@@ -1,3 +1,8 @@
+# Git Rules
+
+- **NEVER run `git push` automatically.** Only push to GitHub if the user explicitly asks.
+- Committing changes is fine, but always stop before pushing.
+
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 
