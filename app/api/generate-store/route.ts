@@ -19,8 +19,8 @@ export async function POST(req: NextRequest) {
   const client = new Anthropic({ apiKey });
 
   const stream = await client.messages.stream({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 2048,
+    model: 'claude-sonnet-4-6',
+    max_tokens: 4096,
     system: [
       {
         type: 'text',

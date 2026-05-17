@@ -106,13 +106,18 @@ export function generateStoreData(store: Store): StoreData {
   const totalOrders = store.orders > 0 ? store.orders : 12;
   const totalRevenue = store.revenue > 0 ? store.revenue : baseProducts.reduce((s, p) => s + p.price * 3, 0);
 
-  // Products
-  const products: DashboardProduct[] = baseProducts.map((p, i) => ({
-    ...p,
-    stock: STOCK_POOL[i % STOCK_POOL.length],
-    sales: Math.max(1, Math.round(totalOrders * SALES_SHARE[i % 4])),
-    status: 'Active' as const,
-  }));
+  // Prefer AI-generated products (design.products) for richer data; fall back to template demoProducts
+  const designProducts = store.design?.products ?? [];
+  const products: DashboardProduct[] = baseProducts.map((p, i) => {
+    const rich = designProducts[i];
+    return {
+      ...p,
+      ...(rich ? { name: rich.name, price: rich.price, category: rich.category, badge: rich.badge } : {}),
+      stock: STOCK_POOL[i % STOCK_POOL.length],
+      sales: Math.max(1, Math.round(totalOrders * SALES_SHARE[i % 4])),
+      status: 'Active' as const,
+    };
+  });
 
   // Orders
   const orderCount = Math.min(totalOrders, 20);

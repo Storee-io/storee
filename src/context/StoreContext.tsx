@@ -108,7 +108,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const storeData = useMemo(
     () => generateStoreData(activeStore),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeStore?.id, activeStore?.revenue, activeStore?.orders]
+    [activeStore?.id, activeStore?.revenue, activeStore?.orders, activeStore?.template?.id]
   );
 
   return (
