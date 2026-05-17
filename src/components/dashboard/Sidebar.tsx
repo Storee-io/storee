@@ -20,13 +20,14 @@ interface NavItem {
   children?: { label: string; path: string; badge?: number }[];
 }
 
-const navSections = [
+function buildNavSections(pendingOrders: number, newProducts: number) {
+  return [
   {
     label: 'STORE',
     items: [
       { icon: LayoutDashboard, label: 'Overview', path: '/dashboard' },
-      { icon: ShoppingBag, label: 'Orders', path: '/dashboard/orders', badge: 5 },
-      { icon: Package, label: 'Products', path: '/dashboard/products', badge: 2 },
+      { icon: ShoppingBag, label: 'Orders', path: '/dashboard/orders', ...(pendingOrders > 0 ? { badge: pendingOrders } : {}) },
+      { icon: Package, label: 'Products', path: '/dashboard/products', ...(newProducts > 0 ? { badge: newProducts } : {}) },
       { icon: Users, label: 'Customers', path: '/dashboard/customers' },
     ] as NavItem[],
   },
@@ -45,7 +46,8 @@ const navSections = [
       { icon: Settings, label: 'Store Settings', path: '/dashboard/settings' },
     ] as NavItem[],
   },
-];
+  ];
+}
 
 interface SidebarProps {
   collapsed: boolean;
@@ -55,11 +57,16 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
-  const { stores, activeStore, setActiveStore } = useStore();
+  const { stores, activeStore, setActiveStore, storeData } = useStore();
   const { openUpgradeModal } = useAuth();
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  // Badge: orders Processing/Shipped = belum selesai; products dengan badge 'New'
+  const pendingOrders = storeData.orders.filter(o => o.status === 'Processing' || o.status === 'Shipped').length;
+  const newProducts = storeData.products.filter(p => p.badge === 'New').length;
+  const navSections = buildNavSections(pendingOrders, newProducts);
 
   const isActive = (path: string) => pathname === path;
 
