@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { Store, Globe, CreditCard, Truck, Check } from 'lucide-react';
@@ -71,7 +71,7 @@ export default function StoreSettings() {
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Storee Subdomain</label>
             <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden">
               <input defaultValue={activeStore?.domain?.split('.')[0] || 'my-store'} className="flex-1 px-4 py-2.5 text-sm outline-none" />
-              <span className="px-4 py-2.5 bg-slate-50 text-sm text-slate-500 border-l border-slate-200">.storee.app</span>
+              <span className="px-4 py-2.5 bg-slate-50 text-sm text-slate-500 border-l border-slate-200">.storee.co</span>
             </div>
           </div>
           <div>

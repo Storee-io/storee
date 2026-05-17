@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -88,7 +88,7 @@ export default function PreviewPage() {
               </div>
               <div className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 flex items-center gap-2">
                 <Globe className="w-3.5 h-3.5 text-slate-400" />
-                <span className="text-xs text-slate-500 font-mono truncate">https://{store?.domain || 'my-store.storee.app'}</span>
+                <span className="text-xs text-slate-500 font-mono truncate">https://{store?.domain || 'my-store.storee.co'}</span>
                 <div className="ml-auto w-3.5 h-3.5 rounded-full bg-green-500/20 flex items-center justify-center">
                   <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
                 </div>

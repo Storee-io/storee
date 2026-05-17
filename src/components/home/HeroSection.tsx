@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -143,7 +143,7 @@ export default function HeroSection() {
     const newStore: Store = {
       id: `store-${Date.now()}`,
       name: storeName,
-      domain: `${storeName.toLowerCase().replace(/\s+/g, '-')}.storee.app`,
+      domain: `${storeName.toLowerCase().replace(/\s+/g, '-')}.storee.co`,
       status: 'Draft',
       template,
       primaryColor: primaryColorFinal,

@@ -1,4 +1,4 @@
-export const revenueData = [
+﻿export const revenueData = [
   { month: 'Jan', revenue: 4200, orders: 38 },
   { month: 'Feb', revenue: 5800, orders: 52 },
   { month: 'Mar', revenue: 4900, orders: 44 },
@@ -41,9 +41,9 @@ export const promotions = [
 ];
 
 export const demoStores = [
-  { id: 'store-1', name: 'Luxe Fashion', domain: 'luxe-fashion.storee.app', status: 'Published', revenue: 12840, orders: 142, category: 'Fashion' },
-  { id: 'store-2', name: 'Coffee Artisan', domain: 'coffee-artisan.storee.app', status: 'Published', revenue: 5420, orders: 89, category: 'Coffee' },
-  { id: 'store-3', name: 'Beauty Glow', domain: 'beauty-glow.storee.app', status: 'Draft', revenue: 0, orders: 0, category: 'Beauty' },
+  { id: 'store-1', name: 'Luxe Fashion', domain: 'luxe-fashion.storee.co', status: 'Published', revenue: 12840, orders: 142, category: 'Fashion' },
+  { id: 'store-2', name: 'Coffee Artisan', domain: 'coffee-artisan.storee.co', status: 'Published', revenue: 5420, orders: 89, category: 'Coffee' },
+  { id: 'store-3', name: 'Beauty Glow', domain: 'beauty-glow.storee.co', status: 'Draft', revenue: 0, orders: 0, category: 'Beauty' },
 ];
 
 export const testimonials = [

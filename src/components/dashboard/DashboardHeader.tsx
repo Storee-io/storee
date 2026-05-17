@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -25,7 +25,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const router = useRouter();
 
   const copyLink = () => {
-    navigator.clipboard.writeText(`https://${activeStore?.domain || 'my-store.storee.app'}`);
+    navigator.clipboard.writeText(`https://${activeStore?.domain || 'my-store.storee.co'}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import type { ReactNode } from 'react';
@@ -54,7 +54,7 @@ const defaultStores: Store[] = [
   {
     id: 'store-1',
     name: 'Luxe Fashion',
-    domain: 'luxe-fashion.storee.app',
+    domain: 'luxe-fashion.storee.co',
     status: 'Published',
     primaryColor: '#ec4899',
     createdAt: '2024-01-15',
@@ -66,7 +66,7 @@ const defaultStores: Store[] = [
   {
     id: 'store-2',
     name: 'Coffee Artisan',
-    domain: 'coffee-artisan.storee.app',
+    domain: 'coffee-artisan.storee.co',
     status: 'Published',
     primaryColor: '#d97706',
     createdAt: '2024-02-20',
