@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useMemo } from 'react';
+import { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Template } from '../data/templates';
 import { templates } from '../data/templates';
@@ -10,6 +10,19 @@ import type { StoreDesign } from '../lib/claudeApi';
 
 export type { StoreData };
 export type { StoreDesign };
+
+// -- Helper: reads (but does NOT delete) the pending store from sessionStorage --
+// The item is deleted in a useEffect after all useState initializers have run.
+// This is safe to call multiple times -- each call returns the same value.
+function readPendingStore(): Store | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem('storee_pending_store');
+    return raw ? (JSON.parse(raw) as Store) : null;
+  } catch {
+    return null;
+  }
+}
 
 export interface Store {
   id: string;
@@ -65,19 +78,27 @@ const defaultStores: Store[] = [
 ];
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [stores, setStores] = useState<Store[]>(defaultStores);
-  const [activeStore, setActiveStore] = useState<Store>(defaultStores[0]);
-  const [generatedStore, setGeneratedStore] = useState<Store | null>(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const pending = sessionStorage.getItem('storee_pending_store');
-      if (!pending) return null;
-      sessionStorage.removeItem('storee_pending_store');
-      return JSON.parse(pending) as Store;
-    } catch {
-      return null;
-    }
+  // If a store was AI-generated on the home page (saved to sessionStorage),
+  // initialize all three states from it so the dashboard shows the correct data.
+  // readPendingStore() is idempotent (does not delete), so calling it 3x is safe.
+  // The item is removed after mount via useEffect below.
+  const [stores, setStores] = useState<Store[]>(() => {
+    const pending = readPendingStore();
+    return pending ? [...defaultStores, pending] : defaultStores;
   });
+  const [activeStore, setActiveStore] = useState<Store>(() =>
+    readPendingStore() ?? defaultStores[0]
+  );
+  const [generatedStore, setGeneratedStore] = useState<Store | null>(() =>
+    readPendingStore()
+  );
+
+  // Clean up sessionStorage after states are initialized (runs once per mount).
+  // This ensures a fresh read on the next StoreProvider mount (e.g. user goes back
+  // to home, generates a new store, then navigates to /preview again).
+  useEffect(() => {
+    sessionStorage.removeItem('storee_pending_store');
+  }, []);
 
   const addStore = (store: Store) => {
     setStores(prev => [...prev, store]);
