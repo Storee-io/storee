@@ -3,9 +3,8 @@
   "configurations": [
     {
       "name": "storee-next",
-      "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
-      "runtimeArgs": ["node_modules\\next\\dist\\bin\\next", "dev"],
-      "cwd": "E:\\AI Projects\\Storee",
+      "runtimeExecutable": "/Users/nasrulfatah/.nvm/versions/node/v20.19.0/bin/npm",
+      "runtimeArgs": ["run", "dev"],
       "port": 3000
     }
   ]

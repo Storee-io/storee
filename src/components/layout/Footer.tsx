@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Sparkles, XIcon, Music2, Link2, Code2 } from 'lucide-react';
+import Image from 'next/image';
+import { XIcon, Music2, Link2, Code2 } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -8,11 +9,15 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
           {/* Brand */}
           <div className="col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">Storee</span>
+            <Link href="/" className="inline-flex mb-4">
+              <Image
+                src="/logo-white.png"
+                alt="Storee"
+                width={103}
+                height={32}
+                unoptimized
+              className="h-8 w-auto"
+              />
             </Link>
             <p className="text-sm leading-relaxed mb-6 max-w-xs">
               Build your online store in minutes with the power of AI. No code, no design skills required.

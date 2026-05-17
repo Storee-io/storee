@@ -4,7 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Sparkles, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import Image from 'next/image';
 import { useAuth } from '@/src/context/AuthContext';
 
 export default function LoginPage() {
@@ -34,11 +35,16 @@ export default function LoginPage() {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center shadow-md">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-slate-900">Storee</span>
+          <Link href="/" className="inline-flex mb-6">
+            <Image
+              src="/logo-dark.png"
+              alt="Storee"
+              width={126}
+              height={36}
+              unoptimized
+              className="h-9 w-auto"
+              priority
+            />
           </Link>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome back</h1>
           <p className="text-slate-500">Sign in to manage your stores</p>

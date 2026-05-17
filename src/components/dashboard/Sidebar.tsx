@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Sparkles, LayoutDashboard, ShoppingBag, Package, Users, Tag, Megaphone,
+  LayoutDashboard, ShoppingBag, Package, Users, Tag, Megaphone,
   BarChart3, Palette, Settings, ChevronDown, ChevronRight, Plus, Store,
   Menu, X, TrendingUp
 } from 'lucide-react';
+import Image from 'next/image';
 import { useStore } from '../../context/StoreContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -74,11 +75,27 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center justify-between px-4 h-16 border-b border-slate-100 flex-shrink-0">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center shadow-sm">
-            <Sparkles className="w-4 h-4 text-white" />
-          </div>
-          {!collapsed && <span className="text-lg font-bold text-slate-900">Storee</span>}
+        <Link href="/" className="flex items-center">
+          {collapsed ? (
+            <Image
+              src="/logo-icon.png"
+              alt="Storee"
+              width={32}
+              height={32}
+              unoptimized
+              className="w-8 h-8 object-contain"
+            />
+          ) : (
+            <Image
+              src="/logo-dark.png"
+              alt="Storee"
+              width={112}
+              height={32}
+              unoptimized
+              className="h-8 w-auto"
+              priority
+            />
+          )}
         </Link>
         <button
           onClick={onToggle}

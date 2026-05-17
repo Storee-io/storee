@@ -1,7 +1,7 @@
 {
   "permissions": {
-    "deny": [
-      "Bash(git push*)"
+    "allow": [
+      "Bash(/Users/nasrulfatah/.nvm/versions/node/v20.19.0/bin/npm *)"
     ]
   }
 }

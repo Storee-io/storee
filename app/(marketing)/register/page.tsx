@@ -4,7 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Sparkles, User, Mail, Lock, Eye, EyeOff, ArrowRight, Check } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Check } from 'lucide-react';
+import Image from 'next/image';
 import { useAuth } from '@/src/context/AuthContext';
 
 const perks = [
@@ -41,11 +42,16 @@ export default function RegisterPage() {
         className="relative z-10 w-full max-w-4xl grid lg:grid-cols-2 gap-8 items-center"
       >
         <div className="hidden lg:block">
-          <Link href="/" className="inline-flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shadow-lg">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-slate-900">Storee</span>
+          <Link href="/" className="inline-flex mb-8">
+            <Image
+              src="/logo-dark.png"
+              alt="Storee"
+              width={126}
+              height={36}
+              unoptimized
+              className="h-9 w-auto"
+              priority
+            />
           </Link>
           <h2 className="text-3xl font-bold text-slate-900 mb-3">
             Start selling online<br />
@@ -66,11 +72,15 @@ export default function RegisterPage() {
 
         <div>
           <div className="text-center lg:text-left mb-6 lg:hidden">
-            <Link href="/" className="inline-flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shadow-lg">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-2xl font-bold text-slate-900">Storee</span>
+            <Link href="/" className="inline-flex">
+              <Image
+                src="/logo-dark.png"
+                alt="Storee"
+                width={126}
+                height={36}
+                unoptimized
+              className="h-9 w-auto"
+              />
             </Link>
           </div>
 

@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Menu, X, Store, LayoutDashboard } from 'lucide-react';
+import { Menu, X, Store, LayoutDashboard } from 'lucide-react';
+import Image from 'next/image';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '@/components/ui/button';
 
@@ -38,11 +39,16 @@ export default function Navbar() {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-xl font-bold text-slate-900 tracking-tight">Storee</span>
+          <Link href="/" className="flex items-center group">
+            <Image
+              src="/logo-dark.png"
+              alt="Storee"
+              width={112}
+              height={32}
+              unoptimized
+              className="h-8 w-auto"
+              priority
+            />
           </Link>
 
           {/* Desktop Nav */}
