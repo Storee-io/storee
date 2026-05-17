@@ -7,6 +7,11 @@ import {
 import { TrendingUp, ShoppingBag, Package, Users, ArrowUpRight } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
 
+// Locale-independent formatter — server and client always agree
+function fmt(n: number): string {
+  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
 const statusColors: Record<string, string> = {
   Completed: 'bg-emerald-100 text-emerald-700',
   Processing: 'bg-amber-100 text-amber-700',
@@ -21,7 +26,7 @@ export default function Overview() {
   const totalOrders = activeStore?.orders || orders.length;
 
   const stats = [
-    { label: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}`, change: '+18%', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Total Revenue', value: `$${fmt(totalRevenue)}`, change: '+18%', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { label: 'Total Orders', value: String(totalOrders), change: '+12%', icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-50' },
     { label: 'Products', value: String(products.length), change: `+${Math.max(1, Math.floor(products.length / 4))} new`, icon: Package, color: 'text-purple-600', bg: 'bg-purple-50' },
     { label: 'Customers', value: String(customers.length), change: '+24%', icon: Users, color: 'text-rose-600', bg: 'bg-rose-50' },
@@ -44,7 +49,7 @@ export default function Overview() {
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map(stat => (
-          <div key={stat.label} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <div key={stat.label} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm text-slate-500 font-medium">{stat.label}</p>
               <div className={`w-9 h-9 ${stat.bg} rounded-xl flex items-center justify-center`}>
@@ -62,7 +67,7 @@ export default function Overview() {
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="font-bold text-slate-900">Revenue Overview</h3>
@@ -83,14 +88,14 @@ export default function Overview() {
               <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', fontSize: '13px' }}
-                formatter={(v: unknown) => [`$${Number(v).toLocaleString()}`, 'Revenue']}
+                formatter={(v: unknown) => [`$${fmt(Number(v))}`, 'Revenue']}
               />
               <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2.5} fill="url(#colorRevDash)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
           <div className="mb-6">
             <h3 className="font-bold text-slate-900">Orders</h3>
             <p className="text-xs text-slate-500 mt-0.5">Monthly orders</p>
@@ -111,7 +116,7 @@ export default function Overview() {
 
       {/* Bottom row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <h3 className="font-bold text-slate-900">Recent Orders</h3>
             <button className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">View all</button>
@@ -139,7 +144,7 @@ export default function Overview() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <h3 className="font-bold text-slate-900">Top Products</h3>
             <button className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">View all</button>
@@ -151,7 +156,7 @@ export default function Overview() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm font-medium text-slate-900 truncate">{p.name}</p>
-                    <p className="text-sm font-bold text-slate-700 ml-2">${p.revenue.toLocaleString()}</p>
+                    <p className="text-sm font-bold text-slate-700 ml-2">${fmt(p.revenue)}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">

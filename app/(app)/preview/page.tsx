@@ -76,26 +76,26 @@ export default function PreviewPage() {
         <motion.div
           animate={{ width: device === 'desktop' ? '100%' : device === 'tablet' ? '768px' : '375px' }}
           transition={{ duration: 0.3 }}
-          className="max-w-full"
-          style={{ minWidth: device === 'mobile' ? '375px' : undefined }}
+          className="max-w-full rounded-2xl"
+          style={{ minWidth: device === 'mobile' ? '375px' : undefined, boxShadow: '0 16px 48px -4px rgba(0,0,0,0.18), 0 6px 16px -2px rgba(0,0,0,0.10)' }}
         >
-          <div className="bg-slate-800 rounded-t-2xl px-4 py-3">
+          <div className="bg-[#f0f0f0] rounded-t-2xl px-4 py-3">
             <div className="flex items-center gap-3">
               <div className="flex gap-1.5">
                 <div className="w-3 h-3 rounded-full bg-red-400" />
                 <div className="w-3 h-3 rounded-full bg-amber-400" />
                 <div className="w-3 h-3 rounded-full bg-green-400" />
               </div>
-              <div className="flex-1 bg-slate-700 rounded-lg px-3 py-1.5 flex items-center gap-2">
+              <div className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 flex items-center gap-2">
                 <Globe className="w-3.5 h-3.5 text-slate-400" />
-                <span className="text-xs text-slate-300 font-mono truncate">https://{store?.domain || 'my-store.storee.app'}</span>
-                <div className="ml-auto w-3.5 h-3.5 rounded-full bg-green-500/30 flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                <span className="text-xs text-slate-500 font-mono truncate">https://{store?.domain || 'my-store.storee.app'}</span>
+                <div className="ml-auto w-3.5 h-3.5 rounded-full bg-green-500/20 flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
                 </div>
               </div>
             </div>
           </div>
-          <div className="rounded-b-2xl overflow-hidden shadow-2xl border border-slate-200 border-t-0">
+          <div className="rounded-b-2xl overflow-hidden">
             {store && <StorePreview store={store} device={device} />}
           </div>
         </motion.div>

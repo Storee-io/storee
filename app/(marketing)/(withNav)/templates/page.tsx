@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import Navbar from '@/src/components/layout/Navbar';
-import Footer from '@/src/components/layout/Footer';
 import TemplatesListClient from './TemplatesListClient';
 
 export const metadata: Metadata = {
@@ -9,11 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function TemplatesPage() {
-  return (
-    <div className="min-h-screen bg-white">
-      <Navbar />
-      <TemplatesListClient />
-      <Footer />
-    </div>
-  );
+  return <TemplatesListClient />;
 }

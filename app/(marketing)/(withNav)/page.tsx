@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import Navbar from '@/src/components/layout/Navbar';
-import Footer from '@/src/components/layout/Footer';
 import HeroSection from '@/src/components/home/HeroSection';
 import TemplatesSection from '@/src/components/home/TemplatesSection';
 import AdvantageGrid from '@/src/components/home/AdvantageGrid';
@@ -21,8 +19,7 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar />
+    <>
       <HeroSection />
       <TemplatesSection />
       <AdvantageGrid />
@@ -30,7 +27,6 @@ export default function HomePage() {
       <Testimonials />
       <FAQ />
       <FinalCTA />
-      <Footer />
-    </div>
+    </>
   );
 }

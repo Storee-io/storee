@@ -71,6 +71,8 @@ export default function HeroSection() {
   const [selectedLang, setSelectedLang] = useState('');
   const [selectedCurr, setSelectedCurr] = useState<typeof currencies[0] | null>(null);
 
+  const [isFocused, setIsFocused] = useState(false);
+
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const brandInputRef = useRef<HTMLInputElement>(null);
@@ -168,18 +170,68 @@ export default function HeroSection() {
 
   const doubled = [...businessCategories, ...businessCategories];
 
-  // Active-state shadow/border for the prompt box
-  const promptBoxClass = prompt.trim()
-    ? 'border-emerald-400 shadow-[0_0_0_4px_rgba(16,185,129,0.10),0_8px_32px_rgba(16,185,129,0.10)]'
-    : 'border-slate-200 shadow-lg';
+  // Default → subtle shadow + barely-visible border
+  // Active (focused or has content) → teal-tinted shadow + clear defined border
+  // Shadow menyerupai pencahayaan dari sedikit atas:
+  // y-offset positif (bayangan jatuh ke bawah), blur lebar, x-offset 0
+  const promptBoxClass = isFocused || prompt.trim()
+    ? 'shadow-[0_6px_32px_-4px_rgba(16,185,129,0.22),0_6px_16px_-2px_rgba(16,185,129,0.12)]'
+    : 'shadow-[0_6px_28px_-4px_rgba(0,0,0,0.14),0_6px_10px_-2px_rgba(0,0,0,0.08)]';
 
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center pt-16 bg-gradient-to-b from-slate-50 to-white">
+    <section
+      className="relative min-h-screen flex flex-col items-center justify-center pt-16"
+      style={{ background: 'linear-gradient(170deg, #e0fdf4 0%, #f0fdf4 20%, #ecfeff 45%, #f0f9ff 70%, #ffffff 100%)' }}
+    >
       {/* Background blobs — overflow-hidden here, NOT on section, so popups aren't clipped */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-100/50 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-cyan-100/50 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-50/30 rounded-full blur-3xl" />
+        {/* Tosca blob — top left */}
+        <motion.div
+          animate={{ y: [0, -30, 0], x: [0, 20, 0], scale: [1, 1.07, 1] }}
+          transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute -top-16 -left-20 w-[520px] h-[520px] rounded-full blur-[80px]"
+          style={{ background: 'rgba(20,184,166,0.18)' }}
+        />
+        {/* Hijau muda blob — top center-right */}
+        <motion.div
+          animate={{ y: [0, 24, 0], x: [0, -16, 0], scale: [1, 1.06, 1] }}
+          transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+          className="absolute -top-10 right-[10%] w-[460px] h-[460px] rounded-full blur-[80px]"
+          style={{ background: 'rgba(134,239,172,0.22)' }}
+        />
+        {/* Biru muda blob — center */}
+        <motion.div
+          animate={{ y: [0, -20, 0], scale: [1, 1.09, 1] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+          className="absolute top-[30%] left-1/2 -translate-x-1/2 w-[640px] h-[420px] rounded-full blur-[90px]"
+          style={{ background: 'rgba(125,211,252,0.18)' }}
+        />
+        {/* Tosca kecil — mid left */}
+        <motion.div
+          animate={{ y: [0, -18, 0], x: [0, 14, 0], opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+          className="absolute top-[40%] -left-8 w-72 h-72 rounded-full blur-[60px]"
+          style={{ background: 'rgba(45,212,191,0.16)' }}
+        />
+        {/* Hijau muda kecil — bottom left */}
+        <motion.div
+          animate={{ y: [0, -16, 0], x: [0, 22, 0] }}
+          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+          className="absolute bottom-[10%] left-[12%] w-80 h-80 rounded-full blur-[70px]"
+          style={{ background: 'rgba(110,231,183,0.18)' }}
+        />
+        {/* Biru kecil — bottom right */}
+        <motion.div
+          animate={{ y: [0, 18, 0], x: [0, -14, 0] }}
+          transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}
+          className="absolute bottom-[8%] right-[8%] w-80 h-80 rounded-full blur-[70px]"
+          style={{ background: 'rgba(56,189,248,0.16)' }}
+        />
+        {/* Fade ke putih di bagian bawah */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none"
+          style={{ background: 'linear-gradient(to bottom, transparent, #ffffff)' }}
+        />
       </div>
 
       <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -254,7 +306,13 @@ export default function HeroSection() {
           className="relative max-w-3xl mx-auto"
         >
           {/* Outer card — NO overflow-hidden so popups aren't clipped */}
-          <div className={`bg-white rounded-2xl border transition-all duration-300 ${promptBoxClass}`}>
+          <div
+            className={`bg-white rounded-2xl transition-all duration-300 ${promptBoxClass}`}
+            onFocus={() => setIsFocused(true)}
+            onBlur={e => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setIsFocused(false);
+            }}
+          >
 
             {/* ── Option capsules row ─────────────────────────────────── */}
             <div className="flex items-center gap-2 px-4 pt-3.5 pb-2.5 flex-wrap">
@@ -282,10 +340,10 @@ export default function HeroSection() {
                 ) : (
                   <button
                     onClick={() => setBrandNameActive(true)}
-                    className="flex items-center gap-1.5 h-8 px-3.5 bg-slate-100 hover:bg-slate-200 border border-transparent hover:border-slate-300 rounded-full text-sm text-slate-600 font-medium transition-all duration-200"
+                    className="flex items-center gap-1.5 h-8 px-3.5 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-full text-sm text-slate-600 font-medium transition-all duration-200"
                   >
-                    <StoreIcon className="w-3.5 h-3.5" />
-                    Brand Name
+                    <StoreIcon className="w-3.5 h-3.5 text-emerald-500" />
+                    Brand name...
                   </button>
                 )}
               </div>
@@ -294,10 +352,10 @@ export default function HeroSection() {
               <div className="relative">
                 <button
                   onClick={() => { setShowColorPicker(!showColorPicker); setShowLangDropdown(false); setShowCurrDropdown(false); }}
-                  className={`flex items-center gap-1.5 h-8 px-3 rounded-full text-sm font-medium transition-all duration-200 border ${
+                  className={`flex items-center gap-1.5 h-8 px-3.5 rounded-full text-sm font-medium transition-all duration-200 border ${
                     showColorPicker
-                      ? 'bg-slate-100 border-slate-300 text-slate-700'
-                      : 'bg-slate-100 border-transparent hover:bg-slate-200 hover:border-slate-300 text-slate-600'
+                      ? 'bg-slate-50 border-slate-300 text-slate-700'
+                      : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-600'
                   }`}
                 >
                   <Palette className="w-3.5 h-3.5 flex-shrink-0" />
@@ -434,10 +492,10 @@ export default function HeroSection() {
               <div className="relative">
                 <button
                   onClick={() => { setShowLangDropdown(!showLangDropdown); setShowColorPicker(false); setShowCurrDropdown(false); }}
-                  className={`flex items-center gap-1.5 h-8 px-3 rounded-full text-sm font-medium transition-all duration-200 border ${
+                  className={`flex items-center gap-1.5 h-8 px-3.5 rounded-full text-sm font-medium transition-all duration-200 border ${
                     showLangDropdown
-                      ? 'bg-slate-100 border-slate-300 text-slate-700'
-                      : 'bg-slate-100 border-transparent hover:bg-slate-200 hover:border-slate-300 text-slate-600'
+                      ? 'bg-slate-50 border-slate-300 text-slate-700'
+                      : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-600'
                   }`}
                 >
                   <Globe className="w-3.5 h-3.5 flex-shrink-0" />
@@ -475,10 +533,10 @@ export default function HeroSection() {
               <div className="relative">
                 <button
                   onClick={() => { setShowCurrDropdown(!showCurrDropdown); setShowColorPicker(false); setShowLangDropdown(false); }}
-                  className={`flex items-center gap-1.5 h-8 px-3 rounded-full text-sm font-medium transition-all duration-200 border ${
+                  className={`flex items-center gap-1.5 h-8 px-3.5 rounded-full text-sm font-medium transition-all duration-200 border ${
                     showCurrDropdown
-                      ? 'bg-slate-100 border-slate-300 text-slate-700'
-                      : 'bg-slate-100 border-transparent hover:bg-slate-200 hover:border-slate-300 text-slate-600'
+                      ? 'bg-slate-50 border-slate-300 text-slate-700'
+                      : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-600'
                   }`}
                 >
                   {/* Always shows a symbol — selected currency's or default $ */}
@@ -519,11 +577,8 @@ export default function HeroSection() {
               </div>
             </div>
 
-            {/* Thin divider */}
-            <div className="mx-4 h-px bg-slate-100" />
-
             {/* ── Textarea + Generate button ──────────────────────────── */}
-            <div className="flex items-end gap-3 px-4 py-3.5" onClick={closeAllDropdowns}>
+            <div className="flex items-end gap-3 px-4 pt-3 pb-2" onClick={closeAllDropdowns}>
               <textarea
                 ref={textareaRef}
                 value={prompt}
@@ -549,23 +604,29 @@ export default function HeroSection() {
                   <>
                     <Sparkles className="w-4 h-4" />
                     Generate Store
-                    <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
             </div>
+
           </div>
 
           {/* Social proof */}
           <div className="flex items-center justify-center gap-4 mt-5">
             <div className="flex -space-x-2">
-              {['#10b981', '#0ea5e9', '#f59e0b', '#ec4899', '#8b5cf6'].map((color, i) => (
+              {[
+                { color: '#10b981', initial: 'R' },
+                { color: '#0ea5e9', initial: 'S' },
+                { color: '#f59e0b', initial: 'M' },
+                { color: '#ec4899', initial: 'K' },
+                { color: '#8b5cf6', initial: 'D' },
+              ].map(({ color, initial }) => (
                 <div
-                  key={i}
+                  key={initial}
                   className="w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-sm"
                   style={{ background: color }}
                 >
-                  {String.fromCharCode(65 + i)}
+                  {initial}
                 </div>
               ))}
             </div>

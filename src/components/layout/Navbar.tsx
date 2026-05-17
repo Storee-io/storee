@@ -53,8 +53,8 @@ export default function Navbar() {
                 href={link.path}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   pathname === link.path
-                    ? 'text-emerald-600 bg-emerald-50'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    ? 'text-emerald-600'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-muted'
                 }`}
               >
                 {link.label}
@@ -91,7 +91,7 @@ export default function Navbar() {
             ) : (
               <>
                 <Link href="/login">
-                  <Button variant="ghost" className="text-slate-600 hover:text-slate-900">
+                  <Button variant="ghost" className="px-4 py-2 h-auto text-slate-600 hover:text-slate-900">
                     Sign In
                   </Button>
                 </Link>

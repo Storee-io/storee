@@ -21,7 +21,7 @@ export default function TemplatesError({
         <div className="w-14 h-14 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
           <AlertTriangle className="w-7 h-7 text-red-400" />
         </div>
-        <h2 className="text-xl font-bold text-slate-900 mb-2">Couldn't load templates</h2>
+        <h2 className="text-xl font-bold text-slate-900 mb-2">Couldn&apos;t load templates</h2>
         <p className="text-sm text-slate-500 mb-8 leading-relaxed">
           Failed to load the template gallery. Check your connection and try again.
         </p>
