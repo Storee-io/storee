@@ -3,8 +3,21 @@
 import { motion } from 'framer-motion';
 import { Check, Sparkles, Zap, Crown } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/src/context/AuthContext';
+import type { PlanName } from '@/src/context/AuthContext';
 
-const plans = [
+const plans: {
+  name: string;
+  icon: React.ElementType;
+  price: number;
+  desc: string;
+  color: string;
+  features: string[];
+  cta: string;
+  ctaLink?: string;
+  upgradePlan?: PlanName;
+  highlight: boolean;
+}[] = [
   {
     name: 'Free', icon: Sparkles, price: 0, desc: 'Perfect to get started',
     color: 'from-slate-500 to-slate-600',
@@ -15,17 +28,19 @@ const plans = [
     name: 'Starter', icon: Zap, price: 19, desc: 'For growing businesses',
     color: 'from-emerald-500 to-teal-500',
     features: ['3 stores', 'Unlimited products', 'Custom domain', 'Advanced analytics', 'Priority support', 'Remove Storee branding', 'Abandoned cart recovery', 'Custom checkout'],
-    cta: 'Start 14-day Trial', ctaLink: '/register', highlight: true,
+    cta: 'Start 14-day Trial', upgradePlan: 'Starter', highlight: true,
   },
   {
     name: 'Pro', icon: Crown, price: 49, desc: 'For serious entrepreneurs',
     color: 'from-purple-500 to-pink-500',
     features: ['Unlimited stores', 'Unlimited products', 'Multiple custom domains', 'Advanced reporting', '24/7 priority support', 'White-label option', 'API access', 'Team collaboration', 'Custom integrations'],
-    cta: 'Get Pro', ctaLink: '/register', highlight: false,
+    cta: 'Get Pro', upgradePlan: 'Pro', highlight: false,
   },
 ];
 
 export default function PricingClient() {
+  const { openUpgradeModal } = useAuth();
+
   return (
     <div className="pt-24 pb-16">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -70,9 +85,27 @@ export default function PricingClient() {
                 <span className="text-4xl font-bold text-slate-900">${plan.price}</span>
                 <span className="text-slate-400 mb-1.5">/month</span>
               </div>
-              <Link href={plan.ctaLink} className={`block w-full py-3 text-center font-semibold rounded-2xl transition-all mb-6 ${plan.highlight ? 'gradient-bg text-white hover:opacity-90 shadow-lg' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
-                {plan.cta}
-              </Link>
+
+              {plan.ctaLink ? (
+                <Link
+                  href={plan.ctaLink}
+                  className={`block w-full py-3 text-center font-semibold rounded-2xl transition-all mb-6 bg-slate-100 text-slate-700 hover:bg-slate-200`}
+                >
+                  {plan.cta}
+                </Link>
+              ) : (
+                <button
+                  onClick={() => openUpgradeModal(plan.upgradePlan!)}
+                  className={`w-full py-3 text-center font-semibold rounded-2xl transition-all mb-6 ${
+                    plan.highlight
+                      ? 'gradient-bg text-white hover:opacity-90 shadow-lg'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  {plan.cta}
+                </button>
+              )}
+
               <div className="space-y-3">
                 {plan.features.map(feature => (
                   <div key={feature} className="flex items-center gap-3">

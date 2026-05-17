@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import Navbar from '@/src/components/layout/Navbar';
-import Footer from '@/src/components/layout/Footer';
 import PricingClient from './PricingClient';
 
 export const metadata: Metadata = {
@@ -9,11 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function PricingPage() {
-  return (
-    <div className="min-h-screen bg-white">
-      <Navbar />
-      <PricingClient />
-      <Footer />
-    </div>
-  );
+  return <PricingClient />;
 }

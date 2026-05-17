@@ -10,6 +10,7 @@ import {
   Menu, X, TrendingUp
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
+import { useAuth } from '../../context/AuthContext';
 
 interface NavItem {
   icon: React.ElementType;
@@ -55,6 +56,7 @@ interface SidebarProps {
 
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const { stores, activeStore, setActiveStore } = useStore();
+  const { openUpgradeModal } = useAuth();
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -200,7 +202,10 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
               <span className="text-sm font-bold">Upgrade Plan</span>
             </div>
             <p className="text-xs text-emerald-100 mb-3">Unlock unlimited stores, custom domains & priority support</p>
-            <button className="w-full py-2 bg-white text-emerald-700 text-xs font-bold rounded-xl hover:bg-emerald-50 transition-colors">
+            <button
+              onClick={() => openUpgradeModal('Starter')}
+              className="w-full py-2 bg-white text-emerald-700 text-xs font-bold rounded-xl hover:bg-emerald-50 transition-colors"
+            >
               Upgrade Now →
             </button>
           </div>
