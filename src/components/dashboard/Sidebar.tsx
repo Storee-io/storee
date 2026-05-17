@@ -64,7 +64,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const router = useRouter();
 
   // Badge: orders Processing/Shipped = belum selesai; products dengan badge 'New'
-  const pendingOrders = storeData.orders.filter(o => o.status === 'Processing' || o.status === 'Shipped').length;
+  const pendingOrders = storeData.orders.filter(o => o.status === 'Processing').length;
   const newProducts = storeData.products.filter(p => p.badge === 'New').length;
   const navSections = buildNavSections(pendingOrders, newProducts);
 
