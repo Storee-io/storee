@@ -24,6 +24,12 @@ function readPendingStore(): Store | null {
   }
 }
 
+export interface StoreCurrency {
+  code: string;
+  symbol: string;
+  label: string;
+}
+
 export interface Store {
   id: string;
   name: string;
@@ -36,6 +42,8 @@ export interface Store {
   revenue: number;
   orders: number;
   design?: StoreDesign;
+  currency?: StoreCurrency;
+  language?: string;
 }
 
 interface StoreContextType {
@@ -43,6 +51,7 @@ interface StoreContextType {
   activeStore: Store | null;
   setActiveStore: (store: Store) => void;
   addStore: (store: Store) => void;
+  updateActiveStore: (patch: Partial<Store>) => void;
   generatedStore: Store | null;
   setGeneratedStore: (store: Store | null) => void;
   storeData: StoreData;
@@ -105,6 +114,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setActiveStore(store);
   };
 
+  const updateActiveStore = (patch: Partial<Store>) => {
+    setActiveStore(prev => prev ? { ...prev, ...patch } : prev);
+    setStores(prev => prev.map(s => s.id === activeStore?.id ? { ...s, ...patch } : s));
+  };
+
   const storeData = useMemo(
     () => generateStoreData(activeStore),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -112,7 +126,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <StoreContext.Provider value={{ stores, activeStore, setActiveStore, addStore, generatedStore, setGeneratedStore, storeData }}>
+    <StoreContext.Provider value={{ stores, activeStore, setActiveStore, addStore, updateActiveStore, generatedStore, setGeneratedStore, storeData }}>
       {children}
     </StoreContext.Provider>
   );

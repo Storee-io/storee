@@ -99,7 +99,7 @@ export default function HeroSection() {
 
     // Run Claude API call and minimum loading timer in parallel
     const [aiResult] = await Promise.all([
-      generateStoreWithClaude(prompt),
+      generateStoreWithClaude(prompt, selectedCurr ?? undefined, selectedLang || undefined),
       new Promise<void>(r => setTimeout(r, 2500)),
     ]);
 
@@ -140,6 +140,16 @@ export default function HeroSection() {
       primaryColorFinal = color1;
     }
 
+    // If user picked a gradient, apply color2 as accentColor override on the design
+    const designOverride = aiResult?.design
+      ? {
+          design: {
+            ...aiResult.design,
+            ...(colorPicked && colorMode === 'gradient' ? { accentColor: color2 } : {}),
+          },
+        }
+      : {};
+
     const newStore: Store = {
       id: `store-${Date.now()}`,
       name: storeName,
@@ -151,7 +161,9 @@ export default function HeroSection() {
       category: template.category,
       revenue: 0,
       orders: 0,
-      ...(aiResult?.design ? { design: aiResult.design } : {}),
+      ...designOverride,
+      ...(selectedCurr ? { currency: selectedCurr } : {}),
+      ...(selectedLang ? { language: selectedLang } : {}),
     };
 
     sessionStorage.setItem('storee_pending_store', JSON.stringify(newStore));

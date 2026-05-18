@@ -1,17 +1,47 @@
 ﻿'use client';
 
 import { useState, useEffect } from 'react';
-import { Store, Globe, CreditCard, Truck, Check } from 'lucide-react';
+import { Store, Globe, CreditCard, Truck, Check, DollarSign, Languages } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
 
+const currencies = [
+  { code: 'USD', symbol: '$', label: 'US Dollar' },
+  { code: 'IDR', symbol: 'Rp', label: 'Indonesian Rupiah' },
+  { code: 'EUR', symbol: '€', label: 'Euro' },
+  { code: 'GBP', symbol: '£', label: 'British Pound' },
+  { code: 'JPY', symbol: '¥', label: 'Japanese Yen' },
+  { code: 'SGD', symbol: 'S$', label: 'Singapore Dollar' },
+  { code: 'AUD', symbol: 'A$', label: 'Australian Dollar' },
+  { code: 'MYR', symbol: 'RM', label: 'Malaysian Ringgit' },
+];
+
+const languages = [
+  { code: 'en', label: 'English', flag: '🇺🇸' },
+  { code: 'id', label: 'Bahasa Indonesia', flag: '🇮🇩' },
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
+  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'ja', label: '日本語', flag: '🇯🇵' },
+  { code: 'ko', label: '한국어', flag: '🇰🇷' },
+  { code: 'zh', label: '中文', flag: '🇨🇳' },
+];
+
 export default function StoreSettings() {
-  const { activeStore } = useStore();
+  const { activeStore, updateActiveStore } = useStore();
   const [saved, setSaved] = useState(false);
   const [storeName, setStoreName] = useState(activeStore?.name || '');
   const [storeDesc, setStoreDesc] = useState('Premium quality products for your lifestyle');
+  const [selectedCurrency, setSelectedCurrency] = useState(
+    activeStore?.currency ?? currencies[0]
+  );
+  const [selectedLanguage, setSelectedLanguage] = useState(
+    languages.find(l => l.label === activeStore?.language) ?? languages[0]
+  );
 
   useEffect(() => {
     setStoreName(activeStore?.name || '');
+    setSelectedCurrency(activeStore?.currency ?? currencies[0]);
+    setSelectedLanguage(languages.find(l => l.label === activeStore?.language) ?? languages[0]);
   }, [activeStore?.id]);
 
   const save = () => {
@@ -35,7 +65,7 @@ export default function StoreSettings() {
       </div>
 
       {/* General */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+      <div className="bg-white rounded-2xl p-6 border border-slate-200">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
             <Store className="w-4 h-4 text-slate-600" />
@@ -59,7 +89,7 @@ export default function StoreSettings() {
       </div>
 
       {/* Domain */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+      <div className="bg-white rounded-2xl p-6 border border-slate-200">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
             <Globe className="w-4 h-4 text-slate-600" />
@@ -83,7 +113,7 @@ export default function StoreSettings() {
       </div>
 
       {/* Payment */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+      <div className="bg-white rounded-2xl p-6 border border-slate-200">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
             <CreditCard className="w-4 h-4 text-slate-600" />
@@ -100,8 +130,77 @@ export default function StoreSettings() {
         </div>
       </div>
 
+      {/* Currency */}
+      <div className="bg-white rounded-2xl p-6 border border-slate-200">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
+            <DollarSign className="w-4 h-4 text-slate-600" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900">Currency</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Set based on your store's target market</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {currencies.map(curr => (
+            <button
+              key={curr.code}
+              onClick={() => { setSelectedCurrency(curr); updateActiveStore({ currency: curr }); }}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
+                selectedCurrency.code === curr.code
+                  ? 'border-emerald-400 bg-emerald-50 text-emerald-800'
+                  : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white text-slate-700'
+              }`}
+            >
+              <span className={`text-base font-bold w-6 text-center flex-shrink-0 ${selectedCurrency.code === curr.code ? 'text-emerald-600' : 'text-slate-500'}`}>
+                {curr.symbol}
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate">{curr.code}</p>
+                <p className="text-xs text-slate-400 truncate">{curr.label}</p>
+              </div>
+              {selectedCurrency.code === curr.code && (
+                <Check className="w-4 h-4 text-emerald-500 ml-auto flex-shrink-0" />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Language */}
+      <div className="bg-white rounded-2xl p-6 border border-slate-200">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
+            <Languages className="w-4 h-4 text-slate-600" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900">Site Language</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Language used across your storefront</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {languages.map(lang => (
+            <button
+              key={lang.code}
+              onClick={() => { setSelectedLanguage(lang); updateActiveStore({ language: lang.label }); }}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
+                selectedLanguage.code === lang.code
+                  ? 'border-emerald-400 bg-emerald-50 text-emerald-800'
+                  : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white text-slate-700'
+              }`}
+            >
+              <span className="text-base flex-shrink-0">{lang.flag}</span>
+              <span className="text-sm font-medium truncate">{lang.label}</span>
+              {selectedLanguage.code === lang.code && (
+                <Check className="w-4 h-4 text-emerald-500 ml-auto flex-shrink-0" />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Shipping */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+      <div className="bg-white rounded-2xl p-6 border border-slate-200">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
             <Truck className="w-4 h-4 text-slate-600" />

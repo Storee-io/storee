@@ -45,9 +45,18 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
       >
         <Menu className="w-5 h-5" />
       </button>
-      <div className="hidden lg:block">
-        <h1 className="text-lg font-bold text-slate-900">{activeStore?.name || 'Dashboard'}</h1>
-        <p className="text-xs text-slate-500">{activeStore?.status === 'Published' ? '🟢 Live' : '🟡 Draft'} · {activeStore?.domain}</p>
+      <div className="hidden lg:flex items-center gap-2.5">
+        <h1 className="text-[15px] font-bold text-slate-900">{activeStore?.name || 'Dashboard'}</h1>
+        <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+          activeStore?.status === 'Published'
+            ? 'bg-emerald-50 text-emerald-600'
+            : 'bg-amber-50 text-amber-500'
+        }`}>
+          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+            activeStore?.status === 'Published' ? 'bg-emerald-500' : 'bg-amber-400'
+          }`} />
+          {activeStore?.status === 'Published' ? 'Live' : 'Draft'}
+        </span>
       </div>
 
       {/* Right */}
