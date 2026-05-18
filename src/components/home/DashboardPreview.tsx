@@ -68,7 +68,7 @@ export default function DashboardPreview() {
               <div className="w-3 h-3 rounded-full bg-green-400" />
             </div>
             <div className="flex-1 mx-4 bg-slate-700 rounded-md px-3 py-1">
-              <span className="text-xs text-slate-400 font-mono">dashboard.storee.co</span>
+              <span className="text-xs text-slate-400 font-mono">dashboard.storee.io</span>
             </div>
           </div>
 

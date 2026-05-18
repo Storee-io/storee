@@ -36,7 +36,7 @@ export default function TemplatePreviewClient({ id, from }: Props) {
 
   const backHref = from || '/templates';
   const backLabel = BACK_LABELS[from] ?? 'All Templates';
-  const domain = `${template.name.toLowerCase().replace(/\s+/g, '-')}.storee.co`;
+  const domain = `${template.name.toLowerCase().replace(/\s+/g, '-')}.storee.io`;
 
   const previewStore = {
     id: 'preview',

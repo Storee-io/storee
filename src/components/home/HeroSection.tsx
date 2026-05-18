@@ -153,7 +153,7 @@ export default function HeroSection() {
     const newStore: Store = {
       id: `store-${Date.now()}`,
       name: storeName,
-      domain: `${storeName.toLowerCase().replace(/\s+/g, '-')}.storee.co`,
+      domain: `${storeName.toLowerCase().replace(/\s+/g, '-')}.storee.io`,
       status: 'Draft',
       template,
       primaryColor: primaryColorFinal,

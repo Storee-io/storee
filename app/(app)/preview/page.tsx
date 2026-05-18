@@ -88,7 +88,7 @@ export default function PreviewPage() {
               </div>
               <div className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 flex items-center gap-2">
                 <Globe className="w-3.5 h-3.5 text-slate-400" />
-                <span className="text-xs text-slate-500 font-mono truncate">https://{store?.domain || 'my-store.storee.co'}</span>
+                <span className="text-xs text-slate-500 font-mono truncate">https://{store?.domain || 'my-store.storee.io'}</span>
                 <div className="ml-auto w-3.5 h-3.5 rounded-full bg-green-500/20 flex items-center justify-center">
                   <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
                 </div>
@@ -104,8 +104,7 @@ export default function PreviewPage() {
       <AnimatePresence>
         {showPublishModal && store && (
           <PublishModal
-            storeName={store.name}
-            currentDomain={store.domain}
+            store={store}
             onPublish={handlePublishComplete}
             onClose={() => setShowPublishModal(false)}
           />

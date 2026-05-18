@@ -25,7 +25,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const router = useRouter();
 
   const copyLink = () => {
-    navigator.clipboard.writeText(`https://${activeStore?.domain || 'my-store.storee.co'}`);
+    navigator.clipboard.writeText(`https://${activeStore?.domain || 'my-store.storee.io'}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

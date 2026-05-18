@@ -71,7 +71,7 @@ const defaultStores: Store[] = [
   {
     id: 'store-1',
     name: 'Luxe Fashion',
-    domain: 'luxe-fashion.storee.co',
+    domain: 'luxe-fashion.storee.io',
     status: 'Published',
     primaryColor: '#ec4899',
     createdAt: '2024-01-15',
@@ -83,7 +83,7 @@ const defaultStores: Store[] = [
   {
     id: 'store-2',
     name: 'Coffee Artisan',
-    domain: 'coffee-artisan.storee.co',
+    domain: 'coffee-artisan.storee.io',
     status: 'Published',
     primaryColor: '#d97706',
     createdAt: '2024-02-20',

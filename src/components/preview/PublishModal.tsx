@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Globe, Rocket, Check, ExternalLink, ArrowLeft, Loader2 } from 'lucide-react';
+import type { Store } from '@/src/context/StoreContext';
 
 interface PublishModalProps {
-  storeName: string;
-  currentDomain: string;
+  store: Store;
   onPublish: (subdomain: string) => void;
   onClose: () => void;
 }
@@ -19,7 +19,7 @@ const PROCESSING_STEPS = [
   'Publishing your store...',
 ];
 
-const BASE_DOMAIN = 'storee.co';
+const BASE_DOMAIN = 'storee.io';
 
 function slugify(text: string): string {
   return text
@@ -33,44 +33,88 @@ function isValidSubdomain(value: string): boolean {
   return /^[a-z0-9]([a-z0-9-]{1,48}[a-z0-9])?$/.test(value);
 }
 
-export default function PublishModal({ storeName, currentDomain, onPublish, onClose }: PublishModalProps) {
-  const defaultSub = slugify(currentDomain.replace(`.${BASE_DOMAIN}`, '') || storeName);
+export default function PublishModal({ store, onPublish, onClose }: PublishModalProps) {
+  const defaultSub = slugify(store.domain.replace(`.${BASE_DOMAIN}`, '') || store.name);
   const [subdomain, setSubdomain] = useState(defaultSub);
   const [step, setStep] = useState<Step>('form');
   const [processStep, setProcessStep] = useState(0);
   const [publishedUrl, setPublishedUrl] = useState('');
+  const [formError, setFormError] = useState('');
 
-  const error = subdomain.length > 0 && !isValidSubdomain(subdomain)
+  const apiResultRef = useRef<{ success: boolean; error?: string } | null>(null);
+
+  const validationError = subdomain.length > 0 && !isValidSubdomain(subdomain)
     ? 'Only lowercase letters, numbers, and hyphens. Must start and end with a letter or number.'
     : '';
 
   const handleSubdomainChange = (val: string) => {
     setSubdomain(val.toLowerCase().replace(/[^a-z0-9-]/g, ''));
+    setFormError('');
   };
 
   const startPublish = () => {
     if (!isValidSubdomain(subdomain)) return;
     const url = `${subdomain}.${BASE_DOMAIN}`;
     setPublishedUrl(url);
+    setFormError('');
+    apiResultRef.current = null;
     setStep('processing');
     setProcessStep(0);
+
+    fetch('/api/publish-store', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subdomain,
+        name: store.name,
+        primaryColor: store.primaryColor,
+        category: store.category,
+        templateId: store.template?.id,
+        design: store.design,
+        currency: store.currency,
+        language: store.language,
+      }),
+    })
+      .then(async res => {
+        if (res.ok) {
+          apiResultRef.current = { success: true };
+        } else {
+          const err = await res.json();
+          apiResultRef.current = { success: false, error: err.error ?? 'Failed to publish' };
+        }
+      })
+      .catch(() => {
+        apiResultRef.current = { success: false, error: 'Network error. Please try again.' };
+      });
   };
 
   useEffect(() => {
     if (step !== 'processing') return;
     let current = 0;
+
     const advance = () => {
       current += 1;
       if (current < PROCESSING_STEPS.length) {
         setProcessStep(current);
         setTimeout(advance, 900);
       } else {
-        setTimeout(() => {
-          onPublish(publishedUrl);
-          setStep('success');
-        }, 700);
+        const checkAndFinish = () => {
+          if (apiResultRef.current === null) {
+            setTimeout(checkAndFinish, 200);
+            return;
+          }
+          if (apiResultRef.current.success) {
+            onPublish(publishedUrl);
+            setStep('success');
+          } else {
+            setFormError(apiResultRef.current.error ?? 'Failed to publish');
+            setStep('form');
+          }
+        };
+        setTimeout(checkAndFinish, 700);
       }
     };
+
     const t = setTimeout(advance, 900);
     return () => clearTimeout(t);
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -122,7 +166,11 @@ export default function PublishModal({ storeName, currentDomain, onPublish, onCl
 
               <div className="mb-5">
                 <label className="block text-sm font-medium text-slate-700 mb-2">Store URL</label>
-                <div className={`flex items-center border rounded-xl overflow-hidden transition-colors ${error ? 'border-red-300 ring-2 ring-red-100' : 'border-slate-200 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100'}`}>
+                <div className={`flex items-center border rounded-xl overflow-hidden transition-colors ${
+                  validationError || formError
+                    ? 'border-red-300 ring-2 ring-red-100'
+                    : 'border-slate-200 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100'
+                }`}>
                   <input
                     value={subdomain}
                     onChange={e => handleSubdomainChange(e.target.value)}
@@ -135,8 +183,10 @@ export default function PublishModal({ storeName, currentDomain, onPublish, onCl
                     .{BASE_DOMAIN}
                   </span>
                 </div>
-                {error && <p className="text-xs text-red-500 mt-1.5">{error}</p>}
-                {!error && subdomain && (
+                {(validationError || formError) && (
+                  <p className="text-xs text-red-500 mt-1.5">{validationError || formError}</p>
+                )}
+                {!validationError && !formError && subdomain && (
                   <p className="text-xs text-slate-400 mt-1.5 flex items-center gap-1">
                     <Check className="w-3 h-3 text-emerald-500" />
                     Your store will be live at <span className="font-mono text-slate-600">{subdomain}.{BASE_DOMAIN}</span>
@@ -147,7 +197,7 @@ export default function PublishModal({ storeName, currentDomain, onPublish, onCl
               <div className="bg-slate-50 rounded-xl p-4 mb-5">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Included with publish</p>
                 <div className="space-y-1.5">
-                  {['Free subdomain on storee.co', 'SSL/HTTPS certificate included', 'CDN-optimized for fast loading'].map(item => (
+                  {['Free subdomain on storee.io', 'SSL/HTTPS certificate included', 'CDN-optimized for fast loading'].map(item => (
                     <div key={item} className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
                       <span className="text-xs text-slate-600">{item}</span>
@@ -158,7 +208,7 @@ export default function PublishModal({ storeName, currentDomain, onPublish, onCl
 
               <button
                 onClick={startPublish}
-                disabled={!subdomain || !!error}
+                disabled={!subdomain || !!validationError}
                 className="w-full flex items-center justify-center gap-2 py-3 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
               >
                 <Rocket className="w-4 h-4" />
