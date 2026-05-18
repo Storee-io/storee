@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft, Check } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft } from 'lucide-react';
 import { useStore } from '@/src/context/StoreContext';
 import StorePreview from '@/src/components/preview/StorePreview';
+import PublishModal from '@/src/components/preview/PublishModal';
 
 type DeviceMode = 'desktop' | 'tablet' | 'mobile';
 
@@ -23,8 +24,8 @@ function getBackLabel(from: string | null): string {
 
 export default function PreviewPage() {
   const [device, setDevice] = useState<DeviceMode>('desktop');
-  const [published, setPublished] = useState(false);
-  const { generatedStore, activeStore } = useStore();
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const { generatedStore, activeStore, updateActiveStore } = useStore();
   const router = useRouter();
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
@@ -33,9 +34,8 @@ export default function PreviewPage() {
 
   const store = generatedStore || activeStore;
 
-  const handlePublish = () => {
-    setPublished(true);
-    setTimeout(() => setPublished(false), 4000);
+  const handlePublishComplete = (subdomain: string) => {
+    updateActiveStore({ status: 'Published', domain: subdomain });
   };
 
   return (
@@ -66,8 +66,8 @@ export default function PreviewPage() {
           <button onClick={() => router.push('/dashboard')} className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors">
             <LayoutDashboard className="w-4 h-4" />Dashboard
           </button>
-          <button onClick={handlePublish} className="flex items-center gap-2 px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow-md">
-            {published ? <><Check className="w-4 h-4" />Published!</> : <><Rocket className="w-4 h-4" />Publish</>}
+          <button onClick={() => setShowPublishModal(true)} className="flex items-center gap-2 px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow-md">
+            <Rocket className="w-4 h-4" />Publish
           </button>
         </div>
       </div>
@@ -102,21 +102,13 @@ export default function PreviewPage() {
       </div>
 
       <AnimatePresence>
-        {published && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 z-50"
-          >
-            <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
-              <Check className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <p className="font-semibold text-sm">Store Published!</p>
-              <p className="text-xs text-slate-400">{store?.domain}</p>
-            </div>
-          </motion.div>
+        {showPublishModal && store && (
+          <PublishModal
+            storeName={store.name}
+            currentDomain={store.domain}
+            onPublish={handlePublishComplete}
+            onClose={() => setShowPublishModal(false)}
+          />
         )}
       </AnimatePresence>
     </div>

@@ -3,8 +3,11 @@
 import { useState } from 'react';
 import { Plus, Copy, Trash2, Check } from 'lucide-react';
 import { promotions } from '../../../data/dummyData';
+import { useStore } from '../../../context/StoreContext';
 
 export default function Promotions() {
+  const { activeStore } = useStore();
+  const currencySymbol = activeStore?.currency?.symbol ?? '$';
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const copyCode = (code: string) => {
@@ -30,9 +33,9 @@ export default function Promotions() {
         {[
           { label: 'Active Promotions', value: '3', color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { label: 'Total Uses', value: '254', color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Revenue Impact', value: '$1,240', color: 'text-purple-600', bg: 'bg-purple-50' },
+          { label: 'Revenue Impact', value: `${currencySymbol}1,240`, color: 'text-purple-600', bg: 'bg-purple-50' },
         ].map(s => (
-          <div key={s.label} className={`bg-white rounded-2xl p-5 border border-slate-200 shadow-sm`}>
+          <div key={s.label} className={`bg-white rounded-2xl p-5 border border-slate-200`}>
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-sm text-slate-500 mt-1">{s.label}</p>
           </div>
@@ -41,7 +44,7 @@ export default function Promotions() {
 
       <div className="grid gap-4">
         {promotions.map(promo => (
-          <div key={promo.id} className={`bg-white rounded-2xl p-5 border shadow-sm ${promo.status === 'Expired' ? 'border-slate-200 opacity-60' : 'border-slate-200 hover:border-emerald-200 hover:shadow-md'} transition-all`}>
+          <div key={promo.id} className={`bg-white rounded-2xl p-5 border ${promo.status === 'Expired' ? 'border-slate-200 opacity-60' : 'border-slate-200 hover:border-emerald-200'} transition-all`}>
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div className="flex items-center gap-4">
                 <div className="bg-slate-900 text-white font-mono font-bold px-4 py-2 rounded-xl text-sm tracking-wider">

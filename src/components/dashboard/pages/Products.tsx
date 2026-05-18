@@ -77,7 +77,7 @@ function StatCard({
   iconColor: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-2xl p-5 border border-slate-100">
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm text-slate-500 font-medium">{label}</p>
         <div className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}>
@@ -102,7 +102,7 @@ function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; s
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function Products() {
-  const { storeData } = useStore();
+  const { storeData, activeStore } = useStore();
   const { products } = storeData;
 
   // Filters
@@ -138,7 +138,8 @@ export default function Products() {
     const s = String(Math.round(n));
     return s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
-  const fmtUSD = (n: number) => `$${fmt(n)}`;
+  const currencySymbol = activeStore?.currency?.symbol ?? '$';
+  const fmtUSD = (n: number) => `${currencySymbol}${fmt(n)}`;
 
   const filtered = useMemo(() => {
     let list = [...products];
@@ -263,22 +264,22 @@ export default function Products() {
       {/* Status Tabs + Toolbar */}
       <div className="space-y-3">
         {/* Status tabs */}
-        <div className="flex items-center gap-1 border-b border-slate-200">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {(['All', 'Active', 'Draft'] as StatusFilter[]).map(s => {
             const count = s === 'All' ? products.length : s === 'Active' ? activeCount : draftCount;
             return (
               <button
                 key={s}
                 onClick={() => handleFilterChange(() => setStatusFilter(s))}
-                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium transition-all ${
                   statusFilter === s
-                    ? 'border-emerald-500 text-emerald-600'
-                    : 'border-transparent text-slate-500 hover:text-slate-700'
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 {s}
-                <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
-                  statusFilter === s ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
+                  statusFilter === s ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-500'
                 }`}>
                   {count}
                 </span>
@@ -295,13 +296,13 @@ export default function Products() {
               value={search}
               onChange={e => handleFilterChange(() => setSearch(e.target.value))}
               placeholder="Search by name, category, or ID..."
-              className="pl-9"
+              className="pl-9 h-9 rounded-xl bg-white border-slate-200/60 text-sm placeholder:text-slate-400 focus-visible:ring-emerald-400/40 focus-visible:border-emerald-400"
             />
           </div>
           <select
             value={categoryFilter}
             onChange={e => handleFilterChange(() => setCategoryFilter(e.target.value))}
-            className="h-9 rounded-xl border border-slate-100 bg-white px-3 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400/50 cursor-pointer"
+            className="h-9 rounded-xl bg-white border border-slate-200/60 px-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 cursor-pointer"
           >
             {categories.map(c => <option key={c}>{c}</option>)}
           </select>
@@ -330,7 +331,7 @@ export default function Products() {
       )}
 
       {/* Table */}
-      <div className="rounded-2xl border border-slate-100 shadow-sm overflow-hidden bg-white">
+      <div className="rounded-2xl border border-slate-200/60 overflow-hidden bg-white">
         <Table>
           <TableHeader className="bg-slate-50">
             <TableRow>
@@ -520,7 +521,7 @@ export default function Products() {
           <select
             value={pageSize}
             onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
-            className="h-8 rounded-xl border border-slate-100 bg-white px-2 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400/50 cursor-pointer"
+            className="h-8 rounded-xl border border-slate-200/60 bg-white px-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 cursor-pointer"
           >
             {PAGE_SIZE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
           </select>

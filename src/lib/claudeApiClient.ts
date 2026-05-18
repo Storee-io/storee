@@ -4,13 +4,15 @@ import type { GeneratedStoreConfig } from './claudeApi';
 export type { GeneratedStoreConfig };
 
 export async function generateStoreWithClaude(
-  prompt: string
+  prompt: string,
+  currency?: { code: string; symbol: string; label: string },
+  language?: string
 ): Promise<GeneratedStoreConfig | null> {
   try {
     const res = await fetch('/api/generate-store', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({ prompt, currency, language }),
     });
     if (!res.ok) return null;
     const text = await res.text();

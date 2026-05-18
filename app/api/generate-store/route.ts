@@ -5,11 +5,17 @@ import { SYSTEM_PROMPT } from '@/src/lib/claudePrompt';
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
-  const { prompt } = await req.json();
+  const { prompt, currency, language } = await req.json();
 
   if (!prompt || typeof prompt !== 'string') {
     return new Response('Missing prompt', { status: 400 });
   }
+
+  const extras: string[] = [];
+  if (currency) extras.push(`Currency: ${currency.label} (${currency.code}, symbol: ${currency.symbol}). Use realistic ${currency.code} pricing for all products.`);
+  if (language) extras.push(`Generate ALL text content (storeName, tagline, heroTitle, heroSubtitle, ctaText, navLinks, product names, descriptions, features, testimonials, FAQ, newsletter, promoBar, brandStory, trustBadges, collections, stats) in ${language}. Only exception: keep category value in English.`);
+
+  const userMessage = extras.length > 0 ? `${prompt}\n\n${extras.join('\n')}` : prompt;
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -28,7 +34,7 @@ export async function POST(req: NextRequest) {
         cache_control: { type: 'ephemeral' },
       },
     ],
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: 'user', content: userMessage }],
   });
 
   const encoder = new TextEncoder();

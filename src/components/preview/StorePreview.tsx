@@ -20,6 +20,7 @@ interface LayoutProps {
   onAddToCart: (p: RichProduct) => void;
   onCartClick: () => void;
   cartCount: number;
+  currencySymbol: string;
 }
 
 // ── Image fallback ────────────────────────────────────────────────────────────
@@ -70,8 +71,8 @@ function gridCols(device: DeviceMode) {
 
 // ── Shared interactive pages ──────────────────────────────────────────────────
 
-function ProductDetailPage({ product, primaryColor, storeName, device, onBack, onAddToCart, onCartClick, cartCount }: {
-  product: RichProduct; primaryColor: string; storeName: string; device: DeviceMode;
+function ProductDetailPage({ product, primaryColor, storeName, device, onBack, onAddToCart, onCartClick, cartCount, currencySymbol }: {
+  product: RichProduct; primaryColor: string; storeName: string; device: DeviceMode; currencySymbol: string;
   onBack: () => void; onAddToCart: (p: RichProduct) => void; onCartClick: () => void; cartCount: number;
 }) {
   const [qty, setQty] = useState(1);
@@ -100,8 +101,8 @@ function ProductDetailPage({ product, primaryColor, storeName, device, onBack, o
           <p className="text-xs text-gray-400 uppercase tracking-wider">{product.category}</p>
           <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
           <div className="flex items-center gap-3">
-            <span className="text-2xl font-black" style={{ color: primaryColor }}>${product.price}</span>
-            {product.originalPrice && <span className="text-lg text-gray-400 line-through">${product.originalPrice}</span>}
+            <span className="text-2xl font-black" style={{ color: primaryColor }}>{currencySymbol}{product.price}</span>
+            {product.originalPrice && <span className="text-lg text-gray-400 line-through">{currencySymbol}{product.originalPrice}</span>}
           </div>
           <div className="flex items-center gap-1.5">
             {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
@@ -129,8 +130,8 @@ function ProductDetailPage({ product, primaryColor, storeName, device, onBack, o
   );
 }
 
-function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, onUpdateQty }: {
-  cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode;
+function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, onUpdateQty, currencySymbol }: {
+  cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; currencySymbol: string;
   onBack: () => void; onCheckout: () => void; onUpdateQty: (id: string, delta: number) => void;
 }) {
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
@@ -158,10 +159,10 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] text-gray-400 uppercase tracking-wider">{p.category}</p>
                   <p className="text-sm font-bold text-gray-900 truncate">{p.name}</p>
-                  <p className="text-sm font-black mt-0.5" style={{ color: primaryColor }}>${p.price}</p>
+                  <p className="text-sm font-black mt-0.5" style={{ color: primaryColor }}>{currencySymbol}{p.price}</p>
                 </div>
                 <div className="flex flex-col items-end justify-between">
-                  <span className="text-sm font-bold text-gray-900">${(p.price * qty).toFixed(2)}</span>
+                  <span className="text-sm font-bold text-gray-900">{currencySymbol}{(p.price * qty).toFixed(2)}</span>
                   <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
                     <button onClick={() => onUpdateQty(p.id, -1)} className="w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-50 text-sm">−</button>
                     <span className="w-7 text-center text-xs font-bold">{qty}</span>
@@ -173,10 +174,10 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
           </div>
           <div className="bg-gray-50 rounded-2xl p-5 h-fit space-y-2.5">
             <h3 className="text-sm font-bold text-gray-900 mb-3">Order Summary</h3>
-            <div className="flex justify-between text-sm"><span className="text-gray-500">Subtotal</span><span className="font-semibold">${subtotal.toFixed(2)}</span></div>
-            <div className="flex justify-between text-sm"><span className="text-gray-500">Shipping</span><span className="font-semibold">{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</span></div>
-            {shipping > 0 && <p className="text-xs text-gray-400">Free shipping on orders over $100</p>}
-            <div className="border-t border-gray-200 pt-3 flex justify-between text-sm font-bold"><span>Total</span><span style={{ color: primaryColor }}>${total.toFixed(2)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-gray-500">Subtotal</span><span className="font-semibold">{currencySymbol}{subtotal.toFixed(2)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-gray-500">Shipping</span><span className="font-semibold">{shipping === 0 ? 'FREE' : `${currencySymbol}${shipping.toFixed(2)}`}</span></div>
+            {shipping > 0 && <p className="text-xs text-gray-400">Free shipping on orders over {currencySymbol}100</p>}
+            <div className="border-t border-gray-200 pt-3 flex justify-between text-sm font-bold"><span>Total</span><span style={{ color: primaryColor }}>{currencySymbol}{total.toFixed(2)}</span></div>
             <button onClick={onCheckout} className="w-full py-3 rounded-xl text-sm font-bold text-white mt-1 hover:opacity-90 transition-opacity" style={{ background: primaryColor }}>Checkout →</button>
           </div>
         </div>
@@ -185,8 +186,8 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
   );
 }
 
-function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder }: {
-  cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode;
+function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, currencySymbol }: {
+  cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; currencySymbol: string;
   onBack: () => void; onPlaceOrder: () => void;
 }) {
   const [form, setForm] = useState({ name: '', email: '', address: '', city: '', zip: '', card: '', expiry: '', cvv: '' });
@@ -236,13 +237,13 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
           <h3 className="text-sm font-bold text-gray-900">Order ({cart.reduce((s, i) => s + i.qty, 0)} items)</h3>
           <div className="space-y-1.5 max-h-36 overflow-y-auto">
             {cart.map(({ product: p, qty }) => (
-              <div key={p.id} className="flex justify-between text-xs"><span className="text-gray-500 truncate max-w-[150px]">{p.name} ×{qty}</span><span className="font-semibold">${(p.price * qty).toFixed(2)}</span></div>
+              <div key={p.id} className="flex justify-between text-xs"><span className="text-gray-500 truncate max-w-[150px]">{p.name} ×{qty}</span><span className="font-semibold">{currencySymbol}{(p.price * qty).toFixed(2)}</span></div>
             ))}
           </div>
           <div className="border-t border-gray-200 pt-3 space-y-1.5">
-            <div className="flex justify-between text-xs text-gray-500"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
-            <div className="flex justify-between text-xs text-gray-500"><span>Shipping</span><span>{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</span></div>
-            <div className="flex justify-between text-sm font-bold pt-1"><span>Total</span><span style={{ color: primaryColor }}>${(subtotal + shipping).toFixed(2)}</span></div>
+            <div className="flex justify-between text-xs text-gray-500"><span>Subtotal</span><span>{currencySymbol}{subtotal.toFixed(2)}</span></div>
+            <div className="flex justify-between text-xs text-gray-500"><span>Shipping</span><span>{shipping === 0 ? 'FREE' : `${currencySymbol}${shipping.toFixed(2)}`}</span></div>
+            <div className="flex justify-between text-sm font-bold pt-1"><span>Total</span><span style={{ color: primaryColor }}>{currencySymbol}{(subtotal + shipping).toFixed(2)}</span></div>
           </div>
           <button onClick={onPlaceOrder} className="w-full py-3 rounded-xl text-sm font-bold text-white hover:opacity-90 transition-opacity" style={{ background: primaryColor }}>Place Order 🚀</button>
           <p className="text-[10px] text-gray-400 text-center">🔒 SSL secured · Demo only</p>
@@ -252,13 +253,13 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   );
 }
 
-function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue }: { primaryColor: string; storeName: string; orderNum: string; total: number; onContinue: () => void }) {
+function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, currencySymbol }: { primaryColor: string; storeName: string; orderNum: string; total: number; currencySymbol: string; onContinue: () => void }) {
   return (
     <div className="bg-white min-h-screen flex flex-col items-center justify-center px-6 text-center py-16">
       <div className="w-20 h-20 rounded-full flex items-center justify-center text-3xl text-white mb-6 shadow-xl" style={{ background: primaryColor }}>✓</div>
       <h1 className="text-2xl font-black text-gray-900 mb-2">Order Placed!</h1>
       <p className="text-sm text-gray-500 mb-1">Thank you for shopping at <span className="font-bold" style={{ color: primaryColor }}>{storeName}</span></p>
-      <p className="text-xs text-gray-400 mb-8">Order <span className="font-mono font-bold text-gray-600">{orderNum}</span> · ${total.toFixed(2)}</p>
+      <p className="text-xs text-gray-400 mb-8">Order <span className="font-mono font-bold text-gray-600">{orderNum}</span> · {currencySymbol}{total.toFixed(2)}</p>
       <div className="bg-gray-50 rounded-2xl p-5 w-full max-w-xs mb-8 space-y-3 text-left">
         {[['📦', 'Processing', "We'll confirm within 1 hour"], ['🚚', 'Delivery', '2–4 business days'], ['📧', 'Confirmation', 'Sent to your inbox']].map(([icon, title, desc]) => (
           <div key={title} className="flex items-start gap-3">
@@ -272,11 +273,180 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue }: {
   );
 }
 
+// ── Shared section components ────────────────────────────────────────────────
+
+function PromoBar({ text, primaryColor }: { text: string; primaryColor: string }) {
+  const [dismissed, setDismissed] = useState(false);
+  if (!text || dismissed) return null;
+  const dark = isDark(primaryColor);
+  return (
+    <div className="flex items-center justify-center gap-3 px-4 py-2.5 relative" style={{ background: primaryColor }}>
+      <p className="text-xs font-semibold text-center" style={{ color: dark ? '#fff' : '#111' }}>{text}</p>
+      <button onClick={() => setDismissed(true)} className="absolute right-4 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition-opacity text-sm font-bold" style={{ color: dark ? '#fff' : '#111' }}>✕</button>
+    </div>
+  );
+}
+
+function StatsRow({ stats, primaryColor, dark = false }: { stats: Array<{ value: string; label: string }>; primaryColor: string; dark?: boolean }) {
+  if (!stats?.length) return null;
+  return (
+    <div className={`border-y ${dark ? 'border-white/10' : 'border-gray-100'}`}>
+      <div className="max-w-6xl mx-auto px-5">
+        <div className={`grid grid-cols-3 divide-x ${dark ? 'divide-white/10' : 'divide-gray-100'}`}>
+          {stats.map((s, i) => (
+            <div key={i} className="text-center px-4 py-6">
+              <p className="text-2xl font-black" style={{ color: primaryColor }}>{s.value}</p>
+              <p className={`text-xs mt-1 font-medium ${dark ? 'text-white/50' : 'text-gray-500'}`}>{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TrustBadgesRow({ badges, primaryColor, dark = false }: { badges: Array<{ icon: string; text: string }>; primaryColor: string; dark?: boolean }) {
+  if (!badges?.length) return null;
+  return (
+    <div className={`${dark ? 'border-white/10' : 'border-gray-100'} border-y`}>
+      <div className={`${dark ? '' : 'bg-gray-50'}`}>
+        <div className="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-center gap-6 flex-wrap">
+          {badges.map((b, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className="text-base">{b.icon}</span>
+              <span className={`text-xs font-semibold ${dark ? 'text-white/60' : 'text-gray-600'}`}>{b.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FAQSection({ faq, primaryColor, device, dark = false, elegant = false }: {
+  faq: Array<{ q: string; a: string }>;
+  primaryColor: string;
+  device: DeviceMode;
+  dark?: boolean;
+  elegant?: boolean;
+}) {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  if (!faq?.length) return null;
+  return (
+    <section
+      className="py-14"
+      style={dark ? { background: 'rgba(255,255,255,0.03)' } : elegant ? { background: '#fdfcf8' } : {}}
+    >
+      <div className="max-w-3xl mx-auto px-5">
+        <div className="text-center mb-9">
+          {elegant ? (
+            <>
+              <p className="text-[10px] tracking-[0.35em] mb-3" style={{ color: primaryColor }}>QUESTIONS</p>
+              <h2 className="text-xl font-bold tracking-wide" style={{ color: '#2a2420' }}>Frequently Asked</h2>
+              <div className="w-12 h-px mx-auto mt-4" style={{ background: primaryColor }} />
+            </>
+          ) : (
+            <h2 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>
+              Frequently Asked Questions
+            </h2>
+          )}
+        </div>
+        <div className="space-y-2">
+          {faq.map((item, i) => (
+            <div
+              key={i}
+              className={`rounded-2xl overflow-hidden border transition-all cursor-pointer ${
+                dark ? 'border-white/10 bg-white/5' :
+                elegant ? 'border-gray-200 bg-white' :
+                'border-gray-100 bg-gray-50 hover:border-gray-200'
+              }`}
+            >
+              <button
+                onClick={() => setOpenIndex(openIndex === i ? null : i)}
+                className="w-full flex items-center justify-between px-5 py-4 text-left"
+              >
+                <span className={`text-sm font-semibold pr-4 ${dark ? 'text-white' : elegant ? 'text-[#2a2420]' : 'text-gray-900'}`}>{item.q}</span>
+                <span
+                  className="text-xl flex-shrink-0 transition-transform duration-200 font-light"
+                  style={{ color: primaryColor, display: 'inline-block', transform: openIndex === i ? 'rotate(45deg)' : 'none' }}
+                >+</span>
+              </button>
+              {openIndex === i && (
+                <div
+                  className={`px-5 pb-5 text-sm leading-relaxed ${dark ? 'text-white/60' : elegant ? 'text-[#6b5e52]' : 'text-gray-500'}`}
+                  style={elegant ? { fontFamily: 'system-ui' } : {}}
+                >
+                  {item.a}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function NewsletterSection({ newsletter, primaryColor, dark = false, elegant = false }: {
+  newsletter: { headline: string; subtext: string };
+  primaryColor: string;
+  dark?: boolean;
+  elegant?: boolean;
+}) {
+  const [email, setEmail] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  if (!newsletter) return null;
+  const inverted = dark || elegant;
+  return (
+    <section className="py-14">
+      <div className="max-w-xl mx-auto px-5">
+        <div
+          className="rounded-3xl p-10 text-center"
+          style={
+            dark ? { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' } :
+            elegant ? { background: '#2a2420' } :
+            { background: `linear-gradient(135deg, ${alpha(primaryColor, 0.09)}, ${alpha(primaryColor, 0.04)})`, border: `1px solid ${alpha(primaryColor, 0.12)}` }
+          }
+        >
+          <p className="text-2xl font-bold mb-3" style={{ color: inverted ? '#fff' : '#111' }}>{newsletter.headline}</p>
+          <p className={`text-sm mb-7 leading-relaxed ${inverted ? 'text-white/60' : 'text-gray-500'}`}>{newsletter.subtext}</p>
+          {submitted ? (
+            <div className="flex items-center justify-center gap-2 text-sm font-semibold" style={{ color: inverted ? '#fff' : primaryColor }}>
+              <span>✓</span> You're on the list!
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="Your email address"
+                className="flex-1 px-4 py-3 rounded-xl text-sm outline-none transition-colors"
+                style={inverted
+                  ? { background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff' }
+                  : { background: '#fff', border: `1px solid ${alpha(primaryColor, 0.2)}`, color: '#111' }
+                }
+              />
+              <button
+                onClick={() => email && setSubmitted(true)}
+                className="px-5 py-3 rounded-xl text-sm font-bold transition-opacity hover:opacity-90 flex-shrink-0"
+                style={{ background: primaryColor, color: isDark(primaryColor) ? '#fff' : '#111' }}
+              >
+                Subscribe
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── MINIMAL layout ────────────────────────────────────────────────────────────
 // Inspired by: COS, Aesop, Muji — editorial, clean, whitespace-forward
 
-function MinimalLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks, products, collections, features, testimonials, tagline } = design;
+function MinimalLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, currencySymbol }: LayoutProps) {
+  const { heroTitle, heroSubtitle, ctaText, navLinks, products, collections, features, testimonials, tagline, faq, stats, promoBar, newsletter, trustBadges } = design;
   const onLight = isDark(primaryColor);
   const btnText = onLight ? '#fff' : '#111';
 
@@ -300,6 +470,8 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
           </div>
         </div>
       </header>
+
+      {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} />}
 
       {/* Hero */}
       <section style={{ background: '#f5f4f0' }}>
@@ -334,7 +506,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
                   <div>
                     <p className="text-[10px] text-gray-400 uppercase tracking-wider">{products[1]?.category}</p>
                     <p className="text-xs font-bold text-gray-900 max-w-[110px] truncate">{products[1]?.name}</p>
-                    <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>${products[1]?.price}</p>
+                    <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{currencySymbol}{products[1]?.price}</p>
                   </div>
                 </div>
               </div>
@@ -357,6 +529,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
           ))}
         </div>
       </div>
+      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} />}
 
       {/* Products */}
       <section className="max-w-6xl mx-auto px-5 py-16">
@@ -388,8 +561,8 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
               <p className="text-sm font-bold text-gray-900 truncate">{p.name}</p>
               <p className="text-[11px] text-gray-400 mt-0.5 truncate">{p.description}</p>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-sm font-black text-gray-900">${p.price}</span>
-                {p.originalPrice && <span className="text-xs text-gray-400 line-through">${p.originalPrice}</span>}
+                <span className="text-sm font-black text-gray-900">{currencySymbol}{p.price}</span>
+                {p.originalPrice && <span className="text-xs text-gray-400 line-through">{currencySymbol}{p.originalPrice}</span>}
               </div>
             </div>
           ))}
@@ -429,6 +602,10 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
       </section>
 
+      {stats && <StatsRow stats={stats} primaryColor={primaryColor} />}
+      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} />}
+
       {/* Footer */}
       <footer className="border-t border-gray-100 py-8">
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -444,8 +621,8 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
 // ── BOLD layout ───────────────────────────────────────────────────────────────
 // Inspired by: Nike, OFF-WHITE, Supreme — dark, high-energy, high contrast
 
-function BoldLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks, products, collections, features, testimonials, tagline, accentColor } = design;
+function BoldLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, currencySymbol }: LayoutProps) {
+  const { heroTitle, heroSubtitle, ctaText, navLinks, products, collections, features, testimonials, tagline, accentColor, faq, stats, promoBar, newsletter, trustBadges } = design;
 
   return (
     <div className="bg-[#0f0f0f]" style={{ fontFamily: 'system-ui, sans-serif' }}>
@@ -466,6 +643,8 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
           </div>
         </div>
       </header>
+
+      {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} />}
 
       {/* Hero */}
       <section className="relative min-h-[70vh] flex items-center overflow-hidden">
@@ -505,6 +684,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
           ))}
         </div>
       </section>
+      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} dark={true} />}
 
       {/* Products */}
       <section className="max-w-6xl mx-auto px-5 py-14">
@@ -532,8 +712,8 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
                 <p className="text-[10px] text-white/30 uppercase tracking-widest">{p.category}</p>
                 <p className="text-sm font-black text-white mt-0.5 truncate">{p.name}</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-sm font-black" style={{ color: primaryColor }}>${p.price}</span>
-                  {p.originalPrice && <span className="text-xs text-white/30 line-through">${p.originalPrice}</span>}
+                  <span className="text-sm font-black" style={{ color: primaryColor }}>{currencySymbol}{p.price}</span>
+                  {p.originalPrice && <span className="text-xs text-white/30 line-through">{currencySymbol}{p.originalPrice}</span>}
                 </div>
               </div>
             </div>
@@ -576,6 +756,10 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
         </div>
       </section>
 
+      {stats && <StatsRow stats={stats} primaryColor={primaryColor} dark={true} />}
+      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} dark={true} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} dark={true} />}
+
       {/* Footer */}
       <footer className="border-t border-white/10 py-8">
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -591,8 +775,8 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
 // ── ELEGANT layout ────────────────────────────────────────────────────────────
 // Inspired by: Net-a-Porter, Jo Malone, Tiffany — luxury, refined, warm
 
-function ElegantLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks, products, collections, features, testimonials, tagline } = design;
+function ElegantLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, currencySymbol }: LayoutProps) {
+  const { heroTitle, heroSubtitle, ctaText, navLinks, products, collections, features, testimonials, tagline, faq, stats, promoBar, newsletter, trustBadges } = design;
   const onLight = isDark(primaryColor);
   const btnText = onLight ? '#fff' : '#222';
 
@@ -625,6 +809,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
         {/* Gold line */}
         <div className="h-px" style={{ background: `linear-gradient(to right, transparent, ${primaryColor}, transparent)` }} />
       </header>
+      {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} />}
 
       {/* Hero — full width image with overlay */}
       <section className="relative overflow-hidden" style={{ height: device === 'mobile' ? '70vh' : '80vh' }}>
@@ -657,6 +842,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
           ))}
         </div>
       </section>
+      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} />}
 
       {/* Products */}
       <section className="max-w-6xl mx-auto px-6 py-16">
@@ -685,8 +871,8 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
               <p className="text-[10px] tracking-[0.2em] mb-1.5" style={{ color: '#a09080', fontFamily: 'system-ui' }}>{p.category.toUpperCase()}</p>
               <p className="text-sm font-medium tracking-wide text-gray-900 truncate" style={{ color: '#2a2420' }}>{p.name}</p>
               <div className="flex items-center gap-2.5 mt-1.5">
-                <span className="text-sm font-bold" style={{ color: primaryColor }}>${p.price}</span>
-                {p.originalPrice && <span className="text-xs line-through" style={{ color: '#a09080' }}>${p.originalPrice}</span>}
+                <span className="text-sm font-bold" style={{ color: primaryColor }}>{currencySymbol}{p.price}</span>
+                {p.originalPrice && <span className="text-xs line-through" style={{ color: '#a09080' }}>{currencySymbol}{p.originalPrice}</span>}
               </div>
             </div>
           ))}
@@ -739,6 +925,10 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
       </section>
 
+      {stats && <StatsRow stats={stats} primaryColor={primaryColor} />}
+      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} elegant={true} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} elegant={true} />}
+
       {/* Footer */}
       <footer style={{ background: '#2a2420', borderTop: `2px solid ${primaryColor}` }} className="py-10">
         <div className="max-w-6xl mx-auto px-6 text-center">
@@ -755,8 +945,8 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
 // ── MODERN layout ─────────────────────────────────────────────────────────────
 // Inspired by: Apple Store, Allbirds, Casper — clean, airy, contemporary
 
-function ModernLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks, products, collections, features, testimonials, tagline, accentColor } = design;
+function ModernLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, currencySymbol }: LayoutProps) {
+  const { heroTitle, heroSubtitle, ctaText, navLinks, products, collections, features, testimonials, tagline, accentColor, faq, stats, promoBar, newsletter, trustBadges } = design;
   const onLight = isDark(primaryColor);
   const btnText = onLight ? '#fff' : '#111';
 
@@ -785,6 +975,8 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
           </div>
         </div>
       </header>
+
+      {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} />}
 
       {/* Hero — split layout */}
       <section className="overflow-hidden">
@@ -824,7 +1016,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
                       <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
                       <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
                         <p className="text-white text-xs font-semibold truncate">{p.name}</p>
-                        <p className="text-white/80 text-xs">${p.price}</p>
+                        <p className="text-white/80 text-xs">{currencySymbol}{p.price}</p>
                       </div>
                       {p.badge && (
                         <span className="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: primaryColor }}>{p.badge}</span>
@@ -837,6 +1029,8 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
           )}
         </div>
       </section>
+
+      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} />}
 
       {/* Products */}
       <section className="max-w-6xl mx-auto px-5 py-14" style={{ borderTop: '1px solid #f0f0f0' }}>
@@ -867,8 +1061,8 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
                 <p className="text-xs text-gray-400 mt-0.5 truncate">{p.description}</p>
                 <div className="flex items-center justify-between mt-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-gray-900">${p.price}</span>
-                    {p.originalPrice && <span className="text-xs text-gray-400 line-through">${p.originalPrice}</span>}
+                    <span className="text-sm font-bold text-gray-900">{currencySymbol}{p.price}</span>
+                    {p.originalPrice && <span className="text-xs text-gray-400 line-through">{currencySymbol}{p.originalPrice}</span>}
                   </div>
                   <button onClick={e => { e.stopPropagation(); onAddToCart(p); }} className="px-3 py-1.5 text-xs font-semibold rounded-xl text-white" style={{ background: primaryColor }}>
                     Add
@@ -917,6 +1111,10 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
         </div>
       </section>
 
+      {stats && <StatsRow stats={stats} primaryColor={primaryColor} />}
+      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} />}
+
       {/* Footer */}
       <footer className="bg-gray-50 border-t border-gray-100 py-10">
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -937,8 +1135,8 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
 // ── PLAYFUL layout ────────────────────────────────────────────────────────────
 // Inspired by: Glossier, Oatly, Warby Parker — fun, colorful, round, youthful
 
-function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks, products, collections, features, testimonials, tagline, accentColor } = design;
+function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, currencySymbol }: LayoutProps) {
+  const { heroTitle, heroSubtitle, ctaText, navLinks, products, collections, features, testimonials, tagline, accentColor, faq, stats, promoBar, newsletter, trustBadges } = design;
   const onPrimary = isDark(primaryColor);
   const heroText = onPrimary ? '#fff' : '#111';
 
@@ -967,6 +1165,8 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
           </button>
         </div>
       </header>
+
+      {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} />}
 
       {/* Hero — colorful gradient */}
       <section className="relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${accentColor} 100%)` }}>
@@ -1000,7 +1200,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
                       </div>
                       <div className="p-2.5">
                         <p className="text-xs font-bold text-gray-900 truncate">{p.name}</p>
-                        <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>${p.price}</p>
+                        <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{currencySymbol}{p.price}</p>
                       </div>
                     </div>
                   ))}
@@ -1022,6 +1222,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
           ))}
         </div>
       </section>
+      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} />}
 
       {/* Products */}
       <section className="max-w-6xl mx-auto px-5 py-14">
@@ -1058,8 +1259,8 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
                 <p className="text-xs text-gray-400 mt-0.5 truncate">{p.description}</p>
                 <div className="flex items-center justify-between mt-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-base font-black" style={{ color: primaryColor }}>${p.price}</span>
-                    {p.originalPrice && <span className="text-xs text-gray-400 line-through">${p.originalPrice}</span>}
+                    <span className="text-base font-black" style={{ color: primaryColor }}>{currencySymbol}{p.price}</span>
+                    {p.originalPrice && <span className="text-xs text-gray-400 line-through">{currencySymbol}{p.originalPrice}</span>}
                   </div>
                   <button onClick={e => { e.stopPropagation(); onAddToCart(p); }} className="p-2 rounded-xl text-white hover:opacity-80 transition-opacity" style={{ background: idx % 2 === 0 ? primaryColor : accentColor }}>
                     <ShoppingCart className="w-3.5 h-3.5" />
@@ -1108,6 +1309,10 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
       </section>
 
+      {stats && <StatsRow stats={stats} primaryColor={primaryColor} />}
+      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} />}
+
       {/* Footer */}
       <footer className="py-10" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})` }}>
         <div className="max-w-6xl mx-auto px-5 text-center">
@@ -1131,6 +1336,7 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
   cartCount: number;
 }) {
   const primaryColor = store.primaryColor || '#10b981';
+  const currencySymbol = store.currency?.symbol ?? '$';
   const template = store.template;
   const products = (template?.demoProducts || []).map(p => ({ ...p, description: '' })) as RichProduct[];
 
@@ -1180,7 +1386,7 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
                 <p className="text-xs text-slate-400 mb-1">{p.category}</p>
                 <p className="text-sm font-semibold text-slate-900 truncate">{p.name}</p>
                 <div className="flex items-center justify-between mt-2">
-                  <span className="font-bold text-slate-900">${p.price}</span>
+                  <span className="font-bold text-slate-900">{currencySymbol}{p.price}</span>
                   <button onClick={e => { e.stopPropagation(); onAddToCart(p); }} className="px-3 py-1.5 text-xs font-semibold rounded-xl text-white" style={{ background: primaryColor }}>Add</button>
                 </div>
               </div>
@@ -1219,6 +1425,7 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
   const design = store.design as StoreDesign | undefined;
   const primaryColor = store.primaryColor || '#10b981';
   const storeName = store.name;
+  const currencySymbol = store.currency?.symbol ?? '$';
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
   const cartTotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
   const shipping = cartTotal > 0 && cartTotal < 100 ? 9.99 : 0;
@@ -1246,22 +1453,22 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
 
   // Shared pages
   if (page === 'product' && selectedProduct) {
-    return <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} onBack={() => setPage('home')} onAddToCart={addToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} />;
+    return <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} currencySymbol={currencySymbol} onBack={() => setPage('home')} onAddToCart={addToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} />;
   }
   if (page === 'cart') {
-    return <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} onBack={() => setPage('home')} onCheckout={() => setPage('checkout')} onUpdateQty={updateQty} />;
+    return <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} currencySymbol={currencySymbol} onBack={() => setPage('home')} onCheckout={() => setPage('checkout')} onUpdateQty={updateQty} />;
   }
   if (page === 'checkout') {
-    return <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} onBack={() => setPage('cart')} onPlaceOrder={() => { setPage('success'); }} />;
+    return <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} currencySymbol={currencySymbol} onBack={() => setPage('cart')} onPlaceOrder={() => { setPage('success'); }} />;
   }
   if (page === 'success') {
-    return <SuccessPage primaryColor={primaryColor} storeName={storeName} orderNum={orderNum} total={cartTotal + shipping} onContinue={() => { setCart([]); setPage('home'); }} />;
+    return <SuccessPage primaryColor={primaryColor} storeName={storeName} orderNum={orderNum} total={cartTotal + shipping} currencySymbol={currencySymbol} onContinue={() => { setCart([]); setPage('home'); }} />;
   }
 
   // Home page — layout-specific
   if (!design) return <FallbackLayout store={store} device={device} {...shared} />;
 
-  const props: LayoutProps = { storeName, primaryColor, design, device, ...shared };
+  const props: LayoutProps = { storeName, primaryColor, design, device, currencySymbol, ...shared };
 
   switch (design.layoutStyle) {
     case 'minimal':  return <MinimalLayout {...props} />;

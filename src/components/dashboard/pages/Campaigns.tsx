@@ -41,14 +41,14 @@ export default function Campaigns() {
           { label: 'Emails Sent', value: '2,096', color: 'text-blue-600' },
           { label: 'Avg Open Rate', value: '33.2%', color: 'text-purple-600' },
         ].map(s => (
-          <div key={s.label} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+          <div key={s.label} className="bg-white rounded-2xl p-5 border border-slate-200">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-sm text-slate-500 mt-1">{s.label}</p>
           </div>
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50">

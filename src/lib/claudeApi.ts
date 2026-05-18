@@ -26,6 +26,12 @@ export interface StoreDesign {
   products: RichProduct[];
   features: Array<{ icon: string; title: string; description: string }>;
   testimonials: Array<{ text: string; author: string; role: string; rating: number }>;
+  faq?: Array<{ q: string; a: string }>;
+  stats?: Array<{ value: string; label: string }>;
+  promoBar?: string;
+  newsletter?: { headline: string; subtext: string };
+  trustBadges?: Array<{ icon: string; text: string }>;
+  brandStory?: string;
 }
 
 export interface ClaudeStoreResponse {
@@ -50,6 +56,12 @@ export interface ClaudeStoreResponse {
   }>;
   features: Array<{ icon: string; title: string; description: string }>;
   testimonials: Array<{ text: string; author: string; role: string; rating: number }>;
+  faq?: Array<{ q: string; a: string }>;
+  stats?: Array<{ value: string; label: string }>;
+  promoBar?: string;
+  newsletter?: { headline: string; subtext: string };
+  trustBadges?: Array<{ icon: string; text: string }>;
+  brandStory?: string;
 }
 
 export interface GeneratedStoreConfig {
@@ -74,7 +86,7 @@ export function buildStoreConfig(parsed: ClaudeStoreResponse): GeneratedStoreCon
 
   const originalImages = matchedTemplate.demoProducts.map(p => p.image);
 
-  const richProducts: RichProduct[] = parsed.products.slice(0, 4).map((p, i) => ({
+  const richProducts: RichProduct[] = parsed.products.slice(0, 6).map((p, i) => ({
     id: `p${i + 1}`,
     name: p.name,
     price: p.price,
@@ -106,6 +118,12 @@ export function buildStoreConfig(parsed: ClaudeStoreResponse): GeneratedStoreCon
     products: richProducts,
     features: parsed.features,
     testimonials: parsed.testimonials,
+    ...(parsed.faq ? { faq: parsed.faq } : {}),
+    ...(parsed.stats ? { stats: parsed.stats } : {}),
+    ...(parsed.promoBar ? { promoBar: parsed.promoBar } : {}),
+    ...(parsed.newsletter ? { newsletter: parsed.newsletter } : {}),
+    ...(parsed.trustBadges ? { trustBadges: parsed.trustBadges } : {}),
+    ...(parsed.brandStory ? { brandStory: parsed.brandStory } : {}),
   };
 
   return {

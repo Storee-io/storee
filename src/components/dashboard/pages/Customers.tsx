@@ -18,8 +18,10 @@ function fmt(n: number): string {
   return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
+
 export default function Customers() {
-  const { storeData } = useStore();
+  const { storeData, activeStore } = useStore();
+  const currencySymbol = activeStore?.currency?.symbol ?? '$';
   const { customers } = storeData;
   const [search, setSearch] = useState('');
 
@@ -54,7 +56,7 @@ export default function Customers() {
       {/* Stat cards */}
       <div className="grid grid-cols-3 gap-4">
         {stats.map(s => (
-          <div key={s.label} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+          <div key={s.label} className="bg-white rounded-2xl p-5 border border-slate-100">
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm text-slate-500 font-medium">{s.label}</p>
               <div className={`w-9 h-9 ${s.iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}>
@@ -78,7 +80,7 @@ export default function Customers() {
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl border border-slate-100 shadow-sm overflow-hidden bg-white">
+      <div className="rounded-2xl border border-slate-200/60 overflow-hidden bg-white">
         <Table>
           <TableHeader className="bg-slate-50">
             <TableRow>
@@ -118,7 +120,7 @@ export default function Customers() {
                       <span className="text-sm font-medium text-slate-700">{c.orders}</span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm font-bold text-slate-900">${fmt(c.spent)}</span>
+                      <span className="text-sm font-bold text-slate-900">{currencySymbol}{fmt(c.spent)}</span>
                     </TableCell>
                     <TableCell>
                       <span className="text-xs text-slate-400">{c.joined}</span>

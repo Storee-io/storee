@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import { revenueData } from '../../../data/dummyData';
 import { TrendingUp, TrendingDown, Users, ShoppingBag, Eye } from 'lucide-react';
+import { useStore } from '../../../context/StoreContext';
 
 const trafficData = [
   { day: 'Mon', visitors: 142, pageviews: 412 },
@@ -25,6 +26,8 @@ const sourceData = [
 ];
 
 export default function Analytics() {
+  const { activeStore } = useStore();
+  const currencySymbol = activeStore?.currency?.symbol ?? '$';
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -40,7 +43,7 @@ export default function Analytics() {
           { label: 'Conversion Rate', value: '3.2%', change: '+0.4%', up: true, icon: TrendingUp },
           { label: 'Cart Abandonment', value: '62%', change: '-5%', up: false, icon: ShoppingBag },
         ].map(kpi => (
-          <div key={kpi.label} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+          <div key={kpi.label} className="bg-white rounded-2xl p-5 border border-slate-200">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs text-slate-500 font-medium">{kpi.label}</p>
               <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center">
@@ -58,7 +61,7 @@ export default function Analytics() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue */}
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200">
           <h3 className="font-bold text-slate-900 mb-5">Revenue Trend</h3>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={revenueData}>
@@ -71,14 +74,14 @@ export default function Analytics() {
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
               <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0' }} formatter={(v: unknown) => [`$${Number(v).toLocaleString()}`, 'Revenue']} />
+              <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0' }} formatter={(v: unknown) => [`${currencySymbol}${Number(v).toLocaleString()}`, 'Revenue']} />
               <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2.5} fill="url(#colorRevA)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
         {/* Traffic sources */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200">
           <h3 className="font-bold text-slate-900 mb-5">Traffic Sources</h3>
           <div className="flex justify-center mb-4">
             <PieChart width={160} height={160}>
@@ -102,7 +105,7 @@ export default function Analytics() {
       </div>
 
       {/* Traffic */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+      <div className="bg-white rounded-2xl p-6 border border-slate-200">
         <h3 className="font-bold text-slate-900 mb-5">Weekly Traffic</h3>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={trafficData}>
