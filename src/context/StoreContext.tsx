@@ -46,6 +46,12 @@ export interface Store {
   language?: string;
 }
 
+export interface GenerationState {
+  active: boolean;
+  step: number;
+  prompt: string;
+}
+
 interface StoreContextType {
   stores: Store[];
   activeStore: Store | null;
@@ -55,6 +61,8 @@ interface StoreContextType {
   generatedStore: Store | null;
   setGeneratedStore: (store: Store | null) => void;
   storeData: StoreData;
+  generationState: GenerationState | null;
+  setGenerationState: (state: GenerationState | null) => void;
 }
 
 const StoreContext = createContext<StoreContextType | null>(null);
@@ -101,6 +109,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [generatedStore, setGeneratedStore] = useState<Store | null>(() =>
     readPendingStore()
   );
+  const [generationState, setGenerationState] = useState<GenerationState | null>(null);
 
   // Clean up sessionStorage after states are initialized (runs once per mount).
   // This ensures a fresh read on the next StoreProvider mount (e.g. user goes back
@@ -126,7 +135,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <StoreContext.Provider value={{ stores, activeStore, setActiveStore, addStore, updateActiveStore, generatedStore, setGeneratedStore, storeData }}>
+    <StoreContext.Provider value={{ stores, activeStore, setActiveStore, addStore, updateActiveStore, generatedStore, setGeneratedStore, storeData, generationState, setGenerationState }}>
       {children}
     </StoreContext.Provider>
   );
