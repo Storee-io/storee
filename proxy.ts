@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'storee.io';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const hostname = request.headers.get('host') ?? '';
 
   // Strip port for comparison (e.g. localhost:3000 → localhost)
