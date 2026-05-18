@@ -19,7 +19,7 @@ const PROCESSING_STEPS = [
   'Publishing your store...',
 ];
 
-const BASE_DOMAIN = 'storee.co';
+const BASE_DOMAIN = 'storee.io';
 
 function slugify(text: string): string {
   return text
@@ -147,7 +147,7 @@ export default function PublishModal({ storeName, currentDomain, onPublish, onCl
               <div className="bg-slate-50 rounded-xl p-4 mb-5">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Included with publish</p>
                 <div className="space-y-1.5">
-                  {['Free subdomain on storee.co', 'SSL/HTTPS certificate included', 'CDN-optimized for fast loading'].map(item => (
+                  {['Free subdomain on storee.io', 'SSL/HTTPS certificate included', 'CDN-optimized for fast loading'].map(item => (
                     <div key={item} className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
                       <span className="text-xs text-slate-600">{item}</span>
