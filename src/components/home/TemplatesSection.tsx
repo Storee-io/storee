@@ -18,11 +18,11 @@ export default function TemplatesSection() {
     : templates.filter(t => t.category === activeCategory);
 
   return (
-    <section id="templates" className="py-14 sm:py-24 bg-white">
-      <div className="max-w-5xl mx-auto px-[3.75rem] sm:px-6 lg:px-8 xl:px-20 2xl:px-32">
+    <section id="templates" className="py-10 sm:py-24 bg-white">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-20 2xl:px-32">
 
         {/* Header */}
-        <div className="text-center mb-8 sm:mb-12">
+        <div className="text-center mb-6 sm:mb-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -52,7 +52,7 @@ export default function TemplatesSection() {
         </div>
 
         {/* Category filter */}
-        <div className="flex items-center gap-2 justify-center flex-wrap mb-6 sm:mb-10">
+        <div className="flex items-center gap-2 justify-center flex-wrap mb-4 sm:mb-10">
           {categories.map(cat => (
             <button
               key={cat}

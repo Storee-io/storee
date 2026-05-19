@@ -55,9 +55,9 @@ const advantages = [
 
 export default function AdvantageGrid() {
   return (
-    <section className="py-14 sm:py-24 bg-slate-50">
-      <div className="max-w-5xl mx-auto px-[3.75rem] sm:px-6 lg:px-8 xl:px-20 2xl:px-32">
-        <div className="text-center mb-10 sm:mb-16">
+    <section className="py-10 sm:py-24 bg-slate-50">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-20 2xl:px-32">
+        <div className="text-center mb-7 sm:mb-16">
           <AnimateOnView className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full text-sm text-slate-600 font-medium mb-3 shadow-sm border border-slate-200">
             Why Choose Storee
           </AnimateOnView>
@@ -73,12 +73,12 @@ export default function AdvantageGrid() {
           </AnimateOnView>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {advantages.map((adv, i) => (
             <AnimateOnView key={adv.title} delay={i * 0.08} y={24}>
-              <Card className={`relative p-6 ${adv.border} card-hover group overflow-hidden`}>
+              <Card className={`relative p-4 sm:p-6 ${adv.border} card-hover group overflow-hidden`}>
               <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${adv.color} opacity-5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:opacity-10 transition-opacity`} />
-              <div className={`w-12 h-12 ${adv.bg} rounded-xl flex items-center justify-center mb-4`}>
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 ${adv.bg} rounded-xl flex items-center justify-center mb-3 sm:mb-4`}>
                 <div className={`bg-gradient-to-br ${adv.color} rounded-lg w-10 h-10 flex items-center justify-center`}>
                   <adv.icon className="w-5 h-5 text-white" />
                 </div>

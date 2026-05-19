@@ -246,13 +246,13 @@ export default function HeroSection() {
         />
       </div>
 
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-[3.75rem] sm:px-6 lg:px-8 xl:px-20 2xl:px-32 text-center">
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-20 2xl:px-32 text-center">
 
         {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-full text-sm text-emerald-700 font-medium mb-8"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-full text-sm text-emerald-700 font-medium mb-4 sm:mb-8"
         >
           <Sparkles className="w-4 h-4" />
           AI-Powered Store Builder
@@ -264,7 +264,7 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="text-3xl sm:text-5xl lg:text-7xl font-bold text-slate-900 leading-tight tracking-tight mb-6"
+          className="text-3xl sm:text-5xl lg:text-7xl font-bold text-slate-900 leading-tight tracking-tight mb-3 sm:mb-6"
         >
           Build Your Online Store
           <br />
@@ -275,7 +275,7 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="text-lg sm:text-xl text-slate-500 max-w-2xl mx-auto mb-10 leading-relaxed"
+          className="text-sm sm:text-xl text-slate-500 max-w-2xl mx-auto mb-5 sm:mb-10 leading-relaxed"
         >
           Describe your business and our AI will generate a complete, ready-to-publish online store in seconds. No code, no design skills needed.
         </motion.p>
@@ -285,7 +285,7 @@ export default function HeroSection() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="mb-8 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]"
+          className="mb-5 sm:mb-8 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]"
         >
           <div className="flex animate-scroll w-max gap-2.5">
             {doubled.map((cat, i) => (
@@ -628,7 +628,7 @@ export default function HeroSection() {
           </div>
 
           {/* Social proof */}
-          <div className="flex items-center justify-center gap-4 mt-5">
+          <div className="flex items-center justify-center gap-4 mt-3 sm:mt-5">
             <div className="flex -space-x-2">
               {[
                 { color: '#10b981', initial: 'R' },
