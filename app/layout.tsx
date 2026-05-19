@@ -17,12 +17,12 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     siteName: 'Storee',
-    images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
+    images: [{ url: '/og-image.png', width: 1340, height: 860, alt: 'Storee – AI Online Store Builder' }],
   },
   twitter: {
     card: 'summary_large_image',
     site: '@storeeapp',
-    images: ['/opengraph-image'],
+    images: ['/og-image.png'],
   },
 };
 
