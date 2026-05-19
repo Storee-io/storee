@@ -145,10 +145,12 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
                 Account Settings
               </DropdownMenuItem>
             </Link>
-            <DropdownMenuItem className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600">
-              <HelpCircle className="w-4 h-4 text-slate-400" />
-              Help & Support
-            </DropdownMenuItem>
+            <a href="mailto:support@storee.io" target="_blank" rel="noopener noreferrer">
+              <DropdownMenuItem className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600">
+                <HelpCircle className="w-4 h-4 text-slate-400" />
+                Help & Support
+              </DropdownMenuItem>
+            </a>
 
             <DropdownMenuSeparator />
 
