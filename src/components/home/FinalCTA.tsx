@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 
 export default function FinalCTA() {
   return (
-    <section className="py-24 bg-white">
+    <section className="py-14 sm:py-24 bg-white">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <AnimateOnView
           y={40}
-          className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-12 sm:p-16 text-center"
+          className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 sm:p-12 lg:p-16 text-center"
         >
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             <div className="absolute -top-24 -left-24 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl" />
@@ -18,17 +18,17 @@ export default function FinalCTA() {
           </div>
 
           <div className="relative z-10">
-            <div className="w-16 h-16 gradient-bg rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl animate-float">
-              <Sparkles className="w-8 h-8 text-white" />
+            <div className="w-14 h-14 sm:w-16 sm:h-16 gradient-bg rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-2xl animate-float">
+              <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
             </div>
 
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-6">
+            <h2 className="text-2xl sm:text-4xl lg:text-6xl font-bold text-white tracking-tight mb-4 sm:mb-6">
               Ready to Build Your
               <br />
               <span className="gradient-text">Dream Store?</span>
             </h2>
 
-            <p className="text-slate-400 text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+            <p className="text-slate-400 text-base sm:text-lg max-w-2xl mx-auto mb-7 sm:mb-10 leading-relaxed">
               Join 1,000+ entrepreneurs who launched their online stores with Storee. Get started free — no credit card required.
             </p>
 
@@ -47,7 +47,7 @@ export default function FinalCTA() {
               </Link>
             </div>
 
-            <div className="mt-8 flex items-center justify-center gap-6 text-sm text-slate-400">
+            <div className="mt-6 sm:mt-8 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm text-slate-400">
               {['Free forever plan', 'No credit card required', 'Launch in minutes'].map(label => (
                 <span key={label} className="flex items-center gap-1.5">
                   <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center">

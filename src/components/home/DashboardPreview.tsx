@@ -22,14 +22,14 @@ const statusColors: Record<string, string> = {
 
 export default function DashboardPreview() {
   return (
-    <section className="py-24 bg-white">
+    <section className="py-14 sm:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 sm:mb-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full text-sm text-slate-600 font-medium mb-4"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full text-sm text-slate-600 font-medium mb-3"
           >
             Powerful Dashboard
           </motion.div>
@@ -38,7 +38,7 @@ export default function DashboardPreview() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-4xl sm:text-5xl font-bold text-slate-900 tracking-tight mb-4"
+            className="text-2xl sm:text-4xl md:text-5xl font-bold text-slate-900 tracking-tight mb-3"
           >
             Manage Everything <span className="gradient-text">Effortlessly</span>
           </motion.h2>
@@ -47,7 +47,7 @@ export default function DashboardPreview() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="text-lg text-slate-500 max-w-xl mx-auto"
+            className="text-base sm:text-lg text-slate-500 max-w-xl mx-auto"
           >
             A Shopify-grade dashboard that makes running your store a joy, not a chore
           </motion.p>

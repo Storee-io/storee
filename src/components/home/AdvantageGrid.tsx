@@ -55,19 +55,19 @@ const advantages = [
 
 export default function AdvantageGrid() {
   return (
-    <section className="py-24 bg-slate-50">
+    <section className="py-14 sm:py-24 bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <AnimateOnView className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full text-sm text-slate-600 font-medium mb-4 shadow-sm border border-slate-200">
+        <div className="text-center mb-10 sm:mb-16">
+          <AnimateOnView className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full text-sm text-slate-600 font-medium mb-3 shadow-sm border border-slate-200">
             Why Choose Storee
           </AnimateOnView>
           <AnimateOnView delay={0.1}>
-            <h2 className="text-4xl sm:text-5xl font-bold text-slate-900 tracking-tight mb-4">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-slate-900 tracking-tight mb-3">
               Everything You Need to <span className="gradient-text">Sell Online</span>
             </h2>
           </AnimateOnView>
           <AnimateOnView delay={0.2}>
-            <p className="text-lg text-slate-500 max-w-xl mx-auto">
+            <p className="text-base sm:text-lg text-slate-500 max-w-xl mx-auto">
               Storee combines AI power with enterprise-grade ecommerce tools in one beautiful platform
             </p>
           </AnimateOnView>

@@ -264,7 +264,7 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="text-5xl sm:text-6xl lg:text-7xl font-bold text-slate-900 leading-tight tracking-tight mb-6"
+          className="text-3xl sm:text-5xl lg:text-7xl font-bold text-slate-900 leading-tight tracking-tight mb-6"
         >
           Build Your Online Store
           <br />
