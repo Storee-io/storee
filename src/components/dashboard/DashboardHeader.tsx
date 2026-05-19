@@ -139,7 +139,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
             </div>
 
             {/* Menu items */}
-            <Link href="/dashboard/settings">
+            <Link href="/dashboard/account">
               <DropdownMenuItem className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600">
                 <Settings className="w-4 h-4 text-slate-400" />
                 Account Settings

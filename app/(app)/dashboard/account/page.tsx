@@ -1,0 +1,8 @@
+import type { Metadata } from 'next';
+import AccountSettings from '@/src/components/dashboard/pages/AccountSettings';
+
+export const metadata: Metadata = { title: 'Account Settings', robots: { index: false, follow: false } };
+
+export default function AccountSettingsPage() {
+  return <AccountSettings />;
+}
