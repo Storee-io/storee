@@ -1126,18 +1126,18 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
                   </button>
                 )}
               </div>
-              <div className="p-4">
-                <div className="flex items-center gap-2 mb-2">
+              <div className={isMobile ? 'p-3' : 'p-4'}>
+                <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: alpha(primaryColor, 0.1), color: primaryColor }}>{p.category}</span>
                 </div>
                 <p className="text-sm font-bold text-gray-900 truncate">{p.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5 truncate">{p.description}</p>
-                <div className="flex items-center justify-between mt-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-gray-900">{currencySymbol}{p.price}</span>
-                    {p.originalPrice && <span className="text-xs text-gray-400 line-through">{currencySymbol}{p.originalPrice}</span>}
+                {!isMobile && <p className="text-xs text-gray-400 mt-0.5 truncate">{p.description}</p>}
+                <div className="flex items-center justify-between mt-2.5">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-sm font-bold text-gray-900">{currencySymbol}{p.price.toLocaleString()}</span>
+                    {p.originalPrice && !isMobile && <span className="text-xs text-gray-400 line-through">{currencySymbol}{p.originalPrice}</span>}
                   </div>
-                  <button onClick={e => { e.stopPropagation(); onAddToCart(p); }} className="px-3.5 py-2 text-xs font-semibold rounded-xl text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: primaryColor }}>
+                  <button onClick={e => { e.stopPropagation(); onAddToCart(p); }} className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-xl text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: primaryColor }}>
                     Add
                   </button>
                 </div>
@@ -1328,20 +1328,20 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
                   </span>
                 )}
               </div>
-              <div className="p-4">
+              <div className={isMobile ? 'p-3' : 'p-4'}>
                 <p className="text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mb-1.5" style={{ background: alpha(primaryColor, 0.1), color: primaryColor }}>{p.category}</p>
                 <p className="text-sm font-black text-gray-900 truncate">{p.name}</p>
-                <div className="flex items-center justify-between mt-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-black" style={{ color: primaryColor }}>{currencySymbol}{p.price}</span>
-                    {p.originalPrice && <span className="text-xs text-gray-400 line-through">{currencySymbol}{p.originalPrice}</span>}
+                <div className="flex items-center justify-between mt-2.5">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-sm font-black truncate" style={{ color: primaryColor }}>{currencySymbol}{p.price.toLocaleString()}</span>
+                    {p.originalPrice && !isMobile && <span className="text-xs text-gray-400 line-through flex-shrink-0">{currencySymbol}{p.originalPrice}</span>}
                   </div>
                   <button
                     onClick={e => { e.stopPropagation(); onAddToCart(p); }}
-                    className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-black text-white hover:opacity-85 transition-opacity"
+                    className={`flex-shrink-0 rounded-xl font-black text-white hover:opacity-85 transition-opacity ${isMobile ? 'p-2' : 'flex items-center gap-1 px-3 py-2 text-xs'}`}
                     style={{ background: idx % 2 === 0 ? primaryColor : accentColor }}
                   >
-                    <ShoppingCart className="w-3 h-3" /> Add
+                    {isMobile ? <ShoppingCart className="w-3.5 h-3.5" /> : <><ShoppingCart className="w-3 h-3" /> Add</>}
                   </button>
                 </div>
               </div>
