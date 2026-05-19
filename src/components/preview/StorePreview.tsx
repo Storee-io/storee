@@ -837,7 +837,7 @@ function NewsletterSection({ newsletter, primaryColor, dark = false, elegant = f
 // Inspired by: COS, Aesop, Muji — editorial, clean, whitespace-forward
 
 function MinimalLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, currencySymbol }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks, products, collections, features, testimonials, tagline, faq, stats, promoBar, newsletter, trustBadges, brandStory } = design;
+  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory } = design;
   const btnText = isDark(primaryColor) ? '#fff' : '#111';
   const isMobile = device === 'mobile';
 
@@ -1065,7 +1065,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
 // Inspired by: Nike, OFF-WHITE, Supreme — dark, high-energy, high contrast
 
 function BoldLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, currencySymbol }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks, products, collections, features, testimonials, tagline, accentColor, faq, stats, promoBar, newsletter, trustBadges } = design;
+  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [] } = design;
   const isMobile = device === 'mobile';
 
   return (
@@ -1236,7 +1236,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
 // Inspired by: Net-a-Porter, Jo Malone, Tiffany — luxury, refined, warm
 
 function ElegantLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, currencySymbol }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks, products, collections, features, testimonials, tagline, faq, stats, promoBar, newsletter, trustBadges, brandStory } = design;
+  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory } = design;
   const btnText = isDark(primaryColor) ? '#fff' : '#2a2420';
   const isMobile = device === 'mobile';
 
@@ -1414,7 +1414,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
 // Inspired by: Apple Store, Allbirds, Casper — clean, airy, contemporary
 
 function ModernLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, currencySymbol }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks, products, collections, features, testimonials, tagline, accentColor, faq, stats, promoBar, newsletter, trustBadges } = design;
+  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [] } = design;
   const btnText = isDark(primaryColor) ? '#fff' : '#fff';
   const isMobile = device === 'mobile';
 
@@ -1636,7 +1636,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
 // Inspired by: Glossier, Oatly, Warby Parker — fun, colorful, round, youthful
 
 function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, currencySymbol }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks, products, collections, features, testimonials, tagline, accentColor, faq, stats, promoBar, newsletter, trustBadges } = design;
+  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [] } = design;
   const heroTextColor = isDark(primaryColor) ? '#fff' : '#111';
   const isMobile = device === 'mobile';
 
