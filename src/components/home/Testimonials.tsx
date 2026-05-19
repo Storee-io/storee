@@ -17,9 +17,17 @@ function TestimonialCard({ t }: { t: Testimonial }) {
       </div>
       <p className="text-slate-600 text-sm leading-relaxed mb-5 line-clamp-4">"{t.text}"</p>
       <div className="flex items-center gap-3">
-        <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${t.color} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
-          {t.avatar}
-        </div>
+        {t.photo ? (
+          <img
+            src={t.photo}
+            alt={t.name}
+            className="w-9 h-9 rounded-full object-cover flex-shrink-0 ring-2 ring-white shadow-sm"
+          />
+        ) : (
+          <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${t.color} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
+            {t.avatar}
+          </div>
+        )}
         <div>
           <p className="font-semibold text-slate-900 text-sm">{t.name}</p>
           <p className="text-xs text-slate-500">{t.role} · {t.company}</p>
