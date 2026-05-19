@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { templates } from '@/src/data/templates';
 
-const BASE_URL = process.env.SITE_URL ?? 'https://storee.app';
+const BASE_URL = process.env.SITE_URL ?? 'https://storee.io';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
