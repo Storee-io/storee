@@ -75,8 +75,8 @@ export default function AdvantageGrid() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {advantages.map((adv, i) => (
-            <AnimateOnView key={adv.title} delay={i * 0.08} y={24}>
-              <Card className={`relative p-4 sm:p-6 ${adv.border} card-hover group overflow-hidden`}>
+            <AnimateOnView key={adv.title} delay={i * 0.08} y={24} className="h-full">
+              <Card className={`relative p-4 sm:p-6 ${adv.border} card-hover group overflow-hidden h-full`}>
               <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${adv.color} opacity-5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:opacity-10 transition-opacity`} />
               <div className={`w-10 h-10 sm:w-12 sm:h-12 ${adv.bg} rounded-xl flex items-center justify-center mb-3 sm:mb-4`}>
                 <div className={`bg-gradient-to-br ${adv.color} rounded-lg w-10 h-10 flex items-center justify-center`}>
