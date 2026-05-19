@@ -4,7 +4,16 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { SYSTEM_PROMPT as DEFAULT_PROMPT } from '@/src/lib/claudePrompt';
 
-type Tab = 'prompt' | 'model' | 'format';
+type Tab = 'prompt' | 'model' | 'format' | 'history';
+
+type HistoryEntry = {
+  id: number;
+  system_prompt: string;
+  model: string;
+  max_tokens: number;
+  note: string | null;
+  saved_at: string;
+};
 
 const MODELS = [
   'claude-sonnet-4-6',
@@ -46,6 +55,14 @@ export default function SysconfigDashboard() {
   const [origModel,     setOrigModel]     = useState('');
   const [origMaxTokens, setOrigMaxTokens] = useState(4096);
 
+  // History state
+  const [history,        setHistory]        = useState<HistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [expandedId,     setExpandedId]     = useState<number | null>(null);
+  const [reverting,      setReverting]      = useState<number | null>(null);
+  const [deletingId,     setDeletingId]     = useState<number | null>(null);
+  const [saveNote,       setSaveNote]       = useState('');
+
   // ── Load config ─────────────────────────────────────────────────────────────
   const loadConfig = useCallback(async () => {
     const res = await fetch('/api/sysconfig/config');
@@ -74,6 +91,23 @@ export default function SysconfigDashboard() {
     );
   }, [systemPrompt, model, maxTokens, origPrompt, origModel, origMaxTokens]);
 
+  // ── Load history ──────────────────────────────────────────────────────────────
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const res = await fetch('/api/sysconfig/history');
+      if (res.ok) {
+        const data = await res.json();
+        setHistory(data.history ?? []);
+      }
+    } catch { /* silent */ }
+    setHistoryLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'history') loadHistory();
+  }, [tab, loadHistory]);
+
   // ── Save ─────────────────────────────────────────────────────────────────────
   const saveConfig = async () => {
     setSaving(true);
@@ -81,7 +115,7 @@ export default function SysconfigDashboard() {
       const res = await fetch('/api/sysconfig/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ systemPrompt, model, maxTokens }),
+        body: JSON.stringify({ systemPrompt, model, maxTokens, note: saveNote || null }),
       });
       if (res.ok) {
         const now = new Date();
@@ -91,7 +125,8 @@ export default function SysconfigDashboard() {
         setOrigModel(model);
         setOrigMaxTokens(maxTokens);
         setDirty(false);
-        showToast('ok', 'Config saved successfully');
+        setSaveNote('');
+        showToast('ok', 'Config saved — previous version archived');
       } else {
         showToast('err', 'Save failed — check Supabase connection');
       }
@@ -99,6 +134,62 @@ export default function SysconfigDashboard() {
       showToast('err', 'Network error');
     }
     setSaving(false);
+  };
+
+  // ── Revert to history entry ───────────────────────────────────────────────────
+  const revertTo = async (entry: HistoryEntry) => {
+    if (!confirm(`Restore version from ${new Date(entry.saved_at).toLocaleString()}?\n\nThe current config will be auto-archived first.`)) return;
+    setReverting(entry.id);
+    try {
+      const res = await fetch('/api/sysconfig/revert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: entry.id }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Apply restored values to form
+        setSystemPrompt(data.restored.systemPrompt);
+        setModel(data.restored.model);
+        setMaxTokens(data.restored.maxTokens);
+        setOrigPrompt(data.restored.systemPrompt);
+        setOrigModel(data.restored.model);
+        setOrigMaxTokens(data.restored.maxTokens);
+        setDirty(false);
+        setSavedAt(new Date());
+        setIsDefault(false);
+        showToast('ok', 'Version restored successfully');
+        loadHistory();  // refresh list
+        setTab('prompt');
+      } else {
+        showToast('err', 'Revert failed');
+      }
+    } catch {
+      showToast('err', 'Network error');
+    }
+    setReverting(null);
+  };
+
+  // ── Delete history entry ──────────────────────────────────────────────────────
+  const deleteHistoryEntry = async (id: number) => {
+    if (!confirm('Delete this history entry? This cannot be undone.')) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch('/api/sysconfig/history', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        setHistory(prev => prev.filter(h => h.id !== id));
+        showToast('ok', 'Entry deleted');
+      } else {
+        showToast('err', 'Delete failed');
+      }
+    } catch {
+      showToast('err', 'Network error');
+    }
+    setDeletingId(null);
   };
 
   // ── Reset to default ─────────────────────────────────────────────────────────
@@ -206,9 +297,10 @@ export default function SysconfigDashboard() {
       <div className="flex-shrink-0 border-b border-slate-800 bg-slate-900/30 px-6">
         <div className="flex gap-0">
           {([
-            { id: 'prompt' as Tab, label: 'System Prompt',  icon: '📝' },
-            { id: 'model'  as Tab, label: 'Model & Tokens', icon: '🤖' },
-            { id: 'format' as Tab, label: 'Message Format', icon: '📨' },
+            { id: 'prompt'  as Tab, label: 'System Prompt',  icon: '📝' },
+            { id: 'model'   as Tab, label: 'Model & Tokens', icon: '🤖' },
+            { id: 'format'  as Tab, label: 'Message Format', icon: '📨' },
+            { id: 'history' as Tab, label: 'Version History', icon: '🕐' },
           ]).map(t => (
             <button
               key={t.id}
@@ -264,6 +356,17 @@ export default function SysconfigDashboard() {
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-14 pr-5 py-4 text-slate-200 text-sm font-mono leading-6 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/10 resize-none transition-all"
                 spellCheck={false}
                 placeholder="Enter system prompt…"
+              />
+            </div>
+
+            {/* Save note */}
+            <div className="mt-3">
+              <input
+                type="text"
+                value={saveNote}
+                onChange={e => setSaveNote(e.target.value)}
+                placeholder="Optional note for this version (e.g. 'Added JSON escaping rule')"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-300 text-sm placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/10 transition-all"
               />
             </div>
 
@@ -477,6 +580,132 @@ export default function SysconfigDashboard() {
             </div>
           </div>
         )}
+        {/* ────── Version History tab ────── */}
+        {tab === 'history' && (
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-white font-semibold">Version History</h2>
+                <p className="text-slate-500 text-sm mt-0.5">
+                  Each save archives the previous config. Click Restore to roll back.
+                </p>
+              </div>
+              <button
+                onClick={loadHistory}
+                disabled={historyLoading}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 border border-slate-700 hover:border-slate-600 rounded-lg transition-all disabled:opacity-40"
+              >
+                <svg className={`w-3.5 h-3.5 ${historyLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+              </button>
+            </div>
+
+            {historyLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="w-6 h-6 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+              </div>
+            ) : history.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="text-4xl mb-3">🕐</div>
+                <p className="text-slate-400 font-medium">No history yet</p>
+                <p className="text-slate-600 text-sm mt-1">Save your first config change to start tracking versions.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {history.map((entry, idx) => {
+                  const date    = new Date(entry.saved_at);
+                  const isExp   = expandedId === entry.id;
+                  const vNum    = history.length - idx;  // newest = highest number
+                  return (
+                    <div
+                      key={entry.id}
+                      className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-slate-700 transition-all"
+                    >
+                      {/* Row header */}
+                      <div className="flex items-center gap-3 px-4 py-3">
+                        {/* Version badge */}
+                        <span className="flex-shrink-0 w-10 h-7 flex items-center justify-center bg-slate-800 rounded-lg text-xs font-mono font-bold text-slate-400">
+                          v{vNum}
+                        </span>
+
+                        {/* Meta */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {entry.note && (
+                              <span className="text-slate-200 text-sm font-medium truncate max-w-xs">
+                                {entry.note}
+                              </span>
+                            )}
+                            <span className="font-mono text-xs text-slate-500">
+                              {formatDate(date)} {formatTime(date)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 mt-0.5">
+                            <span className="font-mono text-xs text-slate-600">{entry.model}</span>
+                            <span className="text-slate-700 text-xs">·</span>
+                            <span className="font-mono text-xs text-slate-600">{entry.max_tokens.toLocaleString()} tokens</span>
+                            <span className="text-slate-700 text-xs">·</span>
+                            <span className="font-mono text-xs text-slate-600">
+                              {entry.system_prompt.length.toLocaleString()} chars
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <button
+                            onClick={() => setExpandedId(isExp ? null : entry.id)}
+                            className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-300 border border-slate-700 hover:border-slate-600 rounded-lg transition-all"
+                          >
+                            {isExp ? 'Hide' : 'Preview'}
+                          </button>
+                          <button
+                            onClick={() => revertTo(entry)}
+                            disabled={reverting === entry.id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 hover:border-emerald-500/40 rounded-lg transition-all disabled:opacity-40"
+                          >
+                            {reverting === entry.id ? (
+                              <span className="w-3 h-3 border border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
+                            ) : (
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                              </svg>
+                            )}
+                            Restore
+                          </button>
+                          <button
+                            onClick={() => deleteHistoryEntry(entry.id)}
+                            disabled={deletingId === entry.id}
+                            className="p-1.5 text-slate-700 hover:text-red-400 rounded-lg transition-colors disabled:opacity-40"
+                            title="Delete this entry"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Expanded prompt preview */}
+                      {isExp && (
+                        <div className="border-t border-slate-800 bg-slate-950/50 px-4 py-3">
+                          <pre className="text-slate-400 text-xs font-mono leading-5 whitespace-pre-wrap max-h-60 overflow-y-auto">
+                            {entry.system_prompt}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* ── Footer ── */}
