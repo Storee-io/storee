@@ -1,8 +1,30 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest } from 'next/server';
 import { SYSTEM_PROMPT } from '@/src/lib/claudePrompt';
+import { createServerClient } from '@/src/lib/supabase';
 
 export const runtime = 'nodejs';
+
+// ── Live config from Supabase (falls back to hardcoded defaults) ──────────────
+async function getLiveConfig(): Promise<{ prompt: string; model: string; maxTokens: number }> {
+  try {
+    const sb = createServerClient();
+    const { data } = await sb.from('system_config').select('key, value');
+
+    const map: Record<string, string> = {};
+    (data ?? []).forEach((row: { key: string; value: string }) => {
+      map[row.key] = row.value;
+    });
+
+    return {
+      prompt:    map['system_prompt'] ?? SYSTEM_PROMPT,
+      model:     map['model']         ?? 'claude-sonnet-4-6',
+      maxTokens: parseInt(map['max_tokens'] ?? '4096', 10),
+    };
+  } catch {
+    return { prompt: SYSTEM_PROMPT, model: 'claude-sonnet-4-6', maxTokens: 4096 };
+  }
+}
 
 export async function POST(req: NextRequest) {
   const { prompt, currency, language } = await req.json();
@@ -22,15 +44,18 @@ export async function POST(req: NextRequest) {
     return new Response('API key not configured', { status: 500 });
   }
 
+  // Read live config (edited via /sysconfig)
+  const config = await getLiveConfig();
+
   const client = new Anthropic({ apiKey });
 
   const stream = await client.messages.stream({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 4096,
+    model:      config.model,
+    max_tokens: config.maxTokens,
     system: [
       {
         type: 'text',
-        text: SYSTEM_PROMPT,
+        text: config.prompt,
         cache_control: { type: 'ephemeral' },
       },
     ],
