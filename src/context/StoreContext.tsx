@@ -30,6 +30,62 @@ export interface StoreCurrency {
   label: string;
 }
 
+// ── Shipping ──────────────────────────────────────────────────────────────────
+export interface ShippingMethod {
+  id: string;
+  name: string;
+  price: number;
+  estimatedDays: string;
+  enabled: boolean;
+  icon?: string;
+}
+
+export interface ShippingSettings {
+  methods: ShippingMethod[];
+  freeShippingThreshold?: number;
+}
+
+export const DEFAULT_SHIPPING_METHODS: ShippingMethod[] = [
+  { id: 'jne-reg',  name: 'JNE REG',             price: 15000, estimatedDays: '2–3 hari', enabled: true,  icon: '📦' },
+  { id: 'jne-yes',  name: 'JNE YES (Express)',    price: 35000, estimatedDays: '1 hari',   enabled: true,  icon: '⚡' },
+  { id: 'jnt-reg',  name: 'J&T Express',          price: 12000, estimatedDays: '2–4 hari', enabled: true,  icon: '📫' },
+  { id: 'sicepat',  name: 'SiCepat REG',          price: 10000, estimatedDays: '2–3 hari', enabled: false, icon: '🚀' },
+  { id: 'gosend',   name: 'GoSend Same Day',       price: 25000, estimatedDays: 'Hari ini', enabled: false, icon: '🛵' },
+  { id: 'free',     name: 'Gratis Ongkir',         price: 0,     estimatedDays: '3–5 hari', enabled: false, icon: '🎁' },
+];
+
+// ── Payment ───────────────────────────────────────────────────────────────────
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  type: 'bank_transfer' | 'qris' | 'cod' | 'ewallet';
+  enabled: boolean;
+  bankName?: string;
+  accountNumber?: string;
+  accountHolder?: string;
+  qrisCode?: string;
+  ewalletNumber?: string;
+  instructions?: string;
+}
+
+export interface PaymentSettings {
+  methods: PaymentMethod[];
+  confirmationWhatsapp?: string;
+  paymentNote?: string;
+}
+
+export const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [
+  { id: 'bca',      name: 'Transfer BCA',         type: 'bank_transfer', enabled: true,  bankName: 'BCA',     accountNumber: '1234567890', accountHolder: 'Nama Toko Anda', instructions: 'Transfer ke rekening di atas dan kirim bukti pembayaran via WhatsApp.' },
+  { id: 'mandiri',  name: 'Transfer Mandiri',      type: 'bank_transfer', enabled: false, bankName: 'Mandiri', accountNumber: '0987654321', accountHolder: 'Nama Toko Anda' },
+  { id: 'bni',      name: 'Transfer BNI',          type: 'bank_transfer', enabled: false, bankName: 'BNI',     accountNumber: '1122334455', accountHolder: 'Nama Toko Anda' },
+  { id: 'qris',     name: 'QRIS',                  type: 'qris',          enabled: true,  instructions: 'Scan QR code dengan aplikasi e-wallet atau mobile banking apapun.' },
+  { id: 'cod',      name: 'Bayar di Tempat (COD)', type: 'cod',           enabled: false, instructions: 'Siapkan uang pas saat kurir tiba. Berlaku untuk area tertentu.' },
+  { id: 'gopay',    name: 'GoPay',                 type: 'ewallet',       enabled: false, ewalletNumber: '08123456789' },
+  { id: 'ovo',      name: 'OVO',                   type: 'ewallet',       enabled: false, ewalletNumber: '08123456789' },
+  { id: 'dana',     name: 'Dana',                  type: 'ewallet',       enabled: false, ewalletNumber: '08123456789' },
+];
+
+// ── Store ─────────────────────────────────────────────────────────────────────
 export interface Store {
   id: string;
   name: string;
@@ -44,6 +100,8 @@ export interface Store {
   design?: StoreDesign;
   currency?: StoreCurrency;
   language?: string;
+  shippingSettings?: ShippingSettings;
+  paymentSettings?: PaymentSettings;
 }
 
 export interface GenerationState {

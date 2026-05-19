@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import type { CSSProperties, ChangeEvent } from 'react';
-import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft } from 'lucide-react';
-import type { Store } from '../../context/StoreContext';
+import { useState, useEffect } from 'react';
+import type { CSSProperties } from 'react';
+import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, Copy, MessageCircle, MapPin, Phone, Mail, ChevronDown } from 'lucide-react';
+import type { Store, ShippingSettings, ShippingMethod, PaymentSettings, PaymentMethod } from '../../context/StoreContext';
+import { DEFAULT_SHIPPING_METHODS, DEFAULT_PAYMENT_METHODS } from '../../context/StoreContext';
 import type { StoreDesign, RichProduct } from '../../lib/claudeApi';
 
 export type DeviceMode = 'desktop' | 'tablet' | 'mobile';
@@ -130,55 +131,163 @@ function ProductDetailPage({ product, primaryColor, storeName, device, onBack, o
   );
 }
 
-function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, onUpdateQty, currencySymbol }: {
+function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, onUpdateQty, currencySymbol, shippingSettings }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; currencySymbol: string;
-  onBack: () => void; onCheckout: () => void; onUpdateQty: (id: string, delta: number) => void;
+  shippingSettings?: ShippingSettings;
+  onBack: () => void; onCheckout: (shippingId: string) => void; onUpdateQty: (id: string, delta: number) => void;
 }) {
+  const enabledMethods = (shippingSettings?.methods ?? DEFAULT_SHIPPING_METHODS).filter(m => m.enabled);
+  const shippingMethods: ShippingMethod[] = enabledMethods.length > 0 ? enabledMethods : [
+    { id: 'flat', name: 'Pengiriman Reguler', price: 15000, estimatedDays: '2–3 hari', enabled: true, icon: '📦' }
+  ];
+  const [selectedId, setSelectedId] = useState(shippingMethods[0]?.id ?? '');
+  const [promoCode, setPromoCode] = useState('');
+  const [promoApplied, setPromoApplied] = useState(false);
+
+  const selectedMethod = shippingMethods.find(m => m.id === selectedId) ?? shippingMethods[0];
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
-  const shipping = subtotal > 0 && subtotal < 100 ? 9.99 : 0;
-  const total = subtotal + shipping;
+  const freeThreshold = shippingSettings?.freeShippingThreshold;
+  const shippingCost = (freeThreshold && subtotal >= freeThreshold) ? 0 : (selectedMethod?.price ?? 0);
+  const discount = promoApplied ? Math.round(subtotal * 0.1) : 0;
+  const total = subtotal + shippingCost - discount;
+  const isMobile = device === 'mobile';
+  const fmt = (n: number) => `${currencySymbol}${n.toLocaleString('id-ID')}`;
+
   return (
-    <div className="bg-white min-h-screen">
-      <header className="border-b border-gray-100 px-5 h-14 flex items-center justify-between sticky top-0 bg-white z-40">
-        <button onClick={onBack} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"><ArrowLeft className="w-4 h-4" /> Shop</button>
-        <span className="text-sm font-bold text-gray-900">Cart ({cart.reduce((s, i) => s + i.qty, 0)})</span>
-        <div className="w-20" />
+    <div className="bg-gray-50 min-h-screen">
+      <header className="border-b border-gray-100 px-5 h-14 flex items-center justify-between sticky top-0 bg-white z-40 shadow-sm">
+        <button onClick={onBack} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"><ArrowLeft className="w-4 h-4" /> Lanjut Belanja</button>
+        <span className="text-sm font-bold text-gray-900">Keranjang ({cart.reduce((s, i) => s + i.qty, 0)})</span>
+        <div className="w-28" />
       </header>
+
       {cart.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-4">
           <ShoppingCart className="w-12 h-12 text-gray-200" />
-          <p className="text-gray-400 text-sm">Your cart is empty</p>
-          <button onClick={onBack} className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: primaryColor }}>Start Shopping</button>
+          <p className="text-gray-500 text-sm font-medium">Keranjang kamu kosong</p>
+          <button onClick={onBack} className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: primaryColor }}>Mulai Belanja</button>
         </div>
       ) : (
-        <div className={`max-w-4xl mx-auto px-5 py-8 ${device !== 'mobile' ? 'grid grid-cols-[1fr_300px] gap-10' : 'flex flex-col gap-6'}`}>
-          <div className="space-y-3">
-            {cart.map(({ product: p, qty }) => (
-              <div key={p.id} className="flex gap-4 p-4 rounded-2xl border border-gray-100 hover:border-gray-200 transition-colors">
-                <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-gray-50"><ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" /></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">{p.category}</p>
-                  <p className="text-sm font-bold text-gray-900 truncate">{p.name}</p>
-                  <p className="text-sm font-black mt-0.5" style={{ color: primaryColor }}>{currencySymbol}{p.price}</p>
-                </div>
-                <div className="flex flex-col items-end justify-between">
-                  <span className="text-sm font-bold text-gray-900">{currencySymbol}{(p.price * qty).toFixed(2)}</span>
-                  <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
-                    <button onClick={() => onUpdateQty(p.id, -1)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 text-sm">−</button>
-                    <span className="w-7 text-center text-xs font-bold">{qty}</span>
-                    <button onClick={() => onUpdateQty(p.id, 1)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 text-sm">+</button>
-                  </div>
-                </div>
+        <div className={`max-w-4xl mx-auto px-4 py-6 ${isMobile ? 'flex flex-col gap-4' : 'grid grid-cols-[1fr_320px] gap-8 items-start'}`}>
+
+          {/* Left: items + shipping + promo */}
+          <div className="space-y-4">
+            {/* Items */}
+            <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+              <div className="px-5 py-4 border-b border-gray-50">
+                <h3 className="text-sm font-bold text-gray-900">Produk ({cart.reduce((s, i) => s + i.qty, 0)} item)</h3>
               </div>
-            ))}
+              <div className="divide-y divide-gray-50">
+                {cart.map(({ product: p, qty }) => (
+                  <div key={p.id} className="flex gap-4 px-5 py-4">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                      <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">{p.category}</p>
+                      <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
+                      <p className="text-sm font-bold mt-0.5" style={{ color: primaryColor }}>{fmt(p.price)}</p>
+                    </div>
+                    <div className="flex flex-col items-end justify-between flex-shrink-0">
+                      <span className="text-sm font-bold text-gray-900">{fmt(p.price * qty)}</span>
+                      <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden mt-2">
+                        <button onClick={() => onUpdateQty(p.id, -1)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 text-base font-medium">−</button>
+                        <span className="w-8 text-center text-xs font-bold text-gray-700">{qty}</span>
+                        <button onClick={() => onUpdateQty(p.id, 1)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 text-base font-medium">+</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Shipping method selector */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-50">
+                <h3 className="text-sm font-bold text-gray-900">Pilih Pengiriman</h3>
+              </div>
+              <div className="p-4 space-y-2">
+                {shippingMethods.map(method => {
+                  const isFreeByThreshold = freeThreshold && subtotal >= freeThreshold;
+                  const cost = isFreeByThreshold ? 0 : method.price;
+                  const isSelected = selectedId === method.id;
+                  return (
+                    <label key={method.id} className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${isSelected ? 'border-current bg-opacity-5' : 'border-gray-100 hover:border-gray-200 bg-white'}`}
+                      style={isSelected ? { borderColor: primaryColor, background: alpha(primaryColor, 0.04) } : {}}>
+                      <input type="radio" name="shipping" value={method.id} checked={isSelected} onChange={() => setSelectedId(method.id)} className="sr-only" />
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'border-current' : 'border-gray-300'}`} style={isSelected ? { borderColor: primaryColor } : {}}>
+                        {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: primaryColor }} />}
+                      </div>
+                      <span className="text-lg flex-shrink-0">{method.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900">{method.name}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">Estimasi tiba: {method.estimatedDays}</p>
+                      </div>
+                      <span className="text-sm font-bold flex-shrink-0" style={{ color: primaryColor }}>
+                        {cost === 0 ? 'GRATIS' : fmt(cost)}
+                      </span>
+                    </label>
+                  );
+                })}
+                {freeThreshold && subtotal < freeThreshold && (
+                  <div className="mt-2 px-4 py-2.5 bg-amber-50 rounded-xl border border-amber-100 text-xs text-amber-700">
+                    🎁 Tambah belanja {fmt(freeThreshold - subtotal)} lagi untuk gratis ongkir!
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Promo code */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <p className="text-sm font-bold text-gray-900 mb-3">Kode Promo</p>
+              <div className="flex gap-2">
+                <input
+                  value={promoCode}
+                  onChange={e => { setPromoCode(e.target.value.toUpperCase()); setPromoApplied(false); }}
+                  placeholder="Masukkan kode promo"
+                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:border-transparent"
+                  style={{ '--tw-ring-color': alpha(primaryColor, 0.3) } as CSSProperties}
+                />
+                <button
+                  onClick={() => promoCode && setPromoApplied(true)}
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white hover:opacity-85 transition-opacity"
+                  style={{ background: primaryColor }}
+                >
+                  {promoApplied ? <Check className="w-4 h-4" /> : 'Pakai'}
+                </button>
+              </div>
+              {promoApplied && <p className="text-xs text-emerald-600 mt-2 font-medium">✓ Kode GLOW20 berhasil! Diskon 10% diterapkan.</p>}
+            </div>
           </div>
-          <div className="bg-gray-50 rounded-2xl p-5 h-fit space-y-2.5">
-            <h3 className="text-sm font-bold text-gray-900 mb-3">Order Summary</h3>
-            <div className="flex justify-between text-sm"><span className="text-gray-500">Subtotal</span><span className="font-semibold">{currencySymbol}{subtotal.toFixed(2)}</span></div>
-            <div className="flex justify-between text-sm"><span className="text-gray-500">Shipping</span><span className="font-semibold">{shipping === 0 ? 'FREE' : `${currencySymbol}${shipping.toFixed(2)}`}</span></div>
-            {shipping > 0 && <p className="text-xs text-gray-400">Free shipping on orders over {currencySymbol}100</p>}
-            <div className="border-t border-gray-200 pt-3 flex justify-between text-sm font-bold"><span>Total</span><span style={{ color: primaryColor }}>{currencySymbol}{total.toFixed(2)}</span></div>
-            <button onClick={onCheckout} className="w-full py-3.5 rounded-xl text-sm font-bold text-white mt-1 hover:opacity-90 transition-opacity" style={{ background: primaryColor }}>Checkout →</button>
+
+          {/* Right: order summary */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+            <h3 className="text-sm font-bold text-gray-900">Ringkasan Pesanan</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span className="font-medium">{fmt(subtotal)}</span></div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Ongkos kirim</span>
+                <span className="font-medium">{shippingCost === 0 ? <span className="text-emerald-600 font-semibold">GRATIS</span> : fmt(shippingCost)}</span>
+              </div>
+              {selectedMethod && (
+                <p className="text-xs text-gray-400">{selectedMethod.icon} {selectedMethod.name} · {selectedMethod.estimatedDays}</p>
+              )}
+              {discount > 0 && (
+                <div className="flex justify-between text-emerald-600"><span>Diskon promo</span><span className="font-medium">−{fmt(discount)}</span></div>
+              )}
+            </div>
+            <div className="border-t border-gray-100 pt-3 flex justify-between font-bold text-sm">
+              <span>Total</span>
+              <span style={{ color: primaryColor }}>{fmt(total)}</span>
+            </div>
+            <button
+              onClick={() => onCheckout(selectedId)}
+              className="w-full py-3.5 rounded-xl text-sm font-bold text-white hover:opacity-90 transition-opacity mt-1"
+              style={{ background: primaryColor }}
+            >
+              Lanjut ke Checkout →
+            </button>
+            <p className="text-[10px] text-gray-400 text-center">🔒 Transaksi aman & terlindungi</p>
           </div>
         </div>
       )}
@@ -186,89 +295,407 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
   );
 }
 
-function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, currencySymbol }: {
+const INDONESIAN_PROVINCES = ['Aceh','Bali','Banten','Bengkulu','DI Yogyakarta','DKI Jakarta','Gorontalo','Jambi','Jawa Barat','Jawa Tengah','Jawa Timur','Kalimantan Barat','Kalimantan Selatan','Kalimantan Tengah','Kalimantan Timur','Kalimantan Utara','Kepulauan Bangka Belitung','Kepulauan Riau','Lampung','Maluku','Maluku Utara','Nusa Tenggara Barat','Nusa Tenggara Timur','Papua','Papua Barat','Riau','Sulawesi Barat','Sulawesi Selatan','Sulawesi Tengah','Sulawesi Tenggara','Sulawesi Utara','Sumatera Barat','Sumatera Selatan','Sumatera Utara'];
+
+const PAYMENT_ICONS: Record<string, string> = { bank_transfer: '🏦', qris: '📱', cod: '💵', ewallet: '👛', gopay: '🟢', ovo: '🟣', dana: '🔵' };
+
+function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, currencySymbol, shippingSettings, paymentSettings, selectedShippingId }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; currencySymbol: string;
-  onBack: () => void; onPlaceOrder: () => void;
+  shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; selectedShippingId: string;
+  onBack: () => void; onPlaceOrder: (paymentId: string) => void;
 }) {
-  const [form, setForm] = useState({ name: '', email: '', address: '', city: '', zip: '', card: '', expiry: '', cvv: '' });
-  const set = (k: string) => (e: ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [k]: e.target.value }));
+  const [form, setForm] = useState({ email: '', whatsapp: '', name: '', address: '', city: '', province: '', postal: '' });
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }));
+
+  const enabledPayments = (paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS).filter(m => m.enabled);
+  const paymentMethods: PaymentMethod[] = enabledPayments.length > 0 ? enabledPayments : [
+    { id: 'bca', name: 'Transfer BCA', type: 'bank_transfer', enabled: true, bankName: 'BCA', accountNumber: '1234567890', accountHolder: 'Nama Toko' }
+  ];
+  const [selectedPayId, setSelectedPayId] = useState(paymentMethods[0]?.id ?? '');
+  useEffect(() => { if (!selectedPayId && paymentMethods.length) setSelectedPayId(paymentMethods[0].id); }, []);
+
+  const allShipping = shippingSettings?.methods ?? DEFAULT_SHIPPING_METHODS;
+  const selectedShipping = allShipping.find(m => m.id === selectedShippingId) ?? allShipping.find(m => m.enabled);
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
-  const shipping = subtotal > 0 && subtotal < 100 ? 9.99 : 0;
-  const inp = 'w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 transition-colors bg-white';
-  const lbl = 'text-xs font-semibold text-gray-500 mb-1.5 block';
+  const freeThreshold = shippingSettings?.freeShippingThreshold;
+  const shippingCost = (freeThreshold && subtotal >= freeThreshold) ? 0 : (selectedShipping?.price ?? 15000);
+  const total = subtotal + shippingCost;
+  const isMobile = device === 'mobile';
+  const fmt = (n: number) => `${currencySymbol}${n.toLocaleString('id-ID')}`;
+  const inp = 'w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:border-transparent bg-white';
+  const lbl = 'text-xs font-semibold text-gray-600 mb-1.5 block';
+
+  const selectedPayment = paymentMethods.find(m => m.id === selectedPayId);
+
   return (
-    <div className="bg-white min-h-screen">
-      <header className="border-b border-gray-100 px-5 h-14 flex items-center justify-between sticky top-0 bg-white z-40">
-        <button onClick={onBack} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"><ArrowLeft className="w-4 h-4" /> Cart</button>
-        <span className="text-sm font-bold text-gray-900">Checkout</span>
-        <div className="w-20" />
+    <div className="bg-gray-50 min-h-screen">
+      <header className="border-b border-gray-100 px-5 h-14 flex items-center justify-between sticky top-0 bg-white z-40 shadow-sm">
+        <button onClick={onBack} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"><ArrowLeft className="w-4 h-4" /> Keranjang</button>
+        <span className="text-sm font-bold text-gray-900">{storeName}</span>
+        <div className="w-28" />
       </header>
-      <div className="flex items-center gap-1.5 px-5 py-3 border-b border-gray-50 overflow-x-auto">
-        {['Cart', 'Shipping', 'Payment', 'Confirm'].map((s, i) => (
-          <div key={s} className="flex items-center gap-1.5 flex-shrink-0">
-            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: i <= 2 ? primaryColor : '#e5e7eb' }}>{i + 1}</div>
-            <span className="text-xs font-medium" style={{ color: i <= 2 ? '#111' : '#9ca3af' }}>{s}</span>
-            {i < 3 && <div className="w-5 h-px bg-gray-200 mx-0.5" />}
-          </div>
-        ))}
+
+      {/* Progress bar */}
+      <div className="bg-white border-b border-gray-100 px-5 py-3">
+        <div className="max-w-4xl mx-auto flex items-center gap-2">
+          {['Keranjang', 'Checkout', 'Konfirmasi'].map((step, i) => (
+            <div key={step} className="flex items-center gap-2 flex-shrink-0">
+              <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white" style={{ background: i <= 1 ? primaryColor : '#d1d5db' }}>{i + 1}</div>
+              <span className="text-xs font-medium" style={{ color: i <= 1 ? '#111827' : '#9ca3af' }}>{step}</span>
+              {i < 2 && <div className="w-8 h-px bg-gray-200 mx-1" />}
+            </div>
+          ))}
+        </div>
       </div>
-      <div className={`max-w-4xl mx-auto px-5 py-8 ${device !== 'mobile' ? 'grid grid-cols-[1fr_280px] gap-10' : 'flex flex-col gap-6'}`}>
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-sm font-bold text-gray-900 mb-4">Shipping</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2"><label className={lbl}>Full Name</label><input className={inp} value={form.name} onChange={set('name')} placeholder="Jane Smith" /></div>
-              <div className="col-span-2"><label className={lbl}>Email</label><input className={inp} value={form.email} onChange={set('email')} placeholder="jane@example.com" type="email" /></div>
-              <div className="col-span-2"><label className={lbl}>Address</label><input className={inp} value={form.address} onChange={set('address')} placeholder="123 Main Street" /></div>
-              <div><label className={lbl}>City</label><input className={inp} value={form.city} onChange={set('city')} placeholder="New York" /></div>
-              <div><label className={lbl}>ZIP</label><input className={inp} value={form.zip} onChange={set('zip')} placeholder="10001" /></div>
+
+      <div className={`max-w-4xl mx-auto px-4 py-6 ${isMobile ? 'flex flex-col gap-4' : 'grid grid-cols-[1fr_300px] gap-8 items-start'}`}>
+
+        {/* Left: form sections */}
+        <div className="space-y-4">
+
+          {/* Contact */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-50">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(primaryColor, 0.1) }}>
+                <Mail className="w-3.5 h-3.5" style={{ color: primaryColor }} />
+              </div>
+              <h3 className="text-sm font-bold text-gray-900">Informasi Kontak</h3>
+            </div>
+            <div className="p-5 grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className={lbl}>Email</label>
+                <input type="email" className={inp} value={form.email} onChange={set('email')} placeholder="nama@email.com" />
+              </div>
+              <div className="col-span-2">
+                <label className={lbl}>WhatsApp / No. HP</label>
+                <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:border-transparent" style={{ '--tw-ring-color': alpha(primaryColor, 0.3) } as CSSProperties}>
+                  <span className="px-3 py-2.5 bg-gray-50 text-xs font-medium text-gray-500 border-r border-gray-200">+62</span>
+                  <input type="tel" className="flex-1 px-3 py-2.5 text-sm outline-none bg-white" value={form.whatsapp} onChange={set('whatsapp')} placeholder="81234567890" />
+                </div>
+              </div>
             </div>
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-gray-900 mb-4">Payment</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2"><label className={lbl}>Card Number</label><input className={inp} value={form.card} onChange={set('card')} placeholder="4242 4242 4242 4242" /></div>
-              <div><label className={lbl}>Expiry</label><input className={inp} value={form.expiry} onChange={set('expiry')} placeholder="MM / YY" /></div>
-              <div><label className={lbl}>CVV</label><input className={inp} value={form.cvv} onChange={set('cvv')} placeholder="•••" /></div>
+
+          {/* Delivery address */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-50">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(primaryColor, 0.1) }}>
+                <MapPin className="w-3.5 h-3.5" style={{ color: primaryColor }} />
+              </div>
+              <h3 className="text-sm font-bold text-gray-900">Alamat Pengiriman</h3>
+            </div>
+            <div className="p-5 grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className={lbl}>Nama Penerima</label>
+                <input className={inp} value={form.name} onChange={set('name')} placeholder="Nama lengkap penerima" />
+              </div>
+              <div className="col-span-2">
+                <label className={lbl}>Alamat Lengkap</label>
+                <textarea
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:border-transparent bg-white resize-none"
+                  style={{ '--tw-ring-color': alpha(primaryColor, 0.3) } as CSSProperties}
+                  rows={2}
+                  value={form.address}
+                  onChange={set('address')}
+                  placeholder="Nama jalan, nomor, RT/RW, kelurahan, kecamatan"
+                />
+              </div>
+              <div>
+                <label className={lbl}>Kota / Kabupaten</label>
+                <input className={inp} value={form.city} onChange={set('city')} placeholder="Jakarta Selatan" />
+              </div>
+              <div>
+                <label className={lbl}>Kode Pos</label>
+                <input className={inp} value={form.postal} onChange={set('postal')} placeholder="12345" maxLength={5} />
+              </div>
+              <div className="col-span-2">
+                <label className={lbl}>Provinsi</label>
+                <div className="relative">
+                  <select
+                    value={form.province}
+                    onChange={set('province')}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:border-transparent bg-white appearance-none pr-8"
+                    style={{ '--tw-ring-color': alpha(primaryColor, 0.3) } as CSSProperties}
+                  >
+                    <option value="">Pilih provinsi...</option>
+                    {INDONESIAN_PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+            {/* Selected shipping summary */}
+            {selectedShipping && (
+              <div className="mx-5 mb-4 px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 flex items-center gap-3">
+                <span className="text-base">{selectedShipping.icon}</span>
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-gray-700">{selectedShipping.name}</p>
+                  <p className="text-[10px] text-gray-400">Estimasi: {selectedShipping.estimatedDays}</p>
+                </div>
+                <span className="text-xs font-bold" style={{ color: primaryColor }}>
+                  {shippingCost === 0 ? 'GRATIS' : fmt(shippingCost)}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Payment method */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-50">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(primaryColor, 0.1) }}>
+                <Phone className="w-3.5 h-3.5" style={{ color: primaryColor }} />
+              </div>
+              <h3 className="text-sm font-bold text-gray-900">Metode Pembayaran</h3>
+            </div>
+            <div className="p-5 space-y-2">
+              {paymentMethods.map(pm => {
+                const icon = PAYMENT_ICONS[pm.id] ?? PAYMENT_ICONS[pm.type] ?? '💳';
+                const isSelected = selectedPayId === pm.id;
+                return (
+                  <label key={pm.id} className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${isSelected ? '' : 'border-gray-100 hover:border-gray-200'}`}
+                    style={isSelected ? { borderColor: primaryColor, background: alpha(primaryColor, 0.04) } : {}}>
+                    <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors`} style={isSelected ? { borderColor: primaryColor } : { borderColor: '#d1d5db' }}>
+                      {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: primaryColor }} />}
+                    </div>
+                    <span className="text-xl flex-shrink-0">{icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900">{pm.name}</p>
+                      {pm.type === 'bank_transfer' && pm.bankName && (
+                        <p className="text-xs text-gray-400 mt-0.5">{pm.bankName} · ****{pm.accountNumber?.slice(-4)}</p>
+                      )}
+                      {pm.type === 'ewallet' && pm.ewalletNumber && (
+                        <p className="text-xs text-gray-400 mt-0.5">{pm.ewalletNumber}</p>
+                      )}
+                      {pm.type === 'qris' && (
+                        <p className="text-xs text-gray-400 mt-0.5">Bayar dengan scan QR dari aplikasi apapun</p>
+                      )}
+                      {pm.type === 'cod' && (
+                        <p className="text-xs text-gray-400 mt-0.5">Bayar saat barang tiba di tanganmu</p>
+                      )}
+                      {/* Expanded details when selected */}
+                      {isSelected && pm.type === 'bank_transfer' && pm.accountNumber && (
+                        <div className="mt-3 p-3 bg-white rounded-xl border border-gray-100 space-y-1.5">
+                          <p className="text-xs text-gray-500">Bank: <span className="font-bold text-gray-800">{pm.bankName}</span></p>
+                          <p className="text-xs text-gray-500">No. Rekening: <span className="font-bold text-gray-800 font-mono">{pm.accountNumber}</span></p>
+                          <p className="text-xs text-gray-500">Atas Nama: <span className="font-bold text-gray-800">{pm.accountHolder}</span></p>
+                        </div>
+                      )}
+                      {isSelected && pm.type === 'qris' && (
+                        <div className="mt-3 flex justify-center p-4 bg-white rounded-xl border border-gray-100">
+                          <div className="w-28 h-28 bg-gray-100 rounded-xl flex items-center justify-center text-4xl">📱</div>
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                );
+              })}
+              {paymentSettings?.paymentNote && (
+                <div className="mt-2 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                  <p className="text-xs text-blue-600">{paymentSettings.paymentNote}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
-        <div className="bg-gray-50 rounded-2xl p-5 h-fit space-y-2">
-          <h3 className="text-sm font-bold text-gray-900">Order ({cart.reduce((s, i) => s + i.qty, 0)} items)</h3>
-          <div className="space-y-1.5 max-h-36 overflow-y-auto">
+
+        {/* Right: order summary */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+          <h3 className="text-sm font-bold text-gray-900">Pesanan ({cart.reduce((s, i) => s + i.qty, 0)} item)</h3>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
             {cart.map(({ product: p, qty }) => (
-              <div key={p.id} className="flex justify-between text-xs"><span className="text-gray-500 truncate max-w-[150px]">{p.name} ×{qty}</span><span className="font-semibold">{currencySymbol}{(p.price * qty).toFixed(2)}</span></div>
+              <div key={p.id} className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                  <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-gray-800 truncate">{p.name}</p>
+                  <p className="text-[10px] text-gray-400">×{qty}</p>
+                </div>
+                <span className="text-xs font-bold text-gray-700">{fmt(p.price * qty)}</span>
+              </div>
             ))}
           </div>
-          <div className="border-t border-gray-200 pt-3 space-y-1.5">
-            <div className="flex justify-between text-xs text-gray-500"><span>Subtotal</span><span>{currencySymbol}{subtotal.toFixed(2)}</span></div>
-            <div className="flex justify-between text-xs text-gray-500"><span>Shipping</span><span>{shipping === 0 ? 'FREE' : `${currencySymbol}${shipping.toFixed(2)}`}</span></div>
-            <div className="flex justify-between text-sm font-bold pt-1"><span>Total</span><span style={{ color: primaryColor }}>{currencySymbol}{(subtotal + shipping).toFixed(2)}</span></div>
+          <div className="border-t border-gray-100 pt-3 space-y-1.5 text-sm">
+            <div className="flex justify-between text-gray-500 text-xs"><span>Subtotal</span><span>{fmt(subtotal)}</span></div>
+            <div className="flex justify-between text-gray-500 text-xs">
+              <span>Ongkos kirim</span>
+              <span>{shippingCost === 0 ? <span className="text-emerald-600 font-semibold">GRATIS</span> : fmt(shippingCost)}</span>
+            </div>
+            <div className="flex justify-between font-bold pt-1.5 border-t border-gray-100">
+              <span>Total</span>
+              <span style={{ color: primaryColor }}>{fmt(total)}</span>
+            </div>
           </div>
-          <button onClick={onPlaceOrder} className="w-full py-3.5 rounded-xl text-sm font-bold text-white hover:opacity-90 transition-opacity" style={{ background: primaryColor }}>Place Order 🚀</button>
-          <p className="text-[10px] text-gray-400 text-center">🔒 SSL secured · Demo only</p>
+          <button
+            onClick={() => onPlaceOrder(selectedPayId)}
+            className="w-full py-3.5 rounded-xl text-sm font-bold text-white hover:opacity-90 transition-opacity"
+            style={{ background: primaryColor }}
+          >
+            Buat Pesanan 🚀
+          </button>
+          <p className="text-[10px] text-gray-400 text-center">🔒 Pembayaran aman & terlindungi</p>
         </div>
       </div>
     </div>
   );
 }
 
-function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, currencySymbol }: { primaryColor: string; storeName: string; orderNum: string; total: number; currencySymbol: string; onContinue: () => void }) {
+function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, currencySymbol, paymentSettings, selectedPaymentId }: {
+  primaryColor: string; storeName: string; orderNum: string; total: number; currencySymbol: string;
+  paymentSettings?: PaymentSettings; selectedPaymentId: string;
+  onContinue: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const allMethods = paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS;
+  const payment = allMethods.find(m => m.id === selectedPaymentId) ?? allMethods.find(m => m.enabled);
+  const waNumber = paymentSettings?.confirmationWhatsapp;
+  const fmt = (n: number) => `${currencySymbol}${n.toLocaleString('id-ID')}`;
+
+  const handleCopy = (text: string) => {
+    try { navigator.clipboard?.writeText(text); } catch {}
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <div className="bg-white min-h-screen flex flex-col items-center justify-center px-6 text-center py-16">
-      <div className="w-20 h-20 rounded-full flex items-center justify-center text-3xl text-white mb-6 shadow-xl" style={{ background: primaryColor }}>✓</div>
-      <h1 className="text-2xl font-black text-gray-900 mb-2">Order Placed!</h1>
-      <p className="text-sm text-gray-500 mb-1">Thank you for shopping at <span className="font-bold" style={{ color: primaryColor }}>{storeName}</span></p>
-      <p className="text-xs text-gray-400 mb-8">Order <span className="font-mono font-bold text-gray-600">{orderNum}</span> · {currencySymbol}{total.toFixed(2)}</p>
-      <div className="bg-gray-50 rounded-2xl p-5 w-full max-w-xs mb-8 space-y-3 text-left">
-        {[['📦', 'Processing', "We'll confirm within 1 hour"], ['🚚', 'Delivery', '2–4 business days'], ['📧', 'Confirmation', 'Sent to your inbox']].map(([icon, title, desc]) => (
-          <div key={title} className="flex items-start gap-3">
-            <span className="text-lg">{icon}</span>
-            <div><p className="text-xs font-bold text-gray-900">{title}</p><p className="text-[11px] text-gray-500">{desc}</p></div>
+    <div className="bg-gray-50 min-h-screen">
+      <div className="max-w-lg mx-auto px-5 py-10">
+        {/* Success badge */}
+        <div className="text-center mb-8">
+          <div className="w-20 h-20 rounded-full flex items-center justify-center text-3xl text-white mx-auto mb-5 shadow-xl" style={{ background: primaryColor }}>
+            <Check className="w-9 h-9" />
           </div>
-        ))}
+          <h1 className="text-2xl font-black text-gray-900 mb-1">Pesanan Diterima! 🎉</h1>
+          <p className="text-sm text-gray-500">Terima kasih sudah belanja di <span className="font-bold" style={{ color: primaryColor }}>{storeName}</span></p>
+          <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl">
+            <span className="text-xs text-gray-500">No. Pesanan:</span>
+            <span className="text-xs font-mono font-bold text-gray-800">{orderNum}</span>
+          </div>
+        </div>
+
+        {/* Payment instructions */}
+        {payment && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-50 flex items-center gap-3">
+              <span className="text-xl">{PAYMENT_ICONS[payment.id] ?? PAYMENT_ICONS[payment.type] ?? '💳'}</span>
+              <h3 className="text-sm font-bold text-gray-900">Instruksi Pembayaran</h3>
+            </div>
+            <div className="p-5">
+              {payment.type === 'bank_transfer' && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-gray-50 rounded-xl space-y-2.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-500">Bank</span>
+                      <span className="text-sm font-bold text-gray-900">{payment.bankName}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-500">No. Rekening</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold font-mono text-gray-900">{payment.accountNumber}</span>
+                        <button onClick={() => handleCopy(payment.accountNumber ?? '')} className="p-1 rounded-lg hover:bg-gray-200 transition-colors">
+                          {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-gray-400" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-500">Atas Nama</span>
+                      <span className="text-sm font-bold text-gray-900">{payment.accountHolder}</span>
+                    </div>
+                    <div className="flex justify-between items-center border-t border-gray-200 pt-2.5 mt-2.5">
+                      <span className="text-xs text-gray-500">Total Transfer</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-black" style={{ color: primaryColor }}>{fmt(total)}</span>
+                        <button onClick={() => handleCopy(String(total))} className="p-1 rounded-lg hover:bg-gray-200 transition-colors">
+                          {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-gray-400" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  {payment.instructions && (
+                    <p className="text-xs text-gray-500 leading-relaxed">{payment.instructions}</p>
+                  )}
+                </div>
+              )}
+
+              {payment.type === 'qris' && (
+                <div className="text-center space-y-3">
+                  <div className="w-36 h-36 bg-gray-100 rounded-2xl mx-auto flex items-center justify-center text-5xl">📱</div>
+                  <p className="text-sm font-semibold text-gray-900">Total: <span style={{ color: primaryColor }}>{fmt(total)}</span></p>
+                  {payment.instructions && <p className="text-xs text-gray-500 leading-relaxed">{payment.instructions}</p>}
+                </div>
+              )}
+
+              {payment.type === 'cod' && (
+                <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100">
+                  <span className="text-2xl">💵</span>
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">Bayar di Tempat</p>
+                    <p className="text-sm font-bold mt-0.5" style={{ color: primaryColor }}>Siapkan {fmt(total)}</p>
+                    <p className="text-xs text-gray-500 mt-1">{payment.instructions ?? 'Siapkan uang pas saat kurir tiba.'}</p>
+                  </div>
+                </div>
+              )}
+
+              {payment.type === 'ewallet' && (
+                <div className="space-y-3">
+                  <div className="p-4 bg-gray-50 rounded-xl space-y-2">
+                    <div className="flex justify-between"><span className="text-xs text-gray-500">Kirim ke</span><span className="text-sm font-bold text-gray-900">{payment.ewalletNumber}</span></div>
+                    <div className="flex justify-between"><span className="text-xs text-gray-500">Nominal</span><span className="text-sm font-black" style={{ color: primaryColor }}>{fmt(total)}</span></div>
+                  </div>
+                  {payment.instructions && <p className="text-xs text-gray-500">{payment.instructions}</p>}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* WhatsApp confirmation */}
+        {waNumber && (
+          <a
+            href={`https://wa.me/${waNumber}?text=Halo%2C%20saya%20sudah%20melakukan%20pembayaran%20untuk%20pesanan%20*${orderNum}*%20sebesar%20*${fmt(total)}*%20%F0%9F%99%8F`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-2xl text-sm font-bold text-white mb-4 hover:opacity-90 transition-opacity"
+            style={{ background: '#25D366' }}
+          >
+            <MessageCircle className="w-4 h-4" />
+            Konfirmasi Pembayaran via WhatsApp
+          </a>
+        )}
+
+        {/* Status stepper */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Status Pesanan</p>
+          <div className="flex items-center">
+            {[
+              { icon: '📋', label: 'Diproses', active: true },
+              { icon: '📦', label: 'Dikemas', active: false },
+              { icon: '🚚', label: 'Dikirim', active: false },
+              { icon: '✅', label: 'Diterima', active: false },
+            ].map((step, i, arr) => (
+              <div key={step.label} className="flex items-center flex-1">
+                <div className="flex flex-col items-center flex-shrink-0">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-base border-2 ${step.active ? 'border-current shadow-sm' : 'border-gray-200 bg-gray-50'}`}
+                    style={step.active ? { borderColor: primaryColor, background: alpha(primaryColor, 0.08) } : {}}>
+                    {step.icon}
+                  </div>
+                  <p className={`text-[9px] font-semibold mt-1 text-center ${step.active ? '' : 'text-gray-400'}`}
+                    style={step.active ? { color: primaryColor } : {}}>
+                    {step.label}
+                  </p>
+                </div>
+                {i < arr.length - 1 && <div className="flex-1 h-px bg-gray-200 mx-1 mb-4" />}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <button onClick={onContinue} className="w-full py-3.5 rounded-xl text-sm font-bold text-white hover:opacity-90 transition-opacity" style={{ background: primaryColor }}>
+          Lanjut Belanja
+        </button>
       </div>
-      <button onClick={onContinue} className="px-8 py-3.5 rounded-xl text-sm font-bold text-white hover:opacity-90 transition-opacity" style={{ background: primaryColor }}>Continue Shopping</button>
     </div>
   );
 }
@@ -1496,14 +1923,23 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<RichProduct | null>(null);
   const [orderNum] = useState(() => `ORD-${Math.floor(100000 + Math.random() * 900000)}`);
+  const [selectedShippingId, setSelectedShippingId] = useState('');
+  const [selectedPaymentId, setSelectedPaymentId] = useState('');
 
   const design = store.design as StoreDesign | undefined;
   const primaryColor = store.primaryColor || '#10b981';
   const storeName = store.name;
-  const currencySymbol = store.currency?.symbol ?? '$';
+  const currencySymbol = store.currency?.symbol ?? 'Rp';
+  const shippingSettings = store.shippingSettings;
+  const paymentSettings = store.paymentSettings;
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
   const cartTotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
-  const shipping = cartTotal > 0 && cartTotal < 100 ? 9.99 : 0;
+
+  // Resolve shipping cost for SuccessPage total
+  const enabledShipping = (shippingSettings?.methods ?? DEFAULT_SHIPPING_METHODS).filter(m => m.enabled);
+  const resolvedShipping = enabledShipping.find(m => m.id === selectedShippingId) ?? enabledShipping[0];
+  const freeThreshold = shippingSettings?.freeShippingThreshold;
+  const shippingCost = (freeThreshold && cartTotal >= freeThreshold) ? 0 : (resolvedShipping?.price ?? 15000);
 
   const addToCart = (p: RichProduct) => {
     setCart(prev => {
@@ -1530,13 +1966,13 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
     return <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} currencySymbol={currencySymbol} onBack={() => setPage('home')} onAddToCart={addToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} />;
   }
   if (page === 'cart') {
-    return <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} currencySymbol={currencySymbol} onBack={() => setPage('home')} onCheckout={() => setPage('checkout')} onUpdateQty={updateQty} />;
+    return <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} currencySymbol={currencySymbol} shippingSettings={shippingSettings} onBack={() => setPage('home')} onCheckout={(sid) => { setSelectedShippingId(sid); setPage('checkout'); }} onUpdateQty={updateQty} />;
   }
   if (page === 'checkout') {
-    return <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} currencySymbol={currencySymbol} onBack={() => setPage('cart')} onPlaceOrder={() => { setPage('success'); }} />;
+    return <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} currencySymbol={currencySymbol} shippingSettings={shippingSettings} paymentSettings={paymentSettings} selectedShippingId={selectedShippingId} onBack={() => setPage('cart')} onPlaceOrder={(pid) => { setSelectedPaymentId(pid); setPage('success'); }} />;
   }
   if (page === 'success') {
-    return <SuccessPage primaryColor={primaryColor} storeName={storeName} orderNum={orderNum} total={cartTotal + shipping} currencySymbol={currencySymbol} onContinue={() => { setCart([]); setPage('home'); }} />;
+    return <SuccessPage primaryColor={primaryColor} storeName={storeName} orderNum={orderNum} total={cartTotal + shippingCost} currencySymbol={currencySymbol} paymentSettings={paymentSettings} selectedPaymentId={selectedPaymentId} onContinue={() => { setCart([]); setPage('home'); }} />;
   }
 
   if (!design) return <FallbackLayout store={store} device={device} {...shared} />;
