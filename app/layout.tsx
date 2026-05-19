@@ -8,7 +8,7 @@ import ScrollReset from '@/src/components/ui/ScrollReset';
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.SITE_URL ?? 'https://storee.app'),
+  metadataBase: new URL(process.env.SITE_URL ?? 'https://storee.io'),
   title: {
     default: 'Storee – AI-Powered Store Builder',
     template: '%s | Storee',
