@@ -1,7 +1,8 @@
 ﻿'use client';
 
 import { useState, useEffect } from 'react';
-import { Store, Globe, CreditCard, Truck, Check, DollarSign, Languages } from 'lucide-react';
+import { Store, Globe, CreditCard, Truck, Check, DollarSign, Languages, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 import { useStore } from '../../../context/StoreContext';
 
 const currencies = [
@@ -112,23 +113,19 @@ export default function StoreSettings() {
         </div>
       </div>
 
-      {/* Payment */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
-            <CreditCard className="w-4 h-4 text-slate-600" />
+      {/* Payment — redirect to dedicated page */}
+      <Link href="/dashboard/payment" className="bg-white rounded-2xl p-6 border border-slate-200 flex items-center justify-between hover:border-emerald-300 hover:shadow-sm transition-all group">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+            <CreditCard className="w-5 h-5 text-emerald-600" />
           </div>
-          <h3 className="font-bold text-slate-900">Payment Methods</h3>
+          <div>
+            <h3 className="font-bold text-slate-900">Payment Methods</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Bank transfer, QRIS, COD, e-wallet</p>
+          </div>
         </div>
-        <div className="space-y-3">
-          {['Credit/Debit Card', 'Bank Transfer', 'GoPay', 'OVO', 'Dana', 'QRIS'].map(method => (
-            <label key={method} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
-              <span className="text-sm font-medium text-slate-700">{method}</span>
-              <input type="checkbox" defaultChecked className="w-4 h-4 accent-emerald-500" />
-            </label>
-          ))}
-        </div>
-      </div>
+        <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 transition-colors" />
+      </Link>
 
       {/* Currency */}
       <div className="bg-white rounded-2xl p-6 border border-slate-200">
@@ -199,23 +196,19 @@ export default function StoreSettings() {
         </div>
       </div>
 
-      {/* Shipping */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
-            <Truck className="w-4 h-4 text-slate-600" />
+      {/* Shipping — redirect to dedicated page */}
+      <Link href="/dashboard/shipping" className="bg-white rounded-2xl p-6 border border-slate-200 flex items-center justify-between hover:border-emerald-300 hover:shadow-sm transition-all group">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+            <Truck className="w-5 h-5 text-emerald-600" />
           </div>
-          <h3 className="font-bold text-slate-900">Shipping</h3>
+          <div>
+            <h3 className="font-bold text-slate-900">Shipping</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Kurir, tarif, dan gratis ongkir</p>
+          </div>
         </div>
-        <div className="space-y-3">
-          {['JNE', 'J&T Express', 'SiCepat', 'AnterAja', 'GoSend', 'GrabExpress'].map(courier => (
-            <label key={courier} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
-              <span className="text-sm font-medium text-slate-700">{courier}</span>
-              <input type="checkbox" defaultChecked className="w-4 h-4 accent-emerald-500" />
-            </label>
-          ))}
-        </div>
-      </div>
+        <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 transition-colors" />
+      </Link>
     </div>
   );
 }
