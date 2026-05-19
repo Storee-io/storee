@@ -100,7 +100,7 @@ export default function LoginPage() {
               disabled={isLoading}
               className="w-full py-3.5 gradient-bg text-white font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-md flex items-center justify-center gap-2 disabled:opacity-60"
             >
-              {isLoading ? 'Signing in…' : <><span>Sign In</span><ArrowRight className="w-4 h-4" /></>}
+              {isLoading ? 'Logging in…' : <><span>Login</span><ArrowRight className="w-4 h-4" /></>}
             </button>
           </form>
 

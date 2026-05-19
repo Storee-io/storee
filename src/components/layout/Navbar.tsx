@@ -37,7 +37,7 @@ export default function Navbar() {
       }`}
     >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-16 relative">
           {/* Logo */}
           <Link href="/" className="flex items-center group">
             <Image
@@ -51,8 +51,8 @@ export default function Navbar() {
             />
           </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
+          {/* Desktop Nav — absolutely centered */}
+          <div className="hidden md:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
             {navLinks.map(link => (
               <Link
                 key={link.path}
@@ -98,7 +98,7 @@ export default function Navbar() {
               <>
                 <Link href="/login">
                   <Button variant="ghost" className="px-4 py-2 h-auto text-slate-600 hover:text-slate-900">
-                    Sign In
+                    Login
                   </Button>
                 </Link>
                 <Link
@@ -148,7 +148,7 @@ export default function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link href="/login" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg">Sign In</Link>
+                  <Link href="/login" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg">Login</Link>
                   <Link href="/register" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 text-sm font-semibold text-white gradient-bg rounded-xl text-center">Get Started Free</Link>
                 </>
               )}

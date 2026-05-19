@@ -327,7 +327,7 @@ export default function HeroSection() {
           >
 
             {/* ── Option capsules row ─────────────────────────────────── */}
-            <div className="flex items-center gap-2 px-4 pt-3.5 pb-2.5 flex-wrap">
+            <div className="flex items-center gap-2 px-4 pt-3 pb-1.5 flex-wrap">
 
               {/* Brand Name */}
               <div className="relative">
@@ -590,14 +590,18 @@ export default function HeroSection() {
             </div>
 
             {/* ── Textarea + Generate button ──────────────────────────── */}
-            <div className="flex items-end gap-3 px-4 pt-3 pb-2" onClick={closeAllDropdowns}>
+            <div className="relative px-4 pt-1.5 pb-2" onClick={closeAllDropdowns}>
               <textarea
                 ref={textareaRef}
                 value={prompt}
-                onChange={e => setPrompt(e.target.value)}
+                onChange={e => {
+                  setPrompt(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = e.target.scrollHeight + 'px';
+                }}
                 placeholder="Describe your store… e.g. 'Create a modern fashion store for women's clothing with a minimalist aesthetic and rose gold palette'"
-                rows={5}
-                className="flex-1 resize-none text-slate-800 text-sm outline-none placeholder:text-slate-400 leading-relaxed bg-transparent"
+                rows={3}
+                className="w-full resize-none text-slate-800 text-sm outline-none placeholder:text-slate-400 leading-relaxed bg-transparent pb-12 overflow-hidden"
                 onKeyDown={e => {
                   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleGenerate();
                 }}
@@ -605,7 +609,7 @@ export default function HeroSection() {
               <button
                 onClick={handleGenerate}
                 disabled={!prompt.trim() || isGenerating}
-                className="flex-shrink-0 flex items-center gap-2 px-5 py-3 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+                className="absolute bottom-4 right-6 z-10 flex items-center gap-2 px-5 py-3 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
               >
                 {isGenerating ? (
                   <>
@@ -614,8 +618,8 @@ export default function HeroSection() {
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4" />
                     Generate Store
+                    <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
