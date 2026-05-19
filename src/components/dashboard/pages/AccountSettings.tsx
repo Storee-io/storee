@@ -47,7 +47,7 @@ export default function AccountSettings() {
 
       {/* Profile */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
-        <div className="flex items-center gap-3 mb-1">
+        <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
           <div className="w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center">
             <User className="w-4 h-4 text-emerald-600" />
           </div>
@@ -99,7 +99,7 @@ export default function AccountSettings() {
 
       {/* Change Password */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
-        <div className="flex items-center gap-3 mb-1">
+        <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
           <div className="w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center">
             <Lock className="w-4 h-4 text-emerald-600" />
           </div>
@@ -144,7 +144,7 @@ export default function AccountSettings() {
 
       {/* Notifications */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
-        <div className="flex items-center gap-3 mb-1">
+        <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
           <div className="w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center">
             <Bell className="w-4 h-4 text-emerald-600" />
           </div>
@@ -177,7 +177,7 @@ export default function AccountSettings() {
 
       {/* Security */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
-        <div className="flex items-center gap-3 mb-1">
+        <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
           <div className="w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center">
             <Shield className="w-4 h-4 text-emerald-600" />
           </div>
