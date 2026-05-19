@@ -19,7 +19,7 @@ export default function TemplatesSection() {
 
   return (
     <section id="templates" className="py-14 sm:py-24 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto px-[3.75rem] sm:px-6 lg:px-8 xl:px-20 2xl:px-32">
 
         {/* Header */}
         <div className="text-center mb-8 sm:mb-12">

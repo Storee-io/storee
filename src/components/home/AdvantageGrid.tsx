@@ -56,7 +56,7 @@ const advantages = [
 export default function AdvantageGrid() {
   return (
     <section className="py-14 sm:py-24 bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto px-[3.75rem] sm:px-6 lg:px-8 xl:px-20 2xl:px-32">
         <div className="text-center mb-10 sm:mb-16">
           <AnimateOnView className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full text-sm text-slate-600 font-medium mb-3 shadow-sm border border-slate-200">
             Why Choose Storee

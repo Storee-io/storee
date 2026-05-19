@@ -246,7 +246,7 @@ export default function HeroSection() {
         />
       </div>
 
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-[3.75rem] sm:px-6 lg:px-8 xl:px-20 2xl:px-32 text-center">
 
         {/* Badge */}
         <motion.div

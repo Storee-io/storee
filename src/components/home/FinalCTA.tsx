@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 export default function FinalCTA() {
   return (
     <section className="py-14 sm:py-24 bg-white">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto px-[3.75rem] sm:px-6 lg:px-8 xl:px-20 2xl:px-32">
         <AnimateOnView
           y={40}
           className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 sm:p-12 lg:p-16 text-center"
