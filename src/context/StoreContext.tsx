@@ -153,26 +153,22 @@ const defaultStores: Store[] = [
 ];
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  // If a store was AI-generated on the home page (saved to sessionStorage),
-  // initialize all three states from it so the dashboard shows the correct data.
-  // readPendingStore() is idempotent (does not delete), so calling it 3x is safe.
-  // The item is removed after mount via useEffect below.
-  const [stores, setStores] = useState<Store[]>(() => {
-    const pending = readPendingStore();
-    return pending ? [...defaultStores, pending] : defaultStores;
-  });
-  const [activeStore, setActiveStore] = useState<Store>(() =>
-    readPendingStore() ?? defaultStores[0]
-  );
-  const [generatedStore, setGeneratedStore] = useState<Store | null>(() =>
-    readPendingStore()
-  );
+  // Start with default values (safe for SSR — no sessionStorage access during render).
+  // Pending store from sessionStorage is loaded in useEffect after hydration to
+  // avoid the "server/client mismatch" hydration error.
+  const [stores, setStores] = useState<Store[]>(defaultStores);
+  const [activeStore, setActiveStore] = useState<Store>(defaultStores[0]);
+  const [generatedStore, setGeneratedStore] = useState<Store | null>(null);
   const [generationState, setGenerationState] = useState<GenerationState | null>(null);
 
-  // Clean up sessionStorage after states are initialized (runs once per mount).
-  // This ensures a fresh read on the next StoreProvider mount (e.g. user goes back
-  // to home, generates a new store, then navigates to /preview again).
+  // After hydration: load any pending store from sessionStorage, then clear it.
   useEffect(() => {
+    const pending = readPendingStore();
+    if (pending) {
+      setStores(prev => prev.find(s => s.id === pending.id) ? prev : [...prev, pending]);
+      setActiveStore(pending);
+      setGeneratedStore(pending);
+    }
     sessionStorage.removeItem('storee_pending_store');
   }, []);
 
