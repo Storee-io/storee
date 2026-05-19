@@ -76,6 +76,45 @@ export default function HeroSection() {
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const brandInputRef = useRef<HTMLInputElement>(null);
+  const colorBtnRef = useRef<HTMLButtonElement>(null);
+  const langBtnRef = useRef<HTMLButtonElement>(null);
+  const currBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Compute smart popup position so it stays fully within the viewport
+  const getSmartPos = (
+    btnRef: React.RefObject<HTMLButtonElement | null>,
+    popupW: number,
+    popupH: number,
+    gap = 12,
+  ): React.CSSProperties => {
+    const btn = btnRef.current;
+    if (!btn) return { bottom: '100%', left: 0, marginBottom: gap };
+    const r = btn.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    // Vertical: prefer above, fall back to below
+    const spaceAbove = r.top;
+    const spaceBelow = vh - r.bottom;
+    const showAbove = spaceAbove >= popupH + gap || spaceAbove >= spaceBelow;
+
+    // Horizontal: default align to left edge of button, shift left if overflows
+    let left = r.left;
+    if (left + popupW > vw - 8) left = Math.max(8, vw - popupW - 8);
+
+    const style: React.CSSProperties = {
+      position: 'fixed',
+      left,
+      width: popupW,
+      zIndex: 200,
+    };
+    if (showAbove) {
+      style.bottom = vh - r.top + gap;
+    } else {
+      style.top = r.bottom + gap;
+    }
+    return style;
+  };
 
   const closeAllDropdowns = () => {
     setShowColorPicker(false);
@@ -364,6 +403,7 @@ export default function HeroSection() {
               {/* ── Color Style ─────────────────────────────────────────── */}
               <div className="relative">
                 <button
+                  ref={colorBtnRef}
                   onClick={() => { setShowColorPicker(!showColorPicker); setShowLangDropdown(false); setShowCurrDropdown(false); }}
                   className={`flex items-center gap-1.5 h-8 px-3.5 rounded-full text-sm font-medium transition-all duration-200 border ${
                     showColorPicker
@@ -387,12 +427,12 @@ export default function HeroSection() {
                 <AnimatePresence>
                   {showColorPicker && (
                     <motion.div
-                      initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                      initial={{ opacity: 0, scale: 0.97 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.97 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute bottom-full left-0 mb-3 w-72 bg-white rounded-2xl border border-slate-200/80 p-4 z-[100]"
-                      style={{ boxShadow: '0 -8px 32px rgba(0,0,0,0.10), 0 -2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)' }}
+                      className="w-72 bg-white rounded-2xl border border-slate-200/80 p-4"
+                      style={{ ...getSmartPos(colorBtnRef, 288, 340), boxShadow: '0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)' }}
                     >
                       {/* Mode tabs */}
                       <div className="flex gap-1.5 mb-4 bg-slate-100 p-1 rounded-xl">
@@ -504,6 +544,7 @@ export default function HeroSection() {
               {/* ── Site Language ───────────────────────────────────────── */}
               <div className="relative">
                 <button
+                  ref={langBtnRef}
                   onClick={() => { setShowLangDropdown(!showLangDropdown); setShowColorPicker(false); setShowCurrDropdown(false); }}
                   className={`flex items-center gap-1.5 h-8 px-3.5 rounded-full text-sm font-medium transition-all duration-200 border ${
                     showLangDropdown
@@ -520,12 +561,12 @@ export default function HeroSection() {
                 <AnimatePresence>
                   {showLangDropdown && (
                     <motion.div
-                      initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                      initial={{ opacity: 0, scale: 0.97 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.97 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute bottom-full left-0 mb-3 w-52 bg-white rounded-2xl border border-slate-200/80 py-2 z-[100]"
-                      style={{ boxShadow: '0 -8px 32px rgba(0,0,0,0.10), 0 -2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)' }}
+                      className="w-52 bg-white rounded-2xl border border-slate-200/80 py-2"
+                      style={{ ...getSmartPos(langBtnRef, 208, 280), boxShadow: '0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)' }}
                     >
                       {languages.map(lang => (
                         <button
@@ -545,6 +586,7 @@ export default function HeroSection() {
               {/* ── Currency ────────────────────────────────────────────── */}
               <div className="relative">
                 <button
+                  ref={currBtnRef}
                   onClick={() => { setShowCurrDropdown(!showCurrDropdown); setShowColorPicker(false); setShowLangDropdown(false); }}
                   className={`flex items-center gap-1.5 h-8 px-3.5 rounded-full text-sm font-medium transition-all duration-200 border ${
                     showCurrDropdown
@@ -564,12 +606,12 @@ export default function HeroSection() {
                 <AnimatePresence>
                   {showCurrDropdown && (
                     <motion.div
-                      initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                      initial={{ opacity: 0, scale: 0.97 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.97 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute bottom-full left-0 mb-3 w-56 bg-white rounded-2xl border border-slate-200/80 py-2 z-[100]"
-                      style={{ boxShadow: '0 -8px 32px rgba(0,0,0,0.10), 0 -2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)' }}
+                      className="w-56 bg-white rounded-2xl border border-slate-200/80 py-2"
+                      style={{ ...getSmartPos(currBtnRef, 224, 260), boxShadow: '0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)' }}
                     >
                       {currencies.map(curr => (
                         <button
