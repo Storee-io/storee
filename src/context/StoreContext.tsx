@@ -153,27 +153,21 @@ const defaultStores: Store[] = [
 ];
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  // Start with default values (safe for SSR — no sessionStorage access during render).
-  // Pending store from sessionStorage is loaded in useEffect after hydration to
-  // avoid the "server/client mismatch" hydration error.
+  // Safe SSR defaults — no browser storage access during render (avoids hydration mismatch).
   const [stores, setStores] = useState<Store[]>(defaultStores);
   const [activeStore, setActiveStore] = useState<Store>(defaultStores[0]);
   const [generatedStore, setGeneratedStore] = useState<Store | null>(null);
   const [generationState, setGenerationState] = useState<GenerationState | null>(null);
 
-  // After hydration: load any pending store from sessionStorage, then clear it.
+  // Clean up legacy sessionStorage key on mount (no longer used for store passing).
   useEffect(() => {
-    const pending = readPendingStore();
-    if (pending) {
-      setStores(prev => prev.find(s => s.id === pending.id) ? prev : [...prev, pending]);
-      setActiveStore(pending);
-      setGeneratedStore(pending);
-    }
     sessionStorage.removeItem('storee_pending_store');
   }, []);
 
   const addStore = (store: Store) => {
-    setStores(prev => [...prev, store]);
+    // Persist to localStorage so /preview/[id] can load it even after navigation.
+    try { localStorage.setItem(`storee_store_${store.id}`, JSON.stringify(store)); } catch { /* quota exceeded or SSR */ }
+    setStores(prev => prev.find(s => s.id === store.id) ? prev : [...prev, store]);
     setActiveStore(store);
   };
 

@@ -166,9 +166,10 @@ export default function HeroSection() {
       ...(selectedLang ? { language: selectedLang } : {}),
     };
 
-    sessionStorage.setItem('storee_pending_store', JSON.stringify(newStore));
+    // Save to localStorage with a unique key so /preview/[id] can load it
+    localStorage.setItem(`storee_store_${newStore.id}`, JSON.stringify(newStore));
     setIsGenerating(false);
-    router.push('/preview?from=/');
+    router.push(`/preview/${newStore.id}?from=/`);
   };
 
   // Step progression timers

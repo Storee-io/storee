@@ -63,7 +63,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
       <div className="flex items-center gap-2">
         {/* Preview store */}
         <Link
-          href="/preview?from=/dashboard"
+          href={activeStore ? `/preview/${activeStore.id}?from=/dashboard` : '/preview?from=/dashboard'}
           className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
         >
           <Eye className="w-4 h-4" />
