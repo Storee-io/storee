@@ -19,7 +19,7 @@ const generatingSteps = [
   { label: 'Generating logo & banner...', PendingIcon: ImageIcon },
   { label: 'Finalizing your store...', PendingIcon: StoreIcon },
 ];
-const STEP_TIMINGS = [800, 2000, 3400, 5000, 6600];
+const STEP_TIMINGS = [1500, 4000, 7000, 10500, 14000];
 
 const languages = ['English', 'Bahasa Indonesia', 'Español', 'Français', 'Deutsch', '日本語', '한국어', '中文'];
 const currencies = [
@@ -139,7 +139,7 @@ export default function HeroSection() {
     // Run Claude API call and minimum loading timer in parallel
     const [aiResult] = await Promise.all([
       generateStoreWithClaude(prompt, selectedCurr ?? undefined, selectedLang || undefined),
-      new Promise<void>(r => setTimeout(r, 7000)),
+      new Promise<void>(r => setTimeout(r, 15000)),
     ]);
 
     let template: Template;
