@@ -58,6 +58,22 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
 
       {/* Right */}
       <div className="flex items-center gap-2">
+        {/* Store link + copy */}
+        <div className="hidden sm:flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+          <a
+            href={`https://${activeStore?.domain}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-emerald-600 hover:underline truncate max-w-[160px] flex items-center gap-1"
+          >
+            {activeStore?.domain || 'my-store.storee.io'}
+            <ExternalLink className="w-3 h-3 flex-shrink-0" />
+          </a>
+          <button onClick={copyLink} className="p-1 rounded hover:bg-slate-200 transition-colors flex-shrink-0">
+            {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
+          </button>
+        </div>
+
         {/* Preview store */}
         <Link
           href={activeStore ? `/preview/${activeStore.id}?from=/dashboard` : '/preview?from=/dashboard'}
@@ -135,25 +151,6 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
                   <p className="font-semibold text-slate-900 text-sm">{user?.name || 'User'}</p>
                   <p className="text-xs text-slate-500">{user?.email}</p>
                 </div>
-              </div>
-            </div>
-
-            {/* Store link */}
-            <div className="px-4 py-3 border-b border-slate-100">
-              <p className="text-xs text-slate-400 mb-2 font-medium">Your Store Link</p>
-              <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2">
-                <a
-                  href={`https://${activeStore?.domain}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 text-xs text-emerald-600 hover:underline truncate flex items-center gap-1"
-                >
-                  {activeStore?.domain}
-                  <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                </a>
-                <button onClick={copyLink} className="p-1 rounded hover:bg-slate-200 transition-colors">
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
-                </button>
               </div>
             </div>
 
