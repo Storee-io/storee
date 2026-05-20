@@ -8,12 +8,7 @@ import {
 import { TrendingUp, ShoppingBag, Package, Users, ArrowUpRight } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
 import DateRangePicker, { type DateRange } from '../../ui/DateRangePicker';
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function fmt(n: number): string {
-  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
+import { makePriceFmt } from '../../../lib/formatCurrency';
 
 function buildRevenueData(from: Date, to: Date) {
   const months: { month: string; revenue: number; orders: number }[] = [];
@@ -51,7 +46,7 @@ const statusColors: Record<string, string> = {
 export default function Overview() {
   const { activeStore, storeData } = useStore();
   const { orders, topProducts, products, customers } = storeData;
-  const currencySymbol = activeStore?.currency?.symbol ?? '$';
+  const fmtPrice = makePriceFmt(activeStore?.currency?.code ?? 'USD');
 
   const today = new Date();
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -69,7 +64,7 @@ export default function Overview() {
   const totalOrders  = scaleKpi(baseOrderCount, days, 30);
 
   const stats = [
-    { label: 'Total Revenue', value: `${currencySymbol}${fmt(totalRevenue)}`, change: '+18%', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Total Revenue', value: fmtPrice(totalRevenue), change: '+18%', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { label: 'Total Orders',  value: String(totalOrders),                     change: '+12%', icon: ShoppingBag, color: 'text-blue-600',  bg: 'bg-blue-50' },
     { label: 'Products',      value: String(products.length),                 change: `+${Math.max(1, Math.floor(products.length / 4))} new`, icon: Package, color: 'text-purple-600', bg: 'bg-purple-50' },
     { label: 'Customers',     value: String(customers.length),                change: '+24%', icon: Users,      color: 'text-rose-600',   bg: 'bg-rose-50' },
@@ -126,7 +121,7 @@ export default function Overview() {
               <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', fontSize: '13px' }}
-                formatter={(v: unknown) => [`${currencySymbol}${fmt(Number(v))}`, 'Revenue']}
+                formatter={(v: unknown) => [fmtPrice(Number(v)), 'Revenue']}
               />
               <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2.5} fill="url(#colorRevDash)" />
             </AreaChart>
@@ -176,7 +171,7 @@ export default function Overview() {
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="text-xs text-slate-500 truncate">{order.product}</p>
-                    <p className="text-xs font-bold text-slate-700 ml-2">{currencySymbol}{order.amount}</p>
+                    <p className="text-xs font-bold text-slate-700 ml-2">{fmtPrice(Number(order.amount))}</p>
                   </div>
                 </div>
               </div>
@@ -197,7 +192,7 @@ export default function Overview() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm font-medium text-slate-900 truncate">{p.name}</p>
-                    <p className="text-sm font-bold text-slate-700 ml-2">{currencySymbol}{fmt(p.revenue)}</p>
+                    <p className="text-sm font-bold text-slate-700 ml-2">{fmtPrice(p.revenue)}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">

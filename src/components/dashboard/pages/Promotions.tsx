@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { Plus, Copy, Trash2, Check } from 'lucide-react';
 import { promotions } from '../../../data/dummyData';
 import { useStore } from '../../../context/StoreContext';
+import { makePriceFmt } from '../../../lib/formatCurrency';
 
 export default function Promotions() {
   const { activeStore } = useStore();
-  const currencySymbol = activeStore?.currency?.symbol ?? '$';
+  const fmtPrice = makePriceFmt(activeStore?.currency?.code ?? 'USD');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const copyCode = (code: string) => {
@@ -33,7 +34,7 @@ export default function Promotions() {
         {[
           { label: 'Active Promotions', value: '3', color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { label: 'Total Uses', value: '254', color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Revenue Impact', value: `${currencySymbol}1,240`, color: 'text-purple-600', bg: 'bg-purple-50' },
+          { label: 'Revenue Impact', value: fmtPrice(1240), color: 'text-purple-600', bg: 'bg-purple-50' },
         ].map(s => (
           <div key={s.label} className={`bg-white rounded-2xl p-5 border border-slate-200`}>
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>

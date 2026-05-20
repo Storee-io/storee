@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
+import { makePriceFmt } from '../../../lib/formatCurrency';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -138,8 +139,7 @@ export default function Products() {
     const s = String(Math.round(n));
     return s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
-  const currencySymbol = activeStore?.currency?.symbol ?? '$';
-  const fmtUSD = (n: number) => `${currencySymbol}${fmt(n)}`;
+  const fmtPrice = makePriceFmt(activeStore?.currency?.code ?? 'USD');
 
   const filtered = useMemo(() => {
     let list = [...products];
@@ -246,7 +246,7 @@ export default function Products() {
         <StatCard
           icon={AlertTriangle}
           label="Stock Value"
-          value={fmtUSD(stockValue)}
+          value={fmtPrice(stockValue)}
           sub={`${products.filter(p => p.stock <= 5).length} critical stock`}
           iconBg="bg-amber-50"
           iconColor="text-amber-600"
@@ -254,7 +254,7 @@ export default function Products() {
         <StatCard
           icon={DollarSign}
           label="Total Revenue"
-          value={fmtUSD(totalRevenue)}
+          value={fmtPrice(totalRevenue)}
           sub="from all product sales"
           iconBg="bg-purple-50"
           iconColor="text-purple-600"
@@ -452,7 +452,7 @@ export default function Products() {
 
                     {/* Price */}
                     <TableCell>
-                      <span className="text-sm font-bold text-slate-900">{fmtUSD(product.price)}</span>
+                      <span className="text-sm font-bold text-slate-900">{fmtPrice(product.price)}</span>
                     </TableCell>
 
                     {/* Stock */}
@@ -479,7 +479,7 @@ export default function Products() {
 
                     {/* Revenue */}
                     <TableCell>
-                      <span className="text-sm font-semibold text-slate-800">{fmtUSD(revenue)}</span>
+                      <span className="text-sm font-semibold text-slate-800">{fmtPrice(revenue)}</span>
                     </TableCell>
 
                     {/* Status */}

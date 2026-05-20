@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Search, Download, ShoppingBag, Clock, Truck, CheckCircle2 } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
+import { makePriceFmt } from '../../../lib/formatCurrency';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -48,7 +49,7 @@ type StatusFilter = 'All' | 'Processing' | 'Shipped' | 'Completed';
 export default function Orders() {
   const { storeData, activeStore } = useStore();
   const { orders } = storeData;
-  const currencySymbol = activeStore?.currency?.symbol ?? '$';
+  const fmtPrice = makePriceFmt(activeStore?.currency?.code ?? 'USD');
 
   const [search, setSearch]       = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
@@ -193,7 +194,7 @@ export default function Orders() {
                       <span className="text-sm text-slate-500">{order.product}</span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm font-bold text-slate-900">{currencySymbol}{order.amount}</span>
+                      <span className="text-sm font-bold text-slate-900">{fmtPrice(Number(order.amount))}</span>
                     </TableCell>
                     <TableCell>
                       <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.text}`}>

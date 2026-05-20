@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Truck, Check, Info } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
 import { DEFAULT_SHIPPING_METHODS } from '../../../context/StoreContext';
+import { makePriceFmt } from '../../../lib/formatCurrency';
 import type { ShippingMethod } from '../../../context/StoreContext';
 
 export default function ShippingSettings() {
@@ -37,6 +38,7 @@ export default function ShippingSettings() {
   };
 
   const currencySymbol = activeStore?.currency?.symbol ?? 'Rp';
+  const fmtPrice = makePriceFmt(activeStore?.currency?.code ?? 'IDR');
 
   return (
     <div className="p-6 max-w-2xl space-y-6">
@@ -78,7 +80,7 @@ export default function ShippingSettings() {
         {freeThreshold && (
           <p className="text-xs text-emerald-600 mt-2 flex items-center gap-1">
             <Info className="w-3.5 h-3.5" />
-            Gratis ongkir untuk pesanan di atas {currencySymbol}{Number(freeThreshold).toLocaleString('id-ID')}
+            Gratis ongkir untuk pesanan di atas {fmtPrice(Number(freeThreshold))}
           </p>
         )}
       </div>

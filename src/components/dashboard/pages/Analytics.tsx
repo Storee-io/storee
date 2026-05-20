@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
 import DateRangePicker, { type DateRange } from '../../ui/DateRangePicker';
+import { makePriceFmt } from '../../../lib/formatCurrency';
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
@@ -101,7 +102,7 @@ const hourlyData = [
 
 export default function Analytics() {
   const { activeStore } = useStore();
-  const sym = activeStore?.currency?.symbol ?? '$';
+  const fmtPrice = makePriceFmt(activeStore?.currency?.code ?? 'USD');
 
   const today = new Date();
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -121,12 +122,12 @@ export default function Analytics() {
   const avgOrder = orders > 0 ? Math.round(rev / orders) : 0;
 
   const kpis = [
-    { label: 'Total Revenue',    value: `${sym}${rev.toLocaleString()}`,      change: '+18.6%', up: true,  icon: DollarSign,  color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Total Revenue',    value: fmtPrice(rev),                         change: '+18.6%', up: true,  icon: DollarSign,  color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { label: 'Total Orders',     value: orders.toLocaleString(),              change: '+12.4%', up: true,  icon: ShoppingBag, color: 'text-blue-600',    bg: 'bg-blue-50' },
     { label: 'Unique Visitors',  value: visitors.toLocaleString(),            change: '+8.2%',  up: true,  icon: Users,       color: 'text-purple-600',  bg: 'bg-purple-50' },
     { label: 'Page Views',       value: pageviews.toLocaleString(),           change: '+12.0%', up: true,  icon: Eye,         color: 'text-cyan-600',    bg: 'bg-cyan-50' },
     { label: 'Conversion Rate',  value: `${(orders / Math.max(visitors,1) * 100).toFixed(1)}%`, change: '+0.4%', up: true, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Avg. Order Value', value: `${sym}${avgOrder}`,                  change: '+5.8%',  up: true,  icon: Star,        color: 'text-amber-600',   bg: 'bg-amber-50' },
+    { label: 'Avg. Order Value', value: fmtPrice(avgOrder),                    change: '+5.8%',  up: true,  icon: Star,        color: 'text-amber-600',   bg: 'bg-amber-50' },
     { label: 'Cart Abandonment', value: '62%',                                change: '-5.0%',  up: false, icon: Package,     color: 'text-rose-600',    bg: 'bg-rose-50' },
     { label: 'Repeat Customers', value: '34%',                                change: '+2.1%',  up: true,  icon: ArrowUpRight, color: 'text-indigo-600', bg: 'bg-indigo-50' },
   ];
@@ -184,7 +185,7 @@ export default function Analytics() {
               <YAxis yAxisId="left" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: 12 }} formatter={((v: any, name: any) => [name === 'revenue' ? `${sym}${Number(v).toLocaleString()}` : v, name === 'revenue' ? 'Revenue' : 'Orders']) as any} />
+              <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: 12 }} formatter={((v: any, name: any) => [name === 'revenue' ? fmtPrice(Number(v)) : v, name === 'revenue' ? 'Revenue' : 'Orders']) as any} />
               <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
               <Area yAxisId="left" type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2.5} fill="url(#gradRev)" name="revenue" />
               <Area yAxisId="right" type="monotone" dataKey="orders" stroke="#0ea5e9" strokeWidth={2.5} fill="url(#gradOrd)" name="orders" />
@@ -303,7 +304,7 @@ export default function Analytics() {
                       <span className="text-xs text-slate-400 whitespace-nowrap">{p.sales} sold</span>
                     </div>
                   </div>
-                  <span className="text-sm font-bold text-slate-900 whitespace-nowrap">{sym}{p.revenue.toLocaleString()}</span>
+                  <span className="text-sm font-bold text-slate-900 whitespace-nowrap">{fmtPrice(p.revenue)}</span>
                 </div>
               );
             })}
@@ -326,7 +327,7 @@ export default function Analytics() {
                   <p className="text-xs text-slate-400 truncate">{o.product}</p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-bold text-slate-900">{sym}{o.amount}</p>
+                  <p className="text-sm font-bold text-slate-900">{fmtPrice(Number(o.amount))}</p>
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                     o.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' :
                     o.status === 'Processing' ? 'bg-blue-50 text-blue-600' :

@@ -6,6 +6,7 @@ import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, 
 import type { Store, ShippingSettings, ShippingMethod, PaymentSettings, PaymentMethod } from '../../context/StoreContext';
 import { DEFAULT_SHIPPING_METHODS, DEFAULT_PAYMENT_METHODS } from '../../context/StoreContext';
 import type { StoreDesign, RichProduct } from '../../lib/claudeApi';
+import { makePriceFmt } from '../../lib/formatCurrency';
 
 export type DeviceMode = 'desktop' | 'tablet' | 'mobile';
 
@@ -21,7 +22,8 @@ interface LayoutProps {
   onAddToCart: (p: RichProduct) => void;
   onCartClick: () => void;
   cartCount: number;
-  currencySymbol: string;
+  /** Pre-bound price formatter — call fmtPrice(amount) to get locale-correct string */
+  fmtPrice: (amount: number) => string;
 }
 
 // ── Image fallback ────────────────────────────────────────────────────────────
@@ -72,8 +74,8 @@ function gridCols(device: DeviceMode) {
 
 // ── Shared interactive pages ──────────────────────────────────────────────────
 
-function ProductDetailPage({ product, primaryColor, storeName, device, onBack, onAddToCart, onCartClick, cartCount, currencySymbol }: {
-  product: RichProduct; primaryColor: string; storeName: string; device: DeviceMode; currencySymbol: string;
+function ProductDetailPage({ product, primaryColor, storeName, device, onBack, onAddToCart, onCartClick, cartCount, fmtPrice }: {
+  product: RichProduct; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
   onBack: () => void; onAddToCart: (p: RichProduct) => void; onCartClick: () => void; cartCount: number;
 }) {
   const [qty, setQty] = useState(1);
@@ -102,8 +104,8 @@ function ProductDetailPage({ product, primaryColor, storeName, device, onBack, o
           <p className="text-xs text-gray-400 uppercase tracking-wider">{product.category}</p>
           <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
           <div className="flex items-center gap-3">
-            <span className="text-2xl font-black" style={{ color: primaryColor }}>{currencySymbol}{product.price}</span>
-            {product.originalPrice && <span className="text-lg text-gray-400 line-through">{currencySymbol}{product.originalPrice}</span>}
+            <span className="text-2xl font-black" style={{ color: primaryColor }}>{fmtPrice(product.price)}</span>
+            {product.originalPrice && <span className="text-lg text-gray-400 line-through">{fmtPrice(product.originalPrice)}</span>}
           </div>
           <div className="flex items-center gap-1.5">
             {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
@@ -131,8 +133,8 @@ function ProductDetailPage({ product, primaryColor, storeName, device, onBack, o
   );
 }
 
-function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, onUpdateQty, currencySymbol, shippingSettings }: {
-  cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; currencySymbol: string;
+function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, onUpdateQty, fmtPrice, shippingSettings }: {
+  cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
   shippingSettings?: ShippingSettings;
   onBack: () => void; onCheckout: (shippingId: string) => void; onUpdateQty: (id: string, delta: number) => void;
 }) {
@@ -151,7 +153,6 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
   const discount = promoApplied ? Math.round(subtotal * 0.1) : 0;
   const total = subtotal + shippingCost - discount;
   const isMobile = device === 'mobile';
-  const fmt = (n: number) => `${currencySymbol}${n.toLocaleString('id-ID')}`;
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -186,10 +187,10 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">{p.category}</p>
                       <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
-                      <p className="text-sm font-bold mt-0.5" style={{ color: primaryColor }}>{fmt(p.price)}</p>
+                      <p className="text-sm font-bold mt-0.5" style={{ color: primaryColor }}>{fmtPrice(p.price)}</p>
                     </div>
                     <div className="flex flex-col items-end justify-between flex-shrink-0">
-                      <span className="text-sm font-bold text-gray-900">{fmt(p.price * qty)}</span>
+                      <span className="text-sm font-bold text-gray-900">{fmtPrice(p.price * qty)}</span>
                       <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden mt-2">
                         <button onClick={() => onUpdateQty(p.id, -1)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 text-base font-medium">−</button>
                         <span className="w-8 text-center text-xs font-bold text-gray-700">{qty}</span>
@@ -224,14 +225,14 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
                         <p className="text-xs text-gray-400 mt-0.5">Estimasi tiba: {method.estimatedDays}</p>
                       </div>
                       <span className="text-sm font-bold flex-shrink-0" style={{ color: primaryColor }}>
-                        {cost === 0 ? 'GRATIS' : fmt(cost)}
+                        {cost === 0 ? 'GRATIS' : fmtPrice(cost)}
                       </span>
                     </label>
                   );
                 })}
                 {freeThreshold && subtotal < freeThreshold && (
                   <div className="mt-2 px-4 py-2.5 bg-amber-50 rounded-xl border border-amber-100 text-xs text-amber-700">
-                    🎁 Tambah belanja {fmt(freeThreshold - subtotal)} lagi untuk gratis ongkir!
+                    🎁 Tambah belanja {fmtPrice(freeThreshold - subtotal)} lagi untuk gratis ongkir!
                   </div>
                 )}
               </div>
@@ -264,21 +265,21 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
             <h3 className="text-sm font-bold text-gray-900">Ringkasan Pesanan</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span className="font-medium">{fmt(subtotal)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span className="font-medium">{fmtPrice(subtotal)}</span></div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Ongkos kirim</span>
-                <span className="font-medium">{shippingCost === 0 ? <span className="text-emerald-600 font-semibold">GRATIS</span> : fmt(shippingCost)}</span>
+                <span className="font-medium">{shippingCost === 0 ? <span className="text-emerald-600 font-semibold">GRATIS</span> : fmtPrice(shippingCost)}</span>
               </div>
               {selectedMethod && (
                 <p className="text-xs text-gray-400">{selectedMethod.icon} {selectedMethod.name} · {selectedMethod.estimatedDays}</p>
               )}
               {discount > 0 && (
-                <div className="flex justify-between text-emerald-600"><span>Diskon promo</span><span className="font-medium">−{fmt(discount)}</span></div>
+                <div className="flex justify-between text-emerald-600"><span>Diskon promo</span><span className="font-medium">−{fmtPrice(discount)}</span></div>
               )}
             </div>
             <div className="border-t border-gray-100 pt-3 flex justify-between font-bold text-sm">
               <span>Total</span>
-              <span style={{ color: primaryColor }}>{fmt(total)}</span>
+              <span style={{ color: primaryColor }}>{fmtPrice(total)}</span>
             </div>
             <button
               onClick={() => onCheckout(selectedId)}
@@ -299,8 +300,8 @@ const INDONESIAN_PROVINCES = ['Aceh','Bali','Banten','Bengkulu','DI Yogyakarta',
 
 const PAYMENT_ICONS: Record<string, string> = { bank_transfer: '🏦', qris: '📱', cod: '💵', ewallet: '👛', gopay: '🟢', ovo: '🟣', dana: '🔵' };
 
-function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, currencySymbol, shippingSettings, paymentSettings, selectedShippingId }: {
-  cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; currencySymbol: string;
+function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, selectedShippingId }: {
+  cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
   shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; selectedShippingId: string;
   onBack: () => void; onPlaceOrder: (paymentId: string) => void;
 }) {
@@ -322,7 +323,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const shippingCost = (freeThreshold && subtotal >= freeThreshold) ? 0 : (selectedShipping?.price ?? 15000);
   const total = subtotal + shippingCost;
   const isMobile = device === 'mobile';
-  const fmt = (n: number) => `${currencySymbol}${n.toLocaleString('id-ID')}`;
   const inp = 'w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:border-transparent bg-white';
   const lbl = 'text-xs font-semibold text-gray-600 mb-1.5 block';
 
@@ -434,7 +434,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   <p className="text-[10px] text-gray-400">Estimasi: {selectedShipping.estimatedDays}</p>
                 </div>
                 <span className="text-xs font-bold" style={{ color: primaryColor }}>
-                  {shippingCost === 0 ? 'GRATIS' : fmt(shippingCost)}
+                  {shippingCost === 0 ? 'GRATIS' : fmtPrice(shippingCost)}
                 </span>
               </div>
             )}
@@ -513,19 +513,19 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   <p className="text-xs font-medium text-gray-800 truncate">{p.name}</p>
                   <p className="text-[10px] text-gray-400">×{qty}</p>
                 </div>
-                <span className="text-xs font-bold text-gray-700">{fmt(p.price * qty)}</span>
+                <span className="text-xs font-bold text-gray-700">{fmtPrice(p.price * qty)}</span>
               </div>
             ))}
           </div>
           <div className="border-t border-gray-100 pt-3 space-y-1.5 text-sm">
-            <div className="flex justify-between text-gray-500 text-xs"><span>Subtotal</span><span>{fmt(subtotal)}</span></div>
+            <div className="flex justify-between text-gray-500 text-xs"><span>Subtotal</span><span>{fmtPrice(subtotal)}</span></div>
             <div className="flex justify-between text-gray-500 text-xs">
               <span>Ongkos kirim</span>
-              <span>{shippingCost === 0 ? <span className="text-emerald-600 font-semibold">GRATIS</span> : fmt(shippingCost)}</span>
+              <span>{shippingCost === 0 ? <span className="text-emerald-600 font-semibold">GRATIS</span> : fmtPrice(shippingCost)}</span>
             </div>
             <div className="flex justify-between font-bold pt-1.5 border-t border-gray-100">
               <span>Total</span>
-              <span style={{ color: primaryColor }}>{fmt(total)}</span>
+              <span style={{ color: primaryColor }}>{fmtPrice(total)}</span>
             </div>
           </div>
           <button
@@ -542,8 +542,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   );
 }
 
-function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, currencySymbol, paymentSettings, selectedPaymentId }: {
-  primaryColor: string; storeName: string; orderNum: string; total: number; currencySymbol: string;
+function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmtPrice, paymentSettings, selectedPaymentId }: {
+  primaryColor: string; storeName: string; orderNum: string; total: number; fmtPrice: (n: number) => string;
   paymentSettings?: PaymentSettings; selectedPaymentId: string;
   onContinue: () => void;
 }) {
@@ -551,8 +551,6 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, cur
   const allMethods = paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS;
   const payment = allMethods.find(m => m.id === selectedPaymentId) ?? allMethods.find(m => m.enabled);
   const waNumber = paymentSettings?.confirmationWhatsapp;
-  const fmt = (n: number) => `${currencySymbol}${n.toLocaleString('id-ID')}`;
-
   const handleCopy = (text: string) => {
     try { navigator.clipboard?.writeText(text); } catch {}
     setCopied(true);
@@ -606,7 +604,7 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, cur
                     <div className="flex justify-between items-center border-t border-gray-200 pt-2.5 mt-2.5">
                       <span className="text-xs text-gray-500">Total Transfer</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-black" style={{ color: primaryColor }}>{fmt(total)}</span>
+                        <span className="text-sm font-black" style={{ color: primaryColor }}>{fmtPrice(total)}</span>
                         <button onClick={() => handleCopy(String(total))} className="p-1 rounded-lg hover:bg-gray-200 transition-colors">
                           {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-gray-400" />}
                         </button>
@@ -622,7 +620,7 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, cur
               {payment.type === 'qris' && (
                 <div className="text-center space-y-3">
                   <div className="w-36 h-36 bg-gray-100 rounded-2xl mx-auto flex items-center justify-center text-5xl">📱</div>
-                  <p className="text-sm font-semibold text-gray-900">Total: <span style={{ color: primaryColor }}>{fmt(total)}</span></p>
+                  <p className="text-sm font-semibold text-gray-900">Total: <span style={{ color: primaryColor }}>{fmtPrice(total)}</span></p>
                   {payment.instructions && <p className="text-xs text-gray-500 leading-relaxed">{payment.instructions}</p>}
                 </div>
               )}
@@ -632,7 +630,7 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, cur
                   <span className="text-2xl">💵</span>
                   <div>
                     <p className="text-sm font-bold text-gray-900">Bayar di Tempat</p>
-                    <p className="text-sm font-bold mt-0.5" style={{ color: primaryColor }}>Siapkan {fmt(total)}</p>
+                    <p className="text-sm font-bold mt-0.5" style={{ color: primaryColor }}>Siapkan {fmtPrice(total)}</p>
                     <p className="text-xs text-gray-500 mt-1">{payment.instructions ?? 'Siapkan uang pas saat kurir tiba.'}</p>
                   </div>
                 </div>
@@ -642,7 +640,7 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, cur
                 <div className="space-y-3">
                   <div className="p-4 bg-gray-50 rounded-xl space-y-2">
                     <div className="flex justify-between"><span className="text-xs text-gray-500">Kirim ke</span><span className="text-sm font-bold text-gray-900">{payment.ewalletNumber}</span></div>
-                    <div className="flex justify-between"><span className="text-xs text-gray-500">Nominal</span><span className="text-sm font-black" style={{ color: primaryColor }}>{fmt(total)}</span></div>
+                    <div className="flex justify-between"><span className="text-xs text-gray-500">Nominal</span><span className="text-sm font-black" style={{ color: primaryColor }}>{fmtPrice(total)}</span></div>
                   </div>
                   {payment.instructions && <p className="text-xs text-gray-500">{payment.instructions}</p>}
                 </div>
@@ -654,7 +652,7 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, cur
         {/* WhatsApp confirmation */}
         {waNumber && (
           <a
-            href={`https://wa.me/${waNumber}?text=Halo%2C%20saya%20sudah%20melakukan%20pembayaran%20untuk%20pesanan%20*${orderNum}*%20sebesar%20*${fmt(total)}*%20%F0%9F%99%8F`}
+            href={`https://wa.me/${waNumber}?text=Halo%2C%20saya%20sudah%20melakukan%20pembayaran%20untuk%20pesanan%20*${orderNum}*%20sebesar%20*${fmtPrice(total)}*%20%F0%9F%99%8F`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-2xl text-sm font-bold text-white mb-4 hover:opacity-90 transition-opacity"
@@ -841,7 +839,7 @@ function NewsletterSection({ newsletter, primaryColor, dark = false, elegant = f
 // ── MINIMAL layout ────────────────────────────────────────────────────────────
 // Inspired by: COS, Aesop, Muji — editorial, clean, whitespace-forward
 
-function MinimalLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, currencySymbol }: LayoutProps) {
+function MinimalLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory } = design;
   const btnText = isDark(primaryColor) ? '#fff' : '#111';
   const isMobile = device === 'mobile';
@@ -881,7 +879,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
             <div className="absolute bottom-4 right-4 bg-white rounded-2xl px-3.5 py-2.5 shadow-lg">
               <p className="text-[9px] text-gray-400 uppercase tracking-wider">{products[0]?.category}</p>
               <p className="text-xs font-bold text-gray-900 max-w-[100px] truncate">{products[0]?.name}</p>
-              <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{currencySymbol}{products[0]?.price}</p>
+              <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{fmtPrice(products[0]?.price ?? 0)}</p>
             </div>
           </div>
           <div className="px-5 py-8">
@@ -926,7 +924,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
                   <div className="min-w-0">
                     <p className="text-[9px] text-gray-400 uppercase tracking-wider">{products[1]?.category}</p>
                     <p className="text-xs font-bold text-gray-900 truncate">{products[1]?.name}</p>
-                    <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{currencySymbol}{products[1]?.price}</p>
+                    <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{fmtPrice(products[1]?.price ?? 0)}</p>
                   </div>
                 </div>
               </div>
@@ -990,8 +988,8 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
               <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">{p.category}</p>
               <p className="text-sm font-bold text-gray-900 truncate">{p.name}</p>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-sm font-black text-gray-900">{currencySymbol}{p.price}</span>
-                {p.originalPrice && <span className="text-xs text-gray-400 line-through">{currencySymbol}{p.originalPrice}</span>}
+                <span className="text-sm font-black text-gray-900">{fmtPrice(p.price)}</span>
+                {p.originalPrice && <span className="text-xs text-gray-400 line-through">{fmtPrice(p.originalPrice)}</span>}
               </div>
             </div>
           ))}
@@ -1069,7 +1067,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
 // ── BOLD layout ───────────────────────────────────────────────────────────────
 // Inspired by: Nike, OFF-WHITE, Supreme — dark, high-energy, high contrast
 
-function BoldLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, currencySymbol }: LayoutProps) {
+function BoldLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [] } = design;
   const isMobile = device === 'mobile';
 
@@ -1171,7 +1169,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
                 <p className="text-[10px] text-white/30 uppercase tracking-widest">{p.category}</p>
                 <div className="flex items-center justify-between mt-0.5">
                   <p className="text-sm font-black text-white truncate flex-1">{p.name}</p>
-                  <span className="text-sm font-black ml-2 flex-shrink-0" style={{ color: primaryColor }}>{currencySymbol}{p.price}</span>
+                  <span className="text-sm font-black ml-2 flex-shrink-0" style={{ color: primaryColor }}>{fmtPrice(p.price)}</span>
                 </div>
               </div>
             </div>
@@ -1240,7 +1238,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
 // ── ELEGANT layout ────────────────────────────────────────────────────────────
 // Inspired by: Net-a-Porter, Jo Malone, Tiffany — luxury, refined, warm
 
-function ElegantLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, currencySymbol }: LayoutProps) {
+function ElegantLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory } = design;
   const btnText = isDark(primaryColor) ? '#fff' : '#2a2420';
   const isMobile = device === 'mobile';
@@ -1343,8 +1341,8 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
               <p className="text-[10px] tracking-[0.22em] mb-1.5" style={{ color: '#a09080', fontFamily: 'system-ui' }}>{p.category.toUpperCase()}</p>
               <p className="text-sm font-medium tracking-wide truncate" style={{ color: '#2a2420' }}>{p.name}</p>
               <div className="flex items-center gap-2.5 mt-1.5">
-                <span className="text-sm font-bold" style={{ color: primaryColor, fontFamily: 'system-ui' }}>{currencySymbol}{p.price}</span>
-                {p.originalPrice && <span className="text-xs line-through" style={{ color: '#a09080', fontFamily: 'system-ui' }}>{currencySymbol}{p.originalPrice}</span>}
+                <span className="text-sm font-bold" style={{ color: primaryColor, fontFamily: 'system-ui' }}>{fmtPrice(p.price)}</span>
+                {p.originalPrice && <span className="text-xs line-through" style={{ color: '#a09080', fontFamily: 'system-ui' }}>{fmtPrice(p.originalPrice)}</span>}
               </div>
             </div>
           ))}
@@ -1418,7 +1416,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
 // ── MODERN layout ─────────────────────────────────────────────────────────────
 // Inspired by: Apple Store, Allbirds, Casper — clean, airy, contemporary
 
-function ModernLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, currencySymbol }: LayoutProps) {
+function ModernLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [] } = design;
   const btnText = isDark(primaryColor) ? '#fff' : '#fff';
   const isMobile = device === 'mobile';
@@ -1472,7 +1470,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
                 </div>
                 <div className="p-2 bg-white">
                   <p className="text-[11px] font-semibold text-gray-900 truncate">{p.name}</p>
-                  <p className="text-[11px] font-bold mt-0.5" style={{ color: primaryColor }}>{currencySymbol}{p.price}</p>
+                  <p className="text-[11px] font-bold mt-0.5" style={{ color: primaryColor }}>{fmtPrice(p.price)}</p>
                 </div>
               </div>
             ))}
@@ -1517,7 +1515,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
                       <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
                       <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/65 to-transparent">
                         <p className="text-white text-xs font-semibold truncate">{p.name}</p>
-                        <p className="text-white/80 text-xs">{currencySymbol}{p.price}</p>
+                        <p className="text-white/80 text-xs">{fmtPrice(p.price)}</p>
                       </div>
                       {p.badge && (
                         <span className="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow" style={{ background: primaryColor }}>{p.badge}</span>
@@ -1566,8 +1564,8 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
                 {!isMobile && <p className="text-xs text-gray-400 mt-0.5 truncate">{p.description}</p>}
                 <div className="flex items-center justify-between mt-2.5">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-sm font-bold text-gray-900">{currencySymbol}{p.price.toLocaleString()}</span>
-                    {p.originalPrice && !isMobile && <span className="text-xs text-gray-400 line-through">{currencySymbol}{p.originalPrice}</span>}
+                    <span className="text-sm font-bold text-gray-900">{fmtPrice(p.price)}</span>
+                    {p.originalPrice && !isMobile && <span className="text-xs text-gray-400 line-through">{fmtPrice(p.originalPrice)}</span>}
                   </div>
                   <button onClick={e => { e.stopPropagation(); onAddToCart(p); }} className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-xl text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: primaryColor }}>
                     Add
@@ -1640,7 +1638,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
 // ── PLAYFUL layout ────────────────────────────────────────────────────────────
 // Inspired by: Glossier, Oatly, Warby Parker — fun, colorful, round, youthful
 
-function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, currencySymbol }: LayoutProps) {
+function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [] } = design;
   const heroTextColor = isDark(primaryColor) ? '#fff' : '#111';
   const isMobile = device === 'mobile';
@@ -1707,7 +1705,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
                     </div>
                     <div className="p-2.5">
                       <p className="text-xs font-bold text-gray-900 truncate">{p.name}</p>
-                      <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{currencySymbol}{p.price}</p>
+                      <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{fmtPrice(p.price)}</p>
                     </div>
                   </div>
                 ))}
@@ -1765,8 +1763,8 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
                 <p className="text-sm font-black text-gray-900 truncate">{p.name}</p>
                 <div className="flex items-center justify-between mt-2.5">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-sm font-black truncate" style={{ color: primaryColor }}>{currencySymbol}{p.price.toLocaleString()}</span>
-                    {p.originalPrice && !isMobile && <span className="text-xs text-gray-400 line-through flex-shrink-0">{currencySymbol}{p.originalPrice}</span>}
+                    <span className="text-sm font-black truncate" style={{ color: primaryColor }}>{fmtPrice(p.price)}</span>
+                    {p.originalPrice && !isMobile && <span className="text-xs text-gray-400 line-through flex-shrink-0">{fmtPrice(p.originalPrice)}</span>}
                   </div>
                   <button
                     onClick={e => { e.stopPropagation(); onAddToCart(p); }}
@@ -1850,7 +1848,7 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
   cartCount: number;
 }) {
   const primaryColor = store.primaryColor || '#10b981';
-  const currencySymbol = store.currency?.symbol ?? '$';
+  const fmtPrice = makePriceFmt(store.currency?.code ?? 'USD');
   const template = store.template;
   const products = (template?.demoProducts || []).map(p => ({ ...p, description: '' })) as RichProduct[];
 
@@ -1895,7 +1893,7 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
                 <p className="text-xs text-slate-400 mb-1">{p.category}</p>
                 <p className="text-sm font-semibold text-slate-900 truncate">{p.name}</p>
                 <div className="flex items-center justify-between mt-2">
-                  <span className="font-bold text-slate-900">{currencySymbol}{p.price}</span>
+                  <span className="font-bold text-slate-900">{fmtPrice(p.price)}</span>
                   <button onClick={e => { e.stopPropagation(); onAddToCart(p); }} className="px-3 py-1.5 text-xs font-semibold rounded-xl text-white" style={{ background: primaryColor }}>Add</button>
                 </div>
               </div>
@@ -1934,7 +1932,8 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
   const design = store.design as StoreDesign | undefined;
   const primaryColor = store.primaryColor || '#10b981';
   const storeName = store.name;
-  const currencySymbol = store.currency?.symbol ?? 'Rp';
+  const currencyCode = store.currency?.code ?? 'USD';
+  const fmtPrice = makePriceFmt(currencyCode);
   const shippingSettings = store.shippingSettings;
   const paymentSettings = store.paymentSettings;
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
@@ -1968,21 +1967,21 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
   };
 
   if (page === 'product' && selectedProduct) {
-    return <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} currencySymbol={currencySymbol} onBack={() => setPage('home')} onAddToCart={addToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} />;
+    return <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} onBack={() => setPage('home')} onAddToCart={addToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} />;
   }
   if (page === 'cart') {
-    return <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} currencySymbol={currencySymbol} shippingSettings={shippingSettings} onBack={() => setPage('home')} onCheckout={(sid) => { setSelectedShippingId(sid); setPage('checkout'); }} onUpdateQty={updateQty} />;
+    return <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} onBack={() => setPage('home')} onCheckout={(sid) => { setSelectedShippingId(sid); setPage('checkout'); }} onUpdateQty={updateQty} />;
   }
   if (page === 'checkout') {
-    return <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} currencySymbol={currencySymbol} shippingSettings={shippingSettings} paymentSettings={paymentSettings} selectedShippingId={selectedShippingId} onBack={() => setPage('cart')} onPlaceOrder={(pid) => { setSelectedPaymentId(pid); setPage('success'); }} />;
+    return <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} paymentSettings={paymentSettings} selectedShippingId={selectedShippingId} onBack={() => setPage('cart')} onPlaceOrder={(pid) => { setSelectedPaymentId(pid); setPage('success'); }} />;
   }
   if (page === 'success') {
-    return <SuccessPage primaryColor={primaryColor} storeName={storeName} orderNum={orderNum} total={cartTotal + shippingCost} currencySymbol={currencySymbol} paymentSettings={paymentSettings} selectedPaymentId={selectedPaymentId} onContinue={() => { setCart([]); setPage('home'); }} />;
+    return <SuccessPage primaryColor={primaryColor} storeName={storeName} orderNum={orderNum} total={cartTotal + shippingCost} fmtPrice={fmtPrice} paymentSettings={paymentSettings} selectedPaymentId={selectedPaymentId} onContinue={() => { setCart([]); setPage('home'); }} />;
   }
 
   if (!design) return <FallbackLayout store={store} device={device} {...shared} />;
 
-  const props: LayoutProps = { storeName, primaryColor, design, device, currencySymbol, ...shared };
+  const props: LayoutProps = { storeName, primaryColor, design, device, fmtPrice, ...shared };
 
   switch (design.layoutStyle) {
     case 'minimal':  return <MinimalLayout {...props} />;

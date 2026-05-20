@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Search, Mail, Crown, Users, UserPlus } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
+import { makePriceFmt } from '../../../lib/formatCurrency';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -14,14 +15,9 @@ const STATUS_CONFIG: Record<string, { bg: string; text: string; dot: string }> =
   New:     { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
 };
 
-function fmt(n: number): string {
-  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
-
 export default function Customers() {
   const { storeData, activeStore } = useStore();
-  const currencySymbol = activeStore?.currency?.symbol ?? '$';
+  const fmtPrice = makePriceFmt(activeStore?.currency?.code ?? 'USD');
   const { customers } = storeData;
   const [search, setSearch] = useState('');
 
@@ -34,9 +30,9 @@ export default function Customers() {
   const newCount  = customers.filter((c: DashboardCustomer) => c.status === 'New').length;
 
   const stats = [
-    { label: 'Total Customers', value: fmt(customers.length), icon: Users,    iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
-    { label: 'VIP Customers',   value: fmt(vipCount),         icon: Crown,    iconBg: 'bg-purple-50',  iconColor: 'text-purple-600' },
-    { label: 'New This Month',  value: fmt(newCount),          icon: UserPlus, iconBg: 'bg-sky-50',     iconColor: 'text-sky-600' },
+    { label: 'Total Customers', value: String(customers.length), icon: Users,    iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
+    { label: 'VIP Customers',   value: String(vipCount),         icon: Crown,    iconBg: 'bg-purple-50',  iconColor: 'text-purple-600' },
+    { label: 'New This Month',  value: String(newCount),          icon: UserPlus, iconBg: 'bg-sky-50',     iconColor: 'text-sky-600' },
   ];
 
   return (
@@ -120,7 +116,7 @@ export default function Customers() {
                       <span className="text-sm font-medium text-slate-700">{c.orders}</span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm font-bold text-slate-900">{currencySymbol}{fmt(c.spent)}</span>
+                      <span className="text-sm font-bold text-slate-900">{fmtPrice(c.spent)}</span>
                     </TableCell>
                     <TableCell>
                       <span className="text-xs text-slate-400">{c.joined}</span>
