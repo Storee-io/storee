@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingBag, Package, Users, Tag, Megaphone,
   BarChart3, Palette, Settings, ChevronDown, Plus, Store,
-  X, TrendingUp, PanelLeftClose, PanelLeftOpen, Truck, CreditCard, User
+  X, TrendingUp, PanelLeftClose, PanelLeftOpen, Truck, CreditCard, User, Bell
 } from 'lucide-react';
 import Image from 'next/image';
 import { useStore } from '../../context/StoreContext';
@@ -46,8 +46,9 @@ function buildNavSections(pendingOrders: number, newProducts: number) {
       { icon: Palette,     label: 'Appearance',     path: '/dashboard/appearance' },
       { icon: Truck,       label: 'Shipping',        path: '/dashboard/shipping' },
       { icon: CreditCard,  label: 'Payment',         path: '/dashboard/payment' },
-      { icon: Settings,    label: 'Store Settings',  path: '/dashboard/settings' },
-      { icon: User,        label: 'Account',          path: '/dashboard/account' },
+      { icon: Settings,    label: 'Store Settings',   path: '/dashboard/settings' },
+      { icon: Bell,        label: 'Notifications',    path: '/dashboard/notifications' },
+      { icon: User,        label: 'Account',           path: '/dashboard/account' },
     ] as NavItem[],
   },
   ];

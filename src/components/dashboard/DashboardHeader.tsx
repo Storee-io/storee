@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Menu, Bell, Eye, Copy, Settings, HelpCircle, LogOut, ExternalLink, Check } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
+import { useNotifications } from '../../hooks/useNotifications';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,21 +31,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: 'New order received', desc: '#ORD-1042 — $299', time: '2 min ago', unread: true, link: '/dashboard/orders' },
-    { id: 2, title: 'Product low in stock', desc: 'Oak Dining Table — 8 left', time: '1 hr ago', unread: true, link: '/dashboard/products' },
-    { id: 3, title: 'Payment confirmed', desc: '#ORD-1039 — $129', time: '3 hrs ago', unread: false, link: '/dashboard/orders' },
-  ]);
-
-  const unreadCount = notifications.filter(n => n.unread).length;
-
-  const markAsRead = (id: number) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
-  };
-
-  const markAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
-  };
+  const { notifications, markAsRead, markAllRead, unreadCount } = useNotifications();
 
   return (
     <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
@@ -119,12 +106,12 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
               </div>
             ))}
             <div className="px-4 py-2.5 border-t border-slate-100 text-center">
-              <button
-                onClick={() => router.push('/dashboard/orders')}
+              <Link
+                href="/dashboard/notifications"
                 className="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
               >
                 View all notifications
-              </button>
+              </Link>
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
