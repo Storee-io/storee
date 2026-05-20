@@ -8,9 +8,10 @@ import {
 import { revenueData, topProducts, recentOrders } from '../../../data/dummyData';
 import {
   TrendingUp, TrendingDown, Users, ShoppingBag, Eye, DollarSign,
-  Package, Star, ArrowUpRight, Calendar,
+  Package, Star, ArrowUpRight,
 } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
+import DateRangePicker, { type DateRange } from '../../ui/DateRangePicker';
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
@@ -50,15 +51,18 @@ const revenueVsOrdersData = revenueData.map(d => ({
   avgOrder: Math.round(d.revenue / d.orders),
 }));
 
-const RANGES = ['Last 7 days', 'Last 30 days', 'Last 3 months', 'This year'] as const;
-type Range = typeof RANGES[number];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Analytics() {
   const { activeStore } = useStore();
   const sym = activeStore?.currency?.symbol ?? '$';
-  const [range, setRange] = useState<Range>('Last 7 days');
+
+  const today = new Date();
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6),
+    to: today,
+  });
 
   const kpis = [
     { label: 'Total Revenue',      value: `${sym}18,260`, change: '+18.6%', up: true,  icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
@@ -73,28 +77,13 @@ export default function Analytics() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header + Range selector */}
+      {/* Header + Date range picker */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Analytics</h2>
           <p className="text-slate-500 text-sm mt-1">Track your store performance</p>
         </div>
-        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl p-1">
-          <Calendar className="w-4 h-4 text-slate-400 ml-2" />
-          {RANGES.map(r => (
-            <button
-              key={r}
-              onClick={() => setRange(r)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                range === r
-                  ? 'bg-emerald-500 text-white shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
+        <DateRangePicker value={dateRange} onChange={setDateRange} />
       </div>
 
       {/* KPI grid — 4 cols on lg, 2 on sm */}
