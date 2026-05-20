@@ -73,7 +73,8 @@ export default function AccountSettings() {
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors"
+              placeholder="e.g. John Doe"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors placeholder:text-slate-400"
             />
           </div>
           <div>
@@ -84,7 +85,8 @@ export default function AccountSettings() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors"
+                placeholder="e.g. john@example.com"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-colors placeholder:text-slate-400"
               />
             </div>
           </div>
