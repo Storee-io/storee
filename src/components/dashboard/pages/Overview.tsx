@@ -1,50 +1,89 @@
 'use client';
 
+import { useState } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar
+  BarChart, Bar,
 } from 'recharts';
 import { TrendingUp, ShoppingBag, Package, Users, ArrowUpRight } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
+import DateRangePicker, { type DateRange } from '../../ui/DateRangePicker';
 
-// Locale-independent formatter — server and client always agree
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 function fmt(n: number): string {
   return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
+function buildRevenueData(from: Date, to: Date) {
+  const months: { month: string; revenue: number; orders: number }[] = [];
+  const cur = new Date(from.getFullYear(), from.getMonth(), 1);
+  const end = new Date(to.getFullYear(), to.getMonth(), 1);
+  const BASE = [4200, 5800, 4900, 7200, 6100, 8900, 9400, 7800, 6500, 8100, 9200, 10400];
+  while (cur <= end) {
+    const seed = (cur.getMonth() + cur.getFullYear() * 12) % 20;
+    const rev  = Math.round(BASE[cur.getMonth()] * (0.85 + seed / 100));
+    const ord  = Math.round(rev / 148);
+    months.push({
+      month:   cur.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
+      revenue: rev,
+      orders:  ord,
+    });
+    cur.setMonth(cur.getMonth() + 1);
+  }
+  return months.length ? months : [{ month: 'Now', revenue: 3200, orders: 22 }];
+}
+
+function scaleKpi(base: number, days: number, refDays = 30) {
+  const factor = days / refDays;
+  const jitter = 0.85 + (days % 7) / 40;
+  return Math.round(base * factor * jitter);
+}
+
 const statusColors: Record<string, string> = {
-  Completed: 'bg-emerald-100 text-emerald-700',
+  Completed:  'bg-emerald-100 text-emerald-700',
   Processing: 'bg-amber-100 text-amber-700',
-  Shipped: 'bg-blue-100 text-blue-700',
+  Shipped:    'bg-blue-100 text-blue-700',
 };
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Overview() {
   const { activeStore, storeData } = useStore();
-  const { revenueChart, orders, topProducts, products, customers } = storeData;
-
-  const totalRevenue = activeStore?.revenue || revenueChart.reduce((s, d) => s + d.revenue, 0);
-  const totalOrders = activeStore?.orders || orders.length;
+  const { orders, topProducts, products, customers } = storeData;
   const currencySymbol = activeStore?.currency?.symbol ?? '$';
+
+  const today = new Date();
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6),
+    to: today,
+  });
+
+  const days = Math.max(1, Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / 86400000) + 1);
+  const revenueChartData = buildRevenueData(dateRange.from, dateRange.to);
+
+  const baseRevenue = activeStore?.revenue || 12840;
+  const baseOrderCount = activeStore?.orders || orders.length;
+
+  const totalRevenue = scaleKpi(baseRevenue, days, 30);
+  const totalOrders  = scaleKpi(baseOrderCount, days, 30);
 
   const stats = [
     { label: 'Total Revenue', value: `${currencySymbol}${fmt(totalRevenue)}`, change: '+18%', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Total Orders', value: String(totalOrders), change: '+12%', icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Products', value: String(products.length), change: `+${Math.max(1, Math.floor(products.length / 4))} new`, icon: Package, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Customers', value: String(customers.length), change: '+24%', icon: Users, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { label: 'Total Orders',  value: String(totalOrders),                     change: '+12%', icon: ShoppingBag, color: 'text-blue-600',  bg: 'bg-blue-50' },
+    { label: 'Products',      value: String(products.length),                 change: `+${Math.max(1, Math.floor(products.length / 4))} new`, icon: Package, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Customers',     value: String(customers.length),                change: '+24%', icon: Users,      color: 'text-rose-600',   bg: 'bg-rose-50' },
   ];
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Overview</h2>
-          <p className="text-slate-500 text-sm mt-1">Here's what's happening with your store today</p>
+          <p className="text-slate-500 text-sm mt-1">Here's what's happening with your store</p>
         </div>
-        <select className="text-sm border border-slate-200 rounded-xl px-3 py-2 text-slate-600 bg-white outline-none">
-          <option>Last 7 months</option>
-          <option>Last 30 days</option>
-          <option>Last year</option>
-        </select>
+        <DateRangePicker value={dateRange} onChange={setDateRange} />
       </div>
 
       {/* Stats grid */}
@@ -60,7 +99,7 @@ export default function Overview() {
             <p className="text-2xl font-bold text-slate-900 mb-1">{stat.value}</p>
             <p className="text-xs text-emerald-600 font-medium flex items-center gap-1">
               <ArrowUpRight className="w-3 h-3" />
-              {stat.change} this month
+              {stat.change} vs prev period
             </p>
           </div>
         ))}
@@ -68,16 +107,14 @@ export default function Overview() {
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Revenue area chart */}
         <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-100">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="font-bold text-slate-900">Revenue Overview</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Monthly revenue trend</p>
-            </div>
-            <span className="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full">Last 7 months</span>
+          <div className="mb-6">
+            <h3 className="font-bold text-slate-900">Revenue Overview</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Revenue trend for selected period</p>
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={revenueChart}>
+            <AreaChart data={revenueChartData}>
               <defs>
                 <linearGradient id="colorRevDash" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
@@ -96,13 +133,14 @@ export default function Overview() {
           </ResponsiveContainer>
         </div>
 
+        {/* Orders bar chart */}
         <div className="bg-white rounded-2xl p-6 border border-slate-100">
           <div className="mb-6">
             <h3 className="font-bold text-slate-900">Orders</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Monthly orders</p>
+            <p className="text-xs text-slate-500 mt-0.5">Order volume trend</p>
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={revenueChart}>
+            <BarChart data={revenueChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
@@ -117,6 +155,7 @@ export default function Overview() {
 
       {/* Bottom row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent orders */}
         <div className="bg-white rounded-2xl p-6 border border-slate-100">
           <div className="flex items-center justify-between mb-5">
             <h3 className="font-bold text-slate-900">Recent Orders</h3>
@@ -145,6 +184,7 @@ export default function Overview() {
           </div>
         </div>
 
+        {/* Top products */}
         <div className="bg-white rounded-2xl p-6 border border-slate-100">
           <div className="flex items-center justify-between mb-5">
             <h3 className="font-bold text-slate-900">Top Products</h3>

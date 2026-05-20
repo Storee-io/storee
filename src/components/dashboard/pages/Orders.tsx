@@ -7,6 +7,33 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { DashboardOrder } from '../../../data/storeDataGenerator';
+import DateRangePicker, { type DateRange } from '../../ui/DateRangePicker';
+
+// ── Date helpers ──────────────────────────────────────────────────────────────
+
+/** Convert relative time strings ("2 min ago", "3 days ago") to approximate Date */
+function relativeToDate(str: string): Date {
+  const now = new Date();
+  const dayMatch = str.match(/^(\d+)\s*day/);
+  if (dayMatch) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - parseInt(dayMatch[1]));
+    return d;
+  }
+  // "X min ago", "X hr ago" → today
+  return now;
+}
+
+function stripTime(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function isInRange(date: Date, from: Date, to: Date): boolean {
+  const d = stripTime(date);
+  return d >= stripTime(from) && d <= stripTime(to);
+}
+
+// ── Config ────────────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<string, { bg: string; text: string; dot: string }> = {
   Completed:  { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
@@ -14,47 +41,66 @@ const STATUS_CONFIG: Record<string, { bg: string; text: string; dot: string }> =
   Shipped:    { bg: 'bg-blue-100',    text: 'text-blue-700',    dot: 'bg-blue-400'     },
 };
 
-type Filter = 'All' | 'Processing' | 'Shipped' | 'Completed';
+type StatusFilter = 'All' | 'Processing' | 'Shipped' | 'Completed';
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Orders() {
   const { storeData, activeStore } = useStore();
   const { orders } = storeData;
   const currencySymbol = activeStore?.currency?.symbol ?? '$';
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<Filter>('All');
 
-  const filtered = orders.filter((o: DashboardOrder) => {
-    const matchSearch = o.customer.toLowerCase().includes(search.toLowerCase()) || o.id.includes(search);
-    const matchFilter = filter === 'All' || o.status === filter;
-    return matchSearch && matchFilter;
+  const [search, setSearch]       = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
+
+  const today = new Date();
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6),
+    to: today,
   });
 
-  const counts = {
-    All:        orders.length,
-    Processing: orders.filter((o: DashboardOrder) => o.status === 'Processing').length,
-    Shipped:    orders.filter((o: DashboardOrder) => o.status === 'Shipped').length,
-    Completed:  orders.filter((o: DashboardOrder) => o.status === 'Completed').length,
+  // Apply all three filters: date range + status + search
+  const filtered = orders.filter((o: DashboardOrder) => {
+    const matchDate   = isInRange(relativeToDate(o.date), dateRange.from, dateRange.to);
+    const matchStatus = statusFilter === 'All' || o.status === statusFilter;
+    const matchSearch = o.customer.toLowerCase().includes(search.toLowerCase()) || o.id.includes(search);
+    return matchDate && matchStatus && matchSearch;
+  });
+
+  // Counts computed on date-filtered subset (so status tabs reflect the date window)
+  const dateFiltered = orders.filter((o: DashboardOrder) =>
+    isInRange(relativeToDate(o.date), dateRange.from, dateRange.to)
+  );
+
+  const counts: Record<StatusFilter, number> = {
+    All:        dateFiltered.length,
+    Processing: dateFiltered.filter((o: DashboardOrder) => o.status === 'Processing').length,
+    Shipped:    dateFiltered.filter((o: DashboardOrder) => o.status === 'Shipped').length,
+    Completed:  dateFiltered.filter((o: DashboardOrder) => o.status === 'Completed').length,
   };
 
   const stats = [
-    { label: 'Total Orders',    value: String(counts.All),        icon: ShoppingBag,  iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
-    { label: 'Processing',      value: String(counts.Processing),  icon: Clock,        iconBg: 'bg-amber-50',   iconColor: 'text-amber-600' },
-    { label: 'Shipped',         value: String(counts.Shipped),     icon: Truck,        iconBg: 'bg-blue-50',    iconColor: 'text-blue-600' },
-    { label: 'Completed',       value: String(counts.Completed),   icon: CheckCircle2, iconBg: 'bg-purple-50',  iconColor: 'text-purple-600' },
+    { label: 'Total Orders', value: String(counts.All),        icon: ShoppingBag,  iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
+    { label: 'Processing',   value: String(counts.Processing), icon: Clock,        iconBg: 'bg-amber-50',   iconColor: 'text-amber-600'   },
+    { label: 'Shipped',      value: String(counts.Shipped),    icon: Truck,        iconBg: 'bg-blue-50',    iconColor: 'text-blue-600'    },
+    { label: 'Completed',    value: String(counts.Completed),  icon: CheckCircle2, iconBg: 'bg-purple-50',  iconColor: 'text-purple-600'  },
   ];
 
   return (
     <div className="p-6 space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Orders</h2>
-          <p className="text-slate-500 text-sm mt-0.5">{orders.length} total orders</p>
+          <p className="text-slate-500 text-sm mt-0.5">{counts.All} orders in selected period</p>
         </div>
-        <Button className="gradient-bg hover:opacity-90 shadow-sm">
-          <Download className="w-4 h-4 mr-2" />
-          Export
-        </Button>
+        <div className="flex items-center gap-2.5">
+          <DateRangePicker value={dateRange} onChange={setDateRange} />
+          <Button variant="outline" className="border-slate-200 text-slate-600 hover:bg-slate-50 flex-shrink-0">
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+        </div>
       </div>
 
       {/* Stat cards */}
@@ -72,22 +118,22 @@ export default function Orders() {
         ))}
       </div>
 
-      {/* Search + filter tabs */}
+      {/* Status filter tabs + search */}
       <div className="space-y-3">
         <div className="flex items-center gap-1.5 flex-wrap">
-          {(['All', 'Processing', 'Shipped', 'Completed'] as Filter[]).map(s => (
+          {(['All', 'Processing', 'Shipped', 'Completed'] as StatusFilter[]).map(s => (
             <button
               key={s}
-              onClick={() => setFilter(s)}
+              onClick={() => setStatusFilter(s)}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium transition-all ${
-                filter === s
+                statusFilter === s
                   ? 'bg-emerald-500 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
               {s}
               <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                filter === s ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-500'
+                statusFilter === s ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-500'
               }`}>
                 {counts[s]}
               </span>
@@ -124,7 +170,7 @@ export default function Orders() {
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-16 text-slate-400">
                   <ShoppingBag className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                  No orders found
+                  No orders found for this period
                 </TableCell>
               </TableRow>
             ) : (
