@@ -91,7 +91,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
                 <span className="text-xs text-slate-400">All caught up</span>
               )}
             </div>
-            {notifications.map(n => (
+            {notifications.slice(0, 6).map(n => (
               <div
                 key={n.id}
                 onClick={() => { markAsRead(n.id); router.push(n.link); }}
