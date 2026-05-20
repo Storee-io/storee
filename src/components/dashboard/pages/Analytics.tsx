@@ -5,7 +5,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, BarChart, Bar, Legend,
 } from 'recharts';
-import { revenueData, topProducts, recentOrders } from '../../../data/dummyData';
+import { topProducts, recentOrders } from '../../../data/dummyData';
 import {
   TrendingUp, TrendingDown, Users, ShoppingBag, Eye, DollarSign,
   Package, Star, ArrowUpRight,
@@ -15,7 +15,7 @@ import DateRangePicker, { type DateRange } from '../../ui/DateRangePicker';
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
-const trafficData = [
+const BASE_TRAFFIC = [
   { day: 'Mon', visitors: 142, pageviews: 412 },
   { day: 'Tue', visitors: 189, pageviews: 534 },
   { day: 'Wed', visitors: 156, pageviews: 441 },
@@ -24,6 +24,55 @@ const trafficData = [
   { day: 'Sat', visitors: 312, pageviews: 891 },
   { day: 'Sun', visitors: 289, pageviews: 823 },
 ];
+
+// Generate daily traffic data points for a date range
+function buildTrafficData(from: Date, to: Date) {
+  const days: { day: string; visitors: number; pageviews: number }[] = [];
+  const diff = Math.round((to.getTime() - from.getTime()) / 86400000) + 1;
+  const clamp = Math.min(diff, 30); // show max 30 points for readability
+  const step  = Math.max(1, Math.floor(diff / clamp));
+  for (let i = 0; i < diff; i += step) {
+    const d = new Date(from); d.setDate(d.getDate() + i);
+    const base = BASE_TRAFFIC[d.getDay()];
+    const seed = (d.getDate() * 7 + d.getMonth() * 3) % 40;
+    days.push({
+      day: diff <= 14
+        ? d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+        : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
+      visitors:  Math.round(base.visitors  * (0.7 + seed / 100)),
+      pageviews: Math.round(base.pageviews * (0.7 + seed / 100)),
+    });
+  }
+  return days;
+}
+
+// Generate monthly revenue data for a date range
+function buildRevenueData(from: Date, to: Date) {
+  const months: { month: string; revenue: number; orders: number; avgOrder: number }[] = [];
+  const cur = new Date(from.getFullYear(), from.getMonth(), 1);
+  const end = new Date(to.getFullYear(),   to.getMonth(),   1);
+  const BASE = [4200,5800,4900,7200,6100,8900,9400,7800,6500,8100,9200,10400];
+  while (cur <= end) {
+    const seed = (cur.getMonth() + cur.getFullYear() * 12) % 20;
+    const rev  = Math.round(BASE[cur.getMonth()] * (0.85 + seed / 100));
+    const ord  = Math.round(rev / 148);
+    months.push({
+      month:    cur.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
+      revenue:  rev,
+      orders:   ord,
+      avgOrder: Math.round(rev / ord),
+    });
+    cur.setMonth(cur.getMonth() + 1);
+  }
+  return months.length ? months : [{ month: 'Now', revenue: 3200, orders: 22, avgOrder: 145 }];
+}
+
+// Scale KPI values based on days in range
+function scaleKpi(base: number, days: number, refDays = 30) {
+  const factor = days / refDays;
+  const jitter = 0.85 + (days % 7) / 40;
+  return Math.round(base * factor * jitter);
+}
 
 const sourceData = [
   { name: 'Organic Search', value: 38, color: '#10b981' },
@@ -46,10 +95,6 @@ const hourlyData = [
   { hour: '18', orders: 30 }, { hour: '20', orders: 19 }, { hour: '22', orders: 9 },
 ];
 
-const revenueVsOrdersData = revenueData.map(d => ({
-  ...d,
-  avgOrder: Math.round(d.revenue / d.orders),
-}));
 
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -64,15 +109,26 @@ export default function Analytics() {
     to: today,
   });
 
+  const days = Math.max(1, Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / 86400000) + 1);
+
+  const trafficData   = buildTrafficData(dateRange.from, dateRange.to);
+  const revenueChartData = buildRevenueData(dateRange.from, dateRange.to);
+
+  const rev      = scaleKpi(18260, days);
+  const orders   = scaleKpi(1248,  days);
+  const visitors = scaleKpi(1546,  days);
+  const pageviews = scaleKpi(4429, days);
+  const avgOrder = orders > 0 ? Math.round(rev / orders) : 0;
+
   const kpis = [
-    { label: 'Total Revenue',      value: `${sym}18,260`, change: '+18.6%', up: true,  icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Total Orders',       value: '1,248',        change: '+12.4%', up: true,  icon: ShoppingBag, color: 'text-blue-600',    bg: 'bg-blue-50' },
-    { label: 'Unique Visitors',    value: '1,546',        change: '+8.2%',  up: true,  icon: Users,       color: 'text-purple-600',  bg: 'bg-purple-50' },
-    { label: 'Page Views',         value: '4,429',        change: '+12.0%', up: true,  icon: Eye,         color: 'text-cyan-600',    bg: 'bg-cyan-50' },
-    { label: 'Conversion Rate',    value: '3.2%',         change: '+0.4%',  up: true,  icon: TrendingUp,  color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Avg. Order Value',   value: `${sym}146`,    change: '+5.8%',  up: true,  icon: Star,        color: 'text-amber-600',   bg: 'bg-amber-50' },
-    { label: 'Cart Abandonment',   value: '62%',          change: '-5.0%',  up: false, icon: Package,     color: 'text-rose-600',    bg: 'bg-rose-50' },
-    { label: 'Repeat Customers',   value: '34%',          change: '+2.1%',  up: true,  icon: ArrowUpRight, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Total Revenue',    value: `${sym}${rev.toLocaleString()}`,      change: '+18.6%', up: true,  icon: DollarSign,  color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Total Orders',     value: orders.toLocaleString(),              change: '+12.4%', up: true,  icon: ShoppingBag, color: 'text-blue-600',    bg: 'bg-blue-50' },
+    { label: 'Unique Visitors',  value: visitors.toLocaleString(),            change: '+8.2%',  up: true,  icon: Users,       color: 'text-purple-600',  bg: 'bg-purple-50' },
+    { label: 'Page Views',       value: pageviews.toLocaleString(),           change: '+12.0%', up: true,  icon: Eye,         color: 'text-cyan-600',    bg: 'bg-cyan-50' },
+    { label: 'Conversion Rate',  value: `${(orders / Math.max(visitors,1) * 100).toFixed(1)}%`, change: '+0.4%', up: true, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Avg. Order Value', value: `${sym}${avgOrder}`,                  change: '+5.8%',  up: true,  icon: Star,        color: 'text-amber-600',   bg: 'bg-amber-50' },
+    { label: 'Cart Abandonment', value: '62%',                                change: '-5.0%',  up: false, icon: Package,     color: 'text-rose-600',    bg: 'bg-rose-50' },
+    { label: 'Repeat Customers', value: '34%',                                change: '+2.1%',  up: true,  icon: ArrowUpRight, color: 'text-indigo-600', bg: 'bg-indigo-50' },
   ];
 
   return (
@@ -112,7 +168,7 @@ export default function Analytics() {
             <h3 className="font-bold text-slate-900">Revenue & Orders Trend</h3>
           </div>
           <ResponsiveContainer width="100%" height={230}>
-            <AreaChart data={revenueVsOrdersData}>
+            <AreaChart data={revenueChartData}>
               <defs>
                 <linearGradient id="gradRev" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#10b981" stopOpacity={0.18} />

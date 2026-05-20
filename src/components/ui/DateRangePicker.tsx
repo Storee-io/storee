@@ -287,9 +287,17 @@ export default function DateRangePicker({ value, onChange }: Props) {
         }`}
       >
         <Calendar className="w-4 h-4 text-slate-400" />
-        <span className="font-medium text-slate-700">{fmtDisplay(value.from)}</span>
-        <span className="text-slate-400">→</span>
-        <span className="font-medium text-slate-700">{fmtDisplay(value.to)}</span>
+        {activePreset !== 'custom' ? (
+          <span className="font-medium text-slate-700">
+            {PRESETS.find(p => p.key === activePreset)?.label}
+          </span>
+        ) : (
+          <>
+            <span className="font-medium text-slate-700">{fmtDisplay(value.from)}</span>
+            <span className="text-slate-400">→</span>
+            <span className="font-medium text-slate-700">{fmtDisplay(value.to)}</span>
+          </>
+        )}
       </button>
 
       {/* Dropdown */}
