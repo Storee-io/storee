@@ -714,16 +714,17 @@ function PromoBar({ text, primaryColor }: { text: string; primaryColor: string }
   );
 }
 
-function StatsRow({ stats, primaryColor, dark = false }: { stats: Array<{ value: string; label: string }>; primaryColor: string; dark?: boolean }) {
+function StatsRow({ stats, primaryColor, dark = false, device }: { stats: Array<{ value: string; label: string }>; primaryColor: string; dark?: boolean; device?: DeviceMode }) {
+  const isMobile = device === 'mobile';
   if (!stats?.length) return null;
   return (
     <div className={`border-y ${dark ? 'border-white/10' : 'border-gray-100'}`}>
       <div className="max-w-6xl mx-auto px-5">
         <div className={`grid grid-cols-3 divide-x ${dark ? 'divide-white/10' : 'divide-gray-100'}`}>
           {stats.map((s, i) => (
-            <div key={i} className="text-center px-4 py-8">
-              <p className="text-3xl font-black" style={{ color: primaryColor }}>{s.value}</p>
-              <p className={`text-xs mt-1.5 font-medium tracking-wide ${dark ? 'text-white/50' : 'text-gray-500'}`}>{s.label}</p>
+            <div key={i} className={`text-center px-4 ${isMobile ? 'py-5' : 'py-8'}`}>
+              <p className={`font-black ${isMobile ? 'text-2xl' : 'text-3xl'}`} style={{ color: primaryColor }}>{s.value}</p>
+              <p className={`text-xs mt-1 font-medium tracking-wide ${dark ? 'text-white/50' : 'text-gray-500'}`}>{s.label}</p>
             </div>
           ))}
         </div>
@@ -732,16 +733,17 @@ function StatsRow({ stats, primaryColor, dark = false }: { stats: Array<{ value:
   );
 }
 
-function TrustBadgesRow({ badges, primaryColor, dark = false }: { badges: Array<{ icon: string; text: string }>; primaryColor: string; dark?: boolean }) {
+function TrustBadgesRow({ badges, primaryColor, dark = false, device }: { badges: Array<{ icon: string; text: string }>; primaryColor: string; dark?: boolean; device?: DeviceMode }) {
+  const isMobile = device === 'mobile';
   if (!badges?.length) return null;
   return (
     <div className={`${dark ? 'border-white/10' : 'border-gray-100'} border-y`}>
       <div className={dark ? '' : 'bg-gray-50/70'}>
-        <div className="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-center gap-6 flex-wrap">
+        <div className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-2.5 gap-4' : 'py-3.5 gap-6'} flex items-center justify-center flex-wrap`}>
           {badges.map((b, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span className="text-base">{b.icon}</span>
-              <span className={`text-xs font-semibold ${dark ? 'text-white/60' : 'text-gray-600'}`}>{b.text}</span>
+            <div key={i} className="flex items-center gap-1.5">
+              <span className={isMobile ? 'text-sm' : 'text-base'}>{b.icon}</span>
+              <span className={`${isMobile ? 'text-[11px]' : 'text-xs'} font-semibold ${dark ? 'text-white/60' : 'text-gray-600'}`}>{b.text}</span>
             </div>
           ))}
         </div>
@@ -758,9 +760,10 @@ function FAQSection({ faq, primaryColor, device, dark = false, elegant = false }
   elegant?: boolean;
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const isMobileInFaq = device === 'mobile';
   if (!faq?.length) return null;
   return (
-    <section className="py-14" style={dark ? { background: 'rgba(255,255,255,0.03)' } : elegant ? { background: '#fdfcf8' } : {}}>
+    <section className={isMobileInFaq ? 'py-8' : 'py-14'} style={dark ? { background: 'rgba(255,255,255,0.03)' } : elegant ? { background: '#fdfcf8' } : {}}>
       <div className="max-w-3xl mx-auto px-5">
         <div className="text-center mb-9">
           {elegant ? (
@@ -793,32 +796,34 @@ function FAQSection({ faq, primaryColor, device, dark = false, elegant = false }
   );
 }
 
-function NewsletterSection({ newsletter, primaryColor, dark = false, elegant = false }: {
+function NewsletterSection({ newsletter, primaryColor, dark = false, elegant = false, device }: {
   newsletter: { headline: string; subtext: string };
   primaryColor: string;
   dark?: boolean;
   elegant?: boolean;
+  device?: DeviceMode;
 }) {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const isMobile = device === 'mobile';
   if (!newsletter) return null;
   const inverted = dark || elegant;
   return (
-    <section className="py-14">
+    <section className={isMobile ? 'py-8' : 'py-14'}>
       <div className="max-w-xl mx-auto px-5">
-        <div className="rounded-3xl p-8 text-center" style={
+        <div className={`rounded-3xl ${isMobile ? 'p-5' : 'p-8'} text-center`} style={
           dark ? { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' } :
           elegant ? { background: '#2a2420' } :
           { background: `linear-gradient(135deg, ${alpha(primaryColor, 0.09)}, ${alpha(primaryColor, 0.04)})`, border: `1px solid ${alpha(primaryColor, 0.12)}` }
         }>
-          <p className="text-2xl font-bold mb-3" style={{ color: inverted ? '#fff' : '#111' }}>{newsletter.headline}</p>
-          <p className={`text-sm mb-7 leading-relaxed ${inverted ? 'text-white/60' : 'text-gray-500'}`}>{newsletter.subtext}</p>
+          <p className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-3`} style={{ color: inverted ? '#fff' : '#111' }}>{newsletter.headline}</p>
+          <p className={`text-sm ${isMobile ? 'mb-5' : 'mb-7'} leading-relaxed ${inverted ? 'text-white/60' : 'text-gray-500'}`}>{newsletter.subtext}</p>
           {submitted ? (
             <div className="flex items-center justify-center gap-2 text-sm font-semibold" style={{ color: inverted ? '#fff' : primaryColor }}>
               <span>✓</span> You're on the list!
             </div>
           ) : (
-            <div className="flex gap-2">
+            <div className={`flex ${isMobile ? 'flex-col' : ''} gap-2`}>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Your email address"
                 className="flex-1 px-4 py-3 rounded-xl text-sm outline-none"
                 style={inverted ? { background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff' } : { background: '#fff', border: `1px solid ${alpha(primaryColor, 0.2)}`, color: '#111' }} />
@@ -945,10 +950,10 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
           ))}
         </div>
       </div>
-      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} />}
+      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} device={device} />}
 
       {/* Products */}
-      <section className="max-w-6xl mx-auto px-5 py-14">
+      <section className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
         <div className="flex items-end justify-between mb-8">
           <div>
             <p className="text-[10px] uppercase tracking-[0.22em] text-gray-400 mb-1.5">Curated Selection</p>
@@ -995,16 +1000,16 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
 
       {/* Brand story banner */}
       {brandStory && (
-        <section className="py-14" style={{ background: '#f5f4f0' }}>
+        <section className={isMobile ? 'py-8' : 'py-14'} style={{ background: '#f5f4f0' }}>
           <div className="max-w-2xl mx-auto px-5 text-center">
             <div className="text-4xl mb-5 opacity-20" style={{ color: primaryColor }}>"</div>
-            <p className="text-lg font-medium text-gray-700 leading-relaxed italic">{brandStory}</p>
+            <p className={`${isMobile ? 'text-base' : 'text-lg'} font-medium text-gray-700 leading-relaxed italic`}>{brandStory}</p>
           </div>
         </section>
       )}
 
       {/* Features */}
-      <section className="max-w-6xl mx-auto px-5 py-14">
+      <section className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
         <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-6'}`}>
           {features.map((f, i) => (
             <div key={i} className="flex items-start gap-4 p-6 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all">
@@ -1021,7 +1026,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
       </section>
 
       {/* Testimonials */}
-      <section style={{ background: '#f5f4f0' }} className="py-14">
+      <section style={{ background: '#f5f4f0' }} className={isMobile ? 'py-8' : 'py-14'}>
         <div className="max-w-6xl mx-auto px-5">
           <p className="text-[10px] uppercase tracking-[0.25em] text-gray-400 mb-2 text-center">Reviews</p>
           <h2 className="text-xl font-black text-gray-900 text-center mb-9">What Customers Say</h2>
@@ -1045,9 +1050,9 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
       </section>
 
-      {stats && <StatsRow stats={stats} primaryColor={primaryColor} />}
+      {stats && <StatsRow stats={stats} primaryColor={primaryColor} device={device} />}
       {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} device={device} />}
 
       {/* Footer */}
       <footer className="border-t border-gray-100 py-10 bg-white">
@@ -1104,16 +1109,16 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
               {collections[0]?.emoji} {tagline}
             </span>
           </div>
-          <h1 className={`font-black text-white leading-[0.93] tracking-tight mb-7 ${isMobile ? 'text-[3.5rem]' : 'text-[5.5rem]'}`}
+          <h1 className={`font-black text-white leading-[0.93] tracking-tight mb-7 ${isMobile ? 'text-[2.5rem]' : 'text-[5.5rem]'}`}
             style={{ textShadow: `0 0 80px ${alpha(primaryColor, 0.35)}` }}>
             {heroTitle}
           </h1>
-          <p className="text-white/45 text-sm max-w-md mb-10 leading-relaxed">{heroSubtitle}</p>
-          <div className="flex items-center gap-4 flex-wrap">
-            <button className="px-8 py-4 text-xs font-black uppercase tracking-widest rounded-full text-black hover:opacity-90 transition-opacity shadow-xl" style={{ background: primaryColor }}>
+          <p className={`text-white/45 text-sm max-w-md ${isMobile ? 'mb-7' : 'mb-10'} leading-relaxed`}>{heroSubtitle}</p>
+          <div className="flex items-center gap-3 flex-wrap">
+            <button className={`${isMobile ? 'px-5 py-3 text-[11px]' : 'px-8 py-4 text-xs'} font-black uppercase tracking-widest rounded-full text-black hover:opacity-90 transition-opacity shadow-xl`} style={{ background: primaryColor }}>
               {ctaText} →
             </button>
-            <button className="px-8 py-4 text-xs font-black uppercase tracking-widest rounded-full text-white/70 border border-white/15 hover:bg-white/8 transition-colors">
+            <button className={`${isMobile ? 'px-5 py-3 text-[11px]' : 'px-8 py-4 text-xs'} font-black uppercase tracking-widest rounded-full text-white/70 border border-white/15 hover:bg-white/8 transition-colors`}>
               See All
             </button>
           </div>
@@ -1131,10 +1136,10 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
           ))}
         </div>
       </section>
-      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} dark={true} />}
+      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} dark={true} device={device} />}
 
       {/* Products */}
-      <section className="max-w-6xl mx-auto px-5 py-14">
+      <section className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
         <div className="flex items-end justify-between mb-8">
           <h2 className={`font-black text-white tracking-tight uppercase ${isMobile ? 'text-2xl' : 'text-3xl'}`}>New Drops</h2>
           <a className="text-xs font-black uppercase tracking-widest flex items-center gap-1.5 hover:gap-3 transition-all" style={{ color: primaryColor }}>
@@ -1175,8 +1180,8 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
       </section>
 
       {/* Features — numbered with accent top bar */}
-      <section className="border-t border-white/8 py-14">
-        <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-10' : 'grid-cols-3 gap-8'}`}>
+      <section className={`border-t border-white/8 ${isMobile ? 'py-8' : 'py-14'}`}>
+        <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-8' : 'grid-cols-3 gap-8'}`}>
           {features.map((f, i) => (
             <div key={i} className="flex items-start gap-5">
               <div>
@@ -1192,7 +1197,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
       </section>
 
       {/* Testimonials */}
-      <section className="py-14" style={{ background: alpha(primaryColor, 0.06) }}>
+      <section className={isMobile ? 'py-8' : 'py-14'} style={{ background: alpha(primaryColor, 0.06) }}>
         <div className="max-w-6xl mx-auto px-5">
           <h2 className="text-2xl font-black uppercase tracking-widest text-white mb-8 text-center">The Word</h2>
           <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
@@ -1216,9 +1221,9 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
         </div>
       </section>
 
-      {stats && <StatsRow stats={stats} primaryColor={primaryColor} dark={true} />}
+      {stats && <StatsRow stats={stats} primaryColor={primaryColor} dark={true} device={device} />}
       {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} dark={true} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} dark={true} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} dark={true} device={device} />}
 
       {/* Footer */}
       <footer className="border-t border-white/8 py-10">
@@ -1285,7 +1290,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
               {heroTitle}
             </h1>
             {!isMobile && <p className="text-white/65 text-sm max-w-xs mb-9 leading-relaxed" style={{ fontFamily: 'system-ui' }}>{heroSubtitle}</p>}
-            <button className="px-9 py-3.5 text-xs border text-white hover:bg-white/12 transition-colors"
+            <button className={`${isMobile ? 'w-full text-center py-3 px-6' : 'px-9 py-3.5'} text-xs border text-white hover:bg-white/12 transition-colors`}
               style={{ borderColor: 'rgba(255,255,255,0.35)', letterSpacing: '0.22em', fontFamily: 'system-ui' }}>
               {ctaText.toUpperCase()}
             </button>
@@ -1304,11 +1309,11 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
           ))}
         </div>
       </section>
-      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} />}
+      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} device={device} />}
 
       {/* Products */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <div className="text-center mb-12">
+      <section className={`max-w-6xl mx-auto px-6 ${isMobile ? 'py-8' : 'py-16'}`}>
+        <div className={`text-center ${isMobile ? 'mb-7' : 'mb-12'}`}>
           <p className="text-[10px] tracking-[0.38em] mb-3" style={{ color: primaryColor, fontFamily: 'system-ui' }}>CURATED SELECTION</p>
           <h2 className="text-2xl font-bold tracking-wide" style={{ color: '#2a2420' }}>New Arrivals</h2>
           <div className="w-10 h-px mx-auto mt-4" style={{ background: primaryColor }} />
@@ -1347,7 +1352,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
       </section>
 
       {/* Brand Philosophy */}
-      <section className="py-16" style={{ background: '#f5f0e8' }}>
+      <section className={isMobile ? 'py-8' : 'py-16'} style={{ background: '#f5f0e8' }}>
         <div className="max-w-2xl mx-auto px-6 text-center">
           <p className="text-[10px] tracking-[0.38em] mb-6" style={{ color: primaryColor, fontFamily: 'system-ui' }}>OUR PHILOSOPHY</p>
           <p className="text-lg font-medium leading-loose italic" style={{ color: '#4a3d32', lineHeight: '1.9' }}>
@@ -1358,10 +1363,10 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
       </section>
 
       {/* Features */}
-      <section className="max-w-6xl mx-auto px-6 py-14">
+      <section className={`max-w-6xl mx-auto px-6 ${isMobile ? 'py-8' : 'py-14'}`}>
         <div className={`grid ${isMobile ? 'grid-cols-1 divide-y' : 'grid-cols-3 divide-x'}`} style={{ borderColor: '#e8e3db' }}>
           {features.map((f, i) => (
-            <div key={i} className="text-center px-8 py-8">
+            <div key={i} className={`text-center ${isMobile ? 'px-4 py-5' : 'px-8 py-8'}`}>
               <div className="text-3xl mb-4">{f.icon}</div>
               <h3 className="text-xs font-bold tracking-[0.2em] mb-2" style={{ color: '#2a2420', fontFamily: 'system-ui' }}>{f.title.toUpperCase()}</h3>
               <p className="text-xs leading-relaxed" style={{ color: '#8a7a6a', fontFamily: 'system-ui' }}>{f.description}</p>
@@ -1371,9 +1376,9 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
       </section>
 
       {/* Testimonials */}
-      <section className="py-14" style={{ background: '#f5f0e8' }}>
+      <section className={isMobile ? 'py-8' : 'py-14'} style={{ background: '#f5f0e8' }}>
         <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-10">
+          <div className={`text-center ${isMobile ? 'mb-7' : 'mb-10'}`}>
             <p className="text-[10px] tracking-[0.38em] mb-3" style={{ color: primaryColor, fontFamily: 'system-ui' }}>CLIENT VOICES</p>
             <h2 className="text-xl font-bold tracking-wide" style={{ color: '#2a2420' }}>Testimonials</h2>
           </div>
@@ -1393,9 +1398,9 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
       </section>
 
-      {stats && <StatsRow stats={stats} primaryColor={primaryColor} />}
+      {stats && <StatsRow stats={stats} primaryColor={primaryColor} device={device} />}
       {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} elegant={true} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} elegant={true} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} elegant={true} device={device} />}
 
       {/* Footer */}
       <footer style={{ background: '#2a2420', borderTop: `3px solid ${primaryColor}` }} className="py-12">
@@ -1526,10 +1531,10 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
         </section>
       )}
 
-      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} />}
+      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} device={device} />}
 
       {/* Products */}
-      <section className="max-w-6xl mx-auto px-5 py-14" style={{ borderTop: '1px solid #f0f0f0' }}>
+      <section className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`} style={{ borderTop: '1px solid #f0f0f0' }}>
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Featured Products</h2>
@@ -1575,7 +1580,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
       </section>
 
       {/* Features */}
-      <section className="py-14" style={{ background: `linear-gradient(135deg, ${alpha(primaryColor, 0.04)}, ${alpha(accentColor, 0.06)})` }}>
+      <section className={isMobile ? 'py-8' : 'py-14'} style={{ background: `linear-gradient(135deg, ${alpha(primaryColor, 0.04)}, ${alpha(accentColor, 0.06)})` }}>
         <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-5'}`}>
           {features.map((f, i) => (
             <div key={i} className="bg-white/75 backdrop-blur rounded-3xl p-7 shadow-sm hover:shadow-lg transition-shadow">
@@ -1590,7 +1595,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
       </section>
 
       {/* Testimonials */}
-      <section className="max-w-6xl mx-auto px-5 py-14">
+      <section className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
         <h2 className="text-2xl font-bold text-gray-900 text-center mb-9">Loved by Customers</h2>
         <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
           {testimonials.map((t, i) => (
@@ -1611,9 +1616,9 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
         </div>
       </section>
 
-      {stats && <StatsRow stats={stats} primaryColor={primaryColor} />}
+      {stats && <StatsRow stats={stats} primaryColor={primaryColor} device={device} />}
       {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} device={device} />}
 
       {/* Footer */}
       <footer className="border-t border-gray-100 bg-gray-50 py-10">
@@ -1729,10 +1734,10 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
           ))}
         </div>
       </section>
-      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} />}
+      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} device={device} />}
 
       {/* Products */}
-      <section className="max-w-6xl mx-auto px-5 py-12">
+      <section className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-12'}`}>
         <div className="flex items-end justify-between mb-7">
           <div>
             <h2 className="text-2xl font-black text-gray-900">{collections[0]?.emoji} Our Picks</h2>
@@ -1778,7 +1783,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
       </section>
 
       {/* Features */}
-      <section className="py-12" style={{ background: alpha(primaryColor, 0.04) }}>
+      <section className={isMobile ? 'py-8' : 'py-12'} style={{ background: alpha(primaryColor, 0.04) }}>
         <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-5'}`}>
           {features.map((f, i) => (
             <div key={i} className="rounded-3xl p-7 text-center hover:scale-102 transition-transform"
@@ -1792,7 +1797,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
       </section>
 
       {/* Testimonials */}
-      <section className="max-w-6xl mx-auto px-5 py-12">
+      <section className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-12'}`}>
         <h2 className="text-2xl font-black text-gray-900 text-center mb-8">Happy Customers 🤩</h2>
         <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
           {testimonials.map((t, i) => (
@@ -1813,9 +1818,9 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
       </section>
 
-      {stats && <StatsRow stats={stats} primaryColor={primaryColor} />}
+      {stats && <StatsRow stats={stats} primaryColor={primaryColor} device={device} />}
       {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} device={device} />}
 
       {/* Footer with wave top */}
       <footer style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})` }}>
