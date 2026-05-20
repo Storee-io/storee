@@ -214,20 +214,17 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
       {/* Upgrade CTA */}
       {!isCollapsed && (
-        <div className="px-3 py-4 border-t border-slate-100 flex-shrink-0">
-          <div className="bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl p-4 text-white">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-sm font-bold">Upgrade Plan</span>
+        <div className="px-3 py-3 border-t border-slate-100 flex-shrink-0">
+          <button
+            onClick={() => openUpgradeModal('Starter')}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl text-white hover:opacity-90 transition-opacity"
+          >
+            <TrendingUp className="w-4 h-4 flex-shrink-0" />
+            <div className="text-left min-w-0">
+              <p className="text-xs font-bold leading-none">Upgrade Plan</p>
+              <p className="text-[10px] text-emerald-100 mt-0.5 truncate">Unlock all features →</p>
             </div>
-            <p className="text-xs text-emerald-100 mb-3">Unlock unlimited stores, custom domains & priority support</p>
-            <button
-              onClick={() => openUpgradeModal('Starter')}
-              className="w-full py-2 bg-white text-emerald-700 text-xs font-bold rounded-xl hover:bg-emerald-50 transition-colors"
-            >
-              Upgrade Now →
-            </button>
-          </div>
+          </button>
         </div>
       )}
     </div>
