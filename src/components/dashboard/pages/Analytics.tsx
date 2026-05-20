@@ -183,7 +183,7 @@ export default function Analytics() {
               <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="left" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: 12 }} formatter={(v: unknown, name?: string | number) => [String(name) === 'revenue' ? `${sym}${Number(v).toLocaleString()}` : v, String(name) === 'revenue' ? 'Revenue' : 'Orders']} />
+              <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: 12 }} formatter={(v: number | string, name?: string | number) => [String(name) === 'revenue' ? `${sym}${Number(v).toLocaleString()}` : v, String(name) === 'revenue' ? 'Revenue' : 'Orders'] as [string | number, string]} />
               <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
               <Area yAxisId="left" type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2.5} fill="url(#gradRev)" name="revenue" />
               <Area yAxisId="right" type="monotone" dataKey="orders" stroke="#0ea5e9" strokeWidth={2.5} fill="url(#gradOrd)" name="orders" />
