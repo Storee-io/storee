@@ -190,7 +190,7 @@ export default function HeroSection() {
       : {};
 
     const newStore: Store = {
-      id: `store-${Date.now()}`,
+      id: `${storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${Math.random().toString(36).slice(2, 7)}`,
       name: storeName,
       domain: `${storeName.toLowerCase().replace(/\s+/g, '-')}.storee.io`,
       status: 'Draft',
