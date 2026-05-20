@@ -274,7 +274,8 @@ export default function Analytics() {
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
             <XAxis dataKey="hour" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={h => `${h}:00`} />
             <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: 12 }} formatter={(v: unknown) => [v, 'Orders']} labelFormatter={l => `${l}:00`} />
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: 12 }} formatter={((v: any) => [v, 'Orders']) as any} labelFormatter={(l: any) => `${l}:00`} />
             <Bar dataKey="orders" fill="#10b981" radius={[6, 6, 0, 0]} name="Orders" />
           </BarChart>
         </ResponsiveContainer>
