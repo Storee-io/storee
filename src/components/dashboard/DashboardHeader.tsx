@@ -30,11 +30,21 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const notifications = [
-    { id: 1, title: 'New order received', desc: '#ORD-1042 — $299', time: '2 min ago', unread: true },
-    { id: 2, title: 'Product low in stock', desc: 'Oak Dining Table — 8 left', time: '1 hr ago', unread: true },
-    { id: 3, title: 'Payment confirmed', desc: '#ORD-1039 — $129', time: '3 hrs ago', unread: false },
-  ];
+  const [notifications, setNotifications] = useState([
+    { id: 1, title: 'New order received', desc: '#ORD-1042 — $299', time: '2 min ago', unread: true, link: '/dashboard/orders' },
+    { id: 2, title: 'Product low in stock', desc: 'Oak Dining Table — 8 left', time: '1 hr ago', unread: true, link: '/dashboard/products' },
+    { id: 3, title: 'Payment confirmed', desc: '#ORD-1039 — $129', time: '3 hrs ago', unread: false, link: '/dashboard/orders' },
+  ]);
+
+  const unreadCount = notifications.filter(n => n.unread).length;
+
+  const markAsRead = (id: number) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
+  };
+
+  const markAllRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+  };
 
   return (
     <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
@@ -74,25 +84,47 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         <DropdownMenu>
           <DropdownMenuTrigger className="relative p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors">
             <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white leading-none">
+                {unreadCount}
+              </span>
+            )}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80 p-0">
             <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
               <span className="font-semibold text-slate-900 text-sm">Notifications</span>
-              <span className="text-xs text-slate-500">2 unread</span>
+              {unreadCount > 0 ? (
+                <button
+                  onClick={markAllRead}
+                  className="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+                >
+                  Mark all as read
+                </button>
+              ) : (
+                <span className="text-xs text-slate-400">All caught up</span>
+              )}
             </div>
             {notifications.map(n => (
-              <div key={n.id} className={`flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer ${n.unread ? 'bg-blue-50/50' : ''}`}>
+              <div
+                key={n.id}
+                onClick={() => { markAsRead(n.id); router.push(n.link); }}
+                className={`flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer ${n.unread ? 'bg-blue-50/50' : ''}`}
+              >
                 <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${n.unread ? 'bg-blue-500' : 'bg-transparent'}`} />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-900">{n.title}</p>
+                  <p className={`text-sm text-slate-900 ${n.unread ? 'font-semibold' : 'font-medium'}`}>{n.title}</p>
                   <p className="text-xs text-slate-500">{n.desc}</p>
                   <p className="text-xs text-slate-400 mt-0.5">{n.time}</p>
                 </div>
               </div>
             ))}
             <div className="px-4 py-2.5 border-t border-slate-100 text-center">
-              <button className="text-xs font-medium text-emerald-600 hover:text-emerald-700">View all notifications</button>
+              <button
+                onClick={() => router.push('/dashboard/orders')}
+                className="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+              >
+                View all notifications
+              </button>
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
