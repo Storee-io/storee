@@ -1,12 +1,14 @@
 ﻿'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import {
   Sparkles, ArrowRight, Store as StoreIcon, Palette, Globe, X, Check,
-  CheckCircle2, Loader2, ImageIcon, Package
+  CheckCircle2, Loader2, ImageIcon, Package, SlidersHorizontal,
 } from 'lucide-react';
+import type { AdvancedOptions, ThemeColors } from '../../lib/claudeApiClient';
 import { businessCategories, templates } from '../../data/templates';
 import type { Template } from '../../data/templates';
 import type { Store } from '../../context/StoreContext';
@@ -55,6 +57,68 @@ const gradientPresets: [string, string][] = [
   ['#ec4899', '#06b6d4'],
 ];
 
+const emptyThemeColors: ThemeColors = {
+  primary: '', secondary: '', accent: '', background: '', surface: '',
+  textPrimary: '', textSecondary: '', border: '', success: '', danger: '',
+};
+
+const defaultAdvanced: AdvancedOptions = {
+  themeColors: { ...emptyThemeColors },
+  mood: '',
+  audience: '',
+  productCount: '',
+  features: {
+    reviews: true, wishlist: true, newsletter: true, promoBar: true,
+    faq: true, testimonials: true, brandStory: true, trustBadges: true,
+  },
+};
+
+const themeColorEntries: { key: keyof ThemeColors; label: string }[] = [
+  { key: 'primary',       label: 'Primary' },
+  { key: 'secondary',     label: 'Secondary' },
+  { key: 'accent',        label: 'Accent' },
+  { key: 'background',    label: 'Background' },
+  { key: 'surface',       label: 'Surface' },
+  { key: 'textPrimary',   label: 'Text Primary' },
+  { key: 'textSecondary', label: 'Text Secondary' },
+  { key: 'border',        label: 'Border' },
+  { key: 'success',       label: 'Success' },
+  { key: 'danger',        label: 'Danger' },
+];
+
+const moodOptions: { value: AdvancedOptions['mood']; label: string; emoji: string }[] = [
+  { value: 'luxury', label: 'Luxury', emoji: '💎' },
+  { value: 'casual', label: 'Casual', emoji: '😊' },
+  { value: 'energetic', label: 'Energetic', emoji: '⚡' },
+  { value: 'professional', label: 'Professional', emoji: '💼' },
+  { value: 'romantic', label: 'Romantic', emoji: '🌸' },
+];
+
+const productCountOptions: { value: AdvancedOptions['productCount']; label: string; sub: string }[] = [
+  { value: 'few', label: 'Few', sub: '~6 items' },
+  { value: 'medium', label: 'Standard', sub: '~12 items' },
+  { value: 'many', label: 'Many', sub: '~18 items' },
+];
+
+const featureList: { key: keyof AdvancedOptions['features']; label: string; emoji: string }[] = [
+  { key: 'reviews', label: 'Reviews', emoji: '⭐' },
+  { key: 'wishlist', label: 'Wishlist', emoji: '❤️' },
+  { key: 'newsletter', label: 'Newsletter', emoji: '📧' },
+  { key: 'promoBar', label: 'Promo Bar', emoji: '📢' },
+  { key: 'faq', label: 'FAQ', emoji: '❓' },
+  { key: 'testimonials', label: 'Testimonials', emoji: '💬' },
+  { key: 'brandStory', label: 'Brand Story', emoji: '📖' },
+  { key: 'trustBadges', label: 'Trust Badges', emoji: '🛡️' },
+];
+
+// Renders children into document.body so they escape any parent stacking context
+function PortalPopup({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  if (!mounted) return null;
+  return createPortal(children, document.body);
+}
+
 export default function HeroSection() {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -72,6 +136,14 @@ export default function HeroSection() {
   const [selectedCurr, setSelectedCurr] = useState<typeof currencies[0] | null>(null);
 
   const [isFocused, setIsFocused] = useState(false);
+  const [, forcePositionUpdate] = useState(0);
+  const [showAdvancedPanel, setShowAdvancedPanel] = useState(false);
+  const [advanced, setAdvanced] = useState<AdvancedOptions>({
+    ...defaultAdvanced,
+    themeColors: { ...emptyThemeColors },
+    features: { ...defaultAdvanced.features },
+  });
+  const [advancedApplied, setAdvancedApplied] = useState(false);
 
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -79,13 +151,16 @@ export default function HeroSection() {
   const colorBtnRef = useRef<HTMLButtonElement>(null);
   const langBtnRef = useRef<HTMLButtonElement>(null);
   const currBtnRef = useRef<HTMLButtonElement>(null);
+  const advancedBtnRef = useRef<HTMLButtonElement>(null);
 
-  // Compute smart popup position so it stays fully within the viewport
+  // Compute smart popup position so it stays fully within the viewport.
+  // topBarH: height of any fixed top bar to avoid (default 0 for most popups, 64 for advanced panel)
   const getSmartPos = (
     btnRef: React.RefObject<HTMLButtonElement | null>,
     popupW: number,
     popupH: number,
     gap = 12,
+    topBarH = 0,
   ): React.CSSProperties => {
     const btn = btnRef.current;
     if (!btn) return { bottom: '100%', left: 0, marginBottom: gap };
@@ -94,9 +169,9 @@ export default function HeroSection() {
     const vh = window.innerHeight;
 
     // Vertical: prefer above, fall back to below
-    const spaceAbove = r.top;
-    const spaceBelow = vh - r.bottom;
-    const showAbove = spaceAbove >= popupH + gap || spaceAbove >= spaceBelow;
+    const spaceAbove = r.top - gap - topBarH;
+    const spaceBelow = vh - r.bottom - gap;
+    const showAbove = spaceAbove >= popupH || spaceAbove >= spaceBelow;
 
     // Horizontal: default align to left edge of button, shift left if overflows
     let left = r.left;
@@ -106,12 +181,14 @@ export default function HeroSection() {
       position: 'fixed',
       left,
       width: popupW,
-      zIndex: 200,
+      zIndex: 9999,
     };
     if (showAbove) {
       style.bottom = vh - r.top + gap;
+      style.maxHeight = `${spaceAbove}px`;
     } else {
       style.top = r.bottom + gap;
+      style.maxHeight = `${spaceBelow}px`;
     }
     return style;
   };
@@ -120,6 +197,7 @@ export default function HeroSection() {
     setShowColorPicker(false);
     setShowLangDropdown(false);
     setShowCurrDropdown(false);
+    setShowAdvancedPanel(false);
   };
 
   // When a running category capsule is clicked:
@@ -136,11 +214,15 @@ export default function HeroSection() {
     if (!prompt.trim()) return;
     setIsGenerating(true);
 
-    // Run Claude API call and minimum loading timer in parallel
+    // Run Claude API call and minimum loading timer in parallel.
+    // The timer ensures all 5 steps are shown (last step triggers at 20s),
+    // then we wait an extra 600ms so the final ✓ is visible before navigating.
     const [aiResult] = await Promise.all([
-      generateStoreWithClaude(prompt, selectedCurr ?? undefined, selectedLang || undefined),
+      generateStoreWithClaude(prompt, selectedCurr ?? undefined, selectedLang || undefined, advancedApplied ? advanced : undefined),
       new Promise<void>(r => setTimeout(r, 21000)),
     ]);
+    // Brief pause so the final "Finalizing your store..." shows as ✓
+    await new Promise<void>(r => setTimeout(r, 600));
 
     let template: Template;
     let storeName: string;
@@ -149,7 +231,8 @@ export default function HeroSection() {
     if (aiResult) {
       template = aiResult.template;
       storeName = brandName || aiResult.storeName;
-      primaryColorFinal = colorPicked ? color1 : aiResult.primaryColor;
+      primaryColorFinal = (advancedApplied && advanced.themeColors.primary) ? advanced.themeColors.primary
+        : colorPicked ? color1 : aiResult.primaryColor;
     } else {
       // Fallback — no API key or call failed, use keyword matching
       const CATEGORY_KEYWORDS: Record<string, string[]> = {
@@ -176,7 +259,7 @@ export default function HeroSection() {
         ? templates.find(t => t.category.toLowerCase() === categoryMatch.label.toLowerCase()) ?? randomTemplate
         : randomTemplate;
       storeName = brandName || template.name;
-      primaryColorFinal = color1;
+      primaryColorFinal = (advancedApplied && advanced.themeColors.primary) ? advanced.themeColors.primary : color1;
     }
 
     // If user picked a gradient, apply color2 as accentColor override on the design
@@ -207,9 +290,58 @@ export default function HeroSection() {
 
     // Save to localStorage with a unique key so /preview/[id] can load it
     localStorage.setItem(`storee_store_${newStore.id}`, JSON.stringify(newStore));
-    setIsGenerating(false);
+    // Navigate immediately — keep overlay visible during transition so home page
+    // never flashes. The overlay disappears naturally when HeroSection unmounts.
     router.push(`/preview/${newStore.id}?from=/`);
   };
+
+  // Color Style → Theme Colors: sync primary/secondary when color changes
+  useEffect(() => {
+    if (!colorPicked) return;
+    setAdvanced(prev => {
+      const next = {
+        ...prev,
+        themeColors: {
+          ...prev.themeColors,
+          primary: color1,
+          ...(colorMode === 'gradient' ? { secondary: color2 } : {}),
+        },
+      };
+      // Skip if nothing changed to avoid loop
+      if (next.themeColors.primary === prev.themeColors.primary &&
+          next.themeColors.secondary === prev.themeColors.secondary) return prev;
+      return next;
+    });
+  }, [colorPicked, color1, color2, colorMode]);
+
+  // Theme Colors → Color Style: sync primary/secondary back to color1/color2
+  useEffect(() => {
+    const p = advanced.themeColors.primary;
+    const s = advanced.themeColors.secondary;
+    if (p && /^#[0-9a-fA-F]{6}$/.test(p) && p !== color1) {
+      setColor1(p);
+      setColorPicked(true);
+    }
+    if (s && /^#[0-9a-fA-F]{6}$/.test(s) && s !== color2) {
+      setColor2(s);
+      setColorPicked(true);
+      setColorMode('gradient');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [advanced.themeColors.primary, advanced.themeColors.secondary]);
+
+  // Re-compute popup positions on scroll/resize so popups follow the button
+  useEffect(() => {
+    const anyOpen = showColorPicker || showLangDropdown || showCurrDropdown || showAdvancedPanel;
+    if (!anyOpen) return;
+    const handler = () => forcePositionUpdate(n => n + 1);
+    window.addEventListener('scroll', handler, { passive: true });
+    window.addEventListener('resize', handler, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handler);
+      window.removeEventListener('resize', handler);
+    };
+  }, [showColorPicker, showLangDropdown, showCurrDropdown, showAdvancedPanel]);
 
   // Step progression timers
   useEffect(() => {
@@ -424,6 +556,7 @@ export default function HeroSection() {
                   )}
                 </button>
 
+                <PortalPopup>
                 <AnimatePresence>
                   {showColorPicker && (
                     <motion.div
@@ -459,7 +592,7 @@ export default function HeroSection() {
                             {singlePresets.map(c => (
                               <button
                                 key={c}
-                                onClick={() => setColor1(c)}
+                                onClick={() => { setColor1(c); setColorPicked(true); }}
                                 className={`w-8 h-8 rounded-full transition-all hover:scale-110 active:scale-95 ${
                                   color1 === c ? 'ring-2 ring-offset-2 ring-slate-500 scale-110' : ''
                                 }`}
@@ -470,16 +603,41 @@ export default function HeroSection() {
                           </div>
                           {/* Custom picker */}
                           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2.5">Custom</p>
-                          <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2">
+                          <div className="flex items-center gap-1.5 bg-slate-50 rounded-xl px-2 py-1.5">
+                            <label className="relative flex-shrink-0 cursor-pointer group">
+                              <div
+                                className="w-7 h-7 rounded-lg border border-slate-200 transition-all group-hover:scale-105"
+                                style={{ background: colorPicked ? color1 : 'repeating-linear-gradient(45deg,#e2e8f0,#e2e8f0 3px,#f8fafc 3px,#f8fafc 6px)' }}
+                              />
+                              <input
+                                type="color"
+                                value={color1}
+                                onChange={e => { setColor1(e.target.value); setColorPicked(true); }}
+                                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                              />
+                            </label>
+                            <div className="w-px h-4 bg-slate-200 flex-shrink-0" />
                             <input
-                              type="color"
-                              value={color1}
-                              onChange={e => setColor1(e.target.value)}
-                              className="w-8 h-8 rounded-lg cursor-pointer border border-slate-200 p-0.5 flex-shrink-0"
+                              type="text"
+                              value={colorPicked ? color1 : ''}
+                              onChange={e => {
+                                const v = e.target.value;
+                                const hex = v.startsWith('#') ? v : '#' + v;
+                                setColor1(hex);
+                                if (/^#[0-9a-fA-F]{3,6}$/.test(hex)) setColorPicked(true);
+                              }}
+                              placeholder="#"
+                              maxLength={7}
+                              className="flex-1 bg-transparent text-sm font-mono text-slate-700 placeholder:text-slate-300 outline-none"
                             />
-                            <div className="w-px h-5 bg-slate-200 flex-shrink-0" />
-                            <span className="text-xs font-mono text-slate-600 flex-1">{color1}</span>
-                            <div className="w-5 h-5 rounded-md flex-shrink-0" style={{ background: color1 }} />
+                            {colorPicked && (
+                              <button
+                                onClick={() => setColorPicked(false)}
+                                className="flex-shrink-0 text-slate-300 hover:text-slate-500 transition-colors"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
                           </div>
                         </>
                       ) : (
@@ -490,7 +648,7 @@ export default function HeroSection() {
                             {gradientPresets.map(([c1, c2], i) => (
                               <button
                                 key={i}
-                                onClick={() => { setColor1(c1); setColor2(c2); }}
+                                onClick={() => { setColor1(c1); setColor2(c2); setColorPicked(true); }}
                                 className={`w-8 h-8 rounded-full transition-all hover:scale-110 active:scale-95 ${
                                   color1 === c1 && color2 === c2
                                     ? 'ring-2 ring-offset-2 ring-slate-500 scale-110'
@@ -500,21 +658,61 @@ export default function HeroSection() {
                               />
                             ))}
                           </div>
-                          {/* Custom pickers — no labels, just swatch + hex */}
+                          {/* Custom pickers */}
                           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2.5">Custom</p>
-                          <div className="flex gap-2">
-                            <div className="flex items-center gap-2 flex-1 bg-slate-50 rounded-xl px-3 py-2">
-                              <input type="color" value={color1} onChange={e => setColor1(e.target.value)} className="w-7 h-7 rounded-lg cursor-pointer border border-slate-200 p-0.5 flex-shrink-0" />
-                              <span className="text-xs font-mono text-slate-500 truncate">{color1}</span>
+                          <div className="grid grid-cols-2 gap-2">
+                            {/* Color 1 */}
+                            <div className="flex items-center gap-1.5 bg-slate-50 rounded-xl px-2 py-1.5 min-w-0">
+                              <label className="relative flex-shrink-0 cursor-pointer group">
+                                <div
+                                  className="w-7 h-7 rounded-lg border border-slate-200 transition-all group-hover:scale-105"
+                                  style={{ background: colorPicked ? color1 : 'repeating-linear-gradient(45deg,#e2e8f0,#e2e8f0 3px,#f8fafc 3px,#f8fafc 6px)' }}
+                                />
+                                <input type="color" value={color1} onChange={e => { setColor1(e.target.value); setColorPicked(true); }} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" />
+                              </label>
+                              <div className="w-px h-4 bg-slate-200 flex-shrink-0" />
+                              <input
+                                type="text"
+                                value={colorPicked ? color1 : ''}
+                                onChange={e => {
+                                  const v = e.target.value;
+                                  const hex = v.startsWith('#') ? v : '#' + v;
+                                  setColor1(hex);
+                                  if (/^#[0-9a-fA-F]{3,6}$/.test(hex)) setColorPicked(true);
+                                }}
+                                placeholder="#"
+                                maxLength={7}
+                                className="w-0 flex-1 bg-transparent text-sm font-mono text-slate-700 placeholder:text-slate-300 outline-none"
+                              />
                             </div>
-                            <div className="flex items-center gap-2 flex-1 bg-slate-50 rounded-xl px-3 py-2">
-                              <input type="color" value={color2} onChange={e => setColor2(e.target.value)} className="w-7 h-7 rounded-lg cursor-pointer border border-slate-200 p-0.5 flex-shrink-0" />
-                              <span className="text-xs font-mono text-slate-500 truncate">{color2}</span>
+                            {/* Color 2 */}
+                            <div className="flex items-center gap-1.5 bg-slate-50 rounded-xl px-2 py-1.5 min-w-0">
+                              <label className="relative flex-shrink-0 cursor-pointer group">
+                                <div
+                                  className="w-7 h-7 rounded-lg border border-slate-200 transition-all group-hover:scale-105"
+                                  style={{ background: colorPicked ? color2 : 'repeating-linear-gradient(45deg,#e2e8f0,#e2e8f0 3px,#f8fafc 3px,#f8fafc 6px)' }}
+                                />
+                                <input type="color" value={color2} onChange={e => { setColor2(e.target.value); setColorPicked(true); }} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" />
+                              </label>
+                              <div className="w-px h-4 bg-slate-200 flex-shrink-0" />
+                              <input
+                                type="text"
+                                value={colorPicked ? color2 : ''}
+                                onChange={e => {
+                                  const v = e.target.value;
+                                  const hex = v.startsWith('#') ? v : '#' + v;
+                                  setColor2(hex);
+                                  if (/^#[0-9a-fA-F]{3,6}$/.test(hex)) setColorPicked(true);
+                                }}
+                                placeholder="#"
+                                maxLength={7}
+                                className="w-0 flex-1 bg-transparent text-sm font-mono text-slate-700 placeholder:text-slate-300 outline-none"
+                              />
                             </div>
                           </div>
-                          {/* Preview bar */}
+                          {/* Preview bar — only when a color is picked */}
                           <div
-                            className="h-7 rounded-xl mt-3"
+                            className={`h-7 rounded-xl mt-3 transition-opacity duration-200 ${colorPicked ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                             style={{ background: `linear-gradient(90deg, ${color1}, ${color2})` }}
                           />
                         </>
@@ -539,6 +737,7 @@ export default function HeroSection() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+                </PortalPopup>
               </div>
 
               {/* ── Site Language ───────────────────────────────────────── */}
@@ -558,6 +757,7 @@ export default function HeroSection() {
                   )}
                 </button>
 
+                <PortalPopup>
                 <AnimatePresence>
                   {showLangDropdown && (
                     <motion.div
@@ -581,13 +781,14 @@ export default function HeroSection() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+                </PortalPopup>
               </div>
 
               {/* ── Currency ────────────────────────────────────────────── */}
               <div className="relative">
                 <button
                   ref={currBtnRef}
-                  onClick={() => { setShowCurrDropdown(!showCurrDropdown); setShowColorPicker(false); setShowLangDropdown(false); }}
+                  onClick={() => { setShowCurrDropdown(!showCurrDropdown); setShowColorPicker(false); setShowLangDropdown(false); setShowAdvancedPanel(false); }}
                   className={`flex items-center gap-1.5 h-8 px-3.5 rounded-full text-sm font-medium transition-all duration-200 border ${
                     showCurrDropdown
                       ? 'bg-slate-50 border-slate-300 text-slate-700'
@@ -603,6 +804,7 @@ export default function HeroSection() {
                   )}
                 </button>
 
+                <PortalPopup>
                 <AnimatePresence>
                   {showCurrDropdown && (
                     <motion.div
@@ -629,6 +831,243 @@ export default function HeroSection() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+                </PortalPopup>
+              </div>
+
+              {/* ── Advanced Options ─────────────────────────────────────── */}
+              <div className="relative ml-auto">
+                <button
+                  ref={advancedBtnRef}
+                  onClick={() => { setShowAdvancedPanel(!showAdvancedPanel); setShowColorPicker(false); setShowLangDropdown(false); setShowCurrDropdown(false); }}
+                  className={`relative flex items-center justify-center h-8 w-8 rounded-full text-sm font-medium transition-all duration-200 border ${
+                    showAdvancedPanel
+                      ? 'bg-slate-50 border-slate-300 text-slate-700'
+                      : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-600'
+                  }`}
+                  title="Advanced Options"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5 flex-shrink-0" />
+                  {advancedApplied && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full border border-white" />
+                  )}
+                </button>
+
+                <PortalPopup>
+                <AnimatePresence>
+                  {showAdvancedPanel && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.97 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.97 }}
+                      transition={{ duration: 0.15 }}
+                      className="w-96 bg-white rounded-2xl border border-slate-200/80 flex flex-col"
+                      style={{ ...getSmartPos(advancedBtnRef, 384, 620, 12, 64), boxShadow: '0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)', overflow: 'hidden' }}
+                    >
+                      {/* Header */}
+                      <div className="flex-shrink-0 bg-white border-b border-slate-100 px-4 py-3 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-bold text-slate-800">Advanced Options</p>
+                          <p className="text-xs text-slate-400 mt-0.5">Guide the AI with more specific instructions</p>
+                        </div>
+                        <button
+                          onClick={() => setShowAdvancedPanel(false)}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="p-4 space-y-5 overflow-y-auto flex-1">
+
+                        {/* Theme Colors */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2.5">
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Theme Colors</p>
+                            <button
+                              onClick={() => setAdvanced(prev => ({ ...prev, themeColors: { ...emptyThemeColors } }))}
+                              className="text-[10px] font-semibold text-slate-400 hover:text-slate-600 transition-colors"
+                            >
+                              Clear all
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {themeColorEntries.map(({ key, label }) => {
+                              const val = advanced.themeColors[key];
+                              const isSet = val && /^#[0-9a-fA-F]{3,6}$/.test(val);
+                              return (
+                                <div key={key} className="flex flex-col gap-1">
+                                  {/* Label row */}
+                                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-0.5">{label}</p>
+                                  {/* Color card — matches the Custom pickers in color picker */}
+                                  <div className="flex items-center gap-1.5 bg-slate-50 rounded-xl px-2 py-1.5 group">
+                                    {/* Swatch — opens native color picker */}
+                                    <label className="relative flex-shrink-0 cursor-pointer">
+                                      <div
+                                        className="w-7 h-7 rounded-lg border border-slate-200 flex-shrink-0 transition-all group-hover:scale-105"
+                                        style={{
+                                          background: isSet ? val : 'repeating-linear-gradient(45deg,#e2e8f0,#e2e8f0 3px,#f8fafc 3px,#f8fafc 6px)',
+                                        }}
+                                      />
+                                      <input
+                                        type="color"
+                                        value={isSet ? val : '#ffffff'}
+                                        onChange={e => setAdvanced(prev => ({ ...prev, themeColors: { ...prev.themeColors, [key]: e.target.value } }))}
+                                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                                      />
+                                    </label>
+                                    {/* Divider */}
+                                    <div className="w-px h-4 bg-slate-200 flex-shrink-0" />
+                                    {/* Hex input */}
+                                    <input
+                                      type="text"
+                                      value={val}
+                                      onChange={e => {
+                                        let raw = e.target.value;
+                                        if (raw && !raw.startsWith('#')) raw = '#' + raw;
+                                        setAdvanced(prev => ({ ...prev, themeColors: { ...prev.themeColors, [key]: raw } }));
+                                      }}
+                                      placeholder="#"
+                                      maxLength={7}
+                                      className="flex-1 min-w-0 bg-transparent text-sm font-mono text-slate-700 placeholder:text-slate-300 outline-none"
+                                    />
+                                    {/* Clear */}
+                                    {val && (
+                                      <button
+                                        onClick={() => setAdvanced(prev => ({ ...prev, themeColors: { ...prev.themeColors, [key]: '' } }))}
+                                        className="flex-shrink-0 text-slate-300 hover:text-slate-500 transition-colors"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Store Mood */}
+                        <div>
+                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2.5">Store Mood</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {moodOptions.map(opt => (
+                              <button
+                                key={opt.value}
+                                onClick={() => setAdvanced(prev => ({ ...prev, mood: prev.mood === opt.value ? '' : opt.value }))}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                                  advanced.mood === opt.value
+                                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-white'
+                                }`}
+                              >
+                                <span>{opt.emoji}</span>
+                                {opt.label}
+                                {advanced.mood === opt.value && <Check className="w-3 h-3" />}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Target Audience */}
+                        <div>
+                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2.5">Target Audience</p>
+                          <input
+                            type="text"
+                            value={advanced.audience}
+                            onChange={e => setAdvanced(prev => ({ ...prev, audience: e.target.value }))}
+                            placeholder="e.g. young women 18–28, tech enthusiasts, parents..."
+                            className="w-full h-9 px-3.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:border-emerald-400 focus:bg-white transition-colors"
+                          />
+                        </div>
+
+                        {/* Product Count */}
+                        <div>
+                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2.5">Number of Products</p>
+                          <div className="flex gap-2">
+                            {productCountOptions.map(opt => (
+                              <button
+                                key={opt.value}
+                                onClick={() => setAdvanced(prev => ({ ...prev, productCount: prev.productCount === opt.value ? '' : opt.value }))}
+                                className={`flex-1 flex flex-col items-center py-2.5 px-2 rounded-xl border text-center transition-all ${
+                                  advanced.productCount === opt.value
+                                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-white'
+                                }`}
+                              >
+                                <span className="text-xs font-bold">{opt.label}</span>
+                                <span className="text-[10px] text-slate-400 mt-0.5">{opt.sub}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Features */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2.5">
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Optional Features</p>
+                            <button
+                              onClick={() => {
+                                const allOn = featureList.every(f => advanced.features[f.key]);
+                                setAdvanced(prev => ({
+                                  ...prev,
+                                  features: Object.fromEntries(featureList.map(f => [f.key, !allOn])) as AdvancedOptions['features'],
+                                }));
+                              }}
+                              className="text-[10px] font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                            >
+                              {featureList.every(f => advanced.features[f.key]) ? 'Deselect all' : 'Select all'}
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {featureList.map(f => (
+                              <button
+                                key={f.key}
+                                onClick={() => setAdvanced(prev => ({
+                                  ...prev,
+                                  features: { ...prev.features, [f.key]: !prev.features[f.key] },
+                                }))}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium transition-all text-left ${
+                                  advanced.features[f.key]
+                                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                    : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300'
+                                }`}
+                              >
+                                <span className="text-sm leading-none">{f.emoji}</span>
+                                <span className="flex-1">{f.label}</span>
+                                <span className={`w-3.5 h-3.5 rounded-sm border-2 flex items-center justify-center flex-shrink-0 ${
+                                  advanced.features[f.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'
+                                }`}>
+                                  {advanced.features[f.key] && <Check className="w-2.5 h-2.5 text-white" />}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex-shrink-0 bg-white border-t border-slate-100 px-4 py-3 flex gap-2">
+                        <button
+                          onClick={() => {
+                            setAdvanced({ ...defaultAdvanced, themeColors: { ...emptyThemeColors }, features: { ...defaultAdvanced.features } });
+                            setAdvancedApplied(false);
+                            setShowAdvancedPanel(false);
+                          }}
+                          className="flex-1 py-2 text-xs font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                        >
+                          Reset
+                        </button>
+                        <button
+                          onClick={() => { setAdvancedApplied(true); setShowAdvancedPanel(false); }}
+                          className="flex-1 py-2 text-xs font-semibold gradient-bg text-white hover:opacity-90 rounded-xl transition-opacity"
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                </PortalPopup>
               </div>
             </div>
 

@@ -9,6 +9,8 @@ interface PublishModalProps {
   store: Store;
   onPublish: (subdomain: string) => void;
   onClose: () => void;
+  /** When provided the URL step is skipped and this domain is used as-is */
+  fixedSubdomain?: string;
 }
 
 type Step = 'form' | 'processing' | 'success';
@@ -33,15 +35,45 @@ function isValidSubdomain(value: string): boolean {
   return /^[a-z0-9]([a-z0-9-]{1,48}[a-z0-9])?$/.test(value);
 }
 
-export default function PublishModal({ store, onPublish, onClose }: PublishModalProps) {
-  const defaultSub = slugify(store.domain.replace(`.${BASE_DOMAIN}`, '') || store.name);
+export default function PublishModal({ store, onPublish, onClose, fixedSubdomain }: PublishModalProps) {
+  const defaultSub = fixedSubdomain ?? slugify(store.domain.replace(`.${BASE_DOMAIN}`, '') || store.name);
   const [subdomain, setSubdomain] = useState(defaultSub);
-  const [step, setStep] = useState<Step>('form');
+  const [step, setStep] = useState<Step>(fixedSubdomain ? 'processing' : 'form');
   const [processStep, setProcessStep] = useState(0);
-  const [publishedUrl, setPublishedUrl] = useState('');
+  const [publishedUrl, setPublishedUrl] = useState(fixedSubdomain ? `${fixedSubdomain}.${BASE_DOMAIN}` : '');
   const [formError, setFormError] = useState('');
 
   const apiResultRef = useRef<{ success: boolean; error?: string } | null>(null);
+
+  // When fixedSubdomain is provided we skip the form and fire the API immediately on mount
+  useEffect(() => {
+    if (!fixedSubdomain) return;
+    apiResultRef.current = null;
+    fetch('/api/publish-store', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subdomain: fixedSubdomain,
+        name: store.name,
+        primaryColor: store.primaryColor,
+        category: store.category,
+        templateId: store.template?.id,
+        design: store.design,
+        currency: store.currency,
+        language: store.language,
+      }),
+    })
+      .then(async res => {
+        if (res.ok) {
+          apiResultRef.current = { success: true };
+        } else {
+          const err = await res.json();
+          apiResultRef.current = { success: false, error: err.error ?? 'Failed to publish' };
+        }
+      })
+      .catch(() => { apiResultRef.current = { success: false, error: 'Network error. Please try again.' }; });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const validationError = subdomain.length > 0 && !isValidSubdomain(subdomain)
     ? 'Only lowercase letters, numbers, and hyphens. Must start and end with a letter or number.'
@@ -229,7 +261,7 @@ export default function PublishModal({ store, onPublish, onClose }: PublishModal
               <div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-5">
                 <Loader2 className="w-7 h-7 text-white animate-spin" />
               </div>
-              <h2 className="text-lg font-bold text-slate-900 mb-1">Publishing your store</h2>
+              <h2 className="text-lg font-bold text-slate-900 mb-1">{fixedSubdomain ? 'Republishing your store' : 'Publishing your store'}</h2>
               <p className="text-xs text-slate-400 font-mono mb-8">{subdomain}.{BASE_DOMAIN}</p>
 
               <div className="space-y-3 text-left">

@@ -83,7 +83,7 @@ export default function Navbar() {
                   Dashboard
                 </Link>
                 <Link
-                  href="/dashboard"
+                  href="/stores"
                   className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors"
                 >
                   <Store className="w-4 h-4" />
@@ -147,6 +147,7 @@ export default function Navbar() {
               {user ? (
                 <>
                   <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg">Dashboard</Link>
+                  <Link href="/stores" onClick={() => setMobileOpen(false)} className="block px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg">My Stores</Link>
                   <button onClick={() => { logout(); router.push('/'); setMobileOpen(false); }} className="block w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg">Logout</button>
                 </>
               ) : (

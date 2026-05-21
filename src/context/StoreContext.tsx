@@ -1,28 +1,16 @@
-﻿'use client';
+'use client';
 
-import { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import { createContext, useContext, useState, useMemo, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import type { Template } from '../data/templates';
 import { templates } from '../data/templates';
 import { generateStoreData } from '../data/storeDataGenerator';
 import type { StoreData } from '../data/storeDataGenerator';
 import type { StoreDesign } from '../lib/claudeApi';
+import { supabase, fetchUserStores, upsertStore } from '../lib/supabase';
 
 export type { StoreData };
 export type { StoreDesign };
-
-// -- Helper: reads (but does NOT delete) the pending store from sessionStorage --
-// The item is deleted in a useEffect after all useState initializers have run.
-// This is safe to call multiple times -- each call returns the same value.
-function readPendingStore(): Store | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = sessionStorage.getItem('storee_pending_store');
-    return raw ? (JSON.parse(raw) as Store) : null;
-  } catch {
-    return null;
-  }
-}
 
 export interface StoreCurrency {
   code: string;
@@ -102,6 +90,7 @@ export interface Store {
   language?: string;
   shippingSettings?: ShippingSettings;
   paymentSettings?: PaymentSettings;
+  publishedDomain?: string; // set once on first publish; used to lock URL on republish
 }
 
 export interface GenerationState {
@@ -114,18 +103,21 @@ interface StoreContextType {
   stores: Store[];
   activeStore: Store | null;
   setActiveStore: (store: Store) => void;
-  addStore: (store: Store) => void;
+  addStore: (store: Store) => Promise<void>;
   updateActiveStore: (patch: Partial<Store>) => void;
+  deleteStore: (storeId: string) => Promise<void>;
   generatedStore: Store | null;
   setGeneratedStore: (store: Store | null) => void;
   storeData: StoreData;
   generationState: GenerationState | null;
   setGenerationState: (state: GenerationState | null) => void;
+  isLoadingStores: boolean;
 }
 
 const StoreContext = createContext<StoreContextType | null>(null);
 
-const defaultStores: Store[] = [
+// Demo stores for unauthenticated users
+const DEMO_STORES: Store[] = [
   {
     id: 'store-1',
     name: 'Luxe Fashion',
@@ -153,28 +145,139 @@ const defaultStores: Store[] = [
 ];
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  // Safe SSR defaults — no browser storage access during render (avoids hydration mismatch).
-  const [stores, setStores] = useState<Store[]>(defaultStores);
-  const [activeStore, setActiveStore] = useState<Store>(defaultStores[0]);
+  const [stores, setStores] = useState<Store[]>(DEMO_STORES);
+  const [activeStore, setActiveStoreState] = useState<Store>(DEMO_STORES[0]);
   const [generatedStore, setGeneratedStore] = useState<Store | null>(null);
   const [generationState, setGenerationState] = useState<GenerationState | null>(null);
+  const [isLoadingStores, setIsLoadingStores] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // Clean up legacy sessionStorage key on mount (no longer used for store passing).
+  // Listen to Supabase auth — load stores when user signs in, clear when signs out
   useEffect(() => {
-    sessionStorage.removeItem('storee_pending_store');
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (session?.user) {
+          loadStores(session.user.id);
+        } else {
+          loadGuestStores();
+        }
+      })
+      .catch(() => {
+        // Supabase unreachable (network error / project paused) — treat as guest
+        loadGuestStores();
+      });
+
+    let subscription: { unsubscribe: () => void } | null = null;
+    try {
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+          loadStores(session.user.id);
+        } else {
+          setUserId(null);
+          loadGuestStores();
+        }
+      });
+      subscription = data.subscription;
+    } catch {
+      // Auth listener setup failed — already in guest mode from getSession catch
+    }
+
+    return () => subscription?.unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const addStore = (store: Store) => {
-    // Persist to localStorage so /preview/[id] can load it even after navigation.
-    try { localStorage.setItem(`storee_store_${store.id}`, JSON.stringify(store)); } catch { /* quota exceeded or SSR */ }
-    setStores(prev => prev.find(s => s.id === store.id) ? prev : [...prev, store]);
-    setActiveStore(store);
-  };
+  function loadGuestStores() {
+    try {
+      const guestStores: Store[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key?.startsWith('storee_store_')) continue;
+        try {
+          const s = JSON.parse(localStorage.getItem(key)!) as Store;
+          if (s?.id && s?.name) guestStores.push(s);
+        } catch { /* skip malformed */ }
+      }
+      if (guestStores.length > 0) {
+        // Sort newest first (createdAt desc)
+        guestStores.sort((a, b) =>
+          new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
+        );
+        setStores(guestStores);
+        setActiveStoreState(guestStores[0]);
+      } else {
+        setStores(DEMO_STORES);
+        setActiveStoreState(DEMO_STORES[0]);
+      }
+    } catch {
+      // localStorage not available (SSR edge case)
+      setStores(DEMO_STORES);
+      setActiveStoreState(DEMO_STORES[0]);
+    }
+  }
 
-  const updateActiveStore = (patch: Partial<Store>) => {
-    setActiveStore(prev => prev ? { ...prev, ...patch } : prev);
-    setStores(prev => prev.map(s => s.id === activeStore?.id ? { ...s, ...patch } : s));
-  };
+  async function loadStores(uid: string) {
+    setIsLoadingStores(true);
+    setUserId(uid);
+    try {
+      const userStores = await fetchUserStores(uid);
+      if (userStores.length > 0) {
+        setStores(userStores);
+        setActiveStoreState(userStores[0]);
+      } else {
+        setStores([]);
+        setActiveStoreState(DEMO_STORES[0]);
+      }
+    } catch {
+      // Supabase unavailable — fall back to guest stores
+      loadGuestStores();
+    }
+    setIsLoadingStores(false);
+  }
+
+  const setActiveStore = useCallback((store: Store) => {
+    setActiveStoreState(store);
+  }, []);
+
+  const addStore = useCallback(async (store: Store) => {
+    // Optimistic update
+    setStores(prev => prev.find(s => s.id === store.id) ? prev : [...prev, store]);
+    setActiveStoreState(store);
+    // Persist to Supabase if logged in
+    if (userId) {
+      await upsertStore(store, userId);
+    } else {
+      // Fallback: localStorage for unauthenticated preview
+      try { localStorage.setItem(`storee_store_${store.id}`, JSON.stringify(store)); } catch { /* quota */ }
+    }
+  }, [userId]);
+
+  const updateActiveStore = useCallback((patch: Partial<Store>) => {
+    setActiveStoreState(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...patch };
+      // Persist asynchronously
+      if (userId) {
+        upsertStore(updated, userId).catch(console.error);
+      }
+      return updated;
+    });
+    setStores(prev => prev.map(s =>
+      s.id === activeStore?.id ? { ...s, ...patch } : s
+    ));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, activeStore?.id]);
+
+  const deleteStore = useCallback(async (storeId: string) => {
+    setStores(prev => prev.filter(s => s.id !== storeId));
+    if (activeStore?.id === storeId) {
+      setActiveStoreState(stores.find(s => s.id !== storeId) ?? DEMO_STORES[0]);
+    }
+    if (userId) {
+      const { deleteStoreById } = await import('../lib/supabase');
+      await deleteStoreById(storeId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, activeStore?.id, stores]);
 
   const storeData = useMemo(
     () => generateStoreData(activeStore),
@@ -183,7 +286,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <StoreContext.Provider value={{ stores, activeStore, setActiveStore, addStore, updateActiveStore, generatedStore, setGeneratedStore, storeData, generationState, setGenerationState }}>
+    <StoreContext.Provider value={{
+      stores,
+      activeStore,
+      setActiveStore,
+      addStore,
+      updateActiveStore,
+      deleteStore,
+      generatedStore,
+      setGeneratedStore,
+      storeData,
+      generationState,
+      setGenerationState,
+      isLoadingStores,
+    }}>
       {children}
     </StoreContext.Provider>
   );

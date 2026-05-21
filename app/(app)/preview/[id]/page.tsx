@@ -31,7 +31,7 @@ export default function PreviewByIdPage() {
       try {
         const loaded = JSON.parse(raw) as Store;
         setStore(loaded);
-        addStore(loaded);
+        addStore(loaded).catch(console.error);
         setGeneratedStore(loaded);
         return;
       } catch {

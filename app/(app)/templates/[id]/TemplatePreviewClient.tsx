@@ -51,7 +51,7 @@ export default function TemplatePreviewClient({ id, from }: Props) {
     orders: 0,
   };
 
-  const handleUse = () => {
+  const handleUse = async () => {
     const newStore = {
       id: `store-${Date.now()}`,
       name: template.name,
@@ -64,7 +64,7 @@ export default function TemplatePreviewClient({ id, from }: Props) {
       revenue: 0,
       orders: 0,
     };
-    addStore(newStore);
+    await addStore(newStore);
     setGeneratedStore(newStore);
     router.push(`/preview?from=/templates/${id}`);
   };

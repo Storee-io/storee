@@ -1,17 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { CSSProperties } from 'react';
-import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, Copy, MessageCircle, MapPin, Phone, Mail, ChevronDown } from 'lucide-react';
+import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, Copy, MessageCircle, MapPin, Phone, Mail, ChevronDown, User, LogOut, Package, Eye, EyeOff } from 'lucide-react';
 import type { Store, ShippingSettings, ShippingMethod, PaymentSettings, PaymentMethod } from '../../context/StoreContext';
 import { DEFAULT_SHIPPING_METHODS, DEFAULT_PAYMENT_METHODS } from '../../context/StoreContext';
 import type { StoreDesign, RichProduct } from '../../lib/claudeApi';
 import { makePriceFmt } from '../../lib/formatCurrency';
+import { supabase } from '../../lib/supabase';
 
 export type DeviceMode = 'desktop' | 'tablet' | 'mobile';
 
 interface CartItem { product: RichProduct; qty: number; }
-type StorePage = 'home' | 'product' | 'cart' | 'checkout' | 'success';
+type StorePage = 'home' | 'product' | 'cart' | 'checkout' | 'success' | 'myorders';
+
+interface BuyerUser { id: string; email: string; }
 
 interface LayoutProps {
   storeName: string;
@@ -24,6 +27,8 @@ interface LayoutProps {
   cartCount: number;
   /** Pre-bound price formatter — call fmtPrice(amount) to get locale-correct string */
   fmtPrice: (amount: number) => string;
+  onUserClick: () => void;
+  buyerEmail: string | null;
 }
 
 // ── Image fallback ────────────────────────────────────────────────────────────
@@ -70,6 +75,16 @@ function Stars({ n = 5 }: { n?: number }) {
 
 function gridCols(device: DeviceMode) {
   return device === 'mobile' ? 'grid-cols-2' : device === 'tablet' ? 'grid-cols-3' : 'grid-cols-4';
+}
+
+// ── Theme helpers ─────────────────────────────────────────────────────────────
+
+function getLayoutFont(style?: string): string {
+  switch (style) {
+    case 'elegant': return 'Georgia, "Times New Roman", serif';
+    case 'modern':  return '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+    default:        return 'system-ui, -apple-system, sans-serif';
+  }
 }
 
 // ── Shared interactive pages ──────────────────────────────────────────────────
@@ -133,9 +148,9 @@ function ProductDetailPage({ product, primaryColor, storeName, device, onBack, o
   );
 }
 
-function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, onUpdateQty, fmtPrice, shippingSettings }: {
+function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, onUpdateQty, fmtPrice, shippingSettings, layoutStyle }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
-  shippingSettings?: ShippingSettings;
+  shippingSettings?: ShippingSettings; layoutStyle?: string;
   onBack: () => void; onCheckout: (shippingId: string) => void; onUpdateQty: (id: string, delta: number) => void;
 }) {
   const enabledMethods = (shippingSettings?.methods ?? DEFAULT_SHIPPING_METHODS).filter(m => m.enabled);
@@ -153,11 +168,14 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
   const discount = promoApplied ? Math.round(subtotal * 0.1) : 0;
   const total = subtotal + shippingCost - discount;
   const isMobile = device === 'mobile';
+  const fontFamily = getLayoutFont(layoutStyle);
+  const headerBg = alpha(primaryColor, 0.06);
+  const cardBorder = alpha(primaryColor, 0.12);
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <header className="border-b border-gray-100 px-5 h-14 flex items-center justify-between sticky top-0 bg-white z-40 shadow-sm">
-        <button onClick={onBack} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"><ArrowLeft className="w-4 h-4" /> Lanjut Belanja</button>
+    <div className="min-h-screen" style={{ background: alpha(primaryColor, 0.03), fontFamily }}>
+      <header className="px-5 h-14 flex items-center justify-between sticky top-0 z-40 shadow-sm" style={{ background: headerBg, borderBottom: `1px solid ${cardBorder}` }}>
+        <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium transition-colors" style={{ color: primaryColor }}><ArrowLeft className="w-4 h-4" /> Lanjut Belanja</button>
         <span className="text-sm font-bold text-gray-900">Keranjang ({cart.reduce((s, i) => s + i.qty, 0)})</span>
         <div className="w-28" />
       </header>
@@ -174,8 +192,8 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
           {/* Left: items + shipping + promo */}
           <div className="space-y-4">
             {/* Items */}
-            <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
-              <div className="px-5 py-4 border-b border-gray-50">
+            <div className="bg-white rounded-2xl overflow-hidden shadow-sm" style={{ border: `1px solid ${cardBorder}` }}>
+              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${cardBorder}` }}>
                 <h3 className="text-sm font-bold text-gray-900">Produk ({cart.reduce((s, i) => s + i.qty, 0)} item)</h3>
               </div>
               <div className="divide-y divide-gray-50">
@@ -203,8 +221,8 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
             </div>
 
             {/* Shipping method selector */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-50">
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border: `1px solid ${cardBorder}` }}>
+              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${cardBorder}` }}>
                 <h3 className="text-sm font-bold text-gray-900">Pilih Pengiriman</h3>
               </div>
               <div className="p-4 space-y-2">
@@ -239,7 +257,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
             </div>
 
             {/* Promo code */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <div className="bg-white rounded-2xl shadow-sm p-4" style={{ border: `1px solid ${cardBorder}` }}>
               <p className="text-sm font-bold text-gray-900 mb-3">Kode Promo</p>
               <div className="flex gap-2">
                 <input
@@ -262,7 +280,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
           </div>
 
           {/* Right: order summary */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+          <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3" style={{ border: `1px solid ${cardBorder}` }}>
             <h3 className="text-sm font-bold text-gray-900">Ringkasan Pesanan</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span className="font-medium">{fmtPrice(subtotal)}</span></div>
@@ -300,10 +318,10 @@ const INDONESIAN_PROVINCES = ['Aceh','Bali','Banten','Bengkulu','DI Yogyakarta',
 
 const PAYMENT_ICONS: Record<string, string> = { bank_transfer: '🏦', qris: '📱', cod: '💵', ewallet: '👛', gopay: '🟢', ovo: '🟣', dana: '🔵' };
 
-function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, selectedShippingId }: {
+function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, selectedShippingId, layoutStyle }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
-  shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; selectedShippingId: string;
-  onBack: () => void; onPlaceOrder: (paymentId: string) => void;
+  shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; selectedShippingId: string; layoutStyle?: string;
+  onBack: () => void; onPlaceOrder: (paymentId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => void;
 }) {
   const [form, setForm] = useState({ email: '', whatsapp: '', name: '', address: '', city: '', province: '', postal: '' });
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
@@ -327,23 +345,26 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const lbl = 'text-xs font-semibold text-gray-600 mb-1.5 block';
 
   const selectedPayment = paymentMethods.find(m => m.id === selectedPayId);
+  const fontFamily = getLayoutFont(layoutStyle);
+  const headerBg = alpha(primaryColor, 0.06);
+  const cardBorder = alpha(primaryColor, 0.12);
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <header className="border-b border-gray-100 px-5 h-14 flex items-center justify-between sticky top-0 bg-white z-40 shadow-sm">
-        <button onClick={onBack} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"><ArrowLeft className="w-4 h-4" /> Keranjang</button>
+    <div className="min-h-screen" style={{ background: alpha(primaryColor, 0.03), fontFamily }}>
+      <header className="px-5 h-14 flex items-center justify-between sticky top-0 z-40 shadow-sm" style={{ background: headerBg, borderBottom: `1px solid ${cardBorder}` }}>
+        <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium transition-colors" style={{ color: primaryColor }}><ArrowLeft className="w-4 h-4" /> Keranjang</button>
         <span className="text-sm font-bold text-gray-900">{storeName}</span>
         <div className="w-28" />
       </header>
 
       {/* Progress bar */}
-      <div className="bg-white border-b border-gray-100 px-5 py-3">
+      <div className="px-5 py-3" style={{ background: headerBg, borderBottom: `1px solid ${cardBorder}` }}>
         <div className="max-w-4xl mx-auto flex items-center gap-2">
           {['Keranjang', 'Checkout', 'Konfirmasi'].map((step, i) => (
             <div key={step} className="flex items-center gap-2 flex-shrink-0">
               <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white" style={{ background: i <= 1 ? primaryColor : '#d1d5db' }}>{i + 1}</div>
               <span className="text-xs font-medium" style={{ color: i <= 1 ? '#111827' : '#9ca3af' }}>{step}</span>
-              {i < 2 && <div className="w-8 h-px bg-gray-200 mx-1" />}
+              {i < 2 && <div className="w-8 h-px mx-1" style={{ background: cardBorder }} />}
             </div>
           ))}
         </div>
@@ -355,8 +376,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         <div className="space-y-4">
 
           {/* Contact */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-50">
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border: `1px solid ${cardBorder}` }}>
+            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${cardBorder}` }}>
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(primaryColor, 0.1) }}>
                 <Mail className="w-3.5 h-3.5" style={{ color: primaryColor }} />
               </div>
@@ -378,8 +399,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
           </div>
 
           {/* Delivery address */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-50">
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border: `1px solid ${cardBorder}` }}>
+            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${cardBorder}` }}>
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(primaryColor, 0.1) }}>
                 <MapPin className="w-3.5 h-3.5" style={{ color: primaryColor }} />
               </div>
@@ -441,8 +462,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
           </div>
 
           {/* Payment method */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-50">
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border: `1px solid ${cardBorder}` }}>
+            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${cardBorder}` }}>
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(primaryColor, 0.1) }}>
                 <Phone className="w-3.5 h-3.5" style={{ color: primaryColor }} />
               </div>
@@ -501,7 +522,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         </div>
 
         {/* Right: order summary */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+        <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3" style={{ border: `1px solid ${cardBorder}` }}>
           <h3 className="text-sm font-bold text-gray-900">Pesanan ({cart.reduce((s, i) => s + i.qty, 0)} item)</h3>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {cart.map(({ product: p, qty }) => (
@@ -517,19 +538,19 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               </div>
             ))}
           </div>
-          <div className="border-t border-gray-100 pt-3 space-y-1.5 text-sm">
+          <div className="pt-3 space-y-1.5 text-sm" style={{ borderTop: `1px solid ${cardBorder}` }}>
             <div className="flex justify-between text-gray-500 text-xs"><span>Subtotal</span><span>{fmtPrice(subtotal)}</span></div>
             <div className="flex justify-between text-gray-500 text-xs">
               <span>Ongkos kirim</span>
               <span>{shippingCost === 0 ? <span className="text-emerald-600 font-semibold">GRATIS</span> : fmtPrice(shippingCost)}</span>
             </div>
-            <div className="flex justify-between font-bold pt-1.5 border-t border-gray-100">
+            <div className="flex justify-between font-bold pt-1.5" style={{ borderTop: `1px solid ${cardBorder}` }}>
               <span>Total</span>
               <span style={{ color: primaryColor }}>{fmtPrice(total)}</span>
             </div>
           </div>
           <button
-            onClick={() => onPlaceOrder(selectedPayId)}
+            onClick={() => onPlaceOrder(selectedPayId, form)}
             className="w-full py-3.5 rounded-xl text-sm font-bold text-white hover:opacity-90 transition-opacity"
             style={{ background: primaryColor }}
           >
@@ -542,15 +563,20 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   );
 }
 
-function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmtPrice, paymentSettings, selectedPaymentId }: {
+function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmtPrice, paymentSettings, selectedPaymentId, buyerUser, onShowAuth, onMyOrders, layoutStyle }: {
   primaryColor: string; storeName: string; orderNum: string; total: number; fmtPrice: (n: number) => string;
-  paymentSettings?: PaymentSettings; selectedPaymentId: string;
+  paymentSettings?: PaymentSettings; selectedPaymentId: string; layoutStyle?: string;
   onContinue: () => void;
+  buyerUser?: BuyerUser | null;
+  onShowAuth?: () => void;
+  onMyOrders?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
   const allMethods = paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS;
   const payment = allMethods.find(m => m.id === selectedPaymentId) ?? allMethods.find(m => m.enabled);
   const waNumber = paymentSettings?.confirmationWhatsapp;
+  const fontFamily = getLayoutFont(layoutStyle);
+  const cardBorder = alpha(primaryColor, 0.12);
   const handleCopy = (text: string) => {
     try { navigator.clipboard?.writeText(text); } catch {}
     setCopied(true);
@@ -558,7 +584,7 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="min-h-screen" style={{ background: alpha(primaryColor, 0.03), fontFamily }}>
       <div className="max-w-lg mx-auto px-5 py-10">
         {/* Success badge */}
         <div className="text-center mb-8">
@@ -575,8 +601,8 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
 
         {/* Payment instructions */}
         {payment && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-50 flex items-center gap-3">
+          <div className="bg-white rounded-2xl shadow-sm mb-4 overflow-hidden" style={{ border: `1px solid ${cardBorder}` }}>
+            <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: `1px solid ${cardBorder}` }}>
               <span className="text-xl">{PAYMENT_ICONS[payment.id] ?? PAYMENT_ICONS[payment.type] ?? '💳'}</span>
               <h3 className="text-sm font-bold text-gray-900">Instruksi Pembayaran</h3>
             </div>
@@ -693,6 +719,21 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
         <button onClick={onContinue} className="w-full py-3.5 rounded-xl text-sm font-bold text-white hover:opacity-90 transition-opacity" style={{ background: primaryColor }}>
           Lanjut Belanja
         </button>
+
+        {/* Buyer auth prompt */}
+        {!buyerUser && onShowAuth && (
+          <div className="mt-3 p-3 bg-slate-50 rounded-xl text-center">
+            <p className="text-xs text-slate-500 mb-1.5">Want to track this order anytime?</p>
+            <button onClick={onShowAuth} className="text-xs font-semibold" style={{ color: primaryColor }}>
+              Create a free account →
+            </button>
+          </div>
+        )}
+        {buyerUser && onMyOrders && (
+          <button onClick={onMyOrders} className="w-full mt-3 py-2.5 rounded-xl text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+            View My Orders
+          </button>
+        )}
       </div>
     </div>
   );
@@ -836,10 +877,236 @@ function NewsletterSection({ newsletter, primaryColor, dark = false, elegant = f
   );
 }
 
+// ── Buyer Auth Modal ──────────────────────────────────────────────────────────
+
+function BuyerAuthModal({ primaryColor, onClose, onSuccess, onLogout, buyerEmail }: {
+  primaryColor: string;
+  onClose: () => void;
+  onSuccess: (user: BuyerUser) => void;
+  onLogout: () => void;
+  buyerEmail: string | null;
+}) {
+  const [tab, setTab] = useState<'login' | 'register'>(buyerEmail ? 'login' : 'login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPass, setShowPass] = useState(false);
+
+  const btnText = isDark(primaryColor) ? '#fff' : '#111';
+
+  // If already logged in, show account panel
+  if (buyerEmail) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+        <div className="bg-white rounded-2xl shadow-2xl p-6 w-80 mx-4" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style={{ background: primaryColor }}>
+              {buyerEmail[0].toUpperCase()}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900">My Account</p>
+              <p className="text-xs text-slate-400 truncate max-w-[180px]">{buyerEmail}</p>
+            </div>
+          </div>
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-red-100 text-red-500 text-sm font-medium hover:bg-red-50 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      if (tab === 'login') {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        if (data.user) onSuccess({ id: data.user.id, email: data.user.email ?? email });
+        onClose();
+      } else {
+        const { data, error } = await supabase.auth.signUp({
+          email, password, options: { data: { name } },
+        });
+        if (error) throw error;
+        if (data.user) onSuccess({ id: data.user.id, email: data.user.email ?? email });
+        onClose();
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl p-6 w-80 mx-4" onClick={e => e.stopPropagation()}>
+        {/* Tabs */}
+        <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-5">
+          {(['login', 'register'] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => { setTab(t); setError(''); }}
+              className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${tab === t ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}
+            >
+              {t === 'login' ? 'Sign In' : 'Register'}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-3">
+          {tab === 'register' && (
+            <input
+              type="text"
+              placeholder="Full name"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              required
+              className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400"
+            />
+          )}
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+            className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400"
+          />
+          <div className="relative">
+            <input
+              type={showPass ? 'text' : 'password'}
+              placeholder="Password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 pr-9"
+            />
+            <button type="button" onClick={() => setShowPass(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+              {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+
+          {error && <p className="text-xs text-red-500">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity disabled:opacity-60"
+            style={{ background: primaryColor, color: btnText }}
+          >
+            {loading ? 'Please wait…' : tab === 'login' ? 'Sign In' : 'Create Account'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── My Orders Page ────────────────────────────────────────────────────────────
+
+function MyOrdersPage({ buyerUserId, primaryColor, storeName, storeId, onBack, fmtPrice }: {
+  buyerUserId: string;
+  primaryColor: string;
+  storeName: string;
+  storeId: string;
+  onBack: () => void;
+  fmtPrice: (n: number) => string;
+}) {
+  const [orders, setOrders] = useState<Record<string, unknown>[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/orders?buyerUserId=${buyerUserId}`)
+      .then(r => r.json())
+      .then(d => { setOrders(d.orders ?? []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [buyerUserId]);
+
+  const STATUS_COLOR: Record<string, string> = {
+    Processing: '#f59e0b',
+    Shipped: '#3b82f6',
+    Completed: '#10b981',
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-100 sticky top-0 z-10">
+        <div className="max-w-lg mx-auto px-4 h-14 flex items-center gap-3">
+          <button onClick={onBack} className="p-2 text-slate-400 hover:text-slate-700 rounded-lg transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <span className="text-sm font-bold text-slate-900">My Orders</span>
+          <span className="ml-1 text-xs text-slate-400">— {storeName}</span>
+        </div>
+      </div>
+
+      <div className="max-w-lg mx-auto px-4 py-6 space-y-3">
+        {loading ? (
+          <div className="text-center py-16 text-slate-400 text-sm">Loading orders…</div>
+        ) : orders.length === 0 ? (
+          <div className="text-center py-16">
+            <Package className="w-10 h-10 mx-auto mb-3 text-slate-200" />
+            <p className="text-sm font-medium text-slate-400">No orders yet</p>
+            <button onClick={onBack} className="mt-4 text-sm font-semibold" style={{ color: primaryColor }}>
+              Start Shopping →
+            </button>
+          </div>
+        ) : (
+          orders.map((o: Record<string, unknown>) => {
+            const items = Array.isArray(o.items) ? o.items as Record<string, unknown>[] : [];
+            const status = (o.status as string) ?? 'Processing';
+            const total = Number(o.total ?? 0);
+            const date = new Date(o.created_at as string).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+            return (
+              <div key={o.id as string} className="bg-white rounded-2xl border border-slate-100 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold text-slate-700">{o.id as string}</span>
+                  <span className="text-xs font-semibold px-2 py-1 rounded-full text-white" style={{ background: STATUS_COLOR[status] ?? '#94a3b8' }}>
+                    {status}
+                  </span>
+                </div>
+                {items.slice(0, 2).map((item, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    {item.image
+                      ? <img src={item.image as string} alt={item.name as string} className="w-10 h-10 rounded-lg object-cover bg-slate-100 flex-shrink-0" />
+                      : <div className="w-10 h-10 rounded-lg bg-slate-100 flex-shrink-0 flex items-center justify-center"><Package className="w-4 h-4 text-slate-300" /></div>
+                    }
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-800 truncate">{item.name as string}</p>
+                      <p className="text-xs text-slate-400">x{item.qty as number}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-slate-900">{fmtPrice(Number(item.subtotal ?? 0))}</span>
+                  </div>
+                ))}
+                {items.length > 2 && <p className="text-xs text-slate-400">+{items.length - 2} more item(s)</p>}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-50">
+                  <span className="text-xs text-slate-400">{date}</span>
+                  <span className="text-sm font-bold" style={{ color: primaryColor }}>{fmtPrice(total)}</span>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── MINIMAL layout ────────────────────────────────────────────────────────────
 // Inspired by: COS, Aesop, Muji — editorial, clean, whitespace-forward
 
-function MinimalLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice }: LayoutProps) {
+function MinimalLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory } = design;
   const btnText = isDark(primaryColor) ? '#fff' : '#111';
   const isMobile = device === 'mobile';
@@ -861,6 +1128,10 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
             <button onClick={onCartClick} className="relative p-2 text-gray-400 hover:text-gray-700 rounded-lg transition-colors">
               <ShoppingCart className="w-4 h-4" />
               {cartCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: primaryColor }}>{cartCount}</span>}
+            </button>
+            <button onClick={onUserClick} className="relative p-2 text-gray-400 hover:text-gray-700 rounded-lg transition-colors" title={buyerEmail ?? 'Sign in'}>
+              <User className="w-4 h-4" />
+              {buyerEmail && <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-emerald-500" />}
             </button>
           </div>
         </div>
@@ -1067,7 +1338,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
 // ── BOLD layout ───────────────────────────────────────────────────────────────
 // Inspired by: Nike, OFF-WHITE, Supreme — dark, high-energy, high contrast
 
-function BoldLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice }: LayoutProps) {
+function BoldLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [] } = design;
   const isMobile = device === 'mobile';
 
@@ -1083,10 +1354,16 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
               {navLinks.map(l => <a key={l} className="text-xs uppercase tracking-widest text-white/40 hover:text-white transition-colors">{l}</a>)}
             </nav>
           )}
-          <button onClick={onCartClick} className="relative p-2 text-white/50 hover:text-white transition-colors">
-            <ShoppingCart className="w-5 h-5" />
-            {cartCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold text-black rounded-full flex items-center justify-center" style={{ background: primaryColor }}>{cartCount}</span>}
-          </button>
+          <div className="flex items-center gap-1">
+            <button onClick={onCartClick} className="relative p-2 text-white/50 hover:text-white transition-colors">
+              <ShoppingCart className="w-5 h-5" />
+              {cartCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold text-black rounded-full flex items-center justify-center" style={{ background: primaryColor }}>{cartCount}</span>}
+            </button>
+            <button onClick={onUserClick} className="relative p-2 text-white/50 hover:text-white transition-colors" title={buyerEmail ?? 'Sign in'}>
+              <User className="w-5 h-5" />
+              {buyerEmail && <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-emerald-500" />}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -1238,7 +1515,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
 // ── ELEGANT layout ────────────────────────────────────────────────────────────
 // Inspired by: Net-a-Porter, Jo Malone, Tiffany — luxury, refined, warm
 
-function ElegantLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice }: LayoutProps) {
+function ElegantLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory } = design;
   const btnText = isDark(primaryColor) ? '#fff' : '#2a2420';
   const isMobile = device === 'mobile';
@@ -1267,6 +1544,10 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
             <button onClick={onCartClick} className="relative p-2" style={{ color: '#6b5e52' }}>
               <ShoppingCart className="w-4 h-4" />
               {cartCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: primaryColor }}>{cartCount}</span>}
+            </button>
+            <button onClick={onUserClick} className="relative p-2" style={{ color: '#6b5e52' }} title={buyerEmail ?? 'Sign in'}>
+              <User className="w-4 h-4" />
+              {buyerEmail && <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-emerald-500" />}
             </button>
           </div>
         </div>
@@ -1416,7 +1697,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
 // ── MODERN layout ─────────────────────────────────────────────────────────────
 // Inspired by: Apple Store, Allbirds, Casper — clean, airy, contemporary
 
-function ModernLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice }: LayoutProps) {
+function ModernLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [] } = design;
   const btnText = isDark(primaryColor) ? '#fff' : '#fff';
   const isMobile = device === 'mobile';
@@ -1443,6 +1724,10 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
             <button onClick={onCartClick} className="relative p-2 text-gray-400 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition-colors">
               <ShoppingCart className="w-4 h-4" />
               {cartCount > 0 && <span className="absolute top-0.5 right-0.5 w-4 h-4 text-[9px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: primaryColor }}>{cartCount}</span>}
+            </button>
+            <button onClick={onUserClick} className="relative p-2 text-gray-400 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition-colors" title={buyerEmail ?? 'Sign in'}>
+              <User className="w-4 h-4" />
+              {buyerEmail && <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-emerald-500" />}
             </button>
           </div>
         </div>
@@ -1638,7 +1923,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
 // ── PLAYFUL layout ────────────────────────────────────────────────────────────
 // Inspired by: Glossier, Oatly, Warby Parker — fun, colorful, round, youthful
 
-function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice }: LayoutProps) {
+function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [] } = design;
   const heroTextColor = isDark(primaryColor) ? '#fff' : '#111';
   const isMobile = device === 'mobile';
@@ -1663,10 +1948,16 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
               ))}
             </nav>
           )}
-          <button onClick={onCartClick} className="relative p-2">
-            <ShoppingCart className="w-5 h-5 text-gray-700" />
-            {cartCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-black text-white rounded-full flex items-center justify-center" style={{ background: accentColor }}>{cartCount}</span>}
-          </button>
+          <div className="flex items-center gap-1">
+            <button onClick={onCartClick} className="relative p-2">
+              <ShoppingCart className="w-5 h-5 text-gray-700" />
+              {cartCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-black text-white rounded-full flex items-center justify-center" style={{ background: accentColor }}>{cartCount}</span>}
+            </button>
+            <button onClick={onUserClick} className="relative p-2" title={buyerEmail ?? 'Sign in'}>
+              <User className="w-5 h-5 text-gray-700" />
+              {buyerEmail && <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-emerald-500" />}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -1840,11 +2131,13 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
 
 // ── Fallback layout (template-based stores without AI design) ─────────────────
 
-function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClick, cartCount }: {
+function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClick, cartCount, onUserClick, buyerEmail }: {
   store: Store; device: DeviceMode;
   onProductClick: (p: RichProduct) => void;
   onAddToCart: (p: RichProduct) => void;
   onCartClick: () => void;
+  onUserClick?: () => void;
+  buyerEmail?: string | null;
   cartCount: number;
 }) {
   const primaryColor = store.primaryColor || '#10b981';
@@ -1868,6 +2161,12 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
               <ShoppingCart className="w-4 h-4" />{device !== 'mobile' && <span>Cart</span>}
               {cartCount > 0 && <span className="absolute -top-1.5 -right-1.5 w-5 h-5 text-[9px] font-bold text-white rounded-full flex items-center justify-center bg-rose-500">{cartCount}</span>}
             </button>
+            {onUserClick && (
+              <button onClick={onUserClick} className="relative p-2 rounded-lg hover:bg-slate-100" title={buyerEmail ?? 'Sign in'}>
+                <User className="w-4 h-4 text-slate-500" />
+                {buyerEmail && <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-emerald-500" />}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -1929,6 +2228,41 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
   const [selectedShippingId, setSelectedShippingId] = useState('');
   const [selectedPaymentId, setSelectedPaymentId] = useState('');
 
+  // Buyer auth state
+  const [buyerUser, setBuyerUser] = useState<BuyerUser | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user && !session.user.is_anonymous) {
+        setBuyerUser({ id: session.user.id, email: session.user.email ?? '' });
+      }
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      if (session?.user && !session.user.is_anonymous) {
+        setBuyerUser({ id: session.user.id, email: session.user.email ?? '' });
+      } else {
+        setBuyerUser(null);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleUserClick = useCallback(() => {
+    if (buyerUser) {
+      setPage('myorders');
+    } else {
+      setShowAuthModal(true);
+    }
+  }, [buyerUser]);
+
+  const handleLogout = useCallback(async () => {
+    await supabase.auth.signOut();
+    setBuyerUser(null);
+    setShowAuthModal(false);
+    setPage('home');
+  }, []);
+
   const design = store.design as StoreDesign | undefined;
   const primaryColor = store.primaryColor || '#10b981';
   const storeName = store.name;
@@ -1944,6 +2278,48 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
   const resolvedShipping = enabledShipping.find(m => m.id === selectedShippingId) ?? enabledShipping[0];
   const freeThreshold = shippingSettings?.freeShippingThreshold;
   const shippingCost = (freeThreshold && cartTotal >= freeThreshold) ? 0 : (resolvedShipping?.price ?? 15000);
+
+  const saveOrder = async (paymentId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => {
+    const selectedShipping = (shippingSettings?.methods ?? DEFAULT_SHIPPING_METHODS).find(m => m.id === selectedShippingId);
+    const paymentMethod = (store.paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS).find(m => m.id === paymentId);
+    const subdomain = store.domain.replace('.storee.io', '');
+    try {
+      await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: orderNum,
+          storeId: store.id,
+          storeSubdomain: subdomain,
+          customerName: customer.name,
+          customerEmail: customer.email,
+          customerWhatsapp: customer.whatsapp,
+          shippingAddress: customer.address,
+          shippingCity: customer.city,
+          shippingProvince: customer.province,
+          shippingPostal: customer.postal,
+          shippingMethod: selectedShipping?.name ?? '',
+          shippingCost,
+          paymentMethod: paymentMethod?.name ?? paymentId,
+          subtotal: cartTotal,
+          total: cartTotal + shippingCost,
+          items: cart.map(({ product: p, qty }) => ({
+            id: p.id,
+            name: p.name,
+            image: p.image,
+            price: p.price,
+            qty,
+            subtotal: p.price * qty,
+          })),
+          status: 'Processing',
+          buyerUserId: buyerUser?.id ?? null,
+        }),
+      });
+    } catch (err) {
+      console.error('[order] save failed:', err);
+      // Don't block success page if save fails
+    }
+  };
 
   const addToCart = (p: RichProduct) => {
     setCart(prev => {
@@ -1964,31 +2340,48 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
     onAddToCart: addToCart,
     onCartClick: () => setPage('cart'),
     cartCount,
+    onUserClick: handleUserClick,
+    buyerEmail: buyerUser?.email ?? null,
   };
 
+  let content: React.ReactNode;
+
   if (page === 'product' && selectedProduct) {
-    return <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} onBack={() => setPage('home')} onAddToCart={addToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} />;
-  }
-  if (page === 'cart') {
-    return <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} onBack={() => setPage('home')} onCheckout={(sid) => { setSelectedShippingId(sid); setPage('checkout'); }} onUpdateQty={updateQty} />;
-  }
-  if (page === 'checkout') {
-    return <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} paymentSettings={paymentSettings} selectedShippingId={selectedShippingId} onBack={() => setPage('cart')} onPlaceOrder={(pid) => { setSelectedPaymentId(pid); setPage('success'); }} />;
-  }
-  if (page === 'success') {
-    return <SuccessPage primaryColor={primaryColor} storeName={storeName} orderNum={orderNum} total={cartTotal + shippingCost} fmtPrice={fmtPrice} paymentSettings={paymentSettings} selectedPaymentId={selectedPaymentId} onContinue={() => { setCart([]); setPage('home'); }} />;
+    content = <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} onBack={() => setPage('home')} onAddToCart={addToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} />;
+  } else if (page === 'cart') {
+    content = <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} layoutStyle={design?.layoutStyle} onBack={() => setPage('home')} onCheckout={(sid) => { setSelectedShippingId(sid); setPage('checkout'); }} onUpdateQty={updateQty} />;
+  } else if (page === 'checkout') {
+    content = <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} paymentSettings={paymentSettings} selectedShippingId={selectedShippingId} layoutStyle={design?.layoutStyle} onBack={() => setPage('cart')} onPlaceOrder={async (pid, customer) => { setSelectedPaymentId(pid); await saveOrder(pid, customer); setPage('success'); }} />;
+  } else if (page === 'success') {
+    content = <SuccessPage primaryColor={primaryColor} storeName={storeName} orderNum={orderNum} total={cartTotal + shippingCost} fmtPrice={fmtPrice} paymentSettings={paymentSettings} selectedPaymentId={selectedPaymentId} layoutStyle={design?.layoutStyle} onContinue={() => { setCart([]); setPage('home'); }} buyerUser={buyerUser} onShowAuth={() => setShowAuthModal(true)} onMyOrders={() => setPage('myorders')} />;
+  } else if (page === 'myorders' && buyerUser) {
+    content = <MyOrdersPage buyerUserId={buyerUser.id} primaryColor={primaryColor} storeName={storeName} storeId={store.id} onBack={() => setPage('home')} fmtPrice={fmtPrice} />;
+  } else if (!design) {
+    content = <FallbackLayout store={store} device={device} onProductClick={shared.onProductClick} onAddToCart={shared.onAddToCart} onCartClick={shared.onCartClick} cartCount={shared.cartCount} onUserClick={shared.onUserClick} buyerEmail={shared.buyerEmail} />;
+  } else {
+    const props: LayoutProps = { storeName, primaryColor, design, device, fmtPrice, ...shared };
+    switch (design.layoutStyle) {
+      case 'minimal':  content = <MinimalLayout {...props} />; break;
+      case 'bold':     content = <BoldLayout {...props} />; break;
+      case 'elegant':  content = <ElegantLayout {...props} />; break;
+      case 'modern':   content = <ModernLayout {...props} />; break;
+      case 'playful':  content = <PlayfulLayout {...props} />; break;
+      default:         content = <MinimalLayout {...props} />; break;
+    }
   }
 
-  if (!design) return <FallbackLayout store={store} device={device} {...shared} />;
-
-  const props: LayoutProps = { storeName, primaryColor, design, device, fmtPrice, ...shared };
-
-  switch (design.layoutStyle) {
-    case 'minimal':  return <MinimalLayout {...props} />;
-    case 'bold':     return <BoldLayout {...props} />;
-    case 'elegant':  return <ElegantLayout {...props} />;
-    case 'modern':   return <ModernLayout {...props} />;
-    case 'playful':  return <PlayfulLayout {...props} />;
-    default:         return <MinimalLayout {...props} />;
-  }
+  return (
+    <div className="relative">
+      {content}
+      {showAuthModal && (
+        <BuyerAuthModal
+          primaryColor={primaryColor}
+          onClose={() => setShowAuthModal(false)}
+          onSuccess={(user) => { setBuyerUser(user); setShowAuthModal(false); }}
+          onLogout={handleLogout}
+          buyerEmail={buyerUser?.email ?? null}
+        />
+      )}
+    </div>
+  );
 }

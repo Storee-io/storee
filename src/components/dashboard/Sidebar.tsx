@@ -63,6 +63,9 @@ interface SidebarProps {
 
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const { stores, activeStore, setActiveStore, storeData } = useStore();
+  // Only show real (non-demo) stores in the switcher list
+  const DEMO_IDS = new Set(['store-1', 'store-2']);
+  const realStores = stores.filter(s => !DEMO_IDS.has(s.id));
   const { openUpgradeModal } = useAuth();
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -137,24 +140,36 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
               exit={{ opacity: 0, height: 0 }}
               className="mt-2 space-y-1"
             >
-              {stores.map(store => (
-                <button
-                  key={store.id}
-                  onClick={() => { setActiveStore(store); setStoreMenuOpen(false); }}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left ${
-                    activeStore?.id === store.id ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-slate-50 text-slate-600'
-                  }`}
-                >
+              {realStores.length === 0 && activeStore ? (
+                /* No real stores — show the demo/fallback store so header & list are consistent */
+                <div className="px-3 py-2 flex items-center gap-3">
                   <div className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                    style={{ background: store.primaryColor }}>
-                    {store.name[0]}
+                    style={{ background: activeStore.primaryColor }}>
+                    {activeStore.name[0]}
                   </div>
-                  <span className="text-sm font-medium truncate">{store.name}</span>
-                  {activeStore?.id === store.id && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 ml-auto flex-shrink-0" />
-                  )}
-                </button>
-              ))}
+                  <span className="text-sm font-medium text-slate-600 truncate flex-1">{activeStore.name}</span>
+                  <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full flex-shrink-0">Demo</span>
+                </div>
+              ) : (
+                realStores.map(store => (
+                  <button
+                    key={store.id}
+                    onClick={() => { setActiveStore(store); setStoreMenuOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left ${
+                      activeStore?.id === store.id ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-slate-50 text-slate-600'
+                    }`}
+                  >
+                    <div className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                      style={{ background: store.primaryColor }}>
+                      {store.name[0]}
+                    </div>
+                    <span className="text-sm font-medium truncate">{store.name}</span>
+                    {activeStore?.id === store.id && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 ml-auto flex-shrink-0" />
+                    )}
+                  </button>
+                ))
+              )}
               <button
                 onClick={() => { setStoreMenuOpen(false); router.push('/'); }}
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-500 transition-colors"
@@ -164,6 +179,17 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                 </div>
                 <span className="text-sm">New Store</span>
               </button>
+              <div className="pt-2 mt-1 border-t border-slate-100">
+                <button
+                  onClick={() => { setStoreMenuOpen(false); router.push('/stores'); }}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors group"
+                >
+                  <span className="text-xs font-medium">View all stores</span>
+                  <svg className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                  </svg>
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
