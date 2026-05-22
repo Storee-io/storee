@@ -36,7 +36,8 @@ export default function MyStoresPage() {
     updateActiveStore({
       status: 'Published',
       domain: subdomain,
-      publishedDomain: publishStore.publishedDomain ?? subdomain,
+      // Store only the subdomain slug (e.g. "nexagear"), not the full host
+      publishedDomain: publishStore.publishedDomain ?? subdomain.replace('.storee.io', ''),
     });
     setPublishStore(null);
   };
@@ -281,7 +282,7 @@ export default function MyStoresPage() {
             store={publishStore}
             onPublish={handlePublishComplete}
             onClose={() => setPublishStore(null)}
-            fixedSubdomain={publishStore.publishedDomain}
+            fixedSubdomain={publishStore.publishedDomain?.replace('.storee.io', '')}
           />
         )}
       </AnimatePresence>

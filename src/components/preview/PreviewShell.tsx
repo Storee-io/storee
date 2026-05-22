@@ -38,7 +38,13 @@ export default function PreviewShell({ store, from = null }: Props) {
   const backHref = from ?? '/';
 
   const handlePublishComplete = (subdomain: string) => {
-    updateActiveStore({ status: 'Published', domain: subdomain });
+    // subdomain here is the full host e.g. "nexagear.storee.io"
+    // Store the slug-only in publishedDomain to prevent double-appending on republish
+    updateActiveStore({
+      status: 'Published',
+      domain: subdomain,
+      publishedDomain: subdomain.replace('.storee.io', ''),
+    });
   };
 
   const handleDashboardClick = async () => {
