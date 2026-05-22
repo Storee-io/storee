@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
         design: design ?? null,
         currency: currency ?? null,
         language: language ?? null,
+        status: 'active',
       },
       { onConflict: 'subdomain' }
     );
@@ -32,6 +33,27 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ url: `https://${subdomain}.storee.io` });
+}
+
+export async function PATCH(req: NextRequest) {
+  const body = await req.json();
+  const { subdomain } = body;
+
+  if (!subdomain) {
+    return NextResponse.json({ error: 'Missing subdomain' }, { status: 400 });
+  }
+
+  const db = createServerClient();
+  const { error } = await db
+    .from('published_stores')
+    .update({ status: 'inactive' })
+    .eq('subdomain', subdomain);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
 }
 
 export async function GET(req: NextRequest) {

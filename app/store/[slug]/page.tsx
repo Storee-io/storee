@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { createServerClient } from '@/src/lib/supabase';
 import StorefrontClient from './StorefrontClient';
+import StoreInactive from './StoreInactive';
 import type { Store } from '@/src/context/StoreContext';
 
 interface Props {
@@ -12,11 +13,12 @@ export async function generateMetadata({ params }: Props) {
   const db = createServerClient();
   const { data } = await db
     .from('published_stores')
-    .select('name')
+    .select('name, status')
     .eq('subdomain', slug)
     .maybeSingle();
 
   if (!data) return { title: 'Store Not Found' };
+  if (data.status === 'inactive') return { title: `${data.name} – Currently Unavailable` };
   return { title: data.name };
 }
 
@@ -31,6 +33,11 @@ export default async function StorefrontPage({ params }: Props) {
     .maybeSingle();
 
   if (!data || error) notFound();
+
+  // Store exists but owner has set it to Draft → show inactive page
+  if (data.status === 'inactive') {
+    return <StoreInactive name={data.name} />;
+  }
 
   const store: Store = {
     id: data.id,

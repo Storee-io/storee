@@ -26,6 +26,16 @@ export interface ShippingMethod {
   estimatedDays: string;
   enabled: boolean;
   icon?: string;
+  // Distance-based pricing (Kurir Penjual)
+  useDistancePricing?: boolean;
+  ratePerKm?: number;      // cost per km (e.g. 3000 → Rp3.000/km)
+  minFee?: number;         // minimum ongkir charged (e.g. 10000)
+  maxKm?: number;          // maximum coverage distance in km (e.g. 15)
+  // Pick Up
+  isPickup?: boolean;
+  pickupAddress?: string;
+  pickupLat?: number;
+  pickupLng?: number;
 }
 
 export interface ShippingSettings {
@@ -34,12 +44,14 @@ export interface ShippingSettings {
 }
 
 export const DEFAULT_SHIPPING_METHODS: ShippingMethod[] = [
-  { id: 'jne-reg',  name: 'JNE REG',             price: 15000, estimatedDays: '2–3 hari', enabled: true,  icon: '📦' },
-  { id: 'jne-yes',  name: 'JNE YES (Express)',    price: 35000, estimatedDays: '1 hari',   enabled: true,  icon: '⚡' },
-  { id: 'jnt-reg',  name: 'J&T Express',          price: 12000, estimatedDays: '2–4 hari', enabled: true,  icon: '📫' },
-  { id: 'sicepat',  name: 'SiCepat REG',          price: 10000, estimatedDays: '2–3 hari', enabled: false, icon: '🚀' },
-  { id: 'gosend',   name: 'GoSend Same Day',       price: 25000, estimatedDays: 'Hari ini', enabled: false, icon: '🛵' },
-  { id: 'free',     name: 'Gratis Ongkir',         price: 0,     estimatedDays: '3–5 hari', enabled: false, icon: '🎁' },
+  { id: 'jne-reg',        name: 'JNE REG',              price: 15000, estimatedDays: '2–3 days', enabled: true,  icon: '📦' },
+  { id: 'jne-yes',        name: 'JNE YES (Express)',     price: 35000, estimatedDays: '1 day',    enabled: true,  icon: '⚡' },
+  { id: 'jnt-reg',        name: 'J&T Express',           price: 12000, estimatedDays: '2–4 days', enabled: true,  icon: '📫' },
+  { id: 'sicepat',        name: 'SiCepat REG',           price: 10000, estimatedDays: '2–3 days', enabled: false, icon: '🚀' },
+  { id: 'gosend',         name: 'GoSend Same Day',        price: 25000, estimatedDays: 'Today',    enabled: false, icon: '🛵' },
+  { id: 'free',           name: 'Free Shipping',          price: 0,     estimatedDays: '3–5 days', enabled: false, icon: '🎁' },
+  { id: 'seller-courier', name: 'Seller Delivery',        price: 0,     estimatedDays: 'Today',    enabled: false, icon: '🏍️', useDistancePricing: true, ratePerKm: 3000, minFee: 10000, maxKm: 15 },
+  { id: 'pickup',         name: 'In-Store Pick Up',       price: 0,     estimatedDays: '-',        enabled: false, icon: '🏪', isPickup: true, pickupAddress: '' },
 ];
 
 // ── Payment ───────────────────────────────────────────────────────────────────
@@ -56,10 +68,34 @@ export interface PaymentMethod {
   instructions?: string;
 }
 
+export type AutoPaymentProvider = 'xendit' | 'midtrans' | 'stripe';
+
+export interface AutoPaymentConfig {
+  enabled: boolean;
+  provider: AutoPaymentProvider | null;
+  xendit?: {
+    apiKey: string;
+    webhookToken: string;
+    environment: 'sandbox' | 'production';
+  };
+  midtrans?: {
+    serverKey: string;
+    clientKey: string;
+    environment: 'sandbox' | 'production';
+  };
+  stripe?: {
+    publishableKey: string;
+    secretKey: string;
+    webhookSecret: string;
+    environment: 'test' | 'live';
+  };
+}
+
 export interface PaymentSettings {
   methods: PaymentMethod[];
   confirmationWhatsapp?: string;
   paymentNote?: string;
+  autoPayment?: AutoPaymentConfig;
 }
 
 export const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [
@@ -91,6 +127,10 @@ export interface Store {
   shippingSettings?: ShippingSettings;
   paymentSettings?: PaymentSettings;
   publishedDomain?: string; // set once on first publish; used to lock URL on republish
+  // Appearance preferences
+  font?: string;
+  mood?: string;
+  audience?: string;
 }
 
 export interface GenerationState {

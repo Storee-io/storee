@@ -31,7 +31,7 @@ interface Props {
 export default function PreviewShell({ store, from = null }: Props) {
   const [device, setDevice] = useState<DeviceMode>('desktop');
   const [showPublishModal, setShowPublishModal] = useState(false);
-  const { updateActiveStore } = useStore();
+  const { updateActiveStore, addStore, stores, setActiveStore } = useStore();
   const router = useRouter();
 
   const backLabel = getBackLabel(from);
@@ -39,6 +39,16 @@ export default function PreviewShell({ store, from = null }: Props) {
 
   const handlePublishComplete = (subdomain: string) => {
     updateActiveStore({ status: 'Published', domain: subdomain });
+  };
+
+  const handleDashboardClick = async () => {
+    const isKnown = stores.some(s => s.id === store.id);
+    if (!isKnown) {
+      await addStore(store);
+    } else {
+      setActiveStore(store);
+    }
+    router.push('/dashboard');
   };
 
   return (
@@ -77,7 +87,7 @@ export default function PreviewShell({ store, from = null }: Props) {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => router.push('/dashboard')}
+            onClick={handleDashboardClick}
             className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
           >
             <LayoutDashboard className="w-4 h-4" />Dashboard

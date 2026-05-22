@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, Bell, Eye, Copy, Settings, HelpCircle, LogOut, ExternalLink, Check } from 'lucide-react';
+import { Menu, Bell, Eye, Copy, Settings, HelpCircle, LogOut, ExternalLink, Check, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -19,14 +19,52 @@ interface DashboardHeaderProps {
   onMenuClick: () => void;
 }
 
+/** Copy text to clipboard; falls back to execCommand for non-secure contexts. */
+function safeClipboardWrite(text: string) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).catch(() => execCommandCopy(text));
+  } else {
+    execCommandCopy(text);
+  }
+}
+function execCommandCopy(text: string) {
+  try {
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.style.position = 'fixed';
+    el.style.opacity = '0';
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+  } catch { /* silent */ }
+}
+
 export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const [copied, setCopied] = useState(false);
+  const [unpublishing, setUnpublishing] = useState(false);
   const { user, logout } = useAuth();
-  const { activeStore } = useStore();
+  const { activeStore, updateActiveStore } = useStore();
   const router = useRouter();
 
+  const handleUnpublish = async () => {
+    if (!activeStore?.domain || unpublishing) return;
+    const subdomain = activeStore.domain.replace('.storee.io', '');
+    setUnpublishing(true);
+    try {
+      await fetch('/api/publish-store', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subdomain }),
+      });
+      updateActiveStore({ status: 'Draft' });
+    } finally {
+      setUnpublishing(false);
+    }
+  };
+
   const copyLink = () => {
-    navigator.clipboard.writeText(`https://${activeStore?.domain || 'my-store.storee.io'}`);
+    safeClipboardWrite(`https://${activeStore?.domain || 'my-store.storee.io'}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -44,16 +82,35 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
       </button>
       <div className="hidden lg:flex items-center gap-2.5">
         <h1 className="text-[15px] font-bold text-slate-900">{activeStore?.name || 'Dashboard'}</h1>
-        <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-          activeStore?.status === 'Published'
-            ? 'bg-emerald-50 text-emerald-600'
-            : 'bg-amber-50 text-amber-500'
-        }`}>
-          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-            activeStore?.status === 'Published' ? 'bg-emerald-500' : 'bg-amber-400'
-          }`} />
-          {activeStore?.status === 'Published' ? 'Live' : 'Draft'}
-        </span>
+
+        {activeStore?.status === 'Published' ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer">
+              {unpublishing
+                ? <Loader2 className="w-3 h-3 animate-spin" />
+                : <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />}
+              {unpublishing ? 'Unpublishing…' : 'Live'}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-52">
+              <div className="px-3 py-2 border-b border-slate-100">
+                <p className="text-xs text-slate-500 font-medium">Store is live</p>
+                <p className="text-xs text-slate-400 truncate mt-0.5">{activeStore.domain}</p>
+              </div>
+              <DropdownMenuItem
+                onClick={handleUnpublish}
+                className="flex items-center gap-2.5 px-3 py-2 text-sm text-amber-600 hover:bg-amber-50 cursor-pointer"
+              >
+                <EyeOff className="w-4 h-4" />
+                Unpublish Store
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-500">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+            Draft
+          </span>
+        )}
       </div>
 
       {/* Right */}

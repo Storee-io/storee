@@ -4,7 +4,15 @@ import type { Store } from '../context/StoreContext';
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-export const supabase = createClient(url, anonKey);
+export const supabase = createClient(url, anonKey, {
+  auth: {
+    // Don't schedule background token-refresh timers — they cause
+    // "Failed to fetch" noise when the project is paused or offline.
+    // Sessions are still read on mount via getSession().
+    autoRefreshToken: false,
+    persistSession: true,
+  },
+});
 
 export function createServerClient() {
   const serviceKey = process.env.SUPABASE_SECRET_KEY ?? anonKey;
@@ -86,7 +94,7 @@ export async function fetchUserStores(userId: string): Promise<Store[]> {
     .order('created_at', { ascending: true });
 
   if (error) {
-    console.error('[supabase] fetchUserStores:', error.message);
+    console.warn('[supabase] fetchUserStores:', error.message);
     return [];
   }
   return (data as StoreRow[]).map(rowToStore);
@@ -98,7 +106,7 @@ export async function upsertStore(store: Store, userId: string): Promise<void> {
     .from('stores')
     .upsert(row, { onConflict: 'id' });
 
-  if (error) console.error('[supabase] upsertStore:', error.message);
+  if (error) console.warn('[supabase] upsertStore:', error.message);
 }
 
 export async function deleteStoreById(storeId: string): Promise<void> {
@@ -107,5 +115,5 @@ export async function deleteStoreById(storeId: string): Promise<void> {
     .delete()
     .eq('id', storeId);
 
-  if (error) console.error('[supabase] deleteStore:', error.message);
+  if (error) console.warn('[supabase] deleteStore:', error.message);
 }

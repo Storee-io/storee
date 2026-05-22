@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, Copy, MessageCircle, MapPin, Phone, Mail, ChevronDown, User, LogOut, Package, Eye, EyeOff } from 'lucide-react';
 import type { Store, ShippingSettings, ShippingMethod, PaymentSettings, PaymentMethod } from '../../context/StoreContext';
@@ -9,10 +9,31 @@ import type { StoreDesign, RichProduct } from '../../lib/claudeApi';
 import { makePriceFmt } from '../../lib/formatCurrency';
 import { supabase } from '../../lib/supabase';
 
+// ── Clipboard helper (works in non-secure / iframe contexts) ─────────────────
+function safeClipboardWrite(text: string) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).catch(() => execCommandCopy(text));
+  } else {
+    execCommandCopy(text);
+  }
+}
+function execCommandCopy(text: string) {
+  try {
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.style.position = 'fixed';
+    el.style.opacity = '0';
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+  } catch { /* silent */ }
+}
+
 export type DeviceMode = 'desktop' | 'tablet' | 'mobile';
 
 interface CartItem { product: RichProduct; qty: number; }
-type StorePage = 'home' | 'product' | 'cart' | 'checkout' | 'success' | 'myorders';
+type StorePage = 'home' | 'product' | 'cart' | 'checkout' | 'success' | 'myorders' | 'wishlist';
 
 interface BuyerUser { id: string; email: string; }
 
@@ -22,13 +43,91 @@ interface LayoutProps {
   design: StoreDesign;
   device: DeviceMode;
   onProductClick: (p: RichProduct) => void;
-  onAddToCart: (p: RichProduct) => void;
+  onAddToCart: (p: RichProduct, sourceRect?: DOMRect) => void;
   onCartClick: () => void;
   cartCount: number;
   /** Pre-bound price formatter — call fmtPrice(amount) to get locale-correct string */
   fmtPrice: (amount: number) => string;
   onUserClick: () => void;
   buyerEmail: string | null;
+  onSearchOpen: () => void;
+  wishlist: Set<string>;
+  onToggleWishlist: (id: string) => void;
+  onWishlistClick: () => void;
+}
+
+// ── Cart fly animation ────────────────────────────────────────────────────────
+
+interface FlyItem {
+  id: string;
+  startX: number;
+  startY: number;
+  startW: number;
+  startH: number;
+  image?: string;
+}
+
+/** Pixels per second — keep this constant so speed looks uniform at any distance */
+const FLY_SPEED = 900; // px/s
+const FLY_MIN   = 0.3; // s
+const FLY_MAX   = 1.1; // s
+
+function FlyingDot({ item, primaryColor }: { item: FlyItem; primaryColor: string }) {
+  const [active, setActive] = useState(false);
+  useEffect(() => {
+    const raf1 = requestAnimationFrame(() => {
+      const raf2 = requestAnimationFrame(() => setActive(true));
+      return () => cancelAnimationFrame(raf2);
+    });
+    return () => cancelAnimationFrame(raf1);
+  }, []);
+
+  // Find the actual cart button in the DOM for an accurate target
+  const cartBtn = typeof document !== 'undefined' ? document.querySelector('[data-cart-btn]') : null;
+  const cartRect = cartBtn?.getBoundingClientRect();
+  const targetX = cartRect ? cartRect.left + cartRect.width / 2 : (typeof window !== 'undefined' ? window.innerWidth - 56 : 1144);
+  const targetY = cartRect ? cartRect.top + cartRect.height / 2 : 28;
+
+  // Duration proportional to distance → constant apparent speed
+  const dx = targetX - item.startX;
+  const dy = targetY - item.startY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const dur = Math.min(FLY_MAX, Math.max(FLY_MIN, dist / FLY_SPEED));
+
+  const durS       = `${dur.toFixed(2)}s`;
+  const fadeDurS   = `${(dur * 0.35).toFixed(2)}s`;
+  const fadeDelayS = `${(dur * 0.65).toFixed(2)}s`;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        left: active ? targetX : item.startX,
+        top: active ? targetY : item.startY,
+        width: active ? '8px' : `${item.startW}px`,
+        height: active ? '8px' : `${item.startH}px`,
+        opacity: active ? 0 : 1,
+        transform: 'translate(-50%, -50%)',
+        transition: [
+          `left ${durS} cubic-bezier(0.25,0.6,0.35,1)`,
+          `top ${durS} cubic-bezier(0.25,0.6,0.35,1)`,
+          `width ${durS} linear`,
+          `height ${durS} linear`,
+          `opacity ${fadeDurS} ease-in ${fadeDelayS}`,
+        ].join(', '),
+        zIndex: 99999,
+        borderRadius: '12px',
+        overflow: 'hidden',
+        boxShadow: active ? '0 2px 8px rgba(0,0,0,0.2)' : '0 8px 32px rgba(0,0,0,0.3)',
+        pointerEvents: 'none',
+      }}
+    >
+      {item.image
+        ? <img src={item.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : <div style={{ width: '100%', height: '100%', background: primaryColor }} />
+      }
+    </div>
+  );
 }
 
 // ── Image fallback ────────────────────────────────────────────────────────────
@@ -87,59 +186,213 @@ function getLayoutFont(style?: string): string {
   }
 }
 
+interface CommerceTheme {
+  fontFamily: string;
+  pageBg: string;
+  headerBg: string;
+  headerBorder: string;
+  surfaceBg: string;
+  surfaceBorder: string;
+  surfaceRadius: string;
+  btnRadius: string;
+  inputBg: string;
+  inputBorder: string;
+  inputRadius: string;
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  divider: string;
+  successBg: string;
+  successText: string;
+  successBorder: string;
+  dangerBg: string;
+  dangerText: string;
+  primary: string;
+  primaryContrast: string;
+}
+
+function getCommerceTheme(primaryColor: string, layoutStyle?: string): CommerceTheme {
+  const pc = primaryColor || '#10b981';
+  const contrast = '#ffffff';
+  const base: Omit<CommerceTheme, 'primary' | 'primaryContrast'> = (() => {
+    switch (layoutStyle) {
+      case 'bold':
+        return {
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          pageBg: '#0a0a0a',
+          headerBg: '#141414',
+          headerBorder: 'rgba(255,255,255,0.07)',
+          surfaceBg: '#1c1c1c',
+          surfaceBorder: 'rgba(255,255,255,0.08)',
+          surfaceRadius: '16px',
+          btnRadius: '12px',
+          inputBg: '#242424',
+          inputBorder: 'rgba(255,255,255,0.12)',
+          inputRadius: '12px',
+          textPrimary: '#ffffff',
+          textSecondary: '#aaaaaa',
+          textMuted: '#666666',
+          divider: 'rgba(255,255,255,0.07)',
+          successBg: 'rgba(16,185,129,0.12)',
+          successText: '#34d399',
+          successBorder: 'rgba(16,185,129,0.2)',
+          dangerBg: 'rgba(239,68,68,0.12)',
+          dangerText: '#f87171',
+        };
+      case 'elegant':
+        return {
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          pageBg: '#f7f5f2',
+          headerBg: '#f7f5f2',
+          headerBorder: '#e8e0d8',
+          surfaceBg: '#ffffff',
+          surfaceBorder: '#e8e0d8',
+          surfaceRadius: '4px',
+          btnRadius: '4px',
+          inputBg: '#faf8f6',
+          inputBorder: '#d8cfc6',
+          inputRadius: '4px',
+          textPrimary: '#2a2420',
+          textSecondary: '#6b5e52',
+          textMuted: '#a09080',
+          divider: '#e8e0d8',
+          successBg: '#f0faf5',
+          successText: '#2d6a4f',
+          successBorder: '#b7e4c7',
+          dangerBg: '#fef2f2',
+          dangerText: '#991b1b',
+        };
+      case 'modern':
+        return {
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+          pageBg: '#f4f5f8',
+          headerBg: '#ffffff',
+          headerBorder: '#eeeef2',
+          surfaceBg: '#ffffff',
+          surfaceBorder: '#eeeef2',
+          surfaceRadius: '24px',
+          btnRadius: '20px',
+          inputBg: '#f4f5f8',
+          inputBorder: '#e0e1ea',
+          inputRadius: '16px',
+          textPrimary: '#1a1a2e',
+          textSecondary: '#4a4a6a',
+          textMuted: '#9999aa',
+          divider: '#eeeef2',
+          successBg: '#f0fdf4',
+          successText: '#16a34a',
+          successBorder: '#bbf7d0',
+          dangerBg: '#fff1f2',
+          dangerText: '#e11d48',
+        };
+      case 'playful':
+        return {
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          pageBg: '#f9f9fb',
+          headerBg: '#ffffff',
+          headerBorder: alpha(pc, 0.15),
+          surfaceBg: '#ffffff',
+          surfaceBorder: alpha(pc, 0.15),
+          surfaceRadius: '24px',
+          btnRadius: '20px',
+          inputBg: '#ffffff',
+          inputBorder: alpha(pc, 0.25),
+          inputRadius: '16px',
+          textPrimary: '#1a1a1a',
+          textSecondary: '#555555',
+          textMuted: '#999999',
+          divider: alpha(pc, 0.1),
+          successBg: '#f0fdf4',
+          successText: '#16a34a',
+          successBorder: '#bbf7d0',
+          dangerBg: '#fff1f2',
+          dangerText: '#e11d48',
+        };
+      default: // minimal
+        return {
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          pageBg: '#f9f9f7',
+          headerBg: '#ffffff',
+          headerBorder: '#f0f0ee',
+          surfaceBg: '#ffffff',
+          surfaceBorder: '#f0f0ee',
+          surfaceRadius: '16px',
+          btnRadius: '12px',
+          inputBg: '#ffffff',
+          inputBorder: '#e5e5e0',
+          inputRadius: '12px',
+          textPrimary: '#111111',
+          textSecondary: '#555555',
+          textMuted: '#999999',
+          divider: '#f0f0ee',
+          successBg: '#f0fdf4',
+          successText: '#16a34a',
+          successBorder: '#bbf7d0',
+          dangerBg: '#fff1f2',
+          dangerText: '#e11d48',
+        };
+    }
+  })();
+  return { ...base, primary: pc, primaryContrast: contrast };
+}
+
 // ── Shared interactive pages ──────────────────────────────────────────────────
 
-function ProductDetailPage({ product, primaryColor, storeName, device, onBack, onAddToCart, onCartClick, cartCount, fmtPrice }: {
+function ProductDetailPage({ product, primaryColor, storeName, device, onBack, onAddToCart, onCartClick, cartCount, fmtPrice, layoutStyle }: {
   product: RichProduct; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
-  onBack: () => void; onAddToCart: (p: RichProduct) => void; onCartClick: () => void; cartCount: number;
+  onBack: () => void; onAddToCart: (p: RichProduct, sourceRect?: DOMRect) => void; onCartClick: () => void; cartCount: number;
+  layoutStyle?: string;
 }) {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const imgRef = useRef<HTMLDivElement>(null);
+  const t = getCommerceTheme(primaryColor, layoutStyle);
   const handleAdd = () => {
-    for (let i = 0; i < qty; i++) onAddToCart(product);
+    const rect = imgRef.current?.getBoundingClientRect();
+    for (let i = 0; i < qty; i++) onAddToCart(product, i === 0 ? rect : undefined);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
   return (
-    <div className="bg-white min-h-screen">
-      <header className="border-b border-gray-100 px-5 h-14 flex items-center justify-between sticky top-0 bg-white z-40">
-        <button onClick={onBack} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"><ArrowLeft className="w-4 h-4" /> Back</button>
-        <span className="text-sm font-bold text-gray-900 truncate max-w-[140px]">{storeName}</span>
-        <button onClick={onCartClick} className="relative p-2">
-          <ShoppingCart className="w-5 h-5 text-gray-600" />
-          {cartCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: primaryColor }}>{cartCount}</span>}
+    <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
+      <header className="px-5 h-14 flex items-center justify-between sticky top-0 z-40" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
+        <button onClick={onBack} className="flex items-center gap-2 text-sm transition-colors" style={{ color: t.textSecondary }}><ArrowLeft className="w-4 h-4" /> Back</button>
+        <span className="text-sm font-bold truncate max-w-[140px]" style={{ color: t.textPrimary }}>{storeName}</span>
+        <button data-cart-btn onClick={onCartClick} className="relative p-2">
+          <ShoppingCart className="w-5 h-5" style={{ color: t.textSecondary }} />
+          {cartCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold rounded-full flex items-center justify-center" style={{ background: t.primary, color: t.primaryContrast }}>{cartCount}</span>}
         </button>
       </header>
       <div className={`max-w-4xl mx-auto px-5 py-8 ${device === 'mobile' ? 'flex flex-col gap-6' : 'grid grid-cols-2 gap-12'}`}>
-        <div className="aspect-square rounded-3xl overflow-hidden bg-gray-50 shadow-sm">
+        <div ref={imgRef} className="aspect-square overflow-hidden shadow-sm" style={{ borderRadius: t.surfaceRadius, background: t.surfaceBg }}>
           <ProductImg src={product.image} alt={product.name} className="w-full h-full object-cover" />
         </div>
         <div className="flex flex-col gap-4">
-          {product.badge && <span className="text-xs font-bold px-3 py-1 rounded-full text-white w-fit" style={{ background: primaryColor }}>{product.badge}</span>}
-          <p className="text-xs text-gray-400 uppercase tracking-wider">{product.category}</p>
-          <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
+          {product.badge && <span className="text-xs font-bold px-3 py-1 rounded-full w-fit" style={{ background: t.primary, color: t.primaryContrast }}>{product.badge}</span>}
+          <p className="text-xs uppercase tracking-wider" style={{ color: t.textMuted }}>{product.category}</p>
+          <h1 className="text-2xl font-bold" style={{ color: t.textPrimary }}>{product.name}</h1>
           <div className="flex items-center gap-3">
-            <span className="text-2xl font-black" style={{ color: primaryColor }}>{fmtPrice(product.price)}</span>
-            {product.originalPrice && <span className="text-lg text-gray-400 line-through">{fmtPrice(product.originalPrice)}</span>}
+            <span className="text-2xl font-black" style={{ color: t.primary }}>{fmtPrice(product.price)}</span>
+            {product.originalPrice && <span className="text-lg line-through" style={{ color: t.textMuted }}>{fmtPrice(product.originalPrice)}</span>}
           </div>
           <div className="flex items-center gap-1.5">
             {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
-            <span className="text-sm text-gray-400 ml-1">(4.8) · 124 reviews</span>
+            <span className="text-sm ml-1" style={{ color: t.textMuted }}>(4.8) · 124 reviews</span>
           </div>
-          <p className="text-sm text-gray-600 leading-relaxed">{product.description || 'Premium quality product crafted with care and precision.'}</p>
+          <p className="text-sm leading-relaxed" style={{ color: t.textSecondary }}>{product.description || 'Premium quality product crafted with care and precision.'}</p>
           <div className="flex items-center gap-3 mt-2">
-            <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden">
-              <button onClick={() => setQty(q => Math.max(1, q - 1))} className="w-11 h-11 flex items-center justify-center text-gray-500 hover:bg-gray-50 text-lg font-bold">−</button>
-              <span className="w-10 text-center text-sm font-bold">{qty}</span>
-              <button onClick={() => setQty(q => q + 1)} className="w-11 h-11 flex items-center justify-center text-gray-500 hover:bg-gray-50 text-lg font-bold">+</button>
+            <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.surfaceBorder}`, borderRadius: t.inputRadius }}>
+              <button onClick={() => setQty(q => Math.max(1, q - 1))} className="w-11 h-11 flex items-center justify-center text-lg font-bold transition-colors" style={{ color: t.textSecondary }}>−</button>
+              <span className="w-10 text-center text-sm font-bold" style={{ color: t.textPrimary }}>{qty}</span>
+              <button onClick={() => setQty(q => q + 1)} className="w-11 h-11 flex items-center justify-center text-lg font-bold transition-colors" style={{ color: t.textSecondary }}>+</button>
             </div>
-            <button onClick={handleAdd} className="flex-1 py-3.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95" style={{ background: added ? '#10b981' : primaryColor }}>
+            <button onClick={handleAdd} className="flex-1 py-3.5 text-sm font-bold transition-all hover:opacity-90 active:scale-95" style={{ background: added ? '#10b981' : t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}>
               {added ? '✓ Added to Cart!' : 'Add to Cart'}
             </button>
           </div>
-          <div className="border-t border-gray-100 pt-4 space-y-2 text-sm">
-            {[['Availability', 'In Stock', 'text-emerald-600'], ['Delivery', '2–4 business days', 'text-gray-700'], ['Returns', 'Free 30-day returns', 'text-gray-700']].map(([k, v, cls]) => (
-              <div key={k} className="flex justify-between"><span className="text-gray-400">{k}</span><span className={`font-semibold ${cls}`}>{v}</span></div>
+          <div className="pt-4 space-y-2 text-sm" style={{ borderTop: `1px solid ${t.divider}` }}>
+            {[['Availability', 'In Stock', t.successText], ['Delivery', '2–4 business days', t.textPrimary], ['Returns', 'Free 30-day returns', t.textPrimary]].map(([k, v, clr]) => (
+              <div key={k} className="flex justify-between"><span style={{ color: t.textMuted }}>{k}</span><span className="font-semibold" style={{ color: clr }}>{v}</span></div>
             ))}
           </div>
         </div>
@@ -155,7 +408,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
 }) {
   const enabledMethods = (shippingSettings?.methods ?? DEFAULT_SHIPPING_METHODS).filter(m => m.enabled);
   const shippingMethods: ShippingMethod[] = enabledMethods.length > 0 ? enabledMethods : [
-    { id: 'flat', name: 'Pengiriman Reguler', price: 15000, estimatedDays: '2–3 hari', enabled: true, icon: '📦' }
+    { id: 'flat', name: 'Standard Shipping', price: 15000, estimatedDays: '2–3 days', enabled: true, icon: '📦' }
   ];
   const [selectedId, setSelectedId] = useState(shippingMethods[0]?.id ?? '');
   const [promoCode, setPromoCode] = useState('');
@@ -168,23 +421,21 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
   const discount = promoApplied ? Math.round(subtotal * 0.1) : 0;
   const total = subtotal + shippingCost - discount;
   const isMobile = device === 'mobile';
-  const fontFamily = getLayoutFont(layoutStyle);
-  const headerBg = alpha(primaryColor, 0.06);
-  const cardBorder = alpha(primaryColor, 0.12);
+  const t = getCommerceTheme(primaryColor, layoutStyle);
 
   return (
-    <div className="min-h-screen" style={{ background: alpha(primaryColor, 0.03), fontFamily }}>
-      <header className="px-5 h-14 flex items-center justify-between sticky top-0 z-40 shadow-sm" style={{ background: headerBg, borderBottom: `1px solid ${cardBorder}` }}>
-        <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium transition-colors" style={{ color: primaryColor }}><ArrowLeft className="w-4 h-4" /> Lanjut Belanja</button>
-        <span className="text-sm font-bold text-gray-900">Keranjang ({cart.reduce((s, i) => s + i.qty, 0)})</span>
+    <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
+      <header className="px-5 h-14 flex items-center justify-between sticky top-0 z-40 shadow-sm" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
+        <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium transition-colors" style={{ color: t.textSecondary }}><ArrowLeft className="w-4 h-4" /> Continue Shopping</button>
+        <span className="text-sm font-bold" style={{ color: t.textPrimary }}>Cart ({cart.reduce((s, i) => s + i.qty, 0)})</span>
         <div className="w-28" />
       </header>
 
       {cart.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <ShoppingCart className="w-12 h-12 text-gray-200" />
-          <p className="text-gray-500 text-sm font-medium">Keranjang kamu kosong</p>
-          <button onClick={onBack} className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: primaryColor }}>Mulai Belanja</button>
+          <ShoppingCart className="w-12 h-12" style={{ color: t.textMuted }} />
+          <p className="text-sm font-medium" style={{ color: t.textSecondary }}>Your cart is empty</p>
+          <button onClick={onBack} className="px-6 py-2.5 text-sm font-semibold" style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}>Start Shopping</button>
         </div>
       ) : (
         <div className={`max-w-4xl mx-auto px-4 py-6 ${isMobile ? 'flex flex-col gap-4' : 'grid grid-cols-[1fr_320px] gap-8 items-start'}`}>
@@ -192,27 +443,27 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
           {/* Left: items + shipping + promo */}
           <div className="space-y-4">
             {/* Items */}
-            <div className="bg-white rounded-2xl overflow-hidden shadow-sm" style={{ border: `1px solid ${cardBorder}` }}>
-              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${cardBorder}` }}>
-                <h3 className="text-sm font-bold text-gray-900">Produk ({cart.reduce((s, i) => s + i.qty, 0)} item)</h3>
+            <div className="overflow-hidden shadow-sm" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
+              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
+                <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Items ({cart.reduce((s, i) => s + i.qty, 0)})</h3>
               </div>
-              <div className="divide-y divide-gray-50">
+              <div>
                 {cart.map(({ product: p, qty }) => (
-                  <div key={p.id} className="flex gap-4 px-5 py-4">
-                    <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                  <div key={p.id} className="flex gap-4 px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
+                    <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0" style={{ background: t.inputBg }}>
                       <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">{p.category}</p>
-                      <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
-                      <p className="text-sm font-bold mt-0.5" style={{ color: primaryColor }}>{fmtPrice(p.price)}</p>
+                      <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: t.textMuted }}>{p.category}</p>
+                      <p className="text-sm font-semibold truncate" style={{ color: t.textPrimary }}>{p.name}</p>
+                      <p className="text-sm font-bold mt-0.5" style={{ color: t.primary }}>{fmtPrice(p.price)}</p>
                     </div>
                     <div className="flex flex-col items-end justify-between flex-shrink-0">
-                      <span className="text-sm font-bold text-gray-900">{fmtPrice(p.price * qty)}</span>
-                      <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden mt-2">
-                        <button onClick={() => onUpdateQty(p.id, -1)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 text-base font-medium">−</button>
-                        <span className="w-8 text-center text-xs font-bold text-gray-700">{qty}</span>
-                        <button onClick={() => onUpdateQty(p.id, 1)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 text-base font-medium">+</button>
+                      <span className="text-sm font-bold" style={{ color: t.textPrimary }}>{fmtPrice(p.price * qty)}</span>
+                      <div className="flex items-center overflow-hidden mt-2" style={{ border: `1px solid ${t.surfaceBorder}`, borderRadius: '8px' }}>
+                        <button onClick={() => onUpdateQty(p.id, -1)} className="w-8 h-8 flex items-center justify-center text-base font-medium" style={{ color: t.textSecondary }}>−</button>
+                        <span className="w-8 text-center text-xs font-bold" style={{ color: t.textPrimary }}>{qty}</span>
+                        <button onClick={() => onUpdateQty(p.id, 1)} className="w-8 h-8 flex items-center justify-center text-base font-medium" style={{ color: t.textSecondary }}>+</button>
                       </div>
                     </div>
                   </div>
@@ -221,9 +472,9 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
             </div>
 
             {/* Shipping method selector */}
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border: `1px solid ${cardBorder}` }}>
-              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${cardBorder}` }}>
-                <h3 className="text-sm font-bold text-gray-900">Pilih Pengiriman</h3>
+            <div className="shadow-sm overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
+              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
+                <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Shipping Method</h3>
               </div>
               <div className="p-4 space-y-2">
                 {shippingMethods.map(method => {
@@ -231,82 +482,81 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
                   const cost = isFreeByThreshold ? 0 : method.price;
                   const isSelected = selectedId === method.id;
                   return (
-                    <label key={method.id} className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${isSelected ? 'border-current bg-opacity-5' : 'border-gray-100 hover:border-gray-200 bg-white'}`}
-                      style={isSelected ? { borderColor: primaryColor, background: alpha(primaryColor, 0.04) } : {}}>
+                    <label key={method.id} className="flex items-center gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }}>
                       <input type="radio" name="shipping" value={method.id} checked={isSelected} onChange={() => setSelectedId(method.id)} className="sr-only" />
-                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'border-current' : 'border-gray-300'}`} style={isSelected ? { borderColor: primaryColor } : {}}>
-                        {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: primaryColor }} />}
+                      <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
+                        {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
                       </div>
                       <span className="text-lg flex-shrink-0">{method.icon}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900">{method.name}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">Estimasi tiba: {method.estimatedDays}</p>
+                        <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{method.name}</p>
+                        <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Est. arrival: {method.estimatedDays}</p>
                       </div>
-                      <span className="text-sm font-bold flex-shrink-0" style={{ color: primaryColor }}>
-                        {cost === 0 ? 'GRATIS' : fmtPrice(cost)}
+                      <span className="text-sm font-bold flex-shrink-0" style={{ color: t.primary }}>
+                        {cost === 0 ? 'FREE' : fmtPrice(cost)}
                       </span>
                     </label>
                   );
                 })}
                 {freeThreshold && subtotal < freeThreshold && (
-                  <div className="mt-2 px-4 py-2.5 bg-amber-50 rounded-xl border border-amber-100 text-xs text-amber-700">
-                    🎁 Tambah belanja {fmtPrice(freeThreshold - subtotal)} lagi untuk gratis ongkir!
+                  <div className="mt-2 px-4 py-2.5 rounded-xl border text-xs text-amber-700" style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
+                    🎁 Add {fmtPrice(freeThreshold - subtotal)} more for free shipping!
                   </div>
                 )}
               </div>
             </div>
 
             {/* Promo code */}
-            <div className="bg-white rounded-2xl shadow-sm p-4" style={{ border: `1px solid ${cardBorder}` }}>
-              <p className="text-sm font-bold text-gray-900 mb-3">Kode Promo</p>
+            <div className="shadow-sm p-4" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
+              <p className="text-sm font-bold mb-3" style={{ color: t.textPrimary }}>Promo Code</p>
               <div className="flex gap-2">
                 <input
                   value={promoCode}
                   onChange={e => { setPromoCode(e.target.value.toUpperCase()); setPromoApplied(false); }}
-                  placeholder="Masukkan kode promo"
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:border-transparent"
-                  style={{ '--tw-ring-color': alpha(primaryColor, 0.3) } as CSSProperties}
+                  placeholder="Enter promo code"
+                  className="flex-1 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent"
+                  style={{ background: t.inputBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}
                 />
                 <button
                   onClick={() => promoCode && setPromoApplied(true)}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white hover:opacity-85 transition-opacity"
-                  style={{ background: primaryColor }}
+                  className="px-5 py-2.5 text-sm font-bold hover:opacity-85 transition-opacity"
+                  style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
                 >
-                  {promoApplied ? <Check className="w-4 h-4" /> : 'Pakai'}
+                  {promoApplied ? <Check className="w-4 h-4" /> : 'Apply'}
                 </button>
               </div>
-              {promoApplied && <p className="text-xs text-emerald-600 mt-2 font-medium">✓ Kode GLOW20 berhasil! Diskon 10% diterapkan.</p>}
+              {promoApplied && <p className="text-xs mt-2 font-medium" style={{ color: t.successText }}>✓ Code applied! 10% discount.</p>}
             </div>
           </div>
 
           {/* Right: order summary */}
-          <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3" style={{ border: `1px solid ${cardBorder}` }}>
-            <h3 className="text-sm font-bold text-gray-900">Ringkasan Pesanan</h3>
+          <div className="shadow-sm p-5 space-y-3" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
+            <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Order Summary</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span className="font-medium">{fmtPrice(subtotal)}</span></div>
+              <div className="flex justify-between"><span style={{ color: t.textSecondary }}>Subtotal</span><span className="font-medium" style={{ color: t.textPrimary }}>{fmtPrice(subtotal)}</span></div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Ongkos kirim</span>
-                <span className="font-medium">{shippingCost === 0 ? <span className="text-emerald-600 font-semibold">GRATIS</span> : fmtPrice(shippingCost)}</span>
+                <span style={{ color: t.textSecondary }}>Shipping</span>
+                <span className="font-medium">{shippingCost === 0 ? <span className="font-semibold" style={{ color: t.successText }}>FREE</span> : <span style={{ color: t.textPrimary }}>{fmtPrice(shippingCost)}</span>}</span>
               </div>
               {selectedMethod && (
-                <p className="text-xs text-gray-400">{selectedMethod.icon} {selectedMethod.name} · {selectedMethod.estimatedDays}</p>
+                <p className="text-xs" style={{ color: t.textMuted }}>{selectedMethod.icon} {selectedMethod.name} · {selectedMethod.estimatedDays}</p>
               )}
               {discount > 0 && (
-                <div className="flex justify-between text-emerald-600"><span>Diskon promo</span><span className="font-medium">−{fmtPrice(discount)}</span></div>
+                <div className="flex justify-between" style={{ color: t.successText }}><span>Promo discount</span><span className="font-medium">−{fmtPrice(discount)}</span></div>
               )}
             </div>
-            <div className="border-t border-gray-100 pt-3 flex justify-between font-bold text-sm">
-              <span>Total</span>
-              <span style={{ color: primaryColor }}>{fmtPrice(total)}</span>
+            <div className="pt-3 flex justify-between font-bold text-sm" style={{ borderTop: `1px solid ${t.divider}` }}>
+              <span style={{ color: t.textPrimary }}>Total</span>
+              <span style={{ color: t.primary }}>{fmtPrice(total)}</span>
             </div>
             <button
               onClick={() => onCheckout(selectedId)}
-              className="w-full py-3.5 rounded-xl text-sm font-bold text-white hover:opacity-90 transition-opacity mt-1"
-              style={{ background: primaryColor }}
+              className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity mt-1"
+              style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
             >
-              Lanjut ke Checkout →
+              Proceed to Checkout →
             </button>
-            <p className="text-[10px] text-gray-400 text-center">🔒 Transaksi aman & terlindungi</p>
+            <p className="text-[10px] text-center" style={{ color: t.textMuted }}>🔒 Secure &amp; protected transaction</p>
           </div>
         </div>
       )}
@@ -341,30 +591,27 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const shippingCost = (freeThreshold && subtotal >= freeThreshold) ? 0 : (selectedShipping?.price ?? 15000);
   const total = subtotal + shippingCost;
   const isMobile = device === 'mobile';
-  const inp = 'w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:border-transparent bg-white';
-  const lbl = 'text-xs font-semibold text-gray-600 mb-1.5 block';
-
   const selectedPayment = paymentMethods.find(m => m.id === selectedPayId);
-  const fontFamily = getLayoutFont(layoutStyle);
-  const headerBg = alpha(primaryColor, 0.06);
-  const cardBorder = alpha(primaryColor, 0.12);
+  const t = getCommerceTheme(primaryColor, layoutStyle);
+  const inpStyle: CSSProperties = { background: t.inputBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties;
+  const lblStyle: CSSProperties = { color: t.textSecondary, fontSize: '0.75rem', fontWeight: 600, marginBottom: '6px', display: 'block' };
 
   return (
-    <div className="min-h-screen" style={{ background: alpha(primaryColor, 0.03), fontFamily }}>
-      <header className="px-5 h-14 flex items-center justify-between sticky top-0 z-40 shadow-sm" style={{ background: headerBg, borderBottom: `1px solid ${cardBorder}` }}>
-        <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium transition-colors" style={{ color: primaryColor }}><ArrowLeft className="w-4 h-4" /> Keranjang</button>
-        <span className="text-sm font-bold text-gray-900">{storeName}</span>
+    <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
+      <header className="px-5 h-14 flex items-center justify-between sticky top-0 z-40 shadow-sm" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
+        <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium transition-colors" style={{ color: t.textSecondary }}><ArrowLeft className="w-4 h-4" /> Cart</button>
+        <span className="text-sm font-bold" style={{ color: t.textPrimary }}>{storeName}</span>
         <div className="w-28" />
       </header>
 
       {/* Progress bar */}
-      <div className="px-5 py-3" style={{ background: headerBg, borderBottom: `1px solid ${cardBorder}` }}>
+      <div className="px-5 py-3" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
         <div className="max-w-4xl mx-auto flex items-center gap-2">
-          {['Keranjang', 'Checkout', 'Konfirmasi'].map((step, i) => (
+          {['Cart', 'Checkout', 'Confirmation'].map((step, i) => (
             <div key={step} className="flex items-center gap-2 flex-shrink-0">
-              <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white" style={{ background: i <= 1 ? primaryColor : '#d1d5db' }}>{i + 1}</div>
-              <span className="text-xs font-medium" style={{ color: i <= 1 ? '#111827' : '#9ca3af' }}>{step}</span>
-              {i < 2 && <div className="w-8 h-px mx-1" style={{ background: cardBorder }} />}
+              <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: i <= 1 ? t.primary : t.divider, color: i <= 1 ? t.primaryContrast : t.textMuted }}>{i + 1}</div>
+              <span className="text-xs font-medium" style={{ color: i <= 1 ? t.textPrimary : t.textMuted }}>{step}</span>
+              {i < 2 && <div className="w-8 h-px mx-1" style={{ background: t.divider }} />}
             </div>
           ))}
         </div>
@@ -376,136 +623,135 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         <div className="space-y-4">
 
           {/* Contact */}
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border: `1px solid ${cardBorder}` }}>
-            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${cardBorder}` }}>
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(primaryColor, 0.1) }}>
-                <Mail className="w-3.5 h-3.5" style={{ color: primaryColor }} />
+          <div className="shadow-sm overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
+            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(t.primary, 0.1) }}>
+                <Mail className="w-3.5 h-3.5" style={{ color: t.primary }} />
               </div>
-              <h3 className="text-sm font-bold text-gray-900">Informasi Kontak</h3>
+              <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Contact Information</h3>
             </div>
             <div className="p-5 grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <label className={lbl}>Email</label>
-                <input type="email" className={inp} value={form.email} onChange={set('email')} placeholder="nama@email.com" />
+                <label style={lblStyle}>Email</label>
+                <input type="email" className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.email} onChange={set('email')} placeholder="name@email.com" />
               </div>
               <div className="col-span-2">
-                <label className={lbl}>WhatsApp / No. HP</label>
-                <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:border-transparent" style={{ '--tw-ring-color': alpha(primaryColor, 0.3) } as CSSProperties}>
-                  <span className="px-3 py-2.5 bg-gray-50 text-xs font-medium text-gray-500 border-r border-gray-200">+62</span>
-                  <input type="tel" className="flex-1 px-3 py-2.5 text-sm outline-none bg-white" value={form.whatsapp} onChange={set('whatsapp')} placeholder="81234567890" />
+                <label style={lblStyle}>WhatsApp</label>
+                <div className="flex items-center overflow-hidden focus-within:ring-2 focus-within:border-transparent" style={{ border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}>
+                  <span className="px-3 py-2.5 text-xs font-medium" style={{ background: t.inputBg, color: t.textMuted, borderRight: `1px solid ${t.inputBorder}` }}>+62</span>
+                  <input type="tel" className="flex-1 px-3 py-2.5 text-sm outline-none" style={{ background: t.inputBg, color: t.textPrimary }} value={form.whatsapp} onChange={set('whatsapp')} placeholder="81234567890" />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Delivery address */}
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border: `1px solid ${cardBorder}` }}>
-            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${cardBorder}` }}>
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(primaryColor, 0.1) }}>
-                <MapPin className="w-3.5 h-3.5" style={{ color: primaryColor }} />
+          <div className="shadow-sm overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
+            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(t.primary, 0.1) }}>
+                <MapPin className="w-3.5 h-3.5" style={{ color: t.primary }} />
               </div>
-              <h3 className="text-sm font-bold text-gray-900">Alamat Pengiriman</h3>
+              <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Shipping Information</h3>
             </div>
             <div className="p-5 grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <label className={lbl}>Nama Penerima</label>
-                <input className={inp} value={form.name} onChange={set('name')} placeholder="Nama lengkap penerima" />
+                <label style={lblStyle}>Full Name</label>
+                <input className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.name} onChange={set('name')} placeholder="Recipient full name" />
               </div>
               <div className="col-span-2">
-                <label className={lbl}>Alamat Lengkap</label>
+                <label style={lblStyle}>Full Address</label>
                 <textarea
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:border-transparent bg-white resize-none"
-                  style={{ '--tw-ring-color': alpha(primaryColor, 0.3) } as CSSProperties}
+                  className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent resize-none"
+                  style={{ ...inpStyle, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}
                   rows={2}
                   value={form.address}
                   onChange={set('address')}
-                  placeholder="Nama jalan, nomor, RT/RW, kelurahan, kecamatan"
+                  placeholder="Street name, number, district, subdistrict"
                 />
               </div>
               <div>
-                <label className={lbl}>Kota / Kabupaten</label>
-                <input className={inp} value={form.city} onChange={set('city')} placeholder="Jakarta Selatan" />
+                <label style={lblStyle}>City</label>
+                <input className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.city} onChange={set('city')} placeholder="City" />
               </div>
               <div>
-                <label className={lbl}>Kode Pos</label>
-                <input className={inp} value={form.postal} onChange={set('postal')} placeholder="12345" maxLength={5} />
+                <label style={lblStyle}>Postal Code</label>
+                <input className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.postal} onChange={set('postal')} placeholder="12345" maxLength={5} />
               </div>
               <div className="col-span-2">
-                <label className={lbl}>Provinsi</label>
+                <label style={lblStyle}>Province</label>
                 <div className="relative">
                   <select
                     value={form.province}
                     onChange={set('province')}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:border-transparent bg-white appearance-none pr-8"
-                    style={{ '--tw-ring-color': alpha(primaryColor, 0.3) } as CSSProperties}
+                    className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent appearance-none pr-8"
+                    style={{ ...inpStyle, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}
                   >
-                    <option value="">Pilih provinsi...</option>
+                    <option value="">Select province...</option>
                     {INDONESIAN_PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: t.textMuted }} />
                 </div>
               </div>
             </div>
             {/* Selected shipping summary */}
             {selectedShipping && (
-              <div className="mx-5 mb-4 px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 flex items-center gap-3">
+              <div className="mx-5 mb-4 px-4 py-3 flex items-center gap-3" style={{ borderRadius: t.inputRadius, border: `1px solid ${t.surfaceBorder}`, background: t.inputBg }}>
                 <span className="text-base">{selectedShipping.icon}</span>
                 <div className="flex-1">
-                  <p className="text-xs font-semibold text-gray-700">{selectedShipping.name}</p>
-                  <p className="text-[10px] text-gray-400">Estimasi: {selectedShipping.estimatedDays}</p>
+                  <p className="text-xs font-semibold" style={{ color: t.textPrimary }}>{selectedShipping.name}</p>
+                  <p className="text-[10px]" style={{ color: t.textMuted }}>Est: {selectedShipping.estimatedDays}</p>
                 </div>
-                <span className="text-xs font-bold" style={{ color: primaryColor }}>
-                  {shippingCost === 0 ? 'GRATIS' : fmtPrice(shippingCost)}
+                <span className="text-xs font-bold" style={{ color: t.primary }}>
+                  {shippingCost === 0 ? 'FREE' : fmtPrice(shippingCost)}
                 </span>
               </div>
             )}
           </div>
 
           {/* Payment method */}
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border: `1px solid ${cardBorder}` }}>
-            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${cardBorder}` }}>
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(primaryColor, 0.1) }}>
-                <Phone className="w-3.5 h-3.5" style={{ color: primaryColor }} />
+          <div className="shadow-sm overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
+            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(t.primary, 0.1) }}>
+                <Phone className="w-3.5 h-3.5" style={{ color: t.primary }} />
               </div>
-              <h3 className="text-sm font-bold text-gray-900">Metode Pembayaran</h3>
+              <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Payment Method</h3>
             </div>
             <div className="p-5 space-y-2">
               {paymentMethods.map(pm => {
                 const icon = PAYMENT_ICONS[pm.id] ?? PAYMENT_ICONS[pm.type] ?? '💳';
                 const isSelected = selectedPayId === pm.id;
                 return (
-                  <label key={pm.id} className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${isSelected ? '' : 'border-gray-100 hover:border-gray-200'}`}
-                    style={isSelected ? { borderColor: primaryColor, background: alpha(primaryColor, 0.04) } : {}}>
+                  <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }}>
                     <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors`} style={isSelected ? { borderColor: primaryColor } : { borderColor: '#d1d5db' }}>
-                      {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: primaryColor }} />}
+                    <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
+                      {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
                     </div>
                     <span className="text-xl flex-shrink-0">{icon}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900">{pm.name}</p>
+                      <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
                       {pm.type === 'bank_transfer' && pm.bankName && (
-                        <p className="text-xs text-gray-400 mt-0.5">{pm.bankName} · ****{pm.accountNumber?.slice(-4)}</p>
+                        <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{pm.bankName} · ****{pm.accountNumber?.slice(-4)}</p>
                       )}
                       {pm.type === 'ewallet' && pm.ewalletNumber && (
-                        <p className="text-xs text-gray-400 mt-0.5">{pm.ewalletNumber}</p>
+                        <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{pm.ewalletNumber}</p>
                       )}
                       {pm.type === 'qris' && (
-                        <p className="text-xs text-gray-400 mt-0.5">Bayar dengan scan QR dari aplikasi apapun</p>
+                        <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Pay by scanning QR from any app</p>
                       )}
                       {pm.type === 'cod' && (
-                        <p className="text-xs text-gray-400 mt-0.5">Bayar saat barang tiba di tanganmu</p>
+                        <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Pay when your order arrives</p>
                       )}
                       {/* Expanded details when selected */}
                       {isSelected && pm.type === 'bank_transfer' && pm.accountNumber && (
-                        <div className="mt-3 p-3 bg-white rounded-xl border border-gray-100 space-y-1.5">
-                          <p className="text-xs text-gray-500">Bank: <span className="font-bold text-gray-800">{pm.bankName}</span></p>
-                          <p className="text-xs text-gray-500">No. Rekening: <span className="font-bold text-gray-800 font-mono">{pm.accountNumber}</span></p>
-                          <p className="text-xs text-gray-500">Atas Nama: <span className="font-bold text-gray-800">{pm.accountHolder}</span></p>
+                        <div className="mt-3 p-3 space-y-1.5" style={{ background: t.inputBg, borderRadius: t.inputRadius, border: `1px solid ${t.surfaceBorder}` }}>
+                          <p className="text-xs" style={{ color: t.textSecondary }}>Bank: <span className="font-bold" style={{ color: t.textPrimary }}>{pm.bankName}</span></p>
+                          <p className="text-xs" style={{ color: t.textSecondary }}>Account Number: <span className="font-bold font-mono" style={{ color: t.textPrimary }}>{pm.accountNumber}</span></p>
+                          <p className="text-xs" style={{ color: t.textSecondary }}>Account Name: <span className="font-bold" style={{ color: t.textPrimary }}>{pm.accountHolder}</span></p>
                         </div>
                       )}
                       {isSelected && pm.type === 'qris' && (
-                        <div className="mt-3 flex justify-center p-4 bg-white rounded-xl border border-gray-100">
-                          <div className="w-28 h-28 bg-gray-100 rounded-xl flex items-center justify-center text-4xl">📱</div>
+                        <div className="mt-3 flex justify-center p-4" style={{ background: t.inputBg, borderRadius: t.inputRadius, border: `1px solid ${t.surfaceBorder}` }}>
+                          <div className="w-28 h-28 rounded-xl flex items-center justify-center text-4xl" style={{ background: t.pageBg }}>📱</div>
                         </div>
                       )}
                     </div>
@@ -522,41 +768,41 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         </div>
 
         {/* Right: order summary */}
-        <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3" style={{ border: `1px solid ${cardBorder}` }}>
-          <h3 className="text-sm font-bold text-gray-900">Pesanan ({cart.reduce((s, i) => s + i.qty, 0)} item)</h3>
+        <div className="shadow-sm p-5 space-y-3" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
+          <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Order Summary ({cart.reduce((s, i) => s + i.qty, 0)} items)</h3>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {cart.map(({ product: p, qty }) => (
               <div key={p.id} className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0" style={{ background: t.inputBg }}>
                   <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-gray-800 truncate">{p.name}</p>
-                  <p className="text-[10px] text-gray-400">×{qty}</p>
+                  <p className="text-xs font-medium truncate" style={{ color: t.textPrimary }}>{p.name}</p>
+                  <p className="text-[10px]" style={{ color: t.textMuted }}>×{qty}</p>
                 </div>
-                <span className="text-xs font-bold text-gray-700">{fmtPrice(p.price * qty)}</span>
+                <span className="text-xs font-bold" style={{ color: t.textPrimary }}>{fmtPrice(p.price * qty)}</span>
               </div>
             ))}
           </div>
-          <div className="pt-3 space-y-1.5 text-sm" style={{ borderTop: `1px solid ${cardBorder}` }}>
-            <div className="flex justify-between text-gray-500 text-xs"><span>Subtotal</span><span>{fmtPrice(subtotal)}</span></div>
-            <div className="flex justify-between text-gray-500 text-xs">
-              <span>Ongkos kirim</span>
-              <span>{shippingCost === 0 ? <span className="text-emerald-600 font-semibold">GRATIS</span> : fmtPrice(shippingCost)}</span>
+          <div className="pt-3 space-y-1.5 text-sm" style={{ borderTop: `1px solid ${t.divider}` }}>
+            <div className="flex justify-between text-xs"><span style={{ color: t.textSecondary }}>Subtotal</span><span style={{ color: t.textPrimary }}>{fmtPrice(subtotal)}</span></div>
+            <div className="flex justify-between text-xs">
+              <span style={{ color: t.textSecondary }}>Shipping</span>
+              <span>{shippingCost === 0 ? <span className="font-semibold" style={{ color: t.successText }}>FREE</span> : <span style={{ color: t.textPrimary }}>{fmtPrice(shippingCost)}</span>}</span>
             </div>
-            <div className="flex justify-between font-bold pt-1.5" style={{ borderTop: `1px solid ${cardBorder}` }}>
-              <span>Total</span>
-              <span style={{ color: primaryColor }}>{fmtPrice(total)}</span>
+            <div className="flex justify-between font-bold pt-1.5" style={{ borderTop: `1px solid ${t.divider}` }}>
+              <span style={{ color: t.textPrimary }}>Total</span>
+              <span style={{ color: t.primary }}>{fmtPrice(total)}</span>
             </div>
           </div>
           <button
             onClick={() => onPlaceOrder(selectedPayId, form)}
-            className="w-full py-3.5 rounded-xl text-sm font-bold text-white hover:opacity-90 transition-opacity"
-            style={{ background: primaryColor }}
+            className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity"
+            style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
           >
-            Buat Pesanan 🚀
+            Place Order 🚀
           </button>
-          <p className="text-[10px] text-gray-400 text-center">🔒 Pembayaran aman & terlindungi</p>
+          <p className="text-[10px] text-center" style={{ color: t.textMuted }}>🔒 Secure &amp; protected payment</p>
         </div>
       </div>
     </div>
@@ -575,100 +821,99 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
   const allMethods = paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS;
   const payment = allMethods.find(m => m.id === selectedPaymentId) ?? allMethods.find(m => m.enabled);
   const waNumber = paymentSettings?.confirmationWhatsapp;
-  const fontFamily = getLayoutFont(layoutStyle);
-  const cardBorder = alpha(primaryColor, 0.12);
+  const t = getCommerceTheme(primaryColor, layoutStyle);
   const handleCopy = (text: string) => {
-    try { navigator.clipboard?.writeText(text); } catch {}
+    safeClipboardWrite(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="min-h-screen" style={{ background: alpha(primaryColor, 0.03), fontFamily }}>
+    <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
       <div className="max-w-lg mx-auto px-5 py-10">
         {/* Success badge */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 rounded-full flex items-center justify-center text-3xl text-white mx-auto mb-5 shadow-xl" style={{ background: primaryColor }}>
-            <Check className="w-9 h-9" />
+          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 shadow-xl" style={{ background: t.primary }}>
+            <Check className="w-9 h-9" style={{ color: t.primaryContrast }} />
           </div>
-          <h1 className="text-2xl font-black text-gray-900 mb-1">Pesanan Diterima! 🎉</h1>
-          <p className="text-sm text-gray-500">Terima kasih sudah belanja di <span className="font-bold" style={{ color: primaryColor }}>{storeName}</span></p>
-          <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl">
-            <span className="text-xs text-gray-500">No. Pesanan:</span>
-            <span className="text-xs font-mono font-bold text-gray-800">{orderNum}</span>
+          <h1 className="text-2xl font-black mb-1" style={{ color: t.textPrimary }}>Order Received! 🎉</h1>
+          <p className="text-sm" style={{ color: t.textSecondary }}>Thank you for shopping at <span className="font-bold" style={{ color: t.primary }}>{storeName}</span></p>
+          <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl" style={{ background: t.inputBg }}>
+            <span className="text-xs" style={{ color: t.textMuted }}>Order #:</span>
+            <span className="text-xs font-mono font-bold" style={{ color: t.textPrimary }}>{orderNum}</span>
           </div>
         </div>
 
         {/* Payment instructions */}
         {payment && (
-          <div className="bg-white rounded-2xl shadow-sm mb-4 overflow-hidden" style={{ border: `1px solid ${cardBorder}` }}>
-            <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: `1px solid ${cardBorder}` }}>
+          <div className="shadow-sm mb-4 overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
+            <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: `1px solid ${t.divider}` }}>
               <span className="text-xl">{PAYMENT_ICONS[payment.id] ?? PAYMENT_ICONS[payment.type] ?? '💳'}</span>
-              <h3 className="text-sm font-bold text-gray-900">Instruksi Pembayaran</h3>
+              <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Payment Instructions</h3>
             </div>
             <div className="p-5">
               {payment.type === 'bank_transfer' && (
                 <div className="space-y-4">
-                  <div className="p-4 bg-gray-50 rounded-xl space-y-2.5">
+                  <div className="p-4 space-y-2.5" style={{ background: t.inputBg, borderRadius: t.inputRadius }}>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-500">Bank</span>
-                      <span className="text-sm font-bold text-gray-900">{payment.bankName}</span>
+                      <span className="text-xs" style={{ color: t.textMuted }}>Bank</span>
+                      <span className="text-sm font-bold" style={{ color: t.textPrimary }}>{payment.bankName}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-500">No. Rekening</span>
+                      <span className="text-xs" style={{ color: t.textMuted }}>Account Number</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold font-mono text-gray-900">{payment.accountNumber}</span>
-                        <button onClick={() => handleCopy(payment.accountNumber ?? '')} className="p-1 rounded-lg hover:bg-gray-200 transition-colors">
-                          {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-gray-400" />}
+                        <span className="text-sm font-bold font-mono" style={{ color: t.textPrimary }}>{payment.accountNumber}</span>
+                        <button onClick={() => handleCopy(payment.accountNumber ?? '')} className="p-1 rounded-lg transition-colors" style={{ background: t.surfaceBorder }}>
+                          {copied ? <Check className="w-3.5 h-3.5" style={{ color: t.successText }} /> : <Copy className="w-3.5 h-3.5" style={{ color: t.textMuted }} />}
                         </button>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-500">Atas Nama</span>
-                      <span className="text-sm font-bold text-gray-900">{payment.accountHolder}</span>
+                      <span className="text-xs" style={{ color: t.textMuted }}>Account Name</span>
+                      <span className="text-sm font-bold" style={{ color: t.textPrimary }}>{payment.accountHolder}</span>
                     </div>
-                    <div className="flex justify-between items-center border-t border-gray-200 pt-2.5 mt-2.5">
-                      <span className="text-xs text-gray-500">Total Transfer</span>
+                    <div className="flex justify-between items-center pt-2.5 mt-2.5" style={{ borderTop: `1px solid ${t.divider}` }}>
+                      <span className="text-xs" style={{ color: t.textMuted }}>Amount to Pay</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-black" style={{ color: primaryColor }}>{fmtPrice(total)}</span>
-                        <button onClick={() => handleCopy(String(total))} className="p-1 rounded-lg hover:bg-gray-200 transition-colors">
-                          {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-gray-400" />}
+                        <span className="text-sm font-black" style={{ color: t.primary }}>{fmtPrice(total)}</span>
+                        <button onClick={() => handleCopy(String(total))} className="p-1 rounded-lg transition-colors" style={{ background: t.surfaceBorder }}>
+                          {copied ? <Check className="w-3.5 h-3.5" style={{ color: t.successText }} /> : <Copy className="w-3.5 h-3.5" style={{ color: t.textMuted }} />}
                         </button>
                       </div>
                     </div>
                   </div>
                   {payment.instructions && (
-                    <p className="text-xs text-gray-500 leading-relaxed">{payment.instructions}</p>
+                    <p className="text-xs leading-relaxed" style={{ color: t.textMuted }}>{payment.instructions}</p>
                   )}
                 </div>
               )}
 
               {payment.type === 'qris' && (
                 <div className="text-center space-y-3">
-                  <div className="w-36 h-36 bg-gray-100 rounded-2xl mx-auto flex items-center justify-center text-5xl">📱</div>
-                  <p className="text-sm font-semibold text-gray-900">Total: <span style={{ color: primaryColor }}>{fmtPrice(total)}</span></p>
-                  {payment.instructions && <p className="text-xs text-gray-500 leading-relaxed">{payment.instructions}</p>}
+                  <div className="w-36 h-36 rounded-2xl mx-auto flex items-center justify-center text-5xl" style={{ background: t.inputBg }}>📱</div>
+                  <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>Total: <span style={{ color: t.primary }}>{fmtPrice(total)}</span></p>
+                  {payment.instructions && <p className="text-xs leading-relaxed" style={{ color: t.textMuted }}>{payment.instructions}</p>}
                 </div>
               )}
 
               {payment.type === 'cod' && (
-                <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100">
+                <div className="flex items-start gap-3 p-4 rounded-xl border" style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
                   <span className="text-2xl">💵</span>
                   <div>
-                    <p className="text-sm font-bold text-gray-900">Bayar di Tempat</p>
-                    <p className="text-sm font-bold mt-0.5" style={{ color: primaryColor }}>Siapkan {fmtPrice(total)}</p>
-                    <p className="text-xs text-gray-500 mt-1">{payment.instructions ?? 'Siapkan uang pas saat kurir tiba.'}</p>
+                    <p className="text-sm font-bold" style={{ color: t.textPrimary }}>Cash on Delivery</p>
+                    <p className="text-sm font-bold mt-0.5" style={{ color: t.primary }}>Prepare {fmtPrice(total)}</p>
+                    <p className="text-xs mt-1" style={{ color: t.textMuted }}>{payment.instructions ?? 'Have exact change ready when the courier arrives.'}</p>
                   </div>
                 </div>
               )}
 
               {payment.type === 'ewallet' && (
                 <div className="space-y-3">
-                  <div className="p-4 bg-gray-50 rounded-xl space-y-2">
-                    <div className="flex justify-between"><span className="text-xs text-gray-500">Kirim ke</span><span className="text-sm font-bold text-gray-900">{payment.ewalletNumber}</span></div>
-                    <div className="flex justify-between"><span className="text-xs text-gray-500">Nominal</span><span className="text-sm font-black" style={{ color: primaryColor }}>{fmtPrice(total)}</span></div>
+                  <div className="p-4 space-y-2" style={{ background: t.inputBg, borderRadius: t.inputRadius }}>
+                    <div className="flex justify-between"><span className="text-xs" style={{ color: t.textMuted }}>Send to</span><span className="text-sm font-bold" style={{ color: t.textPrimary }}>{payment.ewalletNumber}</span></div>
+                    <div className="flex justify-between"><span className="text-xs" style={{ color: t.textMuted }}>Amount</span><span className="text-sm font-black" style={{ color: t.primary }}>{fmtPrice(total)}</span></div>
                   </div>
-                  {payment.instructions && <p className="text-xs text-gray-500">{payment.instructions}</p>}
+                  {payment.instructions && <p className="text-xs" style={{ color: t.textMuted }}>{payment.instructions}</p>}
                 </div>
               )}
             </div>
@@ -678,59 +923,59 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
         {/* WhatsApp confirmation */}
         {waNumber && (
           <a
-            href={`https://wa.me/${waNumber}?text=Halo%2C%20saya%20sudah%20melakukan%20pembayaran%20untuk%20pesanan%20*${orderNum}*%20sebesar%20*${fmtPrice(total)}*%20%F0%9F%99%8F`}
+            href={`https://wa.me/${waNumber}?text=Hi%2C%20I%20have%20made%20payment%20for%20order%20*${orderNum}*%20totaling%20*${fmtPrice(total)}*%20%F0%9F%99%8F`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-2xl text-sm font-bold text-white mb-4 hover:opacity-90 transition-opacity"
-            style={{ background: '#25D366' }}
+            className="flex items-center justify-center gap-2.5 w-full py-3.5 text-sm font-bold text-white mb-4 hover:opacity-90 transition-opacity"
+            style={{ background: '#25D366', borderRadius: t.btnRadius }}
           >
             <MessageCircle className="w-4 h-4" />
-            Konfirmasi Pembayaran via WhatsApp
+            Confirm via WhatsApp
           </a>
         )}
 
         {/* Status stepper */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Status Pesanan</p>
+        <div className="shadow-sm p-5 mb-4" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
+          <p className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: t.textMuted }}>Order Status</p>
           <div className="flex items-center">
             {[
-              { icon: '📋', label: 'Diproses', active: true },
-              { icon: '📦', label: 'Dikemas', active: false },
-              { icon: '🚚', label: 'Dikirim', active: false },
-              { icon: '✅', label: 'Diterima', active: false },
+              { icon: '📋', label: 'Processing', active: true },
+              { icon: '📦', label: 'Packing', active: false },
+              { icon: '🚚', label: 'Shipped', active: false },
+              { icon: '✅', label: 'Delivered', active: false },
             ].map((step, i, arr) => (
               <div key={step.label} className="flex items-center flex-1">
                 <div className="flex flex-col items-center flex-shrink-0">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-base border-2 ${step.active ? 'border-current shadow-sm' : 'border-gray-200 bg-gray-50'}`}
-                    style={step.active ? { borderColor: primaryColor, background: alpha(primaryColor, 0.08) } : {}}>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-base border-2"
+                    style={step.active ? { borderColor: t.primary, background: alpha(t.primary, 0.08) } : { borderColor: t.divider, background: t.inputBg }}>
                     {step.icon}
                   </div>
-                  <p className={`text-[9px] font-semibold mt-1 text-center ${step.active ? '' : 'text-gray-400'}`}
-                    style={step.active ? { color: primaryColor } : {}}>
+                  <p className="text-[9px] font-semibold mt-1 text-center"
+                    style={{ color: step.active ? t.primary : t.textMuted }}>
                     {step.label}
                   </p>
                 </div>
-                {i < arr.length - 1 && <div className="flex-1 h-px bg-gray-200 mx-1 mb-4" />}
+                {i < arr.length - 1 && <div className="flex-1 h-px mx-1 mb-4" style={{ background: t.divider }} />}
               </div>
             ))}
           </div>
         </div>
 
-        <button onClick={onContinue} className="w-full py-3.5 rounded-xl text-sm font-bold text-white hover:opacity-90 transition-opacity" style={{ background: primaryColor }}>
-          Lanjut Belanja
+        <button onClick={onContinue} className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}>
+          Continue Shopping
         </button>
 
         {/* Buyer auth prompt */}
         {!buyerUser && onShowAuth && (
-          <div className="mt-3 p-3 bg-slate-50 rounded-xl text-center">
-            <p className="text-xs text-slate-500 mb-1.5">Want to track this order anytime?</p>
-            <button onClick={onShowAuth} className="text-xs font-semibold" style={{ color: primaryColor }}>
+          <div className="mt-3 p-3 rounded-xl text-center" style={{ background: t.inputBg }}>
+            <p className="text-xs mb-1.5" style={{ color: t.textMuted }}>Want to track this order anytime?</p>
+            <button onClick={onShowAuth} className="text-xs font-semibold" style={{ color: t.primary }}>
               Create a free account →
             </button>
           </div>
         )}
         {buyerUser && onMyOrders && (
-          <button onClick={onMyOrders} className="w-full mt-3 py-2.5 rounded-xl text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+          <button onClick={onMyOrders} className="w-full mt-3 py-2.5 text-sm font-medium transition-colors" style={{ borderRadius: t.btnRadius, border: `1px solid ${t.surfaceBorder}`, color: t.textSecondary, background: t.surfaceBg }}>
             View My Orders
           </button>
         )}
@@ -1012,18 +1257,94 @@ function BuyerAuthModal({ primaryColor, onClose, onSuccess, onLogout, buyerEmail
   );
 }
 
+// ── Mobile Menu Drawer ────────────────────────────────────────────────────────
+
+function MobileMenuDrawer({ open, onClose, navLinks, primaryColor, storeName, onScrollToProducts }: {
+  open: boolean; onClose: () => void; navLinks: string[]; primaryColor: string; storeName: string;
+  onScrollToProducts?: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[200]" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="absolute left-0 top-0 bottom-0 w-72 bg-white shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <span className="text-sm font-bold text-gray-900">{storeName}</span>
+          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-700 rounded-lg text-lg leading-none">✕</button>
+        </div>
+        <nav className="p-4 space-y-1">
+          {navLinks.map((l, i) => (
+            <button key={l} onClick={() => { onScrollToProducts?.(); onClose(); }}
+              className="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-colors hover:bg-gray-50"
+              style={i === 0 ? { color: primaryColor, background: alpha(primaryColor, 0.08) } : { color: '#374151' }}>
+              {l}
+            </button>
+          ))}
+        </nav>
+      </div>
+    </div>
+  );
+}
+
+// ── Search Overlay ────────────────────────────────────────────────────────────
+
+function SearchOverlay({ open, onClose, products, primaryColor, onProductClick, fmtPrice }: {
+  open: boolean; onClose: () => void; products: RichProduct[]; primaryColor: string;
+  onProductClick: (p: RichProduct) => void; fmtPrice: (n: number) => string;
+}) {
+  const [query, setQuery] = useState('');
+  const results = query.trim()
+    ? products.filter(p =>
+        p.name.toLowerCase().includes(query.toLowerCase()) ||
+        p.category.toLowerCase().includes(query.toLowerCase()) ||
+        p.description.toLowerCase().includes(query.toLowerCase()))
+    : [];
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm flex items-start justify-center" style={{ paddingTop: '15vh' }} onClick={onClose}>
+      <div className="w-full max-w-lg mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+          <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          <input autoFocus type="text" value={query} onChange={e => setQuery(e.target.value)}
+            placeholder="Search products…" className="flex-1 text-sm outline-none bg-transparent" />
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-700 text-lg leading-none">✕</button>
+        </div>
+        <div className="max-h-80 overflow-y-auto">
+          {!query.trim() && <p className="text-center py-8 text-sm text-gray-400">Start typing to search products…</p>}
+          {query.trim() && results.length === 0 && <p className="text-center py-8 text-sm text-gray-400">No results for &quot;{query}&quot;</p>}
+          {results.map(p => (
+            <button key={p.id} onClick={() => { onProductClick(p); onClose(); setQuery(''); }}
+              className="w-full flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-0">
+              <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
+                <p className="text-xs text-gray-400">{p.category}</p>
+              </div>
+              <span className="text-sm font-bold flex-shrink-0" style={{ color: primaryColor }}>{fmtPrice(p.price)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── My Orders Page ────────────────────────────────────────────────────────────
 
-function MyOrdersPage({ buyerUserId, primaryColor, storeName, storeId, onBack, fmtPrice }: {
+function MyOrdersPage({ buyerUserId, primaryColor, storeName, storeId, onBack, fmtPrice, layoutStyle }: {
   buyerUserId: string;
   primaryColor: string;
   storeName: string;
   storeId: string;
   onBack: () => void;
   fmtPrice: (n: number) => string;
+  layoutStyle?: string;
 }) {
   const [orders, setOrders] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
+  const t = getCommerceTheme(primaryColor, layoutStyle);
 
   useEffect(() => {
     fetch(`/api/orders?buyerUserId=${buyerUserId}`)
@@ -1039,26 +1360,26 @@ function MyOrdersPage({ buyerUserId, primaryColor, storeName, storeId, onBack, f
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
       {/* Header */}
-      <div className="bg-white border-b border-slate-100 sticky top-0 z-10">
+      <div className="sticky top-0 z-10" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center gap-3">
-          <button onClick={onBack} className="p-2 text-slate-400 hover:text-slate-700 rounded-lg transition-colors">
+          <button onClick={onBack} className="p-2 rounded-lg transition-colors" style={{ color: t.textMuted }}>
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <span className="text-sm font-bold text-slate-900">My Orders</span>
-          <span className="ml-1 text-xs text-slate-400">— {storeName}</span>
+          <span className="text-sm font-bold" style={{ color: t.textPrimary }}>My Orders</span>
+          <span className="ml-1 text-xs" style={{ color: t.textMuted }}>— {storeName}</span>
         </div>
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-6 space-y-3">
         {loading ? (
-          <div className="text-center py-16 text-slate-400 text-sm">Loading orders…</div>
+          <div className="text-center py-16 text-sm" style={{ color: t.textMuted }}>Loading orders…</div>
         ) : orders.length === 0 ? (
           <div className="text-center py-16">
-            <Package className="w-10 h-10 mx-auto mb-3 text-slate-200" />
-            <p className="text-sm font-medium text-slate-400">No orders yet</p>
-            <button onClick={onBack} className="mt-4 text-sm font-semibold" style={{ color: primaryColor }}>
+            <Package className="w-10 h-10 mx-auto mb-3" style={{ color: t.divider }} />
+            <p className="text-sm font-medium" style={{ color: t.textMuted }}>No orders yet</p>
+            <button onClick={onBack} className="mt-4 text-sm font-semibold" style={{ color: t.primary }}>
               Start Shopping →
             </button>
           </div>
@@ -1067,11 +1388,11 @@ function MyOrdersPage({ buyerUserId, primaryColor, storeName, storeId, onBack, f
             const items = Array.isArray(o.items) ? o.items as Record<string, unknown>[] : [];
             const status = (o.status as string) ?? 'Processing';
             const total = Number(o.total ?? 0);
-            const date = new Date(o.created_at as string).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+            const date = new Date(o.created_at as string).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
             return (
-              <div key={o.id as string} className="bg-white rounded-2xl border border-slate-100 p-4 space-y-3">
+              <div key={o.id as string} className="p-4 space-y-3" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold text-slate-700">{o.id as string}</span>
+                  <span className="text-xs font-mono font-bold" style={{ color: t.textPrimary }}>{o.id as string}</span>
                   <span className="text-xs font-semibold px-2 py-1 rounded-full text-white" style={{ background: STATUS_COLOR[status] ?? '#94a3b8' }}>
                     {status}
                   </span>
@@ -1079,20 +1400,20 @@ function MyOrdersPage({ buyerUserId, primaryColor, storeName, storeId, onBack, f
                 {items.slice(0, 2).map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
                     {item.image
-                      ? <img src={item.image as string} alt={item.name as string} className="w-10 h-10 rounded-lg object-cover bg-slate-100 flex-shrink-0" />
-                      : <div className="w-10 h-10 rounded-lg bg-slate-100 flex-shrink-0 flex items-center justify-center"><Package className="w-4 h-4 text-slate-300" /></div>
+                      ? <img src={item.image as string} alt={item.name as string} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" style={{ background: t.inputBg }} />
+                      : <div className="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: t.inputBg }}><Package className="w-4 h-4" style={{ color: t.textMuted }} /></div>
                     }
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-800 truncate">{item.name as string}</p>
-                      <p className="text-xs text-slate-400">x{item.qty as number}</p>
+                      <p className="text-sm font-medium truncate" style={{ color: t.textPrimary }}>{item.name as string}</p>
+                      <p className="text-xs" style={{ color: t.textMuted }}>x{item.qty as number}</p>
                     </div>
-                    <span className="text-sm font-semibold text-slate-900">{fmtPrice(Number(item.subtotal ?? 0))}</span>
+                    <span className="text-sm font-semibold" style={{ color: t.textPrimary }}>{fmtPrice(Number(item.subtotal ?? 0))}</span>
                   </div>
                 ))}
-                {items.length > 2 && <p className="text-xs text-slate-400">+{items.length - 2} more item(s)</p>}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-50">
-                  <span className="text-xs text-slate-400">{date}</span>
-                  <span className="text-sm font-bold" style={{ color: primaryColor }}>{fmtPrice(total)}</span>
+                {items.length > 2 && <p className="text-xs" style={{ color: t.textMuted }}>+{items.length - 2} more item(s)</p>}
+                <div className="flex items-center justify-between pt-2" style={{ borderTop: `1px solid ${t.divider}` }}>
+                  <span className="text-xs" style={{ color: t.textMuted }}>{date}</span>
+                  <span className="text-sm font-bold" style={{ color: t.primary }}>{fmtPrice(total)}</span>
                 </div>
               </div>
             );
@@ -1103,36 +1424,213 @@ function MyOrdersPage({ buyerUserId, primaryColor, storeName, storeId, onBack, f
   );
 }
 
-// ── MINIMAL layout ────────────────────────────────────────────────────────────
-// Inspired by: COS, Aesop, Muji — editorial, clean, whitespace-forward
+// ── User profile dropdown (shared across all layouts) ────────────────────────
 
-function MinimalLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory } = design;
-  const btnText = isDark(primaryColor) ? '#fff' : '#111';
+function UserProfileMenu({ buyerEmail, onUserClick, onWishlistClick, wishlistCount, iconColor, hoverClass }: {
+  buyerEmail: string | null;
+  onUserClick: () => void;
+  onWishlistClick: () => void;
+  wishlistCount: number;
+  iconColor: string;
+  hoverClass?: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  if (!buyerEmail) {
+    return (
+      <button onClick={onUserClick} className={`relative p-2 transition-colors ${hoverClass ?? ''}`} title="Sign in" style={{ color: iconColor }}>
+        <User className="w-4 h-4" />
+      </button>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`relative p-2 transition-colors ${hoverClass ?? ''}`}
+        title={buyerEmail}
+        style={{ color: iconColor }}
+      >
+        <User className="w-4 h-4" />
+        <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-emerald-500" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-1.5 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50 w-48">
+            <div className="px-3 py-2 border-b border-slate-50">
+              <p className="text-xs text-slate-400 truncate">{buyerEmail}</p>
+            </div>
+            <button
+              onClick={() => { setOpen(false); onUserClick(); }}
+              className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors text-left"
+            >
+              <Package className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+              My Orders
+            </button>
+            <button
+              onClick={() => { setOpen(false); onWishlistClick(); }}
+              className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors text-left"
+            >
+              <Heart className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
+              Wishlist
+              {wishlistCount > 0 && (
+                <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-600">{wishlistCount}</span>
+              )}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Wishlist page ──────────────────────────────────────────────────────────────
+
+function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onProductClick, onBack, primaryColor, storeName, fmtPrice, layoutStyle, device }: {
+  wishlist: Set<string>;
+  products: RichProduct[];
+  onToggleWishlist: (id: string) => void;
+  onAddToCart: (p: RichProduct, sourceRect?: DOMRect) => void;
+  onProductClick: (p: RichProduct) => void;
+  onBack: () => void;
+  primaryColor: string;
+  storeName: string;
+  fmtPrice: (amount: number) => string;
+  layoutStyle?: string;
+  device: DeviceMode;
+}) {
+  const t = getCommerceTheme(primaryColor, layoutStyle);
+  const wishlisted = products.filter(p => wishlist.has(p.id));
   const isMobile = device === 'mobile';
 
   return (
+    <div style={{ minHeight: '100vh', background: t.pageBg, fontFamily: t.fontFamily }}>
+      {/* Header */}
+      <div className="sticky top-0 z-40 px-4 h-14 flex items-center gap-3" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
+        <button onClick={onBack} className="p-2 rounded-xl transition-colors" style={{ color: t.textMuted }}>
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <Heart className="w-4 h-4 flex-shrink-0 fill-rose-500 text-rose-500" />
+          <span className="font-bold text-sm" style={{ color: t.textPrimary }}>Wishlist</span>
+          {wishlisted.length > 0 && (
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: t.badgeBg, color: t.badgeText }}>
+              {wishlisted.length}
+            </span>
+          )}
+        </div>
+        <span className="text-xs font-medium truncate max-w-[120px]" style={{ color: t.textMuted }}>{storeName}</span>
+      </div>
+
+      <div className="px-4 py-6 max-w-2xl mx-auto">
+        {wishlisted.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4" style={{ background: t.inputBg }}>
+              <Heart className="w-8 h-8" style={{ color: t.textMuted }} />
+            </div>
+            <p className="font-semibold mb-1.5" style={{ color: t.textPrimary }}>No items yet</p>
+            <p className="text-sm" style={{ color: t.textMuted }}>Tap the ♡ on any product to save it here.</p>
+            <button
+              onClick={onBack}
+              className="mt-6 px-6 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-85"
+              style={{ background: t.primary, color: t.primaryText }}
+            >
+              Browse Products
+            </button>
+          </div>
+        ) : (
+          <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-3'} gap-4`}>
+            {wishlisted.map(p => (
+              <div
+                key={p.id}
+                className="rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}` }}
+                onClick={() => onProductClick(p)}
+              >
+                <div className="relative aspect-square" style={{ background: t.inputBg }}>
+                  <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                  {p.badge && (
+                    <span className="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: t.primary }}>
+                      {p.badge}
+                    </span>
+                  )}
+                  <button
+                    onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
+                    className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110 active:scale-95"
+                    title="Remove from wishlist"
+                  >
+                    <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
+                  </button>
+                </div>
+                <div className="p-3">
+                  <p className="text-xs truncate mb-0.5" style={{ color: t.textMuted }}>{p.category}</p>
+                  <p className="text-sm font-semibold truncate" style={{ color: t.textPrimary }}>{p.name}</p>
+                  <div className="flex items-center justify-between mt-2 gap-2">
+                    <span className="text-sm font-bold" style={{ color: t.primary }}>{fmtPrice(p.price)}</span>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                        onAddToCart(p, r);
+                      }}
+                      className="flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-opacity hover:opacity-85"
+                      style={{ background: t.primary, color: t.primaryText }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── MINIMAL layout ────────────────────────────────────────────────────────────
+// Inspired by: COS, Aesop, Muji — editorial, clean, whitespace-forward
+
+function MinimalLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
+  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory } = design;
+  const btnText = isDark(primaryColor) ? '#fff' : '#111';
+  const isMobile = device === 'mobile';
+  const [selectedCol, setSelectedCol] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const productsRef = useRef<HTMLDivElement>(null);
+  const scrollToProducts = () => productsRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const displayed = selectedCol === 0 ? products : products.filter((_, i) => i % 2 === selectedCol - 1);
+
+  return (
     <div className="bg-white" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+
+      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
 
       {/* Header */}
       <header className="bg-white/96 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-5 h-15 flex items-center justify-between" style={{ height: '56px' }}>
           <span className="text-sm font-black tracking-[0.18em] uppercase text-gray-900">{storeName}</span>
-          {!isMobile && (
+          {!isMobile ? (
             <nav className="flex gap-8">
-              {navLinks.map(l => <a key={l} className="text-xs uppercase tracking-wider text-gray-400 hover:text-gray-900 transition-colors font-medium">{l}</a>)}
+              {navLinks.map(l => <a key={l} onClick={scrollToProducts} className="text-xs uppercase tracking-wider text-gray-400 hover:text-gray-900 transition-colors font-medium cursor-pointer">{l}</a>)}
             </nav>
+          ) : (
+            <button onClick={() => setMenuOpen(true)} className="p-2 text-gray-600 rounded-lg"><Menu className="w-5 h-5" /></button>
           )}
           <div className="flex items-center gap-1">
-            {!isMobile && <button className="p-2 text-gray-400 hover:text-gray-700 rounded-lg transition-colors"><Search className="w-4 h-4" /></button>}
-            <button onClick={onCartClick} className="relative p-2 text-gray-400 hover:text-gray-700 rounded-lg transition-colors">
+            {!isMobile && <button onClick={onSearchOpen} className="p-2 text-gray-400 hover:text-gray-700 rounded-lg transition-colors"><Search className="w-4 h-4" /></button>}
+            <button onClick={onWishlistClick} className="relative p-2 text-gray-400 hover:text-gray-700 rounded-lg transition-colors">
+              <Heart className="w-4 h-4" />
+              {wishlist.size > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold text-white rounded-full flex items-center justify-center bg-rose-500">{wishlist.size}</span>}
+            </button>
+            <button data-cart-btn onClick={onCartClick} className="relative p-2 text-gray-400 hover:text-gray-700 rounded-lg transition-colors">
               <ShoppingCart className="w-4 h-4" />
               {cartCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: primaryColor }}>{cartCount}</span>}
             </button>
-            <button onClick={onUserClick} className="relative p-2 text-gray-400 hover:text-gray-700 rounded-lg transition-colors" title={buyerEmail ?? 'Sign in'}>
-              <User className="w-4 h-4" />
-              {buyerEmail && <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-emerald-500" />}
-            </button>
+            <UserProfileMenu buyerEmail={buyerEmail} onUserClick={onUserClick} onWishlistClick={onWishlistClick} wishlistCount={wishlist.size} iconColor="#9ca3af" hoverClass="hover:text-gray-700 rounded-lg" />
           </div>
         </div>
       </header>
@@ -1159,7 +1657,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
             </p>
             <h1 className="text-4xl font-black leading-[1.05] tracking-tight text-gray-900 mb-4">{heroTitle}</h1>
             <p className="text-sm text-gray-500 leading-relaxed mb-7">{heroSubtitle}</p>
-            <button className="w-full py-3.5 text-sm font-bold uppercase tracking-wider rounded-full" style={{ background: primaryColor, color: btnText }}>
+            <button onClick={scrollToProducts} className="w-full py-3.5 text-sm font-bold uppercase tracking-wider rounded-full" style={{ background: primaryColor, color: btnText }}>
               {ctaText}
             </button>
           </div>
@@ -1174,10 +1672,10 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
               <h1 className="text-5xl font-black leading-[1.02] tracking-tight text-gray-900 mb-5">{heroTitle}</h1>
               <p className="text-sm text-gray-500 leading-relaxed mb-8 max-w-sm">{heroSubtitle}</p>
               <div className="flex items-center gap-4">
-                <button className="px-7 py-3 text-xs font-bold uppercase tracking-wider rounded-full hover:opacity-85 transition-opacity" style={{ background: primaryColor, color: btnText }}>
+                <button onClick={scrollToProducts} className="px-7 py-3 text-xs font-bold uppercase tracking-wider rounded-full hover:opacity-85 transition-opacity" style={{ background: primaryColor, color: btnText }}>
                   {ctaText}
                 </button>
-                <button className="text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-700 transition-colors flex items-center gap-1.5">
+                <button onClick={scrollToProducts} className="text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-700 transition-colors flex items-center gap-1.5">
                   Explore <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -1212,8 +1710,8 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
       <div className="border-y border-gray-100 bg-white">
         <div className="max-w-6xl mx-auto px-5 py-3 flex gap-2.5 overflow-x-auto">
           {collections.map((c, i) => (
-            <button key={i} className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold tracking-wide uppercase transition-all"
-              style={i === 0 ? { background: primaryColor, color: btnText } : { background: '#f3f2ef', color: '#555' }}>
+            <button key={i} onClick={() => setSelectedCol(i)} className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold tracking-wide uppercase transition-all"
+              style={selectedCol === i ? { background: primaryColor, color: btnText } : { background: '#f3f2ef', color: '#555' }}>
               {c.emoji} {c.name}
             </button>
           ))}
@@ -1222,18 +1720,18 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
       {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} device={device} />}
 
       {/* Products */}
-      <section className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
+      <section ref={productsRef} className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
         <div className="flex items-end justify-between mb-8">
           <div>
             <p className="text-[10px] uppercase tracking-[0.22em] text-gray-400 mb-1.5">Curated Selection</p>
             <h2 className="text-xl font-black tracking-tight text-gray-900">Featured Products</h2>
           </div>
-          <a className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 hover:gap-2.5 transition-all" style={{ color: primaryColor }}>
+          <button onClick={scrollToProducts} className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 hover:gap-2.5 transition-all" style={{ color: primaryColor }}>
             View All <ArrowRight className="w-3.5 h-3.5" />
-          </a>
+          </button>
         </div>
         <div className={`grid ${gridCols(device)} gap-4`}>
-          {products.map(p => (
+          {displayed.map(p => (
             <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
               <div className="relative overflow-hidden rounded-2xl bg-gray-100 mb-3" style={{ aspectRatio: isMobile ? '3/4' : '3/4' }}>
                 <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
@@ -1243,18 +1741,19 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
                 {/* Quick add — always visible on mobile, hover on desktop */}
                 <div className={`absolute bottom-0 inset-x-0 p-3 transition-transform duration-200 ${isMobile ? '' : 'translate-y-full group-hover:translate-y-0'}`}>
                   <button
-                    onClick={e => { e.stopPropagation(); onAddToCart(p); }}
+                    onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; const _card = _btn.closest('.group') as HTMLElement ?? _btn; const _wrap = _card.querySelector('.relative.overflow-hidden, .relative.aspect-square, .relative.rounded-2xl') as HTMLElement | null; const _img = (_wrap ?? _card).querySelector('img') as HTMLElement | null; onAddToCart(p, (_img ?? _wrap ?? _btn).getBoundingClientRect()); }}
                     className="w-full py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-xl text-white shadow-lg"
                     style={{ background: primaryColor }}
                   >
                     + Add to Cart
                   </button>
                 </div>
-                {!isMobile && (
-                  <button className="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Heart className="w-3.5 h-3.5 text-gray-500" />
-                  </button>
-                )}
+                <button
+                  onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
+                  className={`absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow transition-all hover:scale-110 active:scale-95 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'}`}
+                >
+                  <Heart className={`w-3.5 h-3.5 transition-colors ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+                </button>
               </div>
               <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">{p.category}</p>
               <p className="text-sm font-bold text-gray-900 truncate">{p.name}</p>
@@ -1338,31 +1837,41 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
 // ── BOLD layout ───────────────────────────────────────────────────────────────
 // Inspired by: Nike, OFF-WHITE, Supreme — dark, high-energy, high contrast
 
-function BoldLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail }: LayoutProps) {
+function BoldLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen: _onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [] } = design;
   const isMobile = device === 'mobile';
+  const [selectedCol, setSelectedCol] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const productsRef = useRef<HTMLDivElement>(null);
+  const scrollToProducts = () => productsRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const displayed = selectedCol === 0 ? products : products.filter((_, i) => i % 2 === selectedCol - 1);
 
   return (
     <div className="bg-[#0a0a0a]" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+
+      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
 
       {/* Header */}
       <header className="bg-[#0a0a0a]/96 backdrop-blur-sm border-b border-white/8 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-5 flex items-center justify-between" style={{ height: '56px' }}>
           <span className="text-sm font-black uppercase tracking-[0.18em] text-white">{storeName}</span>
-          {!isMobile && (
+          {!isMobile ? (
             <nav className="flex gap-7">
-              {navLinks.map(l => <a key={l} className="text-xs uppercase tracking-widest text-white/40 hover:text-white transition-colors">{l}</a>)}
+              {navLinks.map(l => <a key={l} onClick={scrollToProducts} className="text-xs uppercase tracking-widest text-white/40 hover:text-white transition-colors cursor-pointer">{l}</a>)}
             </nav>
+          ) : (
+            <button onClick={() => setMenuOpen(true)} className="p-2 text-white/60"><Menu className="w-5 h-5" /></button>
           )}
           <div className="flex items-center gap-1">
-            <button onClick={onCartClick} className="relative p-2 text-white/50 hover:text-white transition-colors">
+            <button onClick={onWishlistClick} className="relative p-2 text-white/50 hover:text-white transition-colors">
+              <Heart className="w-5 h-5" />
+              {wishlist.size > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold text-black rounded-full flex items-center justify-center bg-rose-500">{wishlist.size}</span>}
+            </button>
+            <button data-cart-btn onClick={onCartClick} className="relative p-2 text-white/50 hover:text-white transition-colors">
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold text-black rounded-full flex items-center justify-center" style={{ background: primaryColor }}>{cartCount}</span>}
             </button>
-            <button onClick={onUserClick} className="relative p-2 text-white/50 hover:text-white transition-colors" title={buyerEmail ?? 'Sign in'}>
-              <User className="w-5 h-5" />
-              {buyerEmail && <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-emerald-500" />}
-            </button>
+            <UserProfileMenu buyerEmail={buyerEmail} onUserClick={onUserClick} onWishlistClick={onWishlistClick} wishlistCount={wishlist.size} iconColor="rgba(255,255,255,0.5)" hoverClass="hover:text-white" />
           </div>
         </div>
       </header>
@@ -1390,10 +1899,10 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
           </h1>
           <p className={`text-white/45 text-sm max-w-md ${isMobile ? 'mb-7' : 'mb-10'} leading-relaxed`}>{heroSubtitle}</p>
           <div className="flex items-center gap-3 flex-wrap">
-            <button className={`${isMobile ? 'px-5 py-3 text-[11px]' : 'px-8 py-4 text-xs'} font-black uppercase tracking-widest rounded-full text-black hover:opacity-90 transition-opacity shadow-xl`} style={{ background: primaryColor }}>
+            <button onClick={scrollToProducts} className={`${isMobile ? 'px-5 py-3 text-[11px]' : 'px-8 py-4 text-xs'} font-black uppercase tracking-widest rounded-full text-black hover:opacity-90 transition-opacity shadow-xl`} style={{ background: primaryColor }}>
               {ctaText} →
             </button>
-            <button className={`${isMobile ? 'px-5 py-3 text-[11px]' : 'px-8 py-4 text-xs'} font-black uppercase tracking-widest rounded-full text-white/70 border border-white/15 hover:bg-white/8 transition-colors`}>
+            <button onClick={scrollToProducts} className={`${isMobile ? 'px-5 py-3 text-[11px]' : 'px-8 py-4 text-xs'} font-black uppercase tracking-widest rounded-full text-white/70 border border-white/15 hover:bg-white/8 transition-colors`}>
               See All
             </button>
           </div>
@@ -1404,8 +1913,8 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
       <section className="border-y border-white/8 py-4">
         <div className="max-w-6xl mx-auto px-5 flex gap-2.5 overflow-x-auto">
           {collections.map((c, i) => (
-            <button key={i} className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all"
-              style={i === 0 ? { background: primaryColor, color: '#000' } : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>
+            <button key={i} onClick={() => setSelectedCol(i)} className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all"
+              style={selectedCol === i ? { background: primaryColor, color: '#000' } : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>
               {c.emoji} {c.name}
             </button>
           ))}
@@ -1414,15 +1923,15 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
       {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} dark={true} device={device} />}
 
       {/* Products */}
-      <section className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
+      <section ref={productsRef} className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
         <div className="flex items-end justify-between mb-8">
           <h2 className={`font-black text-white tracking-tight uppercase ${isMobile ? 'text-2xl' : 'text-3xl'}`}>New Drops</h2>
-          <a className="text-xs font-black uppercase tracking-widest flex items-center gap-1.5 hover:gap-3 transition-all" style={{ color: primaryColor }}>
+          <button onClick={scrollToProducts} className="text-xs font-black uppercase tracking-widest flex items-center gap-1.5 hover:gap-3 transition-all" style={{ color: primaryColor }}>
             View All <ArrowRight className="w-3.5 h-3.5" />
-          </a>
+          </button>
         </div>
         <div className={`grid ${gridCols(device)} gap-4`}>
-          {products.map((p, idx) => (
+          {displayed.map((p, idx) => (
             <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
               <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '3/4' }}>
                 <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700" style={{ transition: 'transform 0.7s ease' }} />
@@ -1431,10 +1940,16 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
                 {p.badge && (
                   <span className="absolute top-3 left-3 text-[10px] font-black uppercase px-2.5 py-1 rounded-full text-black" style={{ background: idx === 0 ? accentColor : primaryColor }}>{p.badge}</span>
                 )}
+                <button
+                  onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
+                  className={`absolute top-3 right-3 w-8 h-8 bg-black/40 backdrop-blur rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'}`}
+                >
+                  <Heart className={`w-3.5 h-3.5 transition-colors ${wishlist.has(p.id) ? 'text-rose-400 fill-rose-400' : 'text-white'}`} />
+                </button>
                 {/* Always-visible price + add on mobile; hover on desktop */}
                 <div className={`absolute bottom-0 inset-x-0 p-3 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100 transition-opacity'}`}>
                   <button
-                    onClick={e => { e.stopPropagation(); onAddToCart(p); }}
+                    onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; const _card = _btn.closest('.group') as HTMLElement ?? _btn; const _wrap = _card.querySelector('.relative.overflow-hidden, .relative.aspect-square, .relative.rounded-2xl') as HTMLElement | null; const _img = (_wrap ?? _card).querySelector('img') as HTMLElement | null; onAddToCart(p, (_img ?? _wrap ?? _btn).getBoundingClientRect()); }}
                     className="w-full py-2.5 text-[11px] font-black uppercase tracking-wider rounded-xl text-black"
                     style={{ background: primaryColor }}
                   >
@@ -1515,13 +2030,20 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
 // ── ELEGANT layout ────────────────────────────────────────────────────────────
 // Inspired by: Net-a-Porter, Jo Malone, Tiffany — luxury, refined, warm
 
-function ElegantLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail }: LayoutProps) {
+function ElegantLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory } = design;
   const btnText = isDark(primaryColor) ? '#fff' : '#2a2420';
   const isMobile = device === 'mobile';
+  const [selectedCol, setSelectedCol] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const productsRef = useRef<HTMLDivElement>(null);
+  const scrollToProducts = () => productsRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const displayed = selectedCol === 0 ? products : products.filter((_, i) => i % 2 === selectedCol - 1);
 
   return (
     <div style={{ background: '#fdfcf8', fontFamily: 'Georgia, "Times New Roman", serif' }}>
+
+      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
 
       {/* Header */}
       <header style={{ background: '#fdfcf8', borderBottom: '1px solid #ece7de' }} className="sticky top-0 z-40">
@@ -1532,23 +2054,26 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
             </div>
             <span className="text-sm font-bold" style={{ color: '#2a2420', letterSpacing: '0.16em' }}>{storeName.toUpperCase()}</span>
           </div>
-          {!isMobile && (
+          {!isMobile ? (
             <nav className="flex gap-5">
               {navLinks.map(l => (
-                <a key={l} className="text-[11px] hover:opacity-50 transition-opacity" style={{ color: '#6b5e52', letterSpacing: '0.1em' }}>{l.toUpperCase()}</a>
+                <a key={l} onClick={scrollToProducts} className="text-[11px] hover:opacity-50 transition-opacity cursor-pointer" style={{ color: '#6b5e52', letterSpacing: '0.1em' }}>{l.toUpperCase()}</a>
               ))}
             </nav>
+          ) : (
+            <button onClick={() => setMenuOpen(true)} className="p-2" style={{ color: '#6b5e52' }}><Menu className="w-5 h-5" /></button>
           )}
           <div className="flex items-center gap-3">
-            {!isMobile && <button className="p-1" style={{ color: '#6b5e52' }}><Search className="w-4 h-4" /></button>}
-            <button onClick={onCartClick} className="relative p-2" style={{ color: '#6b5e52' }}>
+            {!isMobile && <button onClick={onSearchOpen} className="p-1" style={{ color: '#6b5e52' }}><Search className="w-4 h-4" /></button>}
+            <button onClick={onWishlistClick} className="relative p-2" style={{ color: '#6b5e52' }}>
+              <Heart className="w-4 h-4" />
+              {wishlist.size > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold text-white rounded-full flex items-center justify-center bg-rose-500">{wishlist.size}</span>}
+            </button>
+            <button data-cart-btn onClick={onCartClick} className="relative p-2" style={{ color: '#6b5e52' }}>
               <ShoppingCart className="w-4 h-4" />
               {cartCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: primaryColor }}>{cartCount}</span>}
             </button>
-            <button onClick={onUserClick} className="relative p-2" style={{ color: '#6b5e52' }} title={buyerEmail ?? 'Sign in'}>
-              <User className="w-4 h-4" />
-              {buyerEmail && <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-emerald-500" />}
-            </button>
+            <UserProfileMenu buyerEmail={buyerEmail} onUserClick={onUserClick} onWishlistClick={onWishlistClick} wishlistCount={wishlist.size} iconColor="#6b5e52" />
           </div>
         </div>
         {/* Gradient rule */}
@@ -1569,7 +2094,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
               {heroTitle}
             </h1>
             {!isMobile && <p className="text-white/65 text-sm max-w-xs mb-9 leading-relaxed" style={{ fontFamily: 'system-ui' }}>{heroSubtitle}</p>}
-            <button className={`${isMobile ? 'w-full text-center py-3 px-6' : 'px-9 py-3.5'} text-xs border text-white hover:bg-white/12 transition-colors`}
+            <button onClick={scrollToProducts} className={`${isMobile ? 'w-full text-center py-3 px-6' : 'px-9 py-3.5'} text-xs border text-white hover:bg-white/12 transition-colors`}
               style={{ borderColor: 'rgba(255,255,255,0.35)', letterSpacing: '0.22em', fontFamily: 'system-ui' }}>
               {ctaText.toUpperCase()}
             </button>
@@ -1581,8 +2106,8 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
       <section style={{ borderBottom: '1px solid #ece7de', background: '#fdfcf8' }} className="py-5">
         <div className="max-w-6xl mx-auto px-6 flex justify-center gap-5 flex-wrap">
           {collections.map((c, i) => (
-            <button key={i} className="flex items-center gap-2 text-xs transition-all px-5 py-2"
-              style={i === 0 ? { background: primaryColor, color: btnText, letterSpacing: '0.14em', fontFamily: 'system-ui' } : { color: '#8a7a6a', letterSpacing: '0.14em', fontFamily: 'system-ui' }}>
+            <button key={i} onClick={() => setSelectedCol(i)} className="flex items-center gap-2 text-xs transition-all px-5 py-2"
+              style={selectedCol === i ? { background: primaryColor, color: btnText, letterSpacing: '0.14em', fontFamily: 'system-ui' } : { color: '#8a7a6a', letterSpacing: '0.14em', fontFamily: 'system-ui' }}>
               {c.emoji} {c.name.toUpperCase()}
             </button>
           ))}
@@ -1591,14 +2116,14 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
       {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} device={device} />}
 
       {/* Products */}
-      <section className={`max-w-6xl mx-auto px-6 ${isMobile ? 'py-8' : 'py-16'}`}>
+      <section ref={productsRef} className={`max-w-6xl mx-auto px-6 ${isMobile ? 'py-8' : 'py-16'}`}>
         <div className={`text-center ${isMobile ? 'mb-7' : 'mb-12'}`}>
           <p className="text-[10px] tracking-[0.38em] mb-3" style={{ color: primaryColor, fontFamily: 'system-ui' }}>CURATED SELECTION</p>
           <h2 className="text-2xl font-bold tracking-wide" style={{ color: '#2a2420' }}>New Arrivals</h2>
           <div className="w-10 h-px mx-auto mt-4" style={{ background: primaryColor }} />
         </div>
         <div className={`grid ${gridCols(device)} gap-6`}>
-          {products.map(p => (
+          {displayed.map(p => (
             <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
               <div className="relative overflow-hidden mb-4 bg-gray-100" style={{ aspectRatio: '3/4' }}>
                 <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover transition-transform duration-1000" style={{ transform: 'scale(1)', transition: 'transform 1s ease' }} />
@@ -1607,11 +2132,17 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
                     {p.badge.toUpperCase()}
                   </span>
                 )}
+                <button
+                  onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
+                  className={`absolute top-3 right-3 w-8 h-8 bg-white/80 backdrop-blur flex items-center justify-center transition-all hover:scale-110 active:scale-95 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'}`}
+                >
+                  <Heart className={`w-3.5 h-3.5 transition-colors ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-500'}`} />
+                </button>
                 {/* Add to bag — always visible on mobile, hover on desktop */}
                 <div className={`absolute bottom-0 inset-x-0 transition-transform duration-300 ${isMobile ? '' : 'translate-y-full group-hover:translate-y-0'}`}
                   style={{ background: 'rgba(15,10,5,0.88)' }}>
                   <button
-                    onClick={e => { e.stopPropagation(); onAddToCart(p); }}
+                    onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; const _card = _btn.closest('.group') as HTMLElement ?? _btn; const _wrap = _card.querySelector('.relative.overflow-hidden, .relative.aspect-square, .relative.rounded-2xl') as HTMLElement | null; const _img = (_wrap ?? _card).querySelector('img') as HTMLElement | null; onAddToCart(p, (_img ?? _wrap ?? _btn).getBoundingClientRect()); }}
                     className="w-full py-3 text-[10px] text-white border-t border-white/15 hover:bg-white/8 transition-colors"
                     style={{ letterSpacing: '0.22em', fontFamily: 'system-ui' }}
                   >
@@ -1697,13 +2228,20 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
 // ── MODERN layout ─────────────────────────────────────────────────────────────
 // Inspired by: Apple Store, Allbirds, Casper — clean, airy, contemporary
 
-function ModernLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail }: LayoutProps) {
+function ModernLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [] } = design;
   const btnText = isDark(primaryColor) ? '#fff' : '#fff';
   const isMobile = device === 'mobile';
+  const [selectedCol, setSelectedCol] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const productsRef = useRef<HTMLDivElement>(null);
+  const scrollToProducts = () => productsRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const displayed = selectedCol === 0 ? products : products.filter((_, i) => i % 2 === selectedCol - 1);
 
   return (
     <div className="bg-white" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif' }}>
+
+      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
 
       {/* Header */}
       <header className="bg-white/85 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-40">
@@ -1714,21 +2252,24 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
             </div>
             <span className="text-sm font-bold text-gray-900">{storeName}</span>
           </div>
-          {!isMobile && (
+          {!isMobile ? (
             <nav className="flex gap-6">
-              {navLinks.map(l => <a key={l} className="text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium">{l}</a>)}
+              {navLinks.map(l => <a key={l} onClick={scrollToProducts} className="text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium cursor-pointer">{l}</a>)}
             </nav>
+          ) : (
+            <button onClick={() => setMenuOpen(true)} className="p-2 text-gray-600 rounded-xl"><Menu className="w-5 h-5" /></button>
           )}
           <div className="flex items-center gap-1">
-            {!isMobile && <button className="p-2 text-gray-400 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition-colors"><Search className="w-4 h-4" /></button>}
-            <button onClick={onCartClick} className="relative p-2 text-gray-400 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition-colors">
+            {!isMobile && <button onClick={onSearchOpen} className="p-2 text-gray-400 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition-colors"><Search className="w-4 h-4" /></button>}
+            <button onClick={onWishlistClick} className="relative p-2 text-gray-400 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition-colors">
+              <Heart className="w-4 h-4" />
+              {wishlist.size > 0 && <span className="absolute top-0.5 right-0.5 w-4 h-4 text-[9px] font-bold text-white rounded-full flex items-center justify-center bg-rose-500">{wishlist.size}</span>}
+            </button>
+            <button data-cart-btn onClick={onCartClick} className="relative p-2 text-gray-400 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition-colors">
               <ShoppingCart className="w-4 h-4" />
               {cartCount > 0 && <span className="absolute top-0.5 right-0.5 w-4 h-4 text-[9px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: primaryColor }}>{cartCount}</span>}
             </button>
-            <button onClick={onUserClick} className="relative p-2 text-gray-400 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition-colors" title={buyerEmail ?? 'Sign in'}>
-              <User className="w-4 h-4" />
-              {buyerEmail && <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-emerald-500" />}
-            </button>
+            <UserProfileMenu buyerEmail={buyerEmail} onUserClick={onUserClick} onWishlistClick={onWishlistClick} wishlistCount={wishlist.size} iconColor="#9ca3af" hoverClass="hover:text-gray-700 rounded-xl hover:bg-gray-100" />
           </div>
         </div>
       </header>
@@ -1743,7 +2284,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
           </div>
           <h1 className="text-4xl font-bold text-gray-900 leading-tight tracking-tight mb-4">{heroTitle}</h1>
           <p className="text-gray-500 text-sm mb-7 leading-relaxed">{heroSubtitle}</p>
-          <button className="w-full py-3.5 text-sm font-semibold rounded-2xl shadow-lg" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})`, color: btnText }}>
+          <button onClick={scrollToProducts} className="w-full py-3.5 text-sm font-semibold rounded-2xl shadow-lg" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})`, color: btnText }}>
             {ctaText}
           </button>
           {/* Mini product scroll on mobile */}
@@ -1771,10 +2312,10 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
               <h1 className="text-5xl font-bold text-gray-900 leading-[1.05] tracking-tight mb-5">{heroTitle}</h1>
               <p className="text-gray-500 text-base mb-8 max-w-sm leading-relaxed">{heroSubtitle}</p>
               <div className="flex flex-wrap gap-3 mb-8">
-                <button className="px-7 py-3.5 text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl hover:opacity-90 transition-all" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})`, color: btnText }}>
+                <button onClick={scrollToProducts} className="px-7 py-3.5 text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl hover:opacity-90 transition-all" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})`, color: btnText }}>
                   {ctaText}
                 </button>
-                <button className="px-7 py-3.5 text-sm font-semibold rounded-2xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all">
+                <button onClick={scrollToProducts} className="px-7 py-3.5 text-sm font-semibold rounded-2xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all">
                   Learn More
                 </button>
               </div>
@@ -1817,29 +2358,30 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
       {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} device={device} />}
 
       {/* Products */}
-      <section className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`} style={{ borderTop: '1px solid #f0f0f0' }}>
+      <section ref={productsRef} className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`} style={{ borderTop: '1px solid #f0f0f0' }}>
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Featured Products</h2>
             <p className="text-sm text-gray-400 mt-1">{tagline}</p>
           </div>
-          <a className="text-sm font-semibold flex items-center gap-1.5 hover:gap-2.5 transition-all" style={{ color: primaryColor }}>
+          <button onClick={scrollToProducts} className="text-sm font-semibold flex items-center gap-1.5 hover:gap-2.5 transition-all" style={{ color: primaryColor }}>
             View All <ArrowRight className="w-4 h-4" />
-          </a>
+          </button>
         </div>
         <div className={`grid ${gridCols(device)} gap-5`}>
-          {products.map(p => (
+          {displayed.map(p => (
             <div key={p.id} className="group bg-white rounded-3xl border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer" onClick={() => onProductClick(p)}>
               <div className="relative aspect-square overflow-hidden bg-gray-50">
                 <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 {p.badge && (
                   <span className="absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-full text-white shadow-sm" style={{ background: primaryColor }}>{p.badge}</span>
                 )}
-                {!isMobile && (
-                  <button className="absolute top-3 right-3 w-9 h-9 bg-white rounded-2xl shadow flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50">
-                    <Heart className="w-4 h-4 text-gray-400" />
-                  </button>
-                )}
+                <button
+                  onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
+                  className={`absolute top-3 right-3 w-9 h-9 bg-white rounded-2xl shadow flex items-center justify-center transition-all hover:scale-110 active:scale-95 hover:bg-gray-50 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'}`}
+                >
+                  <Heart className={`w-4 h-4 transition-colors ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+                </button>
               </div>
               <div className={isMobile ? 'p-3' : 'p-4'}>
                 <div className="flex items-center gap-2 mb-1.5">
@@ -1852,7 +2394,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
                     <span className="text-sm font-bold text-gray-900">{fmtPrice(p.price)}</span>
                     {p.originalPrice && !isMobile && <span className="text-xs text-gray-400 line-through">{fmtPrice(p.originalPrice)}</span>}
                   </div>
-                  <button onClick={e => { e.stopPropagation(); onAddToCart(p); }} className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-xl text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: primaryColor }}>
+                  <button onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; const _card = _btn.closest('.group') as HTMLElement ?? _btn; const _wrap = _card.querySelector('.relative.overflow-hidden, .relative.aspect-square, .relative.rounded-2xl') as HTMLElement | null; const _img = (_wrap ?? _card).querySelector('img') as HTMLElement | null; onAddToCart(p, (_img ?? _wrap ?? _btn).getBoundingClientRect()); }} className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-xl text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: primaryColor }}>
                     Add
                   </button>
                 </div>
@@ -1923,13 +2465,20 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
 // ── PLAYFUL layout ────────────────────────────────────────────────────────────
 // Inspired by: Glossier, Oatly, Warby Parker — fun, colorful, round, youthful
 
-function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail }: LayoutProps) {
+function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen: _onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [] } = design;
   const heroTextColor = isDark(primaryColor) ? '#fff' : '#111';
   const isMobile = device === 'mobile';
+  const [selectedCol, setSelectedCol] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const productsRef = useRef<HTMLDivElement>(null);
+  const scrollToProducts = () => productsRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const displayed = selectedCol === 0 ? products : products.filter((_, i) => i % 2 === selectedCol - 1);
 
   return (
     <div className="bg-white" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+
+      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
 
       {/* Header */}
       <header className="bg-white border-b-2 border-gray-100 sticky top-0 z-40">
@@ -1938,25 +2487,28 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
             <span className="text-xl">{collections[0]?.emoji}</span>
             <span className="text-sm font-black text-gray-900">{storeName}</span>
           </div>
-          {!isMobile && (
+          {!isMobile ? (
             <nav className="flex gap-2">
               {navLinks.map((l, i) => (
-                <a key={l} className="px-4 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer"
+                <a key={l} onClick={scrollToProducts} className="px-4 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer"
                   style={i === 0 ? { background: primaryColor, color: heroTextColor } : { color: '#555', background: '#f5f5f5' }}>
                   {l}
                 </a>
               ))}
             </nav>
+          ) : (
+            <button onClick={() => setMenuOpen(true)} className="p-2 text-gray-700"><Menu className="w-5 h-5" /></button>
           )}
           <div className="flex items-center gap-1">
-            <button onClick={onCartClick} className="relative p-2">
+            <button onClick={onWishlistClick} className="relative p-2">
+              <Heart className="w-5 h-5 text-gray-700" />
+              {wishlist.size > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-black text-white rounded-full flex items-center justify-center bg-rose-500">{wishlist.size}</span>}
+            </button>
+            <button data-cart-btn onClick={onCartClick} className="relative p-2">
               <ShoppingCart className="w-5 h-5 text-gray-700" />
               {cartCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-black text-white rounded-full flex items-center justify-center" style={{ background: accentColor }}>{cartCount}</span>}
             </button>
-            <button onClick={onUserClick} className="relative p-2" title={buyerEmail ?? 'Sign in'}>
-              <User className="w-5 h-5 text-gray-700" />
-              {buyerEmail && <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-emerald-500" />}
-            </button>
+            <UserProfileMenu buyerEmail={buyerEmail} onUserClick={onUserClick} onWishlistClick={onWishlistClick} wishlistCount={wishlist.size} iconColor="#374151" />
           </div>
         </div>
       </header>
@@ -1977,10 +2529,10 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
             </h1>
             <p className={`text-sm mb-8 max-w-sm leading-relaxed ${isMobile ? 'text-center' : ''}`} style={{ color: `${heroTextColor}cc` }}>{heroSubtitle}</p>
             <div className={`flex items-center gap-3 flex-wrap ${isMobile ? 'justify-center' : ''}`}>
-              <button className="px-7 py-3.5 text-sm font-black rounded-2xl shadow-xl hover:scale-105 transition-transform bg-white" style={{ color: primaryColor }}>
+              <button onClick={scrollToProducts} className="px-7 py-3.5 text-sm font-black rounded-2xl shadow-xl hover:scale-105 transition-transform bg-white" style={{ color: primaryColor }}>
                 {ctaText} 🛍️
               </button>
-              <button className="px-7 py-3.5 text-sm font-bold rounded-2xl border-2 hover:bg-white/12 transition-colors" style={{ borderColor: `${heroTextColor}40`, color: heroTextColor }}>
+              <button onClick={scrollToProducts} className="px-7 py-3.5 text-sm font-bold rounded-2xl border-2 hover:bg-white/12 transition-colors" style={{ borderColor: `${heroTextColor}40`, color: heroTextColor }}>
                 Browse All
               </button>
             </div>
@@ -2016,8 +2568,8 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
       <section className="py-5 bg-white">
         <div className="max-w-6xl mx-auto px-5 flex gap-3 overflow-x-auto">
           {collections.map((c, i) => (
-            <button key={i} className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold border-2 transition-all hover:scale-105"
-              style={i === 0 ? { background: primaryColor, borderColor: primaryColor, color: heroTextColor } : { borderColor: '#e5e7eb', color: '#374151' }}>
+            <button key={i} onClick={() => setSelectedCol(i)} className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold border-2 transition-all hover:scale-105"
+              style={selectedCol === i ? { background: primaryColor, borderColor: primaryColor, color: heroTextColor } : { borderColor: '#e5e7eb', color: '#374151' }}>
               <span className="text-base">{c.emoji}</span> {c.name}
             </button>
           ))}
@@ -2026,18 +2578,18 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
       {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} device={device} />}
 
       {/* Products */}
-      <section className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-12'}`}>
+      <section ref={productsRef} className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-12'}`}>
         <div className="flex items-end justify-between mb-7">
           <div>
             <h2 className="text-2xl font-black text-gray-900">{collections[0]?.emoji} Our Picks</h2>
             <p className="text-sm text-gray-400 mt-1">{tagline}</p>
           </div>
-          <a className="text-sm font-black flex items-center gap-1.5 hover:gap-2.5 transition-all" style={{ color: primaryColor }}>
+          <button onClick={scrollToProducts} className="text-sm font-black flex items-center gap-1.5 hover:gap-2.5 transition-all" style={{ color: primaryColor }}>
             See All <ArrowRight className="w-4 h-4" />
-          </a>
+          </button>
         </div>
         <div className={`grid ${gridCols(device)} gap-4`}>
-          {products.map((p, idx) => (
+          {displayed.map((p, idx) => (
             <div key={p.id} className="group bg-white rounded-3xl overflow-hidden border-2 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
               style={{ borderColor: alpha(idx % 2 === 0 ? primaryColor : accentColor, 0.25) }}
               onClick={() => onProductClick(p)}>
@@ -2048,6 +2600,12 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
                     {p.badge}
                   </span>
                 )}
+                <button
+                  onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
+                  className={`absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow transition-all hover:scale-110 active:scale-95 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'}`}
+                >
+                  <Heart className={`w-3.5 h-3.5 transition-colors ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+                </button>
               </div>
               <div className={isMobile ? 'p-3' : 'p-4'}>
                 <p className="text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mb-1.5" style={{ background: alpha(primaryColor, 0.1), color: primaryColor }}>{p.category}</p>
@@ -2058,7 +2616,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
                     {p.originalPrice && !isMobile && <span className="text-xs text-gray-400 line-through flex-shrink-0">{fmtPrice(p.originalPrice)}</span>}
                   </div>
                   <button
-                    onClick={e => { e.stopPropagation(); onAddToCart(p); }}
+                    onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; const _card = _btn.closest('.group') as HTMLElement ?? _btn; const _wrap = _card.querySelector('.relative.overflow-hidden, .relative.aspect-square, .relative.rounded-2xl') as HTMLElement | null; const _img = (_wrap ?? _card).querySelector('img') as HTMLElement | null; onAddToCart(p, (_img ?? _wrap ?? _btn).getBoundingClientRect()); }}
                     className={`flex-shrink-0 rounded-xl font-black text-white hover:opacity-85 transition-opacity ${isMobile ? 'p-2' : 'flex items-center gap-1 px-3 py-2 text-xs'}`}
                     style={{ background: idx % 2 === 0 ? primaryColor : accentColor }}
                   >
@@ -2131,14 +2689,17 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
 
 // ── Fallback layout (template-based stores without AI design) ─────────────────
 
-function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClick, cartCount, onUserClick, buyerEmail }: {
+function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClick, cartCount, onUserClick, buyerEmail, wishlist, onToggleWishlist, onWishlistClick }: {
   store: Store; device: DeviceMode;
   onProductClick: (p: RichProduct) => void;
-  onAddToCart: (p: RichProduct) => void;
+  onAddToCart: (p: RichProduct, sourceRect?: DOMRect) => void;
   onCartClick: () => void;
   onUserClick?: () => void;
   buyerEmail?: string | null;
   cartCount: number;
+  wishlist: Set<string>;
+  onToggleWishlist: (id: string) => void;
+  onWishlistClick?: () => void;
 }) {
   const primaryColor = store.primaryColor || '#10b981';
   const fmtPrice = makePriceFmt(store.currency?.code ?? 'USD');
@@ -2156,16 +2717,18 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
             <span className="font-bold text-slate-900">{store.name || 'My Store'}</span>
           </div>
           <div className="flex items-center gap-3">
-            <button className="p-2 rounded-lg hover:bg-slate-100"><Heart className="w-4 h-4 text-slate-500" /></button>
-            <button onClick={onCartClick} className="relative flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-xl" style={{ background: primaryColor }}>
+            {onWishlistClick && (
+              <button onClick={onWishlistClick} className="relative p-2 rounded-lg hover:bg-slate-100">
+                <Heart className="w-4 h-4 text-slate-500" />
+                {wishlist.size > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 text-[9px] font-bold text-white rounded-full flex items-center justify-center bg-rose-500">{wishlist.size}</span>}
+              </button>
+            )}
+            <button data-cart-btn onClick={onCartClick} className="relative flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-xl" style={{ background: primaryColor }}>
               <ShoppingCart className="w-4 h-4" />{device !== 'mobile' && <span>Cart</span>}
               {cartCount > 0 && <span className="absolute -top-1.5 -right-1.5 w-5 h-5 text-[9px] font-bold text-white rounded-full flex items-center justify-center bg-rose-500">{cartCount}</span>}
             </button>
             {onUserClick && (
-              <button onClick={onUserClick} className="relative p-2 rounded-lg hover:bg-slate-100" title={buyerEmail ?? 'Sign in'}>
-                <User className="w-4 h-4 text-slate-500" />
-                {buyerEmail && <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-emerald-500" />}
-              </button>
+              <UserProfileMenu buyerEmail={buyerEmail ?? null} onUserClick={onUserClick} onWishlistClick={onWishlistClick ?? (() => {})} wishlistCount={wishlist.size} iconColor="#64748b" hoverClass="rounded-lg hover:bg-slate-100" />
             )}
           </div>
         </div>
@@ -2187,13 +2750,19 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
               <div className="relative aspect-square bg-slate-50">
                 <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 {p.badge && <span className="absolute top-2 left-2 px-2 py-0.5 text-xs font-bold text-white rounded-full" style={{ background: primaryColor }}>{p.badge}</span>}
+                <button
+                  onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
+                  className="absolute top-2 right-2 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center shadow transition-all hover:scale-110 active:scale-95"
+                >
+                  <Heart className={`w-3.5 h-3.5 transition-colors ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-slate-400'}`} />
+                </button>
               </div>
               <div className="p-3">
                 <p className="text-xs text-slate-400 mb-1">{p.category}</p>
                 <p className="text-sm font-semibold text-slate-900 truncate">{p.name}</p>
                 <div className="flex items-center justify-between mt-2">
                   <span className="font-bold text-slate-900">{fmtPrice(p.price)}</span>
-                  <button onClick={e => { e.stopPropagation(); onAddToCart(p); }} className="px-3 py-1.5 text-xs font-semibold rounded-xl text-white" style={{ background: primaryColor }}>Add</button>
+                  <button onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; const _card = _btn.closest('.group') as HTMLElement ?? _btn; const _wrap = _card.querySelector('.relative.overflow-hidden, .relative.aspect-square, .relative.rounded-2xl') as HTMLElement | null; const _img = (_wrap ?? _card).querySelector('img') as HTMLElement | null; onAddToCart(p, (_img ?? _wrap ?? _btn).getBoundingClientRect()); }} className="px-3 py-1.5 text-xs font-semibold rounded-xl text-white" style={{ background: primaryColor }}>Add</button>
                 </div>
               </div>
             </div>
@@ -2231,6 +2800,7 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
   // Buyer auth state
   const [buyerUser, setBuyerUser] = useState<BuyerUser | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -2321,12 +2891,34 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
     }
   };
 
-  const addToCart = (p: RichProduct) => {
+  const [flyItems, setFlyItems] = useState<FlyItem[]>([]);
+  const [wishlist, setWishlist] = useState<Set<string>>(new Set());
+  const toggleWishlist = useCallback((id: string) => {
+    setWishlist(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const addToCart = (p: RichProduct, sourceRect?: DOMRect) => {
     setCart(prev => {
       const existing = prev.find(i => i.product.id === p.id);
       if (existing) return prev.map(i => i.product.id === p.id ? { ...i, qty: i.qty + 1 } : i);
       return [...prev, { product: p, qty: 1 }];
     });
+    if (sourceRect) {
+      const flyId = `fly-${Date.now()}-${Math.random()}`;
+      setFlyItems(prev => [...prev, {
+        id: flyId,
+        startX: sourceRect.left + sourceRect.width / 2,
+        startY: sourceRect.top + sourceRect.height / 2,
+        startW: sourceRect.width,
+        startH: sourceRect.height,
+        image: p.image,
+      }]);
+      setTimeout(() => setFlyItems(prev => prev.filter(f => f.id !== flyId)), (FLY_MAX + 0.2) * 1000);
+    }
   };
 
   const updateQty = (productId: string, delta: number) => {
@@ -2337,17 +2929,25 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
 
   const shared = {
     onProductClick: (p: RichProduct) => { setSelectedProduct(p); setPage('product'); },
-    onAddToCart: addToCart,
+    onAddToCart: (p: RichProduct, sourceRect?: DOMRect) => addToCart(p, sourceRect),
     onCartClick: () => setPage('cart'),
+    onWishlistClick: () => setPage('wishlist'),
     cartCount,
     onUserClick: handleUserClick,
     buyerEmail: buyerUser?.email ?? null,
+    onSearchOpen: () => setShowSearch(true),
+    wishlist,
+    onToggleWishlist: toggleWishlist,
   };
 
   let content: React.ReactNode;
 
-  if (page === 'product' && selectedProduct) {
-    content = <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} onBack={() => setPage('home')} onAddToCart={addToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} />;
+  const allProducts = (design?.products ?? []) as RichProduct[];
+
+  if (page === 'wishlist') {
+    content = <WishlistPage wishlist={wishlist} products={allProducts} onToggleWishlist={toggleWishlist} onAddToCart={addToCart} onProductClick={p => { setSelectedProduct(p); setPage('product'); }} onBack={() => setPage('home')} primaryColor={primaryColor} storeName={storeName} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} device={device} />;
+  } else if (page === 'product' && selectedProduct) {
+    content = <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} onBack={() => setPage('home')} onAddToCart={addToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} layoutStyle={design?.layoutStyle} />;
   } else if (page === 'cart') {
     content = <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} layoutStyle={design?.layoutStyle} onBack={() => setPage('home')} onCheckout={(sid) => { setSelectedShippingId(sid); setPage('checkout'); }} onUpdateQty={updateQty} />;
   } else if (page === 'checkout') {
@@ -2355,9 +2955,9 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
   } else if (page === 'success') {
     content = <SuccessPage primaryColor={primaryColor} storeName={storeName} orderNum={orderNum} total={cartTotal + shippingCost} fmtPrice={fmtPrice} paymentSettings={paymentSettings} selectedPaymentId={selectedPaymentId} layoutStyle={design?.layoutStyle} onContinue={() => { setCart([]); setPage('home'); }} buyerUser={buyerUser} onShowAuth={() => setShowAuthModal(true)} onMyOrders={() => setPage('myorders')} />;
   } else if (page === 'myorders' && buyerUser) {
-    content = <MyOrdersPage buyerUserId={buyerUser.id} primaryColor={primaryColor} storeName={storeName} storeId={store.id} onBack={() => setPage('home')} fmtPrice={fmtPrice} />;
+    content = <MyOrdersPage buyerUserId={buyerUser.id} primaryColor={primaryColor} storeName={storeName} storeId={store.id} onBack={() => setPage('home')} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} />;
   } else if (!design) {
-    content = <FallbackLayout store={store} device={device} onProductClick={shared.onProductClick} onAddToCart={shared.onAddToCart} onCartClick={shared.onCartClick} cartCount={shared.cartCount} onUserClick={shared.onUserClick} buyerEmail={shared.buyerEmail} />;
+    content = <FallbackLayout store={store} device={device} onProductClick={shared.onProductClick} onAddToCart={shared.onAddToCart} onCartClick={shared.onCartClick} cartCount={shared.cartCount} onUserClick={shared.onUserClick} buyerEmail={shared.buyerEmail} wishlist={shared.wishlist} onToggleWishlist={shared.onToggleWishlist} onWishlistClick={shared.onWishlistClick} />;
   } else {
     const props: LayoutProps = { storeName, primaryColor, design, device, fmtPrice, ...shared };
     switch (design.layoutStyle) {
@@ -2370,9 +2970,18 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
     }
   }
 
+  const waNumber = paymentSettings?.confirmationWhatsapp;
+
   return (
     <div className="relative">
       {content}
+
+      {/* Cart fly animation dots */}
+      {flyItems.map(item => (
+        <FlyingDot key={item.id} item={item} primaryColor={primaryColor} />
+      ))}
+
+      {/* Auth modal */}
       {showAuthModal && (
         <BuyerAuthModal
           primaryColor={primaryColor}
@@ -2381,6 +2990,30 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
           onLogout={handleLogout}
           buyerEmail={buyerUser?.email ?? null}
         />
+      )}
+
+      {/* Search overlay */}
+      <SearchOverlay
+        open={showSearch}
+        onClose={() => setShowSearch(false)}
+        products={design?.products ?? []}
+        primaryColor={primaryColor}
+        onProductClick={(p) => { shared.onProductClick(p); setShowSearch(false); }}
+        fmtPrice={fmtPrice}
+      />
+
+      {/* WhatsApp floating button */}
+      {waNumber && page === 'home' && (
+        <a
+          href={`https://wa.me/${waNumber.replace(/\D/g, '')}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center z-50 hover:scale-110 active:scale-95 transition-transform"
+          style={{ background: '#25D366' }}
+          title="Chat via WhatsApp"
+        >
+          <MessageCircle className="w-6 h-6 text-white" />
+        </a>
       )}
     </div>
   );
