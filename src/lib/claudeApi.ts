@@ -1,6 +1,6 @@
 // Option C: pure design-token architecture — no template dependency.
 // Visual design comes entirely from layoutStyle + primaryColor/accentColor
-// via getCommerceTheme(). Product images are sourced from Unsplash by keyword.
+// via getCommerceTheme(). Product images come from a curated Unsplash pool.
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -73,25 +73,7 @@ export interface GeneratedStoreConfig {
   design: StoreDesign;
 }
 
-// ── Product image via Unsplash Source ─────────────────────────────────────────
-// Builds a stable, keyword-relevant Unsplash URL from product name + category.
-// The `sig` param is a deterministic hash so the same product always returns
-// the same photo (Unsplash Source caches by full URL in the browser).
-function productImageUrl(name: string, category: string): string {
-  const keyword = encodeURIComponent(
-    `${category} ${name}`
-      .toLowerCase()
-      .replace(/[^a-z0-9 ]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 40),
-  );
-  // Simple deterministic hash → stable image per product across renders
-  const sig = name
-    .split('')
-    .reduce((acc, c) => ((acc * 31 + c.charCodeAt(0)) & 0xffff), 0);
-  return `https://source.unsplash.com/400x400/?${keyword}&sig=${sig}`;
-}
+import { getProductImage } from './productImages';
 
 // ── Valid layout styles ───────────────────────────────────────────────────────
 const VALID_LAYOUTS = ['minimal', 'bold', 'elegant', 'modern', 'playful'] as const;
@@ -111,7 +93,7 @@ export function buildStoreConfig(parsed: ClaudeStoreResponse): GeneratedStoreCon
     name: p.name,
     price: p.price,
     ...(p.originalPrice ? { originalPrice: p.originalPrice } : {}),
-    image: productImageUrl(p.name, p.category),
+    image: getProductImage(p.name, p.category),
     category: p.category,
     ...(p.badge ? { badge: p.badge } : {}),
     description: p.description,
