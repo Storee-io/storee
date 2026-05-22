@@ -124,7 +124,7 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
   function buildUpdated(status: 'Active' | 'Draft'): DashboardProduct {
     return {
       ...product,
-      name: name.trim() || product.name,
+      name: name.trim() || 'Untitled Product',
       price: Math.max(0, Number(price) || product.price),
       stock: Math.max(0, Number(stock) || product.stock),
       category: category.trim() || product.category,
@@ -148,7 +148,7 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
           All Products
         </button>
         <span className="text-slate-300">/</span>
-        <span className="text-sm font-semibold text-slate-900 truncate max-w-[200px]">{product.name}</span>
+        <span className="text-sm font-semibold text-slate-900 truncate max-w-[200px]">{product.name || 'New Product'}</span>
         <span className={`ml-auto inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
           {product.status}
@@ -164,15 +164,19 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
 
             {/* Image card */}
             <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-              <div className="aspect-square bg-slate-50">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                  onError={e => {
-                    e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='3'%3E%3Crect width='4' height='3' fill='%23f1f5f9'/%3E%3C/svg%3E";
-                  }}
-                />
+              <div className="aspect-square bg-slate-50 flex items-center justify-center">
+                {product.image ? (
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                    onError={e => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <Package className="w-12 h-12 text-slate-300" />
+                )}
               </div>
               <div className="p-4">
                 <p className="text-xs text-slate-400 font-mono">{product.id}</p>
@@ -302,6 +306,21 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
       </div>
     </div>
   );
+}
+
+// ── Blank product factory ─────────────────────────────────────────────────────
+
+function newBlankProduct(): DashboardProduct {
+  return {
+    id: `new-${Date.now()}`,
+    name: '',
+    price: 0,
+    image: '',
+    category: '',
+    stock: 0,
+    sales: 0,
+    status: 'Draft',
+  };
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -434,13 +453,21 @@ export default function Products() {
   // ── Full-screen detail view (after all hooks) ─────────────────────────────────
 
   if (editProduct) {
-    const live = localProducts.find(p => p.id === editProduct.id) ?? editProduct;
+    const isNew  = editProduct.id.startsWith('new-');
+    const live   = isNew ? editProduct : (localProducts.find(p => p.id === editProduct.id) ?? editProduct);
     return (
       <ProductDetail
         product={live}
         fmtPrice={fmtPrice}
         onBack={() => setEditProduct(null)}
-        onSave={updated => { updateProduct(updated); setEditProduct(null); }}
+        onSave={updated => {
+          if (isNew) {
+            setLocalProducts(prev => [{ ...updated, id: `P${Date.now()}` }, ...prev]);
+          } else {
+            updateProduct(updated);
+          }
+          setEditProduct(null);
+        }}
       />
     );
   }
@@ -456,7 +483,7 @@ export default function Products() {
           <h2 className="text-2xl font-bold text-slate-900">Products</h2>
           <p className="text-slate-500 text-sm mt-0.5">{localProducts.length} products in your store</p>
         </div>
-        <Button className="gradient-bg hover:opacity-90 shadow-sm">
+        <Button className="gradient-bg hover:opacity-90 shadow-sm" onClick={() => setEditProduct(newBlankProduct())}>
           <Plus className="w-4 h-4 mr-2" />Add Product
         </Button>
       </div>
@@ -573,8 +600,14 @@ export default function Products() {
 
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <img src={product.image} alt={product.name} className="w-11 h-11 rounded-xl object-cover bg-slate-100 flex-shrink-0"
-                          onError={e => { e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='3'%3E%3Crect width='4' height='3' fill='%23f1f5f9'/%3E%3C/svg%3E"; }} />
+                        {product.image ? (
+                          <img src={product.image} alt={product.name} className="w-11 h-11 rounded-xl object-cover bg-slate-100 flex-shrink-0"
+                            onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                        ) : (
+                          <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+                            <Package className="w-5 h-5 text-slate-300" />
+                          </div>
+                        )}
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-slate-900 truncate max-w-[160px]">{product.name}</p>
                           <p className="text-xs text-slate-400 font-mono">{product.id}</p>

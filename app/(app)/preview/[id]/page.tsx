@@ -17,7 +17,7 @@ export default function PreviewByIdPage() {
   useEffect(() => {
     const id = params.id;
 
-    // 1. Check if it's already in context (e.g. dashboard navigation)
+    // 1. Already in context (e.g. dashboard navigation)
     const inContext = stores.find(s => s.id === id);
     if (inContext) {
       setStore(inContext);
@@ -25,7 +25,7 @@ export default function PreviewByIdPage() {
       return;
     }
 
-    // 2. Load from localStorage (AI-generated stores)
+    // 2. In localStorage (same browser, fast path)
     const raw = localStorage.getItem(`storee_store_${id}`);
     if (raw) {
       try {
@@ -34,20 +34,32 @@ export default function PreviewByIdPage() {
         addStore(loaded).catch(console.error);
         setGeneratedStore(loaded);
         return;
-      } catch {
-        // fall through to not-found
-      }
+      } catch { /* fall through */ }
     }
 
-    setNotFound(true);
+    // 3. Fallback: fetch from Supabase guest_stores
+    //    (covers cleared localStorage, different browser, shared link)
+    fetch(`/api/save-draft-store?id=${encodeURIComponent(id)}`)
+      .then(res => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then(({ store: loaded }: { store: Store }) => {
+        // Repopulate localStorage so subsequent loads are instant
+        localStorage.setItem(`storee_store_${loaded.id}`, JSON.stringify(loaded));
+        setStore(loaded);
+        addStore(loaded).catch(console.error);
+        setGeneratedStore(loaded);
+      })
+      .catch(() => setNotFound(true));
   }, [params.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (notFound) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-slate-500">
         <p className="text-lg font-semibold">Store preview not found</p>
-        <p className="text-sm">This preview link may have expired or the store was cleared from your browser.</p>
-        <a href="/" className="px-5 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity">
+        <p className="text-sm">This preview link may have expired or the store was cleared.</p>
+        <a
+          href="/"
+          className="px-5 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity"
+        >
           Generate a new store
         </a>
       </div>

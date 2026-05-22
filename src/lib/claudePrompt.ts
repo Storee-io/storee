@@ -7,7 +7,7 @@ The JSON must exactly match this shape:
 {
   "storeName": "string (catchy brand name, 2-4 words)",
   "tagline": "string (brand promise, max 8 words)",
-  "category": "string (MUST be one of: Fashion, Beauty, Coffee, Electronics, Furniture, Food)",
+  "category": "string (free-form business category label, e.g. Jewelry, Fitness, Streetwear, Pet Supplies, Gaming)",
   "primaryColor": "string (hex, distinctive and on-brand, e.g. #7c3aed)",
   "accentColor": "string (hex, complements primaryColor, e.g. #f59e0b)",
   "layoutStyle": "string (MUST be one of: minimal, bold, elegant, modern, playful)",
@@ -58,13 +58,12 @@ Layout style rules:
 - modern: tech/gadgets/contemporary lifestyle, clean whites, gradient accents
 - playful: food/beverages/kids/consumer goods, bright gradients, rounded shapes
 
-Category mapping:
-- Fashion: clothing, shoes, accessories, apparel, boutique, style, outfit
-- Beauty: skincare, cosmetics, makeup, wellness, glow, serum, spa
-- Coffee: coffee, tea, cafe, espresso, beverages, brew, drinks
-- Electronics: tech, gadgets, computers, phones, laptops, smart devices, digital
-- Furniture: furniture, home decor, interior, living, rugs, lighting, decor
-- Food: food, grocery, organic, snacks, meals, restaurant, culinary
+layoutStyle selection guide (MOST IMPORTANT — drives the entire visual design):
+- minimal   → fashion, beauty, editorial, boutique, lifestyle — clean, neutral, lots of white space
+- bold      → sports, gaming, streetwear, energy, automotive — dark, punchy, high contrast
+- elegant   → luxury, jewelry, fine dining, premium goods, weddings — warm neutrals, refined
+- modern    → tech, gadgets, SaaS, contemporary, digital products — sleek, gradient accents
+- playful   → food, beverages, kids, pets, hobbies, creative — bright, colourful, rounded
 
 Rules:
 - Generate EXACTLY 6 products, each specific, realistic, and non-generic

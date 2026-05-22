@@ -1,135 +1,403 @@
 'use client';
 
-import { useState } from 'react';
-import { Palette, Type, Layout, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Palette, Type, Layout, Check, X, SlidersHorizontal, Save } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 
-const colorPresets = [
-  { name: 'Emerald', value: '#10b981' },
-  { name: 'Ocean', value: '#0ea5e9' },
-  { name: 'Purple', value: '#8b5cf6' },
-  { name: 'Rose', value: '#f43f5e' },
-  { name: 'Amber', value: '#f59e0b' },
-  { name: 'Indigo', value: '#6366f1' },
+// ── Static data (mirrors HeroSection) ────────────────────────────────────────
+
+const singlePresets = [
+  '#ef4444', '#f97316', '#f59e0b', '#eab308',
+  '#22c55e', '#10b981', '#06b6d4', '#3b82f6',
+  '#6366f1', '#8b5cf6', '#ec4899', '#0f172a',
 ];
 
-const fonts = ['Inter', 'Poppins', 'DM Sans', 'Plus Jakarta Sans', 'Nunito'];
+const gradientPresets: [string, string][] = [
+  ['#10b981', '#14b8a6'], ['#10b981', '#06b6d4'],
+  ['#3b82f6', '#06b6d4'], ['#3b82f6', '#8b5cf6'],
+  ['#8b5cf6', '#ec4899'], ['#ec4899', '#f97316'],
+  ['#f97316', '#eab308'], ['#f59e0b', '#ef4444'],
+  ['#ef4444', '#8b5cf6'], ['#06b6d4', '#6366f1'],
+  ['#10b981', '#8b5cf6'], ['#ec4899', '#06b6d4'],
+];
+
+const fonts = [
+  { name: 'Inter',             sample: 'Aa' },
+  { name: 'Poppins',           sample: 'Aa' },
+  { name: 'DM Sans',           sample: 'Aa' },
+  { name: 'Plus Jakarta Sans', sample: 'Aa' },
+  { name: 'Nunito',            sample: 'Aa' },
+  { name: 'Geist',             sample: 'Aa' },
+];
 
 const layouts = [
-  { id: 'minimal', name: 'Minimal', desc: 'Clean and spacious' },
-  { id: 'classic', name: 'Classic', desc: 'Traditional ecommerce' },
-  { id: 'bold', name: 'Bold', desc: 'High impact visuals' },
+  { id: 'minimal',     name: 'Minimal',      desc: 'Clean & spacious' },
+  { id: 'bold',        name: 'Bold',         desc: 'High-impact visuals' },
+  { id: 'elegant',     name: 'Elegant',      desc: 'Refined & premium' },
+  { id: 'modern',      name: 'Modern',       desc: 'Fresh & dynamic' },
+  { id: 'playful',     name: 'Playful',      desc: 'Fun & colorful' },
 ];
 
+const moodOptions = [
+  { value: 'luxury',       label: 'Luxury',       emoji: '💎' },
+  { value: 'casual',       label: 'Casual',       emoji: '😊' },
+  { value: 'energetic',    label: 'Energetic',    emoji: '⚡' },
+  { value: 'professional', label: 'Professional', emoji: '💼' },
+  { value: 'romantic',     label: 'Romantic',     emoji: '🌸' },
+];
+
+const featureList = [
+  { key: 'reviews',      label: 'Reviews',      emoji: '⭐', desc: 'Product review section' },
+  { key: 'wishlist',     label: 'Wishlist',     emoji: '❤️', desc: 'Save-for-later button' },
+  { key: 'newsletter',   label: 'Newsletter',   emoji: '📧', desc: 'Email signup form' },
+  { key: 'promoBar',     label: 'Promo Bar',    emoji: '📢', desc: 'Top announcement bar' },
+  { key: 'faq',          label: 'FAQ',          emoji: '❓', desc: 'Frequently asked questions' },
+  { key: 'testimonials', label: 'Testimonials', emoji: '💬', desc: 'Customer reviews section' },
+  { key: 'brandStory',   label: 'Brand Story',  emoji: '📖', desc: 'About your brand section' },
+  { key: 'trustBadges',  label: 'Trust Badges', emoji: '🛡️', desc: 'Security & trust icons' },
+] as const;
+
+type FeatureKey = typeof featureList[number]['key'];
+
+// ── Section wrapper ───────────────────────────────────────────────────────────
+
+function Section({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 p-6">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
+          <Icon className="w-4 h-4 text-slate-600" />
+        </div>
+        <h3 className="font-bold text-slate-900">{title}</h3>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ── Color swatch button ───────────────────────────────────────────────────────
+
+function ColorSwatch({ bg, selected, onClick, title }: { bg: string; selected: boolean; onClick: () => void; title?: string }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`w-8 h-8 rounded-full transition-all hover:scale-110 active:scale-95 flex-shrink-0 ${selected ? 'ring-2 ring-offset-2 ring-slate-500 scale-110' : ''}`}
+      style={{ background: bg }}
+    />
+  );
+}
+
+// ── Custom hex row ────────────────────────────────────────────────────────────
+
+function HexInput({ value, onChange, label }: { value: string; onChange: (v: string) => void; label?: string }) {
+  return (
+    <div className="flex flex-col gap-1 flex-1">
+      {label && <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{label}</p>}
+      <div className="flex items-center gap-1.5 bg-slate-50 rounded-xl px-2 py-1.5">
+        <label className="relative flex-shrink-0 cursor-pointer group">
+          <div
+            className="w-7 h-7 rounded-lg border border-slate-200 transition-all group-hover:scale-105"
+            style={{ background: value || 'repeating-linear-gradient(45deg,#e2e8f0,#e2e8f0 3px,#f8fafc 3px,#f8fafc 6px)' }}
+          />
+          <input
+            type="color"
+            value={value || '#ffffff'}
+            onChange={e => onChange(e.target.value)}
+            className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+          />
+        </label>
+        <div className="w-px h-4 bg-slate-200 flex-shrink-0" />
+        <input
+          type="text"
+          value={value}
+          onChange={e => {
+            const v = e.target.value.startsWith('#') ? e.target.value : '#' + e.target.value;
+            onChange(v);
+          }}
+          placeholder="#"
+          maxLength={7}
+          className="flex-1 min-w-0 bg-transparent text-sm font-mono text-slate-700 placeholder:text-slate-300 outline-none"
+        />
+        {value && (
+          <button onClick={() => onChange('')} className="flex-shrink-0 text-slate-300 hover:text-slate-500 transition-colors">
+            <X className="w-3 h-3" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+
 export default function Appearance() {
-  const { activeStore } = useStore();
-  const [primaryColor, setPrimaryColor] = useState(activeStore?.primaryColor || '#10b981');
-  const [font, setFont] = useState('Inter');
-  const [layout, setLayout] = useState('minimal');
+  const { activeStore, updateActiveStore } = useStore();
+  const design = activeStore?.design;
+
+  // ── Derive initial values from store ────────────────────────────────────────
+  const initColor1 = activeStore?.primaryColor || '#10b981';
+  const initColor2 = design?.accentColor && design.accentColor !== initColor1 ? design.accentColor : '#06b6d4';
+  const isGradient  = !!(design?.accentColor && design.accentColor !== activeStore?.primaryColor);
+
+  // ── State ───────────────────────────────────────────────────────────────────
+  const [colorMode, setColorMode] = useState<'single' | 'gradient'>(isGradient ? 'gradient' : 'single');
+  const [color1, setColor1]       = useState(initColor1);
+  const [color2, setColor2]       = useState(initColor2);
+  const [font, setFont]           = useState(activeStore?.font || 'Inter');
+  const [layout, setLayout]       = useState<string>(design?.layoutStyle || 'minimal');
+  const [mood, setMood]           = useState(activeStore?.mood || '');
+  const [audience, setAudience]   = useState(activeStore?.audience || '');
+
+  const initFeatures: Record<FeatureKey, boolean> = {
+    reviews:      true,
+    wishlist:     true,
+    newsletter:   design ? !!design.newsletter : true,
+    promoBar:     design ? !!design.promoBar   : true,
+    faq:          design ? !!(design.faq?.length)          : true,
+    testimonials: design ? !!(design.testimonials?.length) : true,
+    brandStory:   design ? !!design.brandStory  : true,
+    trustBadges:  design ? !!(design.trustBadges?.length)  : true,
+  };
+  const [features, setFeatures] = useState(initFeatures);
+
   const [saved, setSaved] = useState(false);
 
-  const save = () => {
+  // Keep in sync when store switches
+  useEffect(() => {
+    setColor1(activeStore?.primaryColor || '#10b981');
+    const ac = activeStore?.design?.accentColor;
+    const grad = !!(ac && ac !== activeStore?.primaryColor);
+    setColorMode(grad ? 'gradient' : 'single');
+    setColor2(ac && grad ? ac : '#06b6d4');
+    setFont(activeStore?.font || 'Inter');
+    setLayout(activeStore?.design?.layoutStyle || 'minimal');
+    setMood(activeStore?.mood || '');
+    setAudience(activeStore?.audience || '');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStore?.id]);
+
+  // ── Save ─────────────────────────────────────────────────────────────────────
+  function handleSave() {
+    if (!activeStore) return;
+    updateActiveStore({
+      primaryColor: color1,
+      font,
+      mood,
+      audience,
+      design: {
+        ...(activeStore.design ?? {} as NonNullable<typeof activeStore.design>),
+        layoutStyle: layout as NonNullable<typeof activeStore.design>['layoutStyle'],
+        accentColor: colorMode === 'gradient' ? color2 : color1,
+        // Reflect feature toggles onto design
+        newsletter:   features.newsletter   ? (activeStore.design?.newsletter ?? { headline: 'Stay in the loop', subtext: 'Subscribe for exclusive deals and new arrivals.' }) : undefined,
+        promoBar:     features.promoBar     ? (activeStore.design?.promoBar   ?? '🎉 Free shipping on orders over $50!') : undefined,
+        faq:          features.faq          ? (activeStore.design?.faq        ?? []) : undefined,
+        brandStory:   features.brandStory   ? (activeStore.design?.brandStory ?? '') : undefined,
+        trustBadges:  features.trustBadges  ? (activeStore.design?.trustBadges ?? []) : undefined,
+      },
+    });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
-  };
+  }
 
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="p-6 max-w-2xl">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-6 max-w-2xl space-y-5">
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Appearance</h2>
-          <p className="text-slate-500 text-sm mt-1">Customize your store's look and feel</p>
+          <p className="text-slate-500 text-sm mt-0.5">Customize your store's look and feel</p>
         </div>
-        <Button onClick={save} className="gradient-bg hover:opacity-90">
-          {saved ? <><Check className="w-4 h-4 mr-2" />Saved!</> : 'Save Changes'}
-        </Button>
+        <button
+          onClick={handleSave}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm ${
+            saved
+              ? 'bg-emerald-500 text-white'
+              : 'gradient-bg text-white hover:opacity-90'
+          }`}
+        >
+          {saved ? <><Check className="w-4 h-4" />Saved!</> : <><Save className="w-4 h-4" />Save Changes</>}
+        </button>
       </div>
 
-      <div className="space-y-6">
-        {/* Primary Color */}
-        <Card className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
-              <Palette className="w-4 h-4 text-slate-600" />
+      {/* ── Brand Color ──────────────────────────────────────────────────────── */}
+      <Section icon={Palette} title="Brand Color">
+
+        {/* Mode tabs */}
+        <div className="flex gap-1.5 mb-5 bg-slate-100 p-1 rounded-xl w-fit">
+          {(['single', 'gradient'] as const).map(mode => (
+            <button
+              key={mode}
+              onClick={() => setColorMode(mode)}
+              className={`px-5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                colorMode === mode ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              {mode === 'single' ? 'Single Color' : 'Gradient'}
+            </button>
+          ))}
+        </div>
+
+        {colorMode === 'single' ? (
+          <>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Presets</p>
+            <div className="flex flex-wrap gap-2.5 mb-5">
+              {singlePresets.map(c => (
+                <ColorSwatch key={c} bg={c} selected={color1 === c} onClick={() => setColor1(c)} title={c} />
+              ))}
             </div>
-            <h3 className="font-bold text-slate-900">Brand Color</h3>
-          </div>
-          <div className="flex flex-wrap gap-3 mb-4">
-            {colorPresets.map(c => (
-              <button
-                key={c.value}
-                onClick={() => setPrimaryColor(c.value)}
-                className="flex flex-col items-center gap-1.5"
-              >
-                <div
-                  className={`w-10 h-10 rounded-xl shadow-sm transition-all ${primaryColor === c.value ? 'ring-2 ring-offset-2 ring-slate-400 scale-110' : 'hover:scale-105'}`}
-                  style={{ background: c.value }}
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Custom</p>
+            <div className="max-w-xs">
+              <HexInput value={color1} onChange={setColor1} />
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Presets</p>
+            <div className="flex flex-wrap gap-2.5 mb-5">
+              {gradientPresets.map(([c1, c2], i) => (
+                <ColorSwatch
+                  key={i}
+                  bg={`linear-gradient(135deg, ${c1}, ${c2})`}
+                  selected={color1 === c1 && color2 === c2}
+                  onClick={() => { setColor1(c1); setColor2(c2); }}
                 />
-                <span className="text-xs text-slate-500">{c.name}</span>
+              ))}
+            </div>
+
+            {/* Preview bar */}
+            <div className="h-8 rounded-xl mb-4 transition-all" style={{ background: `linear-gradient(90deg, ${color1}, ${color2})` }} />
+
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Custom</p>
+            <div className="flex gap-3">
+              <HexInput value={color1} onChange={setColor1} label="Color 1" />
+              <HexInput value={color2} onChange={setColor2} label="Color 2" />
+            </div>
+          </>
+        )}
+      </Section>
+
+      {/* ── Typography ───────────────────────────────────────────────────────── */}
+      <Section icon={Type} title="Typography">
+        <div className="grid grid-cols-3 gap-3">
+          {fonts.map(f => (
+            <button
+              key={f.name}
+              onClick={() => setFont(f.name)}
+              className={`p-4 rounded-xl border-2 text-left transition-all ${font === f.name ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 hover:border-slate-300'}`}
+            >
+              <p className="text-xl font-bold text-slate-900 mb-1" style={{ fontFamily: f.name }}>Aa</p>
+              <p className="text-xs text-slate-500 truncate">{f.name}</p>
+            </button>
+          ))}
+        </div>
+      </Section>
+
+      {/* ── Layout Style ─────────────────────────────────────────────────────── */}
+      <Section icon={Layout} title="Layout Style">
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+          {layouts.map(l => (
+            <button
+              key={l.id}
+              onClick={() => setLayout(l.id)}
+              className={`p-4 rounded-xl border-2 text-left transition-all ${layout === l.id ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 hover:border-slate-300'}`}
+            >
+              <div className="space-y-1.5 mb-3">
+                <div className={`h-2 rounded-full bg-slate-300 ${l.id === 'bold' ? 'w-full' : l.id === 'playful' ? 'w-2/3' : 'w-3/4'}`} />
+                <div className="h-1.5 rounded-full bg-slate-200 w-1/2" />
+              </div>
+              <p className="text-xs font-bold text-slate-900">{l.name}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">{l.desc}</p>
+            </button>
+          ))}
+        </div>
+      </Section>
+
+      {/* ── Advanced ─────────────────────────────────────────────────────────── */}
+      <Section icon={SlidersHorizontal} title="Advanced">
+
+        {/* Store Mood */}
+        <div className="mb-6">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Store Mood</p>
+          <div className="flex flex-wrap gap-2">
+            {moodOptions.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setMood(prev => prev === opt.value ? '' : opt.value)}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border-2 text-sm font-semibold transition-all ${
+                  mood === opt.value
+                    ? 'bg-emerald-50 border-emerald-400 text-emerald-700'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-white'
+                }`}
+              >
+                <span>{opt.emoji}</span>
+                {opt.label}
+                {mood === opt.value && <Check className="w-3.5 h-3.5 ml-0.5" />}
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-3">
-            <input
-              type="color"
-              value={primaryColor}
-              onChange={e => setPrimaryColor(e.target.value)}
-              className="w-10 h-10 rounded-xl cursor-pointer border border-slate-200"
-            />
-            <span className="text-sm text-slate-600 font-mono">{primaryColor}</span>
-          </div>
-        </Card>
+        </div>
 
-        {/* Typography */}
-        <Card className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
-              <Type className="w-4 h-4 text-slate-600" />
-            </div>
-            <h3 className="font-bold text-slate-900">Typography</h3>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {fonts.map(f => (
-              <button
-                key={f}
-                onClick={() => setFont(f)}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${font === f ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 hover:border-slate-300'}`}
-              >
-                <p className="text-lg font-bold text-slate-900" style={{ fontFamily: f }}>Aa</p>
-                <p className="text-xs text-slate-500 mt-1">{f}</p>
-              </button>
-            ))}
-          </div>
-        </Card>
+        {/* Target Audience */}
+        <div className="mb-6">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Target Audience</p>
+          <input
+            type="text"
+            value={audience}
+            onChange={e => setAudience(e.target.value)}
+            placeholder="e.g. young women 18–28, tech enthusiasts, parents..."
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-colors"
+          />
+        </div>
 
-        {/* Layout */}
-        <Card className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
-              <Layout className="w-4 h-4 text-slate-600" />
-            </div>
-            <h3 className="font-bold text-slate-900">Layout Style</h3>
+        {/* Optional Features */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Optional Features</p>
+            <button
+              onClick={() => {
+                const allOn = featureList.every(f => features[f.key]);
+                setFeatures(prev => {
+                  const next = { ...prev };
+                  featureList.forEach(f => { next[f.key] = !allOn; });
+                  return next;
+                });
+              }}
+              className="text-[10px] font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+            >
+              {featureList.every(f => features[f.key]) ? 'Deselect all' : 'Select all'}
+            </button>
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            {layouts.map(l => (
+          <div className="grid grid-cols-2 gap-2">
+            {featureList.map(f => (
               <button
-                key={l.id}
-                onClick={() => setLayout(l.id)}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${layout === l.id ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 hover:border-slate-300'}`}
+                key={f.key}
+                onClick={() => setFeatures(prev => ({ ...prev, [f.key]: !prev[f.key] }))}
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-left transition-all ${
+                  features[f.key]
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                    : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300'
+                }`}
               >
-                <div className="space-y-1.5 mb-3">
-                  <div className={`h-2 rounded-full bg-slate-300 ${l.id === 'bold' ? 'w-full' : 'w-3/4'}`} />
-                  <div className="h-1.5 rounded-full bg-slate-200 w-1/2" />
+                <span className="text-base leading-none flex-shrink-0">{f.emoji}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold leading-none">{f.label}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5 truncate">{f.desc}</p>
                 </div>
-                <p className="text-sm font-bold text-slate-900">{l.name}</p>
-                <p className="text-xs text-slate-400">{l.desc}</p>
+                <span className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                  features[f.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'
+                }`}>
+                  {features[f.key] && <Check className="w-2.5 h-2.5 text-white" />}
+                </span>
               </button>
             ))}
           </div>
-        </Card>
-      </div>
+        </div>
+      </Section>
+
     </div>
   );
 }

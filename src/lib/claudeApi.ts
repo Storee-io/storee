@@ -71,17 +71,25 @@ export interface GeneratedStoreConfig {
   design: StoreDesign;
 }
 
-// ── Valid categories ──────────────────────────────────────────────────────────
-
-const VALID_CATEGORIES = ['Fashion', 'Beauty', 'Coffee', 'Electronics', 'Furniture', 'Food'] as const;
+// ── layoutStyle → template (for product image pool) ──────────────────────────
+// Templates are only used as an image source — the visual design comes entirely
+// from layoutStyle + primaryColor via getCommerceTheme(). Mapping by layoutStyle
+// means we always get a valid template (never null) and image tone matches brand.
+const LAYOUT_TEMPLATE_MAP: Record<string, string> = {
+  minimal:  'fashion-luxe',   // editorial, neutral-tone photos
+  bold:     'tech-hub',       // dramatic, high-contrast photos
+  elegant:  'beauty-glow',    // soft, warm-tone photos
+  modern:   'home-living',    // clean, Scandinavian photos
+  playful:  'food-market',    // bright, colourful photos
+};
 
 // ── Build store config from parsed Claude response ────────────────────────────
 
 export function buildStoreConfig(parsed: ClaudeStoreResponse): GeneratedStoreConfig | null {
-  const cat = VALID_CATEGORIES.find(
-    c => c.toLowerCase() === parsed.category.toLowerCase()
-  );
-  const matchedTemplate = cat ? templates.find(t => t.category === cat) : null;
+  // Resolve template by layoutStyle — always valid, never blocks generation.
+  // category is kept as free-form metadata (label only, no longer gates anything).
+  const templateId = LAYOUT_TEMPLATE_MAP[parsed.layoutStyle] ?? 'fashion-luxe';
+  const matchedTemplate = templates.find(t => t.id === templateId) ?? templates[0];
   if (!matchedTemplate) return null;
 
   const originalImages = matchedTemplate.demoProducts.map(p => p.image);
@@ -145,14 +153,21 @@ export function parseStoreResponse(raw: string): GeneratedStoreConfig | null {
 
     const parsed: ClaudeStoreResponse = JSON.parse(cleaned);
 
+    // category is now free-form metadata — only truly required fields are checked
     if (
       !parsed.storeName ||
-      !parsed.category ||
       !parsed.primaryColor ||
+      !parsed.layoutStyle ||
       !Array.isArray(parsed.products) ||
       parsed.products.length === 0
     ) {
       return null;
+    }
+
+    // Normalise layoutStyle in case Claude produces an unexpected casing/value
+    const validLayouts = ['minimal', 'bold', 'elegant', 'modern', 'playful'];
+    if (!validLayouts.includes(parsed.layoutStyle)) {
+      parsed.layoutStyle = 'modern'; // safe fallback
     }
 
     return buildStoreConfig(parsed);

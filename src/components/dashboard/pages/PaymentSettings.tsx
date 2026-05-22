@@ -1,30 +1,102 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CreditCard, Check, Info, ChevronDown } from 'lucide-react';
+import {
+  CreditCard, Check, Info, ChevronDown, Zap,
+  Eye, EyeOff, ExternalLink, ShieldCheck,
+  Landmark, Wallet, MessageCircle, FileText,
+  QrCode, Banknote, Building2,
+} from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
 import { DEFAULT_PAYMENT_METHODS } from '../../../context/StoreContext';
-import type { PaymentMethod } from '../../../context/StoreContext';
+import type { PaymentMethod, AutoPaymentConfig, AutoPaymentProvider } from '../../../context/StoreContext';
 
 const BANK_OPTIONS = ['BCA', 'Mandiri', 'BNI', 'BRI', 'CIMB Niaga', 'Permata', 'Danamon'];
 
-const PAYMENT_TYPE_ICON: Record<string, string> = {
-  bank_transfer: '🏦',
-  qris: '📱',
-  cod: '💵',
-  ewallet: '👛',
+// ── Payment method icon map ───────────────────────────────────────────────────
+
+const METHOD_ICONS: Record<string, { Icon: React.ElementType; bg: string; color: string }> = {
+  bca:     { Icon: Building2, bg: 'bg-blue-50',    color: 'text-blue-600'    },
+  mandiri: { Icon: Building2, bg: 'bg-amber-50',   color: 'text-amber-600'   },
+  bni:     { Icon: Building2, bg: 'bg-orange-50',  color: 'text-orange-600'  },
+  qris:    { Icon: QrCode,    bg: 'bg-indigo-50',  color: 'text-indigo-600'  },
+  cod:     { Icon: Banknote,  bg: 'bg-green-50',   color: 'text-green-600'   },
+  gopay:   { Icon: Wallet,    bg: 'bg-green-50',   color: 'text-green-600'   },
+  ovo:     { Icon: Wallet,    bg: 'bg-purple-50',  color: 'text-purple-600'  },
+  dana:    { Icon: Wallet,    bg: 'bg-blue-50',    color: 'text-blue-500'    },
 };
 
-const EWALLET_ICON: Record<string, string> = {
-  gopay: '🟢',
-  ovo: '🟣',
-  dana: '🔵',
+function PaymentMethodIcon({ id, type }: { id: string; type: string }) {
+  const entry = METHOD_ICONS[id] ?? (
+    type === 'bank_transfer' ? { Icon: Landmark, bg: 'bg-slate-100', color: 'text-slate-500' } :
+    type === 'ewallet'       ? { Icon: Wallet,   bg: 'bg-slate-100', color: 'text-slate-500' } :
+    { Icon: CreditCard, bg: 'bg-slate-100', color: 'text-slate-500' }
+  );
+  const { Icon, bg, color } = entry;
+  return (
+    <div className={`w-8 h-8 ${bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+      <Icon className={`w-4 h-4 ${color}`} />
+    </div>
+  );
+}
+
+// ── Auto-payment providers ────────────────────────────────────────────────────
+
+const AUTO_PROVIDERS: {
+  id: AutoPaymentProvider;
+  name: string;
+  initial: string;
+  initialBg: string;
+  color: string;
+  desc: string;
+  docsUrl: string;
+}[] = [
+  {
+    id: 'xendit',
+    name: 'Xendit',
+    initial: 'X',
+    initialBg: 'bg-blue-500',
+    color: 'border-blue-300 bg-blue-50',
+    desc: 'Virtual account, QRIS, e-wallet & cards — popular in Indonesia',
+    docsUrl: 'https://dashboard.xendit.co/settings/developers',
+  },
+  {
+    id: 'midtrans',
+    name: 'Midtrans',
+    initial: 'M',
+    initialBg: 'bg-orange-500',
+    color: 'border-orange-300 bg-orange-50',
+    desc: "Gojek's payment gateway — bank transfer, cards & e-wallets",
+    docsUrl: 'https://dashboard.midtrans.com/settings/config_info',
+  },
+  {
+    id: 'stripe',
+    name: 'Stripe',
+    initial: 'S',
+    initialBg: 'bg-violet-600',
+    color: 'border-violet-300 bg-violet-50',
+    desc: 'International payments — credit cards, Apple Pay, Google Pay',
+    docsUrl: 'https://dashboard.stripe.com/apikeys',
+  },
+];
+
+const DEFAULT_AUTO: AutoPaymentConfig = {
+  enabled: false,
+  provider: null,
+  xendit:   { apiKey: '', webhookToken: '', environment: 'sandbox' },
+  midtrans: { serverKey: '', clientKey: '', environment: 'sandbox' },
+  stripe:   { publishableKey: '', secretKey: '', webhookSecret: '', environment: 'test' },
 };
+
+type Tab = 'manual' | 'auto';
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 export default function PaymentSettings() {
   const { activeStore, updateActiveStore } = useStore();
 
-  const [methods, setMethods] = useState<PaymentMethod[]>(
+  const [tab, setTab]             = useState<Tab>('manual');
+  const [methods, setMethods]     = useState<PaymentMethod[]>(
     activeStore?.paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS
   );
   const [confirmationWa, setConfirmationWa] = useState(
@@ -33,12 +105,16 @@ export default function PaymentSettings() {
   const [paymentNote, setPaymentNote] = useState(
     activeStore?.paymentSettings?.paymentNote ?? ''
   );
+  const [autoPayment, setAutoPayment] = useState<AutoPaymentConfig>(
+    activeStore?.paymentSettings?.autoPayment ?? DEFAULT_AUTO
+  );
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     setMethods(activeStore?.paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS);
     setConfirmationWa(activeStore?.paymentSettings?.confirmationWhatsapp ?? '');
     setPaymentNote(activeStore?.paymentSettings?.paymentNote ?? '');
+    setAutoPayment(activeStore?.paymentSettings?.autoPayment ?? DEFAULT_AUTO);
   }, [activeStore?.id]);
 
   const updateMethod = (id: string, patch: Partial<PaymentMethod>) =>
@@ -50,136 +126,358 @@ export default function PaymentSettings() {
         methods,
         confirmationWhatsapp: confirmationWa || undefined,
         paymentNote: paymentNote || undefined,
+        autoPayment,
       },
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const bankTransferMethods = methods.filter(m => m.type === 'bank_transfer');
+  const patchAuto     = (patch: Partial<AutoPaymentConfig>) =>
+    setAutoPayment(prev => ({ ...prev, ...patch }));
+  const patchXendit   = (patch: Partial<NonNullable<AutoPaymentConfig['xendit']>>) =>
+    setAutoPayment(prev => ({ ...prev, xendit:   { ...DEFAULT_AUTO.xendit!,   ...prev.xendit,   ...patch } }));
+  const patchMidtrans = (patch: Partial<NonNullable<AutoPaymentConfig['midtrans']>>) =>
+    setAutoPayment(prev => ({ ...prev, midtrans: { ...DEFAULT_AUTO.midtrans!, ...prev.midtrans, ...patch } }));
+  const patchStripe   = (patch: Partial<NonNullable<AutoPaymentConfig['stripe']>>) =>
+    setAutoPayment(prev => ({ ...prev, stripe:   { ...DEFAULT_AUTO.stripe!,   ...prev.stripe,   ...patch } }));
+
+  const bankMethods  = methods.filter(m => m.type === 'bank_transfer');
   const otherMethods = methods.filter(m => m.type !== 'bank_transfer');
 
+  const tabs: { id: Tab; label: string; icon: React.ElementType; desc: string }[] = [
+    { id: 'manual', label: 'Manual Payment', icon: CreditCard, desc: 'Bank transfer, QRIS, COD, e-wallet' },
+    { id: 'auto',   label: 'Auto Payment',   icon: Zap,        desc: 'Payment gateway API integration'   },
+  ];
+
   return (
-    <div className="p-6 max-w-2xl space-y-6">
+    <div className="p-6 max-w-2xl space-y-5">
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Payment</h2>
-          <p className="text-slate-500 text-sm mt-1">Atur metode pembayaran yang bisa digunakan pembeli</p>
+          <p className="text-slate-500 text-sm mt-0.5">Manage payment methods available to customers</p>
         </div>
         <button
           onClick={save}
-          className="flex items-center gap-2 px-5 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 px-5 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-sm"
         >
-          {saved ? <><Check className="w-4 h-4" />Tersimpan!</> : 'Simpan Perubahan'}
+          {saved ? <><Check className="w-4 h-4" />Saved!</> : 'Save Changes'}
         </button>
       </div>
 
-      {/* Bank Transfer methods */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center text-base">🏦</div>
-          <div>
-            <h3 className="font-bold text-slate-900">Transfer Bank</h3>
-            <p className="text-xs text-slate-400">Aktifkan rekening yang kamu gunakan untuk menerima pembayaran</p>
-          </div>
-        </div>
-        <div className="space-y-3">
-          {bankTransferMethods.map(method => (
-            <BankTransferCard
-              key={method.id}
-              method={method}
-              onUpdate={patch => updateMethod(method.id, patch)}
-            />
-          ))}
-        </div>
+      {/* Tabs */}
+      <div className="grid grid-cols-2 gap-3">
+        {tabs.map(t => {
+          const Icon   = t.icon;
+          const active = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all ${
+                active ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${active ? 'bg-emerald-500' : 'bg-slate-100'}`}>
+                <Icon className={`w-4 h-4 ${active ? 'text-white' : 'text-slate-500'}`} />
+              </div>
+              <div className="min-w-0">
+                <p className={`text-sm font-bold truncate ${active ? 'text-emerald-800' : 'text-slate-800'}`}>{t.label}</p>
+                <p className={`text-xs truncate mt-0.5 ${active ? 'text-emerald-600' : 'text-slate-400'}`}>{t.desc}</p>
+              </div>
+              {active && <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 ml-auto" />}
+            </button>
+          );
+        })}
       </div>
 
-      {/* QRIS, COD, E-wallets */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
-            <CreditCard className="w-4 h-4 text-slate-600" />
-          </div>
-          <div>
-            <h3 className="font-bold text-slate-900">Metode Lainnya</h3>
-            <p className="text-xs text-slate-400">QRIS, COD, dan e-wallet</p>
-          </div>
-        </div>
-        <div className="space-y-3">
-          {otherMethods.map(method => (
-            <OtherPaymentCard
-              key={method.id}
-              method={method}
-              onUpdate={patch => updateMethod(method.id, patch)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* WhatsApp confirmation */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 bg-green-50 rounded-xl flex items-center justify-center text-base">💬</div>
-          <div>
-            <h3 className="font-bold text-slate-900">WhatsApp Konfirmasi</h3>
-            <p className="text-xs text-slate-400">Pembeli bisa langsung kirim bukti bayar via WhatsApp</p>
-          </div>
-        </div>
-        <div className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Nomor WhatsApp</label>
-            <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100">
-              <span className="px-4 py-2.5 bg-slate-50 text-sm text-slate-500 border-r border-slate-200">+62</span>
-              <input
-                type="tel"
-                value={confirmationWa.replace(/^62/, '')}
-                onChange={e => setConfirmationWa('62' + e.target.value.replace(/^0/, ''))}
-                placeholder="81234567890"
-                className="flex-1 px-4 py-2.5 text-sm outline-none bg-white"
-              />
+      {/* ── Manual tab ── */}
+      {tab === 'manual' && (
+        <>
+          {/* Bank Transfer */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
+                <Landmark className="w-4 h-4 text-slate-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900">Bank Transfer</h3>
+                <p className="text-xs text-slate-400">Enable bank accounts to receive payments</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {bankMethods.map(m => (
+                <BankTransferCard key={m.id} method={m} onUpdate={p => updateMethod(m.id, p)} />
+              ))}
             </div>
           </div>
-          {confirmationWa && (
-            <p className="text-xs text-emerald-600 flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5" />
-              Link: wa.me/{confirmationWa}
-            </p>
+
+          {/* Other Methods */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
+                <Wallet className="w-4 h-4 text-slate-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900">Other Methods</h3>
+                <p className="text-xs text-slate-400">QRIS, COD & e-wallets</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {otherMethods.map(m => (
+                <OtherPaymentCard key={m.id} method={m} onUpdate={p => updateMethod(m.id, p)} />
+              ))}
+            </div>
+          </div>
+
+          {/* WhatsApp Confirmation */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 bg-green-50 rounded-xl flex items-center justify-center">
+                <MessageCircle className="w-4 h-4 text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900">WhatsApp Confirmation</h3>
+                <p className="text-xs text-slate-400">Customers send payment proof via WhatsApp</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">WhatsApp Number</label>
+                <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100">
+                  <span className="px-4 py-2.5 bg-slate-50 text-sm text-slate-500 border-r border-slate-200">+62</span>
+                  <input
+                    type="tel"
+                    value={confirmationWa.replace(/^62/, '')}
+                    onChange={e => setConfirmationWa('62' + e.target.value.replace(/^0/, ''))}
+                    placeholder="81234567890"
+                    className="flex-1 px-4 py-2.5 text-sm outline-none bg-white"
+                  />
+                </div>
+              </div>
+              {confirmationWa && (
+                <p className="text-xs text-emerald-600 flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5" />
+                  Link: wa.me/{confirmationWa}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Payment Notes */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
+                <FileText className="w-4 h-4 text-slate-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900">Payment Notes</h3>
+                <p className="text-xs text-slate-400">Shown below payment options at checkout</p>
+              </div>
+            </div>
+            <textarea
+              value={paymentNote}
+              onChange={e => setPaymentNote(e.target.value)}
+              rows={3}
+              placeholder="e.g. Payments confirmed within 24 hrs. Orders processed after verification."
+              className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 resize-none"
+            />
+          </div>
+        </>
+      )}
+
+      {/* ── Auto tab ── */}
+      {tab === 'auto' && (
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-6">
+
+          {/* Toggle */}
+          <div className="flex items-center justify-between pb-5 border-b border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center">
+                <Zap className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-900">Enable Auto Payment</p>
+                <p className="text-xs text-slate-400">Payment confirmation processed automatically via API gateway</p>
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+              <input
+                type="checkbox"
+                checked={autoPayment.enabled}
+                onChange={e => patchAuto({ enabled: e.target.checked })}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-emerald-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" />
+            </label>
+          </div>
+
+          {!autoPayment.enabled ? (
+            <div className="text-center py-8">
+              <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <Zap className="w-6 h-6 text-slate-300" />
+              </div>
+              <p className="text-sm font-semibold text-slate-500 mb-1">Auto payment not active</p>
+              <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                Enable the toggle above, then select a provider to configure your payment gateway.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Provider selector */}
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Select Provider</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {AUTO_PROVIDERS.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => patchAuto({ provider: autoPayment.provider === p.id ? null : p.id })}
+                      className={`relative flex flex-col items-start gap-2 p-3.5 rounded-xl border-2 text-left transition-all ${
+                        autoPayment.provider === p.id ? p.color : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
+                      }`}
+                    >
+                      {autoPayment.provider === p.id && (
+                        <span className="absolute top-2 right-2 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5 text-white" />
+                        </span>
+                      )}
+                      {/* Provider initial badge */}
+                      <div className={`w-8 h-8 ${p.initialBg} rounded-lg flex items-center justify-center`}>
+                        <span className="text-white text-sm font-black">{p.initial}</span>
+                      </div>
+                      <span className="text-sm font-bold text-slate-800">{p.name}</span>
+                      <span className="text-[10px] text-slate-500 leading-tight">{p.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Credentials */}
+              {autoPayment.provider && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      {AUTO_PROVIDERS.find(p => p.id === autoPayment.provider)?.name} Credentials
+                    </p>
+                    <a
+                      href={AUTO_PROVIDERS.find(p => p.id === autoPayment.provider)?.docsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+                    >
+                      Get API Key <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+
+                  <div className="bg-slate-50 rounded-xl p-4 space-y-4">
+                    {autoPayment.provider === 'xendit' && (
+                      <>
+                        <CredentialField label="API Key (Secret Key)" value={autoPayment.xendit?.apiKey ?? ''} onChange={v => patchXendit({ apiKey: v })} placeholder="xnd_production_xxxxxxxx..." secret />
+                        <CredentialField label="Webhook Verification Token" value={autoPayment.xendit?.webhookToken ?? ''} onChange={v => patchXendit({ webhookToken: v })} placeholder="Token from Xendit dashboard" secret />
+                        <EnvToggle value={autoPayment.xendit?.environment ?? 'sandbox'} options={[{ value: 'sandbox', label: 'Sandbox' }, { value: 'production', label: 'Production' }]} onChange={v => patchXendit({ environment: v as 'sandbox' | 'production' })} />
+                      </>
+                    )}
+                    {autoPayment.provider === 'midtrans' && (
+                      <>
+                        <CredentialField label="Server Key" value={autoPayment.midtrans?.serverKey ?? ''} onChange={v => patchMidtrans({ serverKey: v })} placeholder="SB-Mid-server-xxxxxxxx" secret />
+                        <CredentialField label="Client Key" value={autoPayment.midtrans?.clientKey ?? ''} onChange={v => patchMidtrans({ clientKey: v })} placeholder="SB-Mid-client-xxxxxxxx" />
+                        <EnvToggle value={autoPayment.midtrans?.environment ?? 'sandbox'} options={[{ value: 'sandbox', label: 'Sandbox' }, { value: 'production', label: 'Production' }]} onChange={v => patchMidtrans({ environment: v as 'sandbox' | 'production' })} />
+                      </>
+                    )}
+                    {autoPayment.provider === 'stripe' && (
+                      <>
+                        <CredentialField label="Publishable Key" value={autoPayment.stripe?.publishableKey ?? ''} onChange={v => patchStripe({ publishableKey: v })} placeholder="pk_test_xxxxxxxx" />
+                        <CredentialField label="Secret Key" value={autoPayment.stripe?.secretKey ?? ''} onChange={v => patchStripe({ secretKey: v })} placeholder="sk_test_xxxxxxxx" secret />
+                        <CredentialField label="Webhook Secret (optional)" value={autoPayment.stripe?.webhookSecret ?? ''} onChange={v => patchStripe({ webhookSecret: v })} placeholder="whsec_xxxxxxxx" secret />
+                        <EnvToggle value={autoPayment.stripe?.environment ?? 'test'} options={[{ value: 'test', label: 'Test' }, { value: 'live', label: 'Live' }]} onChange={v => patchStripe({ environment: v as 'test' | 'live' })} />
+                      </>
+                    )}
+                  </div>
+
+                  <div className="flex items-start gap-2.5 px-3.5 py-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-emerald-700 leading-relaxed">
+                      Credentials are stored securely and used only for transactions in this store. Never share your Secret Key with anyone.
+                    </p>
+                  </div>
+                </>
+              )}
+            </>
           )}
         </div>
-      </div>
-
-      {/* Payment note */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
-            <Info className="w-4 h-4 text-slate-600" />
-          </div>
-          <div>
-            <h3 className="font-bold text-slate-900">Catatan Pembayaran</h3>
-            <p className="text-xs text-slate-400">Ditampilkan di bawah pilihan pembayaran saat checkout</p>
-          </div>
-        </div>
-        <textarea
-          value={paymentNote}
-          onChange={e => setPaymentNote(e.target.value)}
-          rows={3}
-          placeholder="Contoh: Pembayaran akan dikonfirmasi dalam 1×24 jam. Pesanan akan diproses setelah pembayaran terverifikasi."
-          className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 resize-none"
-        />
-      </div>
+      )}
     </div>
   );
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
+function CredentialField({
+  label, value, onChange, placeholder, secret = false,
+}: {
+  label: string; value: string; onChange: (v: string) => void;
+  placeholder?: string; secret?: boolean;
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <div>
+      <label className="text-xs font-medium text-slate-600 mb-1.5 block">{label}</label>
+      <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-white focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
+        <input
+          type={secret && !show ? 'password' : 'text'}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          autoComplete="off"
+          className="flex-1 px-3.5 py-2.5 text-sm font-mono text-slate-800 outline-none bg-transparent placeholder:text-slate-300 placeholder:font-sans"
+        />
+        {secret && (
+          <button
+            type="button"
+            onClick={() => setShow(s => !s)}
+            className="px-3 text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0"
+          >
+            {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EnvToggle({ value, options, onChange }: {
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <label className="text-xs font-medium text-slate-600 mb-1.5 block">Environment</label>
+      <div className="flex gap-2 bg-slate-100 p-1 rounded-xl w-fit">
+        {options.map(opt => (
+          <button
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+              value === opt.value ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function BankTransferCard({ method, onUpdate }: { method: PaymentMethod; onUpdate: (patch: Partial<PaymentMethod>) => void }) {
   return (
     <div className={`rounded-xl border p-4 transition-all ${method.enabled ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50 opacity-70'}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-lg">🏦</span>
+          <PaymentMethodIcon id={method.id} type={method.type} />
           <span className="text-sm font-semibold text-slate-800">{method.name}</span>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
@@ -198,14 +496,14 @@ function BankTransferCard({ method, onUpdate }: { method: PaymentMethod; onUpdat
                 onChange={e => onUpdate({ bankName: e.target.value })}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-emerald-400 appearance-none bg-white pr-8"
               >
-                <option value="">Pilih bank...</option>
+                <option value="">Select bank...</option>
                 {BANK_OPTIONS.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Nomor Rekening</label>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Account Number</label>
             <input
               type="text"
               value={method.accountNumber ?? ''}
@@ -215,22 +513,22 @@ function BankTransferCard({ method, onUpdate }: { method: PaymentMethod; onUpdat
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Atas Nama</label>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Account Holder</label>
             <input
               type="text"
               value={method.accountHolder ?? ''}
               onChange={e => onUpdate({ accountHolder: e.target.value })}
-              placeholder="Nama pemilik rekening"
+              placeholder="Account owner name"
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Instruksi (opsional)</label>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Instructions (optional)</label>
             <textarea
               value={method.instructions ?? ''}
               onChange={e => onUpdate({ instructions: e.target.value })}
               rows={2}
-              placeholder="Transfer ke rekening di atas dan kirim bukti pembayaran."
+              placeholder="Transfer to the account above and send payment proof."
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 resize-none"
             />
           </div>
@@ -241,13 +539,11 @@ function BankTransferCard({ method, onUpdate }: { method: PaymentMethod; onUpdat
 }
 
 function OtherPaymentCard({ method, onUpdate }: { method: PaymentMethod; onUpdate: (patch: Partial<PaymentMethod>) => void }) {
-  const icon = method.type === 'qris' ? '📱' : method.type === 'cod' ? '💵' : (EWALLET_ICON[method.id] ?? '👛');
-
   return (
     <div className={`rounded-xl border p-4 transition-all ${method.enabled ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50 opacity-70'}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-lg">{icon}</span>
+          <PaymentMethodIcon id={method.id} type={method.type} />
           <span className="text-sm font-semibold text-slate-800">{method.name}</span>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
@@ -260,7 +556,7 @@ function OtherPaymentCard({ method, onUpdate }: { method: PaymentMethod; onUpdat
         <div className="mt-3 pt-3 border-t border-emerald-100 space-y-3">
           {method.type === 'ewallet' && (
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">Nomor {method.name}</label>
+              <label className="text-xs font-medium text-slate-500 mb-1 block">{method.name} Number</label>
               <input
                 type="tel"
                 value={method.ewalletNumber ?? ''}
@@ -272,12 +568,12 @@ function OtherPaymentCard({ method, onUpdate }: { method: PaymentMethod; onUpdat
           )}
           {(method.type === 'qris' || method.type === 'cod') && (
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">Instruksi untuk pembeli</label>
+              <label className="text-xs font-medium text-slate-500 mb-1 block">Instructions for customers</label>
               <textarea
                 value={method.instructions ?? ''}
                 onChange={e => onUpdate({ instructions: e.target.value })}
                 rows={2}
-                placeholder={method.type === 'qris' ? 'Scan QR code dengan aplikasi apapun.' : 'Siapkan uang pas saat kurir tiba.'}
+                placeholder={method.type === 'qris' ? 'Scan QR code with any payment app.' : 'Have exact change ready when courier arrives.'}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 resize-none"
               />
             </div>

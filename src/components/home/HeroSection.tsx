@@ -13,6 +13,7 @@ import { businessCategories, templates } from '../../data/templates';
 import type { Template } from '../../data/templates';
 import type { Store } from '../../context/StoreContext';
 import { generateStoreWithClaude } from '../../lib/claudeApiClient';
+import { getGuestId } from '../../lib/guestId';
 
 const generatingSteps = [
   { label: 'Analyzing your prompt...', PendingIcon: Sparkles },
@@ -288,8 +289,18 @@ export default function HeroSection() {
       ...(selectedLang ? { language: selectedLang } : {}),
     };
 
-    // Save to localStorage with a unique key so /preview/[id] can load it
+    // Save to localStorage (fast, instant access on same browser)
     localStorage.setItem(`storee_store_${newStore.id}`, JSON.stringify(newStore));
+
+    // Fire-and-forget save to Supabase so the store survives localStorage clears
+    // and can be fetched on any device/browser via the store ID.
+    const guestId = getGuestId();
+    fetch('/api/save-draft-store', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guestId, store: newStore }),
+    }).catch(() => { /* non-critical — localStorage is the primary fallback */ });
+
     // Navigate immediately — keep overlay visible during transition so home page
     // never flashes. The overlay disappears naturally when HeroSection unmounts.
     router.push(`/preview/${newStore.id}?from=/`);
