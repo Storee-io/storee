@@ -1187,7 +1187,7 @@ export default function HeroSection() {
             </motion.p>
 
             {/* Steps */}
-            <div className="w-full max-w-lg space-y-3">
+            <div className="w-full max-w-sm space-y-3">
               {generatingSteps.map(({ label, PendingIcon }, i) => {
                 const completed = i < generatingStep;
                 const active = i === generatingStep;
