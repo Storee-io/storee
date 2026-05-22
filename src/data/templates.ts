@@ -133,16 +133,52 @@ export const templates: Template[] = [
 ];
 
 export const businessCategories = [
-  { label: 'Fashion', emoji: '👗', prompt: 'Create a modern fashion store for trendy clothing and accessories' },
-  { label: 'Beauty', emoji: '💄', prompt: 'Build a clean beauty brand store for skincare and cosmetics products' },
-  { label: 'Coffee', emoji: '☕', prompt: 'Create an artisan coffee shop store for premium beans and equipment' },
-  { label: 'Electronics', emoji: '💻', prompt: 'Build a tech store for gadgets, accessories and smart home products' },
-  { label: 'Furniture', emoji: '🪑', prompt: 'Create a Scandinavian furniture and home decor store' },
-  { label: 'Food', emoji: '🥗', prompt: 'Build an organic food marketplace with fresh and healthy products' },
-  { label: 'Fitness', emoji: '💪', prompt: 'Create a fitness and sports equipment store for active lifestyles' },
-  { label: 'Books', emoji: '📚', prompt: 'Build an online bookstore with curated collections and bestsellers' },
-  { label: 'Jewelry', emoji: '💍', prompt: 'Create a luxury jewelry store with fine accessories and gems' },
-  { label: 'Toys', emoji: '🧸', prompt: 'Build a fun kids toy store with educational and play products' },
-  { label: 'Sports', emoji: '⚽', prompt: 'Create a sports equipment and outdoor gear store' },
-  { label: 'Art', emoji: '🎨', prompt: 'Build an online art gallery and prints store' },
+  {
+    label: 'Fashion', emoji: '👗',
+    prompt: 'Contemporary streetwear and curated fashion for the style-conscious generation. We stock limited-edition drops, everyday essentials, and emerging designer pieces — from oversized hoodies to tailored blazers. Every item is hand-picked for quality, fit, and cultural relevance. Free returns, worldwide shipping.',
+  },
+  {
+    label: 'Beauty', emoji: '💄',
+    prompt: 'Science-backed skincare and clean beauty essentials for radiant, healthy skin. From gentle daily cleansers and vitamin C serums to SPF moisturizers and overnight masks — every product is dermatologist-tested, cruelty-free, and formulated without parabens or harsh chemicals. Build your perfect routine.',
+  },
+  {
+    label: 'Coffee', emoji: '☕',
+    prompt: 'Artisan coffee beans and gourmet snacks delivered fresh to your door. We source directly from farmers across Ethiopia, Colombia, and Sumatra, roast weekly in small batches, and offer subscription boxes with exclusive single-origin blends. Perfect for home baristas and serious coffee enthusiasts.',
+  },
+  {
+    label: 'Electronics', emoji: '💻',
+    prompt: 'Premium tech gadgets, wireless audio, and smart home devices for the modern lifestyle. From noise-cancelling headphones and ultra-slim laptops to minimalist desk accessories and IoT home systems — every product is handpicked by our engineers and backed by dedicated customer support.',
+  },
+  {
+    label: 'Furniture', emoji: '🪑',
+    prompt: 'Scandinavian-inspired furniture and home accessories crafted to turn any space into a sanctuary. Each piece is made from sustainably sourced oak, natural linen, and hand-fired ceramics — designed for clean lines, lasting quality, and everyday comfort. Made to order, shipped flat-packed with easy assembly.',
+  },
+  {
+    label: 'Food', emoji: '🥗',
+    prompt: 'Organic groceries, artisan condiments, and gourmet pantry staples sourced directly from small-batch local producers. We deliver weekly curated boxes of seasonal vegetables, cold-pressed oils, hand-rolled pasta, and single-origin honey — supporting sustainable farming and conscious eating.',
+  },
+  {
+    label: 'Fitness', emoji: '💪',
+    prompt: 'High-performance fitness gear, resistance equipment, and recovery tools for athletes and home gym enthusiasts. From competition-grade kettlebells and adjustable dumbbells to foam rollers and compression wear — built for serious training whether you\'re hitting PRs or just starting your wellness journey.',
+  },
+  {
+    label: 'Books', emoji: '📚',
+    prompt: 'Independent bookstore specializing in literary fiction, narrative non-fiction, and rare first editions. Every book is hand-selected by our team of avid readers. We offer monthly subscription boxes with personalized picks, exclusive author bookmarks, and signed copies from debut and celebrated writers.',
+  },
+  {
+    label: 'Jewelry', emoji: '💍',
+    prompt: 'Handcrafted fine jewelry in solid 18k gold, sterling silver, and ethically sourced natural gemstones. Each piece is designed in our studio and made-to-order by master artisans — no mass production, no shortcuts. Engravable, giftable, and built to become heirloom pieces.',
+  },
+  {
+    label: 'Toys', emoji: '🧸',
+    prompt: 'Award-winning educational toys, wooden puzzles, and open-ended play sets for curious kids aged 0–12. Screen-free, sustainably made from non-toxic materials, and designed in collaboration with child development experts. Each toy sparks imagination, builds skills, and grows with your child.',
+  },
+  {
+    label: 'Sports', emoji: '⚽',
+    prompt: 'Professional outdoor gear, trail running shoes, and expedition equipment for hikers, climbers, cyclists, and weekend adventurers. Rigorously field-tested in real conditions — from mountain trails to urban runs. We carry both performance-grade and entry-level gear with honest gear guides.',
+  },
+  {
+    label: 'Art', emoji: '🎨',
+    prompt: 'Original paintings, limited-edition prints, and digital art from independent artists worldwide. Each piece ships in gallery-quality packaging with a certificate of authenticity. Every purchase goes directly to the artist — no middlemen, no galleries. Commission custom works or discover emerging talent.',
+  },
 ];
