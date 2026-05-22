@@ -1181,13 +1181,13 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-sm text-slate-400 text-center max-w-xs mb-10 leading-relaxed"
+              className="text-sm text-slate-400 text-center max-w-lg mb-10 leading-relaxed line-clamp-3"
             >
               {prompt}
             </motion.p>
 
             {/* Steps */}
-            <div className="w-full max-w-sm space-y-3">
+            <div className="w-full max-w-lg space-y-3">
               {generatingSteps.map(({ label, PendingIcon }, i) => {
                 const completed = i < generatingStep;
                 const active = i === generatingStep;
