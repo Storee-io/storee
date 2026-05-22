@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react';
 import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, Copy, MessageCircle, MapPin, Phone, Mail, ChevronDown, User, LogOut, Package, Eye, EyeOff } from 'lucide-react';
 import type { Store, ShippingSettings, ShippingMethod, PaymentSettings, PaymentMethod } from '../../context/StoreContext';
 import { DEFAULT_SHIPPING_METHODS, DEFAULT_PAYMENT_METHODS } from '../../context/StoreContext';
-import type { StoreDesign, RichProduct } from '../../lib/claudeApi';
+import type { StoreDesign, RichProduct, DesignSystem } from '../../lib/claudeApi';
 import { makePriceFmt } from '../../lib/formatCurrency';
 import { supabase } from '../../lib/supabase';
 
@@ -2786,6 +2786,697 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
   );
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// TOKEN LAYOUT — Claude-as-Designer: driven entirely by designSystem tokens
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── Font pairs ────────────────────────────────────────────────────────────────
+
+const FONT_PAIRS: Record<string, { heading: string; body: string; url: string }> = {
+  'playfair-lato': {
+    heading: "'Playfair Display', Georgia, serif",
+    body: "'Lato', system-ui, sans-serif",
+    url: 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Lato:wght@300;400;700&display=swap',
+  },
+  'montserrat-opensans': {
+    heading: "'Montserrat', system-ui, sans-serif",
+    body: "'Open Sans', system-ui, sans-serif",
+    url: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&family=Open+Sans:wght@300;400;600&display=swap',
+  },
+  'space-inter': {
+    heading: "'Space Grotesk', system-ui, sans-serif",
+    body: "'Inter', system-ui, sans-serif",
+    url: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap',
+  },
+  'fraunces-dm': {
+    heading: "'Fraunces', Georgia, serif",
+    body: "'DM Sans', system-ui, sans-serif",
+    url: 'https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,700;0,900;1,300&family=DM+Sans:wght@300;400;500;700&display=swap',
+  },
+  'bebas-barlow': {
+    heading: "'Bebas Neue', system-ui, sans-serif",
+    body: "'Barlow', system-ui, sans-serif",
+    url: 'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&display=swap',
+  },
+  'cormorant-jost': {
+    heading: "'Cormorant Garamond', Georgia, serif",
+    body: "'Jost', system-ui, sans-serif",
+    url: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=Jost:wght@300;400;500;600&display=swap',
+  },
+  'syne-nunito': {
+    heading: "'Syne', system-ui, sans-serif",
+    body: "'Nunito Sans', system-ui, sans-serif",
+    url: 'https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Nunito+Sans:wght@300;400;600;700&display=swap',
+  },
+  'anton-roboto': {
+    heading: "'Anton', system-ui, sans-serif",
+    body: "'Roboto', system-ui, sans-serif",
+    url: 'https://fonts.googleapis.com/css2?family=Anton&family=Roboto:wght@300;400;500;700&display=swap',
+  },
+  'josefin': {
+    heading: "'Josefin Sans', system-ui, sans-serif",
+    body: "'Josefin Sans', system-ui, sans-serif",
+    url: 'https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600;700&display=swap',
+  },
+  'raleway-source': {
+    heading: "'Raleway', system-ui, sans-serif",
+    body: "'Source Sans 3', system-ui, sans-serif",
+    url: 'https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;600;700;900&family=Source+Sans+3:wght@300;400;600&display=swap',
+  },
+};
+
+// ── Color schemes ─────────────────────────────────────────────────────────────
+
+type TkColorBase = Omit<CommerceTheme, 'primary' | 'primaryContrast'>;
+
+const COLOR_SCHEMES: Record<string, TkColorBase> = {
+  light: {
+    fontFamily: 'system-ui',
+    pageBg: '#ffffff', headerBg: '#ffffff', headerBorder: '#f0f0ee',
+    surfaceBg: '#f8f8f6', surfaceBorder: '#e8e8e4', surfaceRadius: '16px', btnRadius: '12px',
+    inputBg: '#f8f8f6', inputBorder: '#e0e0dc', inputRadius: '12px',
+    textPrimary: '#111111', textSecondary: '#444444', textMuted: '#888888', divider: '#f0f0ee',
+    successBg: '#f0fdf4', successText: '#16a34a', successBorder: '#bbf7d0',
+    dangerBg: '#fff1f2', dangerText: '#e11d48',
+  },
+  dark: {
+    fontFamily: 'system-ui',
+    pageBg: '#0a0a0a', headerBg: '#111111', headerBorder: 'rgba(255,255,255,0.07)',
+    surfaceBg: '#1a1a1a', surfaceBorder: 'rgba(255,255,255,0.08)', surfaceRadius: '16px', btnRadius: '12px',
+    inputBg: '#222222', inputBorder: 'rgba(255,255,255,0.12)', inputRadius: '12px',
+    textPrimary: '#ffffff', textSecondary: '#aaaaaa', textMuted: '#666666', divider: 'rgba(255,255,255,0.07)',
+    successBg: 'rgba(16,185,129,0.12)', successText: '#34d399', successBorder: 'rgba(16,185,129,0.2)',
+    dangerBg: 'rgba(239,68,68,0.12)', dangerText: '#f87171',
+  },
+  cream: {
+    fontFamily: 'system-ui',
+    pageBg: '#f9f6f0', headerBg: '#f9f6f0', headerBorder: '#e8e0d4',
+    surfaceBg: '#ffffff', surfaceBorder: '#e4dcd0', surfaceRadius: '8px', btnRadius: '6px',
+    inputBg: '#faf8f5', inputBorder: '#d8cfc6', inputRadius: '6px',
+    textPrimary: '#1a1208', textSecondary: '#5c4a32', textMuted: '#9a8878', divider: '#e8e0d4',
+    successBg: '#f0fdf4', successText: '#2d6a4f', successBorder: '#b7e4c7',
+    dangerBg: '#fef2f2', dangerText: '#991b1b',
+  },
+  slate: {
+    fontFamily: 'system-ui',
+    pageBg: '#f0f4f8', headerBg: '#ffffff', headerBorder: '#e2e8f0',
+    surfaceBg: '#ffffff', surfaceBorder: '#e2e8f0', surfaceRadius: '20px', btnRadius: '16px',
+    inputBg: '#f0f4f8', inputBorder: '#d8e4f0', inputRadius: '14px',
+    textPrimary: '#1e293b', textSecondary: '#475569', textMuted: '#94a3b8', divider: '#e2e8f0',
+    successBg: '#f0fdf4', successText: '#16a34a', successBorder: '#bbf7d0',
+    dangerBg: '#fff1f2', dangerText: '#e11d48',
+  },
+  warm: {
+    fontFamily: 'system-ui',
+    pageBg: '#fdf8f4', headerBg: '#ffffff', headerBorder: '#f0e8e0',
+    surfaceBg: '#ffffff', surfaceBorder: '#f0e8e0', surfaceRadius: '16px', btnRadius: '12px',
+    inputBg: '#fdf8f4', inputBorder: '#e8ddd4', inputRadius: '12px',
+    textPrimary: '#1c0f04', textSecondary: '#6b4c38', textMuted: '#b08070', divider: '#f0e8e0',
+    successBg: '#f0fdf4', successText: '#16a34a', successBorder: '#bbf7d0',
+    dangerBg: '#fff1f2', dangerText: '#e11d48',
+  },
+};
+
+// ── Button / surface radii overrides ─────────────────────────────────────────
+
+const BTN_RADIUS: Record<string, string>     = { pill: '9999px', rounded: '12px', square: '4px' };
+const SURFACE_RADIUS: Record<string, string> = { pill: '20px',   rounded: '16px', square: '6px' };
+
+// ── Extended token theme ──────────────────────────────────────────────────────
+
+interface TokenTheme extends CommerceTheme {
+  headingFont: string;
+  googleFontsUrl: string;
+}
+
+function getTokenTheme(ds: DesignSystem, primaryColor: string): TokenTheme {
+  const colorBase = COLOR_SCHEMES[ds.colorScheme] ?? COLOR_SCHEMES.light;
+  const fonts = FONT_PAIRS[ds.fontPair] ?? FONT_PAIRS['space-inter'];
+  const btnR  = BTN_RADIUS[ds.buttonStyle] ?? '12px';
+  const surR  = SURFACE_RADIUS[ds.buttonStyle] ?? '16px';
+  return {
+    ...colorBase,
+    fontFamily: fonts.body,
+    btnRadius: btnR,
+    surfaceRadius: surR,
+    inputRadius: btnR === '9999px' ? '20px' : btnR,
+    primary: primaryColor,
+    primaryContrast: isDark(primaryColor) ? '#ffffff' : '#000000',
+    headingFont: fonts.heading,
+    googleFontsUrl: fonts.url,
+  };
+}
+
+// ── Font injector ─────────────────────────────────────────────────────────────
+
+function TkFontInjector({ url }: { url: string }) {
+  return <style>{`@import url('${url}');`}</style>;
+}
+
+// ── Hero: CENTERED ────────────────────────────────────────────────────────────
+
+function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts }: {
+  design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onScrollToProducts: () => void;
+}) {
+  const { heroTitle, heroSubtitle, ctaText, products = [], collections = [], tagline } = design;
+  const isMobile = device === 'mobile';
+  const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  const bgImage = products[0]?.image;
+  return (
+    <section className="relative overflow-hidden" style={{ minHeight: isMobile ? '60vh' : '70vh' }}>
+      {bgImage && (
+        <>
+          <div className="absolute inset-0">
+            <ProductImg src={bgImage} alt="" className="w-full h-full object-cover" />
+          </div>
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.65) 100%)' }} />
+        </>
+      )}
+      <div className="relative z-10 flex flex-col items-center justify-center text-center px-5" style={{ minHeight: isMobile ? '60vh' : '70vh', padding: isMobile ? '60px 20px' : '80px 40px' }}>
+        {tagline && (
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] mb-4" style={{ color: alpha(primaryColor, 0.9) }}>
+            {collections[0]?.emoji} {tagline}
+          </p>
+        )}
+        <h1 className="font-black leading-[1.05] tracking-tight mb-5" style={{ fontFamily: tt.headingFont, fontSize: isMobile ? 'clamp(2.2rem,8vw,3rem)' : 'clamp(3rem,5vw,4.5rem)', color: bgImage ? '#ffffff' : tt.textPrimary }}>
+          {heroTitle}
+        </h1>
+        <p className="text-sm leading-relaxed mb-8 max-w-lg" style={{ color: bgImage ? 'rgba(255,255,255,0.82)' : tt.textSecondary }}>
+          {heroSubtitle}
+        </p>
+        <button onClick={onScrollToProducts} className="px-8 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>
+          {ctaText}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+// ── Hero: SPLIT ───────────────────────────────────────────────────────────────
+
+function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmtPrice }: {
+  design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onScrollToProducts: () => void; fmtPrice: (n: number) => string;
+}) {
+  const { heroTitle, heroSubtitle, ctaText, products = [], collections = [], tagline } = design;
+  const isMobile = device === 'mobile';
+  const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  return (
+    <section style={{ background: tt.pageBg }}>
+      <div className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-10 flex flex-col gap-8' : 'py-16 grid grid-cols-2 gap-14 items-center'}`}>
+        <div>
+          {tagline && (
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] mb-5" style={{ color: primaryColor }}>
+              {collections[0]?.emoji} {tagline}
+            </p>
+          )}
+          <h1 className="font-black leading-[1.03] tracking-tight mb-5" style={{ fontFamily: tt.headingFont, fontSize: isMobile ? '2.4rem' : 'clamp(2.8rem,4vw,4rem)', color: tt.textPrimary }}>
+            {heroTitle}
+          </h1>
+          <p className="text-sm leading-relaxed mb-8 max-w-sm" style={{ color: tt.textSecondary }}>
+            {heroSubtitle}
+          </p>
+          <div className="flex items-center gap-4">
+            <button onClick={onScrollToProducts} className="px-7 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>
+              {ctaText}
+            </button>
+            <button onClick={onScrollToProducts} className="text-xs font-semibold flex items-center gap-1.5 hover:opacity-70 transition-opacity" style={{ color: tt.textMuted }}>
+              Explore <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+        <div className="relative">
+          <div className="overflow-hidden shadow-2xl" style={{ aspectRatio: '4/5', borderRadius: tt.surfaceRadius }}>
+            <ProductImg src={products[0]?.image} alt="" className="w-full h-full object-cover" />
+          </div>
+          {!isMobile && products[1] && (
+            <div className="absolute -bottom-6 -left-8 bg-white rounded-2xl p-4 shadow-2xl" style={{ maxWidth: '180px' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                  <ProductImg src={products[1].image} alt="" className="w-full h-full object-cover" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] uppercase tracking-wider text-gray-400 truncate">{products[1].category}</p>
+                  <p className="text-xs font-bold text-gray-900 truncate">{products[1].name}</p>
+                  <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{fmtPrice(products[1].price)}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          {!isMobile && collections[1] && (
+            <div className="absolute -top-4 -right-4 bg-white rounded-full px-4 py-2 shadow-xl text-xs font-bold text-gray-700">
+              {collections[1].emoji} {collections[1].name}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Hero: FULLSCREEN ──────────────────────────────────────────────────────────
+
+function TkHeroFullscreen({ design, tt, primaryColor, device, onScrollToProducts }: {
+  design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onScrollToProducts: () => void;
+}) {
+  const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
+  const isMobile = device === 'mobile';
+  const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  return (
+    <section className="relative" style={{ height: isMobile ? '85vh' : '92vh', minHeight: '480px' }}>
+      <div className="absolute inset-0">
+        <ProductImg src={products[0]?.image} alt="" className="w-full h-full object-cover" />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.1) 100%)' }} />
+      </div>
+      <div className="relative z-10 flex flex-col justify-end h-full px-8 pb-16">
+        {tagline && (
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] mb-4" style={{ color: primaryColor }}>
+            {tagline}
+          </p>
+        )}
+        <h1 className="font-black leading-[1.0] tracking-tight mb-5 text-white" style={{ fontFamily: tt.headingFont, fontSize: isMobile ? 'clamp(2.5rem,9vw,3.5rem)' : 'clamp(3.5rem,6vw,6rem)' }}>
+          {heroTitle}
+        </h1>
+        <p className="text-sm leading-relaxed mb-8 max-w-md text-white/75">
+          {heroSubtitle}
+        </p>
+        <button onClick={onScrollToProducts} className="w-fit px-8 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>
+          {ctaText} <ArrowRight className="w-4 h-4 inline ml-1" />
+        </button>
+      </div>
+    </section>
+  );
+}
+
+// ── Hero: MINIMAL ─────────────────────────────────────────────────────────────
+
+function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts }: {
+  design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onScrollToProducts: () => void;
+}) {
+  const { heroTitle, heroSubtitle, ctaText, tagline, collections = [] } = design;
+  const isMobile = device === 'mobile';
+  const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  return (
+    <section style={{ background: tt.pageBg, borderBottom: `1px solid ${tt.divider}` }}>
+      <div className="max-w-3xl mx-auto px-5 text-center" style={{ padding: isMobile ? '56px 20px' : '80px 40px' }}>
+        {tagline && (
+          <p className="text-[10px] font-bold uppercase tracking-[0.35em] mb-5" style={{ color: primaryColor }}>
+            {collections[0]?.emoji} {tagline}
+          </p>
+        )}
+        <h1 className="font-black leading-[1.05] tracking-tight mb-5" style={{ fontFamily: tt.headingFont, fontSize: isMobile ? '2.2rem' : 'clamp(2.8rem,4.5vw,4rem)', color: tt.textPrimary }}>
+          {heroTitle}
+        </h1>
+        <p className="text-sm leading-relaxed mb-8 max-w-xl mx-auto" style={{ color: tt.textSecondary }}>
+          {heroSubtitle}
+        </p>
+        <button onClick={onScrollToProducts} className="px-8 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>
+          {ctaText}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+// ── Product grid: STANDARD (3-col) ────────────────────────────────────────────
+
+function TkGridStandard({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
+  products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
+  onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
+}) {
+  const isMobile = device === 'mobile';
+  return (
+    <div className={`grid ${gridCols(device)} gap-4 md:gap-5`}>
+      {products.map(p => (
+        <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
+          <div className="relative overflow-hidden mb-3" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
+            <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+            {p.badge && (
+              <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>
+                {p.badge}
+              </span>
+            )}
+            <div className={`absolute bottom-0 inset-x-0 p-3 transition-transform duration-200 ${isMobile ? '' : 'translate-y-full group-hover:translate-y-0'}`}>
+              <button
+                onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; const wrap = btn.closest('.group')?.querySelector('.relative.overflow-hidden') as HTMLElement | null; onAddToCart(p, (wrap ?? btn).getBoundingClientRect()); }}
+                className="w-full py-2.5 text-[11px] font-bold uppercase tracking-wider text-white shadow-lg"
+                style={{ background: primaryColor, borderRadius: tt.btnRadius }}
+              >
+                + Add to Cart
+              </button>
+            </div>
+            <button
+              onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
+              className={`absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow transition-all hover:scale-110 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'}`}
+            >
+              <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+            </button>
+          </div>
+          <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
+          <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-sm font-black" style={{ color: tt.primary }}>{fmtPrice(p.price)}</span>
+            {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Product grid: MAGAZINE (first product featured) ───────────────────────────
+
+function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
+  products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
+  onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
+}) {
+  const isMobile = device === 'mobile';
+  const [featured, ...rest] = products;
+  const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  if (!featured) return null;
+  return (
+    <div className={`${isMobile ? 'flex flex-col gap-4' : 'grid grid-cols-3 gap-5'}`}>
+      {/* Featured product — spans 2 cols */}
+      <div
+        className="group cursor-pointer relative overflow-hidden"
+        style={{ borderRadius: tt.surfaceRadius, ...(isMobile ? { aspectRatio: '4/3' } : { gridColumn: 'span 2', aspectRatio: '16/9' }) }}
+        onClick={() => onProductClick(featured)}
+      >
+        <ProductImg src={featured.image} alt={featured.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 55%)' }} />
+        {featured.badge && (
+          <span className="absolute top-4 left-4 text-[10px] font-black uppercase tracking-wider px-3 py-1 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>
+            {featured.badge}
+          </span>
+        )}
+        <div className="absolute bottom-0 inset-x-0 p-5">
+          <p className="text-[10px] uppercase tracking-widest text-white/60 mb-1">{featured.category}</p>
+          <p className="text-lg font-black text-white mb-1" style={{ fontFamily: tt.headingFont }}>{featured.name}</p>
+          <div className="flex items-center justify-between">
+            <span className="text-base font-black" style={{ color: primaryColor }}>{fmtPrice(featured.price)}</span>
+            <button
+              onClick={e => { e.stopPropagation(); const wrap = (e.currentTarget as HTMLElement).closest('.group') as HTMLElement; onAddToCart(featured, wrap?.getBoundingClientRect()); }}
+              className="px-4 py-2 text-xs font-bold"
+              style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}
+            >
+              Add to Cart
+            </button>
+          </div>
+        </div>
+        <button
+          onClick={e => { e.stopPropagation(); onToggleWishlist(featured.id); }}
+          className="absolute top-4 right-4 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow"
+        >
+          <Heart className={`w-3.5 h-3.5 ${wishlist.has(featured.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+        </button>
+      </div>
+
+      {/* Remaining products */}
+      {rest.slice(0, isMobile ? 4 : 4).map(p => (
+        <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
+          <div className="relative overflow-hidden mb-3" style={{ aspectRatio: '1/1', borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
+            <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            {p.badge && (
+              <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>
+                {p.badge}
+              </span>
+            )}
+            <button onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }} className="absolute top-2 right-2 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity">
+              <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+            </button>
+          </div>
+          <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: tt.textMuted }}>{p.category}</p>
+          <p className="text-xs font-bold truncate mb-1" style={{ color: tt.textPrimary }}>{p.name}</p>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-black" style={{ color: tt.primary }}>{fmtPrice(p.price)}</span>
+            <button
+              onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
+              className="text-[10px] font-bold px-2.5 py-1 text-white flex-shrink-0"
+              style={{ background: primaryColor, borderRadius: tt.btnRadius }}
+            >Add</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Product grid: LIST ────────────────────────────────────────────────────────
+
+function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
+  products: RichProduct[]; tt: TokenTheme; primaryColor: string;
+  onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
+  onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
+}) {
+  const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  return (
+    <div className="space-y-4">
+      {products.map(p => (
+        <div
+          key={p.id}
+          className="group flex gap-5 cursor-pointer hover:shadow-md transition-shadow"
+          style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius, padding: '16px' }}
+          onClick={() => onProductClick(p)}
+        >
+          <div className="w-28 h-28 flex-shrink-0 overflow-hidden" style={{ borderRadius: tt.surfaceRadius, background: tt.inputBg }}>
+            <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          </div>
+          <div className="flex-1 min-w-0 flex flex-col justify-between">
+            <div>
+              {p.badge && (
+                <span className="inline-block text-[9px] font-black uppercase tracking-wider px-2 py-0.5 mb-2 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>
+                  {p.badge}
+                </span>
+              )}
+              <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
+              <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+              <p className="text-xs leading-relaxed mt-1 line-clamp-2" style={{ color: tt.textSecondary }}>{p.description}</p>
+            </div>
+            <div className="flex items-center justify-between mt-3 gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-base font-black" style={{ color: tt.primary }}>{fmtPrice(p.price)}</span>
+                {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }} className="w-8 h-8 flex-shrink-0 bg-gray-50 rounded-full flex items-center justify-center">
+                  <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-300'}`} />
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
+                  className="px-4 py-2 text-xs font-bold flex-shrink-0"
+                  style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}
+                >
+                  Add to Cart
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── TOKEN LAYOUT — main component ─────────────────────────────────────────────
+
+function TokenLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
+  const ds = design.designSystem!;
+  const tt = getTokenTheme(ds, primaryColor);
+  const isMobile = device === 'mobile';
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [selectedCol, setSelectedCol] = useState(0);
+  const productsRef = useRef<HTMLDivElement>(null);
+  const scrollToProducts = () => productsRef.current?.scrollIntoView({ behavior: 'smooth' });
+
+  const { navLinks = [], products = [], collections = [], features = [], testimonials = [],
+          tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory } = design;
+
+  const displayed = selectedCol === 0 ? products : products.filter((_, i) => i % collections.length === selectedCol % collections.length);
+
+  // ── Section renderers ─────────────────────────────────────────────────────
+
+  const renderSection = (section: string): React.ReactNode => {
+    switch (section) {
+      case 'hero':
+        switch (ds.heroLayout) {
+          case 'centered':   return <TkHeroCentered key="hero"   design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
+          case 'fullscreen': return <TkHeroFullscreen key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
+          case 'minimal':    return <TkHeroMinimal key="hero"    design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
+          default:           return <TkHeroSplit key="hero"      design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} fmtPrice={fmtPrice} />;
+        }
+
+      case 'trust':
+        if (!trustBadges.length) return null;
+        return <TrustBadgesRow key="trust" badges={trustBadges} primaryColor={primaryColor} device={device} />;
+
+      case 'collections':
+        if (!collections.length) return null;
+        return (
+          <div key="collections" style={{ borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}`, background: tt.headerBg }}>
+            <div className="max-w-6xl mx-auto px-5 py-3 flex gap-2.5 overflow-x-auto">
+              {[{ name: 'All', emoji: '✨' }, ...collections].map((c, i) => (
+                <button key={i} onClick={() => setSelectedCol(i)} className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 text-xs font-semibold tracking-wide uppercase transition-all"
+                  style={selectedCol === i ? { background: primaryColor, color: isDark(primaryColor) ? '#fff' : '#000', borderRadius: tt.btnRadius } : { background: tt.surfaceBg, color: tt.textSecondary, borderRadius: tt.btnRadius }}>
+                  {c.emoji} {c.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'products':
+        return (
+          <section key="products" ref={productsRef} className="max-w-6xl mx-auto px-5" style={{ paddingTop: isMobile ? '2rem' : '3.5rem', paddingBottom: isMobile ? '2rem' : '3.5rem' }}>
+            <div className="flex items-end justify-between mb-7">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.22em] mb-1.5" style={{ color: tt.textMuted }}>Curated Selection</p>
+                <h2 className="text-xl font-black tracking-tight" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>Featured Products</h2>
+              </div>
+              <button onClick={scrollToProducts} className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 hover:gap-2.5 transition-all" style={{ color: primaryColor }}>
+                View All <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            {ds.productGrid === 'magazine' ? (
+              <TkGridMagazine products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
+            ) : ds.productGrid === 'list' ? (
+              <TkGridList products={displayed} tt={tt} primaryColor={primaryColor} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
+            ) : (
+              <TkGridStandard products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
+            )}
+          </section>
+        );
+
+      case 'features':
+        if (!features.length) return null;
+        return (
+          <section key="features" className="max-w-6xl mx-auto px-5" style={{ paddingTop: isMobile ? '2rem' : '3.5rem', paddingBottom: isMobile ? '2rem' : '3.5rem' }}>
+            <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-6'}`}>
+              {features.map((f, i) => (
+                <div key={i} className="flex items-start gap-4 p-6 transition-shadow hover:shadow-md" style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius }}>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: alpha(primaryColor, 0.1) }}>{f.icon}</div>
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-wide mb-1" style={{ color: tt.textPrimary }}>{f.title}</h3>
+                    <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+
+      case 'testimonials':
+        if (!testimonials.length) return null;
+        return (
+          <section key="testimonials" style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
+            <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: isMobile ? '2rem' : '3.5rem', paddingBottom: isMobile ? '2rem' : '3.5rem' }}>
+              <p className="text-[10px] uppercase tracking-[0.25em] mb-2 text-center" style={{ color: tt.textMuted }}>Reviews</p>
+              <h2 className="text-xl font-black text-center mb-9" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>What Customers Say</h2>
+              <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
+                {testimonials.map((t, i) => (
+                  <div key={i} className="p-6" style={{ background: tt.pageBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius }}>
+                    <Stars n={t.rating} />
+                    <p className="text-sm leading-relaxed mt-3 mb-5 italic" style={{ color: tt.textSecondary }}>"{t.text}"</p>
+                    <div className="flex items-center gap-3 pt-3" style={{ borderTop: `1px solid ${tt.divider}` }}>
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: primaryColor }}>{t.author[0]}</div>
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>{t.author}</p>
+                        <p className="text-[10px] mt-0.5" style={{ color: tt.textMuted }}>{t.role}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+
+      case 'stats':
+        if (!stats.length) return null;
+        return <StatsRow key="stats" stats={stats} primaryColor={primaryColor} device={device} />;
+
+      case 'brandStory':
+        if (!brandStory) return null;
+        return (
+          <section key="brandStory" style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}` }}>
+            <div className="max-w-2xl mx-auto px-5 text-center" style={{ paddingTop: isMobile ? '2rem' : '3.5rem', paddingBottom: isMobile ? '2rem' : '3.5rem' }}>
+              <div className="text-4xl mb-5 opacity-20" style={{ color: primaryColor, fontFamily: tt.headingFont }}>"</div>
+              <p className={`${isMobile ? 'text-base' : 'text-lg'} font-medium leading-relaxed italic`} style={{ color: tt.textSecondary }}>{brandStory}</p>
+            </div>
+          </section>
+        );
+
+      case 'faq':
+        if (!faq.length) return null;
+        return <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} dark={ds.colorScheme === 'dark'} elegant={ds.colorScheme === 'cream'} />;
+
+      case 'newsletter':
+        if (!newsletter) return null;
+        return <NewsletterSection key="newsletter" newsletter={newsletter} primaryColor={primaryColor} device={device} dark={ds.colorScheme === 'dark'} elegant={ds.colorScheme === 'cream'} />;
+
+      default:
+        return null;
+    }
+  };
+
+  const sectionOrder = ds.sectionOrder?.length ? ds.sectionOrder
+    : ['hero', 'trust', 'collections', 'products', 'features', 'testimonials', 'stats', 'brandStory', 'faq', 'newsletter'];
+
+  return (
+    <div style={{ fontFamily: tt.fontFamily, background: tt.pageBg, color: tt.textPrimary }}>
+      <TkFontInjector url={tt.googleFontsUrl} />
+      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
+
+      {/* Promo bar */}
+      {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} />}
+
+      {/* Header */}
+      <header className="sticky top-0 z-40 backdrop-blur-sm" style={{ background: tt.headerBg + 'f5', borderBottom: `1px solid ${tt.headerBorder}`, height: '56px' }}>
+        <div className="max-w-6xl mx-auto px-5 h-full flex items-center justify-between">
+          <span className="text-sm font-black tracking-[0.18em] uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
+          {!isMobile ? (
+            <nav className="flex gap-7">
+              {navLinks.map(l => (
+                <a key={l} onClick={scrollToProducts} className="text-xs uppercase tracking-wider font-medium cursor-pointer transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>{l}</a>
+              ))}
+            </nav>
+          ) : (
+            <button onClick={() => setMenuOpen(true)} className="p-2 rounded-lg" style={{ color: tt.textSecondary }}><Menu className="w-5 h-5" /></button>
+          )}
+          <div className="flex items-center gap-1">
+            {!isMobile && <button onClick={onSearchOpen} className="p-2 rounded-lg transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}><Search className="w-4 h-4" /></button>}
+            <button onClick={onWishlistClick} className="relative p-2 rounded-lg transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>
+              <Heart className="w-4 h-4" />
+              {wishlist.size > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold text-white rounded-full flex items-center justify-center bg-rose-500">{wishlist.size}</span>}
+            </button>
+            <button data-cart-btn onClick={onCartClick} className="relative p-2 rounded-lg transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>
+              <ShoppingCart className="w-4 h-4" />
+              {cartCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: primaryColor }}>{cartCount}</span>}
+            </button>
+            <UserProfileMenu buyerEmail={buyerEmail} onUserClick={onUserClick} onWishlistClick={onWishlistClick} wishlistCount={wishlist.size} iconColor={tt.textSecondary} />
+          </div>
+        </div>
+      </header>
+
+      {/* Sections rendered in Claude-specified order */}
+      {sectionOrder.map(section => renderSection(section))}
+
+      {/* Footer */}
+      <footer style={{ borderTop: `1px solid ${tt.divider}`, background: tt.headerBg, paddingTop: '2.5rem', paddingBottom: '2.5rem' }}>
+        <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <span className="text-sm font-black uppercase tracking-[0.18em]" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
+          <p className="text-xs italic" style={{ color: tt.textMuted }}>{tagline}</p>
+          <p className="text-xs" style={{ color: tt.textMuted }}>© 2026 {storeName} · Powered by Storee</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
 
 interface StorePreviewProps {
@@ -2964,13 +3655,18 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
     content = <FallbackLayout store={store} device={device} onProductClick={shared.onProductClick} onAddToCart={shared.onAddToCart} onCartClick={shared.onCartClick} cartCount={shared.cartCount} onUserClick={shared.onUserClick} buyerEmail={shared.buyerEmail} wishlist={shared.wishlist} onToggleWishlist={shared.onToggleWishlist} onWishlistClick={shared.onWishlistClick} />;
   } else {
     const props: LayoutProps = { storeName, primaryColor, design, device, fmtPrice, ...shared };
-    switch (design.layoutStyle) {
-      case 'minimal':  content = <MinimalLayout {...props} />; break;
-      case 'bold':     content = <BoldLayout {...props} />; break;
-      case 'elegant':  content = <ElegantLayout {...props} />; break;
-      case 'modern':   content = <ModernLayout {...props} />; break;
-      case 'playful':  content = <PlayfulLayout {...props} />; break;
-      default:         content = <MinimalLayout {...props} />; break;
+    // Prefer TokenLayout when Claude supplied a full designSystem object
+    if (design.designSystem) {
+      content = <TokenLayout {...props} />;
+    } else {
+      switch (design.layoutStyle) {
+        case 'minimal':  content = <MinimalLayout {...props} />; break;
+        case 'bold':     content = <BoldLayout {...props} />; break;
+        case 'elegant':  content = <ElegantLayout {...props} />; break;
+        case 'modern':   content = <ModernLayout {...props} />; break;
+        case 'playful':  content = <PlayfulLayout {...props} />; break;
+        default:         content = <MinimalLayout {...props} />; break;
+      }
     }
   }
 

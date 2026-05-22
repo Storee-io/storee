@@ -15,8 +15,29 @@ export interface RichProduct {
   description: string;
 }
 
+// ── Design System tokens (Claude-as-Designer) ────────────────────────────────
+export interface DesignSystem {
+  /** Google Fonts pairing key — must be one of the curated list */
+  fontPair: 'playfair-lato' | 'montserrat-opensans' | 'space-inter' | 'fraunces-dm'
+           | 'bebas-barlow' | 'cormorant-jost' | 'syne-nunito' | 'anton-roboto'
+           | 'josefin' | 'raleway-source';
+  /** Overall page colour palette */
+  colorScheme: 'light' | 'dark' | 'cream' | 'slate' | 'warm';
+  /** Hero section layout variant */
+  heroLayout: 'centered' | 'split' | 'fullscreen' | 'minimal';
+  /** CTA / primary button shape */
+  buttonStyle: 'pill' | 'rounded' | 'square';
+  /** Product listing variant */
+  productGrid: 'standard' | 'magazine' | 'list';
+  /** Page section rendering order */
+  sectionOrder: Array<'hero' | 'trust' | 'collections' | 'products' | 'features'
+                     | 'testimonials' | 'stats' | 'brandStory' | 'faq' | 'newsletter'>;
+}
+
 export interface StoreDesign {
   layoutStyle: 'minimal' | 'bold' | 'elegant' | 'modern' | 'playful';
+  /** When present, drives the TokenLayout renderer (takes priority over layoutStyle) */
+  designSystem?: DesignSystem;
   tagline: string;
   heroTitle: string;
   heroSubtitle: string;
@@ -63,6 +84,7 @@ export interface ClaudeStoreResponse {
   newsletter?: { headline: string; subtext: string };
   trustBadges?: Array<{ icon: string; text: string }>;
   brandStory?: string;
+  designSystem?: DesignSystem;
 }
 
 /** template is optional — AI-generated stores no longer require one */
@@ -116,7 +138,8 @@ export function buildStoreConfig(parsed: ClaudeStoreResponse): GeneratedStoreCon
     ...(parsed.promoBar    ? { promoBar:     parsed.promoBar    } : {}),
     ...(parsed.newsletter  ? { newsletter:   parsed.newsletter  } : {}),
     ...(parsed.trustBadges ? { trustBadges:  parsed.trustBadges } : {}),
-    ...(parsed.brandStory  ? { brandStory:   parsed.brandStory  } : {}),
+    ...(parsed.brandStory    ? { brandStory:   parsed.brandStory    } : {}),
+    ...(parsed.designSystem  ? { designSystem: parsed.designSystem  } : {}),
   };
 
   return {

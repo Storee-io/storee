@@ -11,6 +11,14 @@ The JSON must exactly match this shape:
   "primaryColor": "string (hex, distinctive and on-brand, e.g. #7c3aed)",
   "accentColor": "string (hex, complements primaryColor, e.g. #f59e0b)",
   "layoutStyle": "string (MUST be one of: minimal, bold, elegant, modern, playful)",
+  "designSystem": {
+    "fontPair": "string (MUST be one of: playfair-lato, montserrat-opensans, space-inter, fraunces-dm, bebas-barlow, cormorant-jost, syne-nunito, anton-roboto, josefin, raleway-source)",
+    "colorScheme": "string (MUST be one of: light, dark, cream, slate, warm)",
+    "heroLayout": "string (MUST be one of: centered, split, fullscreen, minimal)",
+    "buttonStyle": "string (MUST be one of: pill, rounded, square)",
+    "productGrid": "string (MUST be one of: standard, magazine, list)",
+    "sectionOrder": ["hero", "...up to 9 more section names from: trust, collections, products, features, testimonials, stats, brandStory, faq, newsletter"]
+  },
   "heroTitle": "string (punchy 3-7 word headline, NOT generic, e.g. 'Speed. Style. Supremacy.')",
   "heroSubtitle": "string (compelling 15-22 word product promise that speaks to the target customer)",
   "ctaText": "string (3-5 word CTA, e.g. 'Shop New Arrivals')",
@@ -51,21 +59,62 @@ The JSON must exactly match this shape:
   "brandStory": "string (authentic 25-35 word brand origin or mission statement)"
 }
 
-Layout style rules:
-- minimal: fashion/beauty/editorial brands, neutral palettes, whitespace-focused
-- bold: sports/streetwear/gaming/energy, dark backgrounds, high contrast
-- elegant: luxury/jewelry/premium/fine goods, warm neutrals, refined typography
-- modern: tech/gadgets/contemporary lifestyle, clean whites, gradient accents
-- playful: food/beverages/kids/consumer goods, bright gradients, rounded shapes
+════════════════════════════════════
+DESIGN SYSTEM SELECTION GUIDE
+════════════════════════════════════
 
-layoutStyle selection guide (MOST IMPORTANT — drives the entire visual design):
-- minimal   → fashion, beauty, editorial, boutique, lifestyle — clean, neutral, lots of white space
-- bold      → sports, gaming, streetwear, energy, automotive — dark, punchy, high contrast
-- elegant   → luxury, jewelry, fine dining, premium goods, weddings — warm neutrals, refined
-- modern    → tech, gadgets, SaaS, contemporary, digital products — sleek, gradient accents
-- playful   → food, beverages, kids, pets, hobbies, creative — bright, colourful, rounded
+fontPair — choose the pairing that fits the brand voice:
+- playfair-lato       → luxury, wedding, editorial, premium goods (elegant serif heading)
+- montserrat-opensans → fashion, lifestyle, boutique, beauty (modern geometric)
+- space-inter         → tech, SaaS, electronics, digital products (geometric grotesque)
+- fraunces-dm         → artisan, organic, niche boutique, coffee (quirky editorial serif)
+- bebas-barlow        → sports, streetwear, gaming, energy (condensed impact)
+- cormorant-jost      → fine jewelry, luxury fashion, skincare, couture (refined thin serif)
+- syne-nunito         → food, kids, creative studio, hobbies (friendly rounded)
+- anton-roboto        → fitness, automotive, bold consumer goods (heavy condensed)
+- josefin             → minimalist, architect, stationery, Nordic-style (geometric thin)
+- raleway-source      → premium lifestyle, travel, wellness (elegant geometric)
 
-Rules:
+colorScheme — choose by brand feel:
+- light  → fresh white base, universally clean, good for most stores
+- dark   → dramatic dark base, gaming / streetwear / premium tech
+- cream  → warm off-white, luxury / fashion / artisan / organic
+- slate  → cool light grey, tech / contemporary / SaaS / gadgets
+- warm   → warm white with amber tones, food / wellness / handmade
+
+heroLayout — choose by visual storytelling style:
+- centered   → large centred text + background image, editorial/luxury
+- split      → text left / image right (2-column), product-focused
+- fullscreen → image fills the viewport, text overlaid, dramatic/fashion
+- minimal    → text only, no image in hero, ultra-clean/editorial
+
+buttonStyle:
+- pill    → fully rounded, friendly / playful / fashion
+- rounded → subtly rounded, universal / modern
+- square  → sharp corners, bold / industrial / luxury minimal
+
+productGrid — choose by catalogue style:
+- standard → 3-column equal grid, universal
+- magazine → first product featured large, rest in 3-col, editorial
+- list     → full-width rows with image+details, best for few products or tech specs
+
+sectionOrder — reorder to match the story flow (always start with "hero"):
+- Put "trust" early (after hero) for new/unknown brands
+- Put "features" before "products" for complex/tech products
+- Put "products" before "features" for impulse-buy / fashion goods
+- "stats" works best after testimonials to reinforce social proof
+- Always end with "faq" and/or "newsletter"
+
+layoutStyle selection (kept for backward compatibility):
+- minimal   → fashion, beauty, editorial — clean, neutral
+- bold      → sports, gaming, streetwear — dark, punchy
+- elegant   → luxury, jewelry, premium — warm neutrals
+- modern    → tech, SaaS, contemporary — sleek, gradient
+- playful   → food, beverages, kids — bright, rounded
+
+════════════════════════════════════
+RULES
+════════════════════════════════════
 - Generate EXACTLY 6 products, each specific, realistic, and non-generic
 - Generate EXACTLY 3 collections with relevant emojis
 - Generate EXACTLY 3 features/USPs with emojis
@@ -73,9 +122,10 @@ Rules:
 - Generate EXACTLY 5 FAQ entries covering realistic customer concerns
 - Generate EXACTLY 3 stats (impressive but believable numbers)
 - Generate EXACTLY 4 trust badges (quality assurance, shipping, returns, security)
+- sectionOrder MUST contain all 10 sections exactly once: hero, trust, collections, products, features, testimonials, stats, brandStory, faq, newsletter
 - heroTitle must be evocative and brand-specific — NOT "Welcome to [Store]"
 - primaryColor should be distinctive (not plain #000 or #fff)
-- layoutStyle must match brand personality
+- designSystem.colorScheme + fontPair MUST be consistent with brand personality
 - If user specified a brand name, use it as storeName
 - Product prices MUST be realistic for the specified currency (IDR: 50000–2000000, USD: 10–500, EUR: 10–400, GBP: 8–350, JPY: 1000–80000, SGD: 15–700, AUD: 15–800, MYR: 40–2000)
 - promoBar should feel real, store-specific, not generic
