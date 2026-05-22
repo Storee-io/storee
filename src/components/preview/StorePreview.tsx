@@ -1516,7 +1516,7 @@ function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onPro
           <Heart className="w-4 h-4 flex-shrink-0 fill-rose-500 text-rose-500" />
           <span className="font-bold text-sm" style={{ color: t.textPrimary }}>Wishlist</span>
           {wishlisted.length > 0 && (
-            <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: t.badgeBg, color: t.badgeText }}>
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: t.inputBg, color: t.textSecondary }}>
               {wishlisted.length}
             </span>
           )}
@@ -1535,7 +1535,7 @@ function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onPro
             <button
               onClick={onBack}
               className="mt-6 px-6 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-85"
-              style={{ background: t.primary, color: t.primaryText }}
+              style={{ background: t.primary, color: t.primaryContrast }}
             >
               Browse Products
             </button>
@@ -1576,7 +1576,7 @@ function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onPro
                         onAddToCart(p, r);
                       }}
                       className="flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-opacity hover:opacity-85"
-                      style={{ background: t.primary, color: t.primaryText }}
+                      style={{ background: t.primary, color: t.primaryContrast }}
                     >
                       Add
                     </button>
