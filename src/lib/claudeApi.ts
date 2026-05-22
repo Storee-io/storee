@@ -1,5 +1,6 @@
-import { templates } from '../data/templates';
-import type { Template } from '../data/templates';
+// Option C: pure design-token architecture — no template dependency.
+// Visual design comes entirely from layoutStyle + primaryColor/accentColor
+// via getCommerceTheme(). Product images are sourced from Unsplash by keyword.
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,80 +65,82 @@ export interface ClaudeStoreResponse {
   brandStory?: string;
 }
 
+/** template is optional — AI-generated stores no longer require one */
 export interface GeneratedStoreConfig {
   storeName: string;
-  template: Template;
+  template?: import('../data/templates').Template;
   primaryColor: string;
   design: StoreDesign;
 }
 
-// ── layoutStyle → template (for product image pool) ──────────────────────────
-// Templates are only used as an image source — the visual design comes entirely
-// from layoutStyle + primaryColor via getCommerceTheme(). Mapping by layoutStyle
-// means we always get a valid template (never null) and image tone matches brand.
-const LAYOUT_TEMPLATE_MAP: Record<string, string> = {
-  minimal:  'fashion-luxe',   // editorial, neutral-tone photos
-  bold:     'tech-hub',       // dramatic, high-contrast photos
-  elegant:  'beauty-glow',    // soft, warm-tone photos
-  modern:   'home-living',    // clean, Scandinavian photos
-  playful:  'food-market',    // bright, colourful photos
-};
+// ── Product image via Unsplash Source ─────────────────────────────────────────
+// Builds a stable, keyword-relevant Unsplash URL from product name + category.
+// The `sig` param is a deterministic hash so the same product always returns
+// the same photo (Unsplash Source caches by full URL in the browser).
+function productImageUrl(name: string, category: string): string {
+  const keyword = encodeURIComponent(
+    `${category} ${name}`
+      .toLowerCase()
+      .replace(/[^a-z0-9 ]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 40),
+  );
+  // Simple deterministic hash → stable image per product across renders
+  const sig = name
+    .split('')
+    .reduce((acc, c) => ((acc * 31 + c.charCodeAt(0)) & 0xffff), 0);
+  return `https://source.unsplash.com/400x400/?${keyword}&sig=${sig}`;
+}
+
+// ── Valid layout styles ───────────────────────────────────────────────────────
+const VALID_LAYOUTS = ['minimal', 'bold', 'elegant', 'modern', 'playful'] as const;
+type LayoutStyle = typeof VALID_LAYOUTS[number];
 
 // ── Build store config from parsed Claude response ────────────────────────────
 
 export function buildStoreConfig(parsed: ClaudeStoreResponse): GeneratedStoreConfig | null {
-  // Resolve template by layoutStyle — always valid, never blocks generation.
-  // category is kept as free-form metadata (label only, no longer gates anything).
-  const templateId = LAYOUT_TEMPLATE_MAP[parsed.layoutStyle] ?? 'fashion-luxe';
-  const matchedTemplate = templates.find(t => t.id === templateId) ?? templates[0];
-  if (!matchedTemplate) return null;
+  // Normalise layoutStyle — it drives the entire visual design
+  const layoutStyle: LayoutStyle = VALID_LAYOUTS.includes(parsed.layoutStyle as LayoutStyle)
+    ? (parsed.layoutStyle as LayoutStyle)
+    : 'modern';
 
-  const originalImages = matchedTemplate.demoProducts.map(p => p.image);
-
-  const richProducts: RichProduct[] = parsed.products.slice(0, 6).map((p, i) => ({
+  // Build rich products with Unsplash images derived from each product's name + category
+  const richProducts: RichProduct[] = parsed.products.slice(0, 20).map((p, i) => ({
     id: `p${i + 1}`,
     name: p.name,
     price: p.price,
     ...(p.originalPrice ? { originalPrice: p.originalPrice } : {}),
-    image: originalImages[i % originalImages.length],
+    image: productImageUrl(p.name, p.category),
     category: p.category,
     ...(p.badge ? { badge: p.badge } : {}),
     description: p.description,
   }));
 
-  const templateProducts = richProducts.map(p => ({
-    id: p.id,
-    name: p.name,
-    price: p.price,
-    image: p.image,
-    category: p.category,
-    ...(p.badge ? { badge: p.badge } : {}),
-  }));
-
   const design: StoreDesign = {
-    layoutStyle: parsed.layoutStyle,
-    tagline: parsed.tagline,
-    heroTitle: parsed.heroTitle,
+    layoutStyle,
+    tagline:      parsed.tagline,
+    heroTitle:    parsed.heroTitle,
     heroSubtitle: parsed.heroSubtitle,
-    ctaText: parsed.ctaText,
-    accentColor: parsed.accentColor,
-    navLinks: parsed.navLinks,
-    collections: parsed.collections,
-    products: richProducts,
-    features: parsed.features,
+    ctaText:      parsed.ctaText,
+    accentColor:  parsed.accentColor,
+    navLinks:     parsed.navLinks,
+    collections:  parsed.collections,
+    products:     richProducts,
+    features:     parsed.features,
     testimonials: parsed.testimonials,
-    ...(parsed.faq ? { faq: parsed.faq } : {}),
-    ...(parsed.stats ? { stats: parsed.stats } : {}),
-    ...(parsed.promoBar ? { promoBar: parsed.promoBar } : {}),
-    ...(parsed.newsletter ? { newsletter: parsed.newsletter } : {}),
-    ...(parsed.trustBadges ? { trustBadges: parsed.trustBadges } : {}),
-    ...(parsed.brandStory ? { brandStory: parsed.brandStory } : {}),
+    ...(parsed.faq         ? { faq:         parsed.faq         } : {}),
+    ...(parsed.stats       ? { stats:        parsed.stats       } : {}),
+    ...(parsed.promoBar    ? { promoBar:     parsed.promoBar    } : {}),
+    ...(parsed.newsletter  ? { newsletter:   parsed.newsletter  } : {}),
+    ...(parsed.trustBadges ? { trustBadges:  parsed.trustBadges } : {}),
+    ...(parsed.brandStory  ? { brandStory:   parsed.brandStory  } : {}),
   };
 
   return {
-    storeName: parsed.storeName,
+    storeName:    parsed.storeName,
     primaryColor: parsed.primaryColor,
-    template: { ...matchedTemplate, demoProducts: templateProducts },
+    // template intentionally omitted — design tokens handle all visuals
     design,
   };
 }
@@ -153,7 +156,6 @@ export function parseStoreResponse(raw: string): GeneratedStoreConfig | null {
 
     const parsed: ClaudeStoreResponse = JSON.parse(cleaned);
 
-    // category is now free-form metadata — only truly required fields are checked
     if (
       !parsed.storeName ||
       !parsed.primaryColor ||
@@ -164,10 +166,9 @@ export function parseStoreResponse(raw: string): GeneratedStoreConfig | null {
       return null;
     }
 
-    // Normalise layoutStyle in case Claude produces an unexpected casing/value
-    const validLayouts = ['minimal', 'bold', 'elegant', 'modern', 'playful'];
-    if (!validLayouts.includes(parsed.layoutStyle)) {
-      parsed.layoutStyle = 'modern'; // safe fallback
+    // Normalise layoutStyle in case Claude produces an unexpected value
+    if (!VALID_LAYOUTS.includes(parsed.layoutStyle as LayoutStyle)) {
+      parsed.layoutStyle = 'modern';
     }
 
     return buildStoreConfig(parsed);

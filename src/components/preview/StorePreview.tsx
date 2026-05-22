@@ -2703,8 +2703,12 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
 }) {
   const primaryColor = store.primaryColor || '#10b981';
   const fmtPrice = makePriceFmt(store.currency?.code ?? 'USD');
-  const template = store.template;
-  const products = (template?.demoProducts || []).map(p => ({ ...p, description: '' })) as RichProduct[];
+  // Option C: use design.products as primary source; fall back to template for
+  // stores created before Option C (template-browsed or legacy AI stores).
+  const products = (
+    store.design?.products ??
+    (store.template?.demoProducts || []).map(p => ({ ...p, description: '' }))
+  ) as RichProduct[];
 
   return (
     <div className="bg-white">
@@ -2734,7 +2738,7 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
         </div>
       </div>
       <div className="relative overflow-hidden" style={{ height: device === 'mobile' ? '200px' : '320px', background: `linear-gradient(135deg, ${primaryColor}, ${primaryColor}80)` }}>
-        {template?.image && <img src={template.image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />}
+        {store.template?.image && <img src={store.template.image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />}
         <div className="absolute inset-0 flex items-center px-8">
           <div>
             <h1 className={`font-bold text-white mb-4 ${device === 'mobile' ? 'text-2xl' : 'text-4xl'}`}>{store.name || 'Your Store'}<br /><span className="opacity-80">Premium Quality</span></h1>

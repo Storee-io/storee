@@ -126,26 +126,28 @@ const SALES_SHARE = [0.40, 0.25, 0.20, 0.15];
 // ── Main generator ───────────────────────────────────────────────────────────
 
 export function generateStoreData(store: Store): StoreData {
-  const template = store.template;
-  const baseProducts = template?.demoProducts ?? [];
+  // Option C: design.products is the single source of truth.
+  // template.demoProducts kept as fallback for stores created before Option C.
+  const designProducts = store.design?.products ?? [];
+  const templateProducts = store.template?.demoProducts ?? [];
+  const baseProducts = designProducts.length > 0 ? designProducts : templateProducts;
 
   if (baseProducts.length === 0) return emptyStoreData();
 
   const totalOrders = store.orders > 0 ? store.orders : 12;
   const totalRevenue = store.revenue > 0 ? store.revenue : baseProducts.reduce((s, p) => s + p.price * 3, 0);
 
-  // Prefer AI-generated products (design.products) for richer data; fall back to template demoProducts
-  const designProducts = store.design?.products ?? [];
-  const products: DashboardProduct[] = baseProducts.map((p, i) => {
-    const rich = designProducts[i];
-    return {
-      ...p,
-      ...(rich ? { name: rich.name, price: rich.price, category: rich.category, badge: rich.badge } : {}),
-      stock: STOCK_POOL[i % STOCK_POOL.length],
-      sales: Math.max(1, Math.round(totalOrders * SALES_SHARE[i % 4])),
-      status: 'Active' as const,
-    };
-  });
+  const products: DashboardProduct[] = baseProducts.map((p, i) => ({
+    id: p.id,
+    name: p.name,
+    price: p.price,
+    image: p.image,
+    category: p.category,
+    badge: (p as { badge?: string }).badge,
+    stock: STOCK_POOL[i % STOCK_POOL.length],
+    sales: Math.max(1, Math.round(totalOrders * SALES_SHARE[i % 4])),
+    status: 'Active' as const,
+  }));
 
   // Orders
   const orderCount = Math.min(totalOrders, 20);

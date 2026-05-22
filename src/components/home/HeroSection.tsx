@@ -225,12 +225,12 @@ export default function HeroSection() {
     // Brief pause so the final "Finalizing your store..." shows as ✓
     await new Promise<void>(r => setTimeout(r, 600));
 
-    let template: Template;
+    let template: Template | undefined;
     let storeName: string;
     let primaryColorFinal: string;
 
     if (aiResult) {
-      template = aiResult.template;
+      template = aiResult.template; // undefined for Option C AI stores
       storeName = brandName || aiResult.storeName;
       primaryColorFinal = (advancedApplied && advanced.themeColors.primary) ? advanced.themeColors.primary
         : colorPicked ? color1 : aiResult.primaryColor;
@@ -281,7 +281,7 @@ export default function HeroSection() {
       template,
       primaryColor: primaryColorFinal,
       createdAt: new Date().toISOString(),
-      category: template.category,
+      category: template?.category ?? aiResult?.design?.collections?.[0]?.name ?? 'General',
       revenue: 0,
       orders: 0,
       ...designOverride,
