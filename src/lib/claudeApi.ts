@@ -155,7 +155,7 @@ export function buildStoreConfig(parsed: ClaudeStoreResponse): GeneratedStoreCon
     name: p.name,
     price: p.price,
     ...(p.originalPrice ? { originalPrice: p.originalPrice } : {}),
-    image: getProductImage(p.name, p.category),
+    image: getProductImage(p.name, p.category, parsed.category ?? ''),
     category: p.category,
     ...(p.badge ? { badge: p.badge } : {}),
     description: p.description,
