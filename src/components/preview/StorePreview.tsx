@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react';
 import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, Copy, MessageCircle, MapPin, Phone, Mail, ChevronDown, User, LogOut, Package, Eye, EyeOff } from 'lucide-react';
 import type { Store, ShippingSettings, ShippingMethod, PaymentSettings, PaymentMethod } from '../../context/StoreContext';
 import { DEFAULT_SHIPPING_METHODS, DEFAULT_PAYMENT_METHODS } from '../../context/StoreContext';
-import type { StoreDesign, RichProduct, DesignSystem } from '../../lib/claudeApi';
+import type { StoreDesign, RichProduct, DesignSystem, DesignTokens } from '../../lib/claudeApi';
 import { makePriceFmt } from '../../lib/formatCurrency';
 import { supabase } from '../../lib/supabase';
 
@@ -2897,7 +2897,7 @@ const COLOR_SCHEMES: Record<string, TkColorBase> = {
   },
 };
 
-// ── Button / surface radii overrides ─────────────────────────────────────────
+// ── Bucket radii (legacy v1 DesignSystem) ─────────────────────────────────────
 
 const BTN_RADIUS: Record<string, string>     = { pill: '9999px', rounded: '12px', square: '4px' };
 const SURFACE_RADIUS: Record<string, string> = { pill: '20px',   rounded: '16px', square: '6px' };
@@ -2909,7 +2909,66 @@ interface TokenTheme extends CommerceTheme {
   googleFontsUrl: string;
 }
 
-function getTokenTheme(ds: DesignSystem, primaryColor: string): TokenTheme {
+// ── Known serif heading fonts (for CSS fallback stack) ────────────────────────
+
+const SERIF_FONTS = new Set([
+  'Playfair Display', 'Cormorant Garamond', 'DM Serif Display', 'Fraunces',
+  'Crimson Pro', 'Libre Baskerville', 'Italiana',
+]);
+
+function fontStack(name: string, role: 'heading' | 'body'): string {
+  const quoted = `'${name}'`;
+  if (role === 'heading') {
+    return SERIF_FONTS.has(name)
+      ? `${quoted}, Georgia, 'Times New Roman', serif`
+      : `${quoted}, system-ui, -apple-system, sans-serif`;
+  }
+  return `${quoted}, system-ui, -apple-system, sans-serif`;
+}
+
+function buildGoogleFontsUrl(heading: string, body: string): string {
+  const enc = (f: string) => encodeURIComponent(f).replace(/%20/g, '+');
+  const headWeights = SERIF_FONTS.has(heading) ? '300;400;600;700' : '400;600;700;900';
+  if (heading === body) {
+    return `https://fonts.googleapis.com/css2?family=${enc(heading)}:wght@300;400;600;700;900&display=swap`;
+  }
+  return `https://fonts.googleapis.com/css2?family=${enc(heading)}:wght@${headWeights}&family=${enc(body)}:wght@300;400;500;600&display=swap`;
+}
+
+// ── v2: build theme from raw DesignTokens (Claude-generated values) ───────────
+
+function getTokenThemeV2(dt: DesignTokens, primaryColor: string): TokenTheme {
+  return {
+    fontFamily:      fontStack(dt.bodyFont, 'body'),
+    pageBg:          dt.pageBg,
+    headerBg:        dt.headerBg,
+    headerBorder:    dt.headerBorder,
+    surfaceBg:       dt.surfaceBg,
+    surfaceBorder:   dt.surfaceBorder,
+    surfaceRadius:   dt.cardRadius,
+    btnRadius:       dt.btnRadius,
+    inputBg:         dt.pageBg,
+    inputBorder:     dt.surfaceBorder,
+    inputRadius:     dt.inputRadius,
+    textPrimary:     dt.textPrimary,
+    textSecondary:   dt.textSecondary,
+    textMuted:       dt.textMuted,
+    divider:         dt.divider,
+    successBg:       '#f0fdf4',
+    successText:     '#16a34a',
+    successBorder:   '#bbf7d0',
+    dangerBg:        '#fff1f2',
+    dangerText:      '#e11d48',
+    primary:         primaryColor,
+    primaryContrast: isDark(primaryColor) ? '#ffffff' : '#000000',
+    headingFont:     fontStack(dt.headingFont, 'heading'),
+    googleFontsUrl:  buildGoogleFontsUrl(dt.headingFont, dt.bodyFont),
+  };
+}
+
+// ── v1: build theme from bucket DesignSystem (legacy) ────────────────────────
+
+function getTokenThemeV1(ds: DesignSystem, primaryColor: string): TokenTheme {
   const colorBase = COLOR_SCHEMES[ds.colorScheme] ?? COLOR_SCHEMES.light;
   const fonts = FONT_PAIRS[ds.fontPair] ?? FONT_PAIRS['space-inter'];
   const btnR  = BTN_RADIUS[ds.buttonStyle] ?? '12px';
@@ -3285,8 +3344,18 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
 // ── TOKEN LAYOUT — main component ─────────────────────────────────────────────
 
 function TokenLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
-  const ds = design.designSystem!;
-  const tt = getTokenTheme(ds, primaryColor);
+  // v2: designTokens (raw CSS values from Claude) takes priority over v1 buckets
+  const dt = design.designTokens;
+  const ds = design.designSystem;
+  const tt: TokenTheme = dt
+    ? getTokenThemeV2(dt, primaryColor)
+    : getTokenThemeV1(ds!, primaryColor);
+
+  // Resolve layout structure from whichever token set is active
+  const heroStyle   = dt?.heroStyle   ?? ds?.heroLayout   ?? 'split';
+  const productGrid = dt?.productGrid ?? ds?.productGrid  ?? 'standard';
+  const rawOrder    = dt?.sectionOrder ?? ds?.sectionOrder;
+
   const isMobile = device === 'mobile';
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedCol, setSelectedCol] = useState(0);
@@ -3303,7 +3372,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
   const renderSection = (section: string): React.ReactNode => {
     switch (section) {
       case 'hero':
-        switch (ds.heroLayout) {
+        switch (heroStyle) {
           case 'centered':   return <TkHeroCentered key="hero"   design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
           case 'fullscreen': return <TkHeroFullscreen key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
           case 'minimal':    return <TkHeroMinimal key="hero"    design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
@@ -3341,9 +3410,9 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
                 View All <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
-            {ds.productGrid === 'magazine' ? (
+            {productGrid === 'magazine' ? (
               <TkGridMagazine products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
-            ) : ds.productGrid === 'list' ? (
+            ) : productGrid === 'list' ? (
               <TkGridList products={displayed} tt={tt} primaryColor={primaryColor} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
             ) : (
               <TkGridStandard products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
@@ -3412,19 +3481,26 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
 
       case 'faq':
         if (!faq.length) return null;
-        return <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} dark={ds.colorScheme === 'dark'} elegant={ds.colorScheme === 'cream'} />;
+        return <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} dark={isDarkPalette} elegant={isWarmPalette} />;
 
       case 'newsletter':
         if (!newsletter) return null;
-        return <NewsletterSection key="newsletter" newsletter={newsletter} primaryColor={primaryColor} device={device} dark={ds.colorScheme === 'dark'} elegant={ds.colorScheme === 'cream'} />;
+        return <NewsletterSection key="newsletter" newsletter={newsletter} primaryColor={primaryColor} device={device} dark={isDarkPalette} elegant={isWarmPalette} />;
 
       default:
         return null;
     }
   };
 
-  const sectionOrder = ds.sectionOrder?.length ? ds.sectionOrder
+  const sectionOrder = rawOrder?.length ? rawOrder
     : ['hero', 'trust', 'collections', 'products', 'features', 'testimonials', 'stats', 'brandStory', 'faq', 'newsletter'];
+
+  // Detect dark/warm palette for FAQ and Newsletter tone
+  const isDarkPalette = tt.pageBg.startsWith('#0') || tt.pageBg.startsWith('#1') || parseInt(tt.pageBg.replace('#',''), 16) < 0x333333;
+  const isWarmPalette = (() => {
+    const bg = tt.pageBg.toLowerCase();
+    return bg.includes('f9f') || bg.includes('faf') || bg.includes('fdf') || bg.includes('f6f') || bg.includes('f5f');
+  })();
 
   return (
     <div style={{ fontFamily: tt.fontFamily, background: tt.pageBg, color: tt.textPrimary }}>
@@ -3656,7 +3732,7 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
   } else {
     const props: LayoutProps = { storeName, primaryColor, design, device, fmtPrice, ...shared };
     // Prefer TokenLayout when Claude supplied a full designSystem object
-    if (design.designSystem) {
+    if (design.designTokens || design.designSystem) {
       content = <TokenLayout {...props} />;
     } else {
       switch (design.layoutStyle) {

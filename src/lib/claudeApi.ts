@@ -15,28 +15,67 @@ export interface RichProduct {
   description: string;
 }
 
-// ── Design System tokens (Claude-as-Designer) ────────────────────────────────
-export interface DesignSystem {
-  /** Google Fonts pairing key — must be one of the curated list */
-  fontPair: 'playfair-lato' | 'montserrat-opensans' | 'space-inter' | 'fraunces-dm'
-           | 'bebas-barlow' | 'cormorant-jost' | 'syne-nunito' | 'anton-roboto'
-           | 'josefin' | 'raleway-source';
-  /** Overall page colour palette */
-  colorScheme: 'light' | 'dark' | 'cream' | 'slate' | 'warm';
-  /** Hero section layout variant */
-  heroLayout: 'centered' | 'split' | 'fullscreen' | 'minimal';
-  /** CTA / primary button shape */
-  buttonStyle: 'pill' | 'rounded' | 'square';
-  /** Product listing variant */
+// ── Design Tokens — Claude-as-Designer (v2: raw CSS values) ─────────────────
+// Claude generates exact color hex codes, font names, and pixel values.
+// No preset color-scheme buckets — every store gets a fully unique palette.
+export interface DesignTokens {
+  // ── Color palette (Claude generates exact hex / rgba values) ──────────────
+  /** Page / body background */
+  pageBg: string;
+  /** Card & panel background */
+  surfaceBg: string;
+  /** Card / panel border */
+  surfaceBorder: string;
+  /** Sticky header background (may match pageBg or be slightly different) */
+  headerBg: string;
+  /** Header bottom border */
+  headerBorder: string;
+  /** Primary text — headings and important copy */
+  textPrimary: string;
+  /** Secondary text — body paragraphs */
+  textSecondary: string;
+  /** Muted text — labels, captions, meta */
+  textMuted: string;
+  /** Thin divider lines between sections */
+  divider: string;
+
+  // ── Typography — from approved Google Fonts list ───────────────────────────
+  /** Heading / display font name, e.g. "Playfair Display" */
+  headingFont: string;
+  /** Body / paragraph font name, e.g. "Inter" */
+  bodyFont: string;
+
+  // ── Shape ─────────────────────────────────────────────────────────────────
+  /** Card border-radius e.g. "16px" or "0px" */
+  cardRadius: string;
+  /** Button border-radius e.g. "999px" (pill) | "8px" | "4px" */
+  btnRadius: string;
+  /** Input field border-radius */
+  inputRadius: string;
+
+  // ── Layout structure ──────────────────────────────────────────────────────
+  heroStyle: 'centered' | 'split' | 'fullscreen' | 'minimal';
   productGrid: 'standard' | 'magazine' | 'list';
-  /** Page section rendering order */
+  sectionOrder: Array<'hero' | 'trust' | 'collections' | 'products' | 'features'
+                     | 'testimonials' | 'stats' | 'brandStory' | 'faq' | 'newsletter'>;
+}
+
+/** @deprecated use DesignTokens instead — kept for stores generated before v2 */
+export interface DesignSystem {
+  fontPair: string;
+  colorScheme: 'light' | 'dark' | 'cream' | 'slate' | 'warm';
+  heroLayout: 'centered' | 'split' | 'fullscreen' | 'minimal';
+  buttonStyle: 'pill' | 'rounded' | 'square';
+  productGrid: 'standard' | 'magazine' | 'list';
   sectionOrder: Array<'hero' | 'trust' | 'collections' | 'products' | 'features'
                      | 'testimonials' | 'stats' | 'brandStory' | 'faq' | 'newsletter'>;
 }
 
 export interface StoreDesign {
   layoutStyle: 'minimal' | 'bold' | 'elegant' | 'modern' | 'playful';
-  /** When present, drives the TokenLayout renderer (takes priority over layoutStyle) */
+  /** v2 designer tokens — raw CSS values, highest priority */
+  designTokens?: DesignTokens;
+  /** v1 bucket tokens — kept for backward compat */
   designSystem?: DesignSystem;
   tagline: string;
   heroTitle: string;
@@ -85,6 +124,7 @@ export interface ClaudeStoreResponse {
   trustBadges?: Array<{ icon: string; text: string }>;
   brandStory?: string;
   designSystem?: DesignSystem;
+  designTokens?: DesignTokens;
 }
 
 /** template is optional — AI-generated stores no longer require one */
@@ -138,8 +178,9 @@ export function buildStoreConfig(parsed: ClaudeStoreResponse): GeneratedStoreCon
     ...(parsed.promoBar    ? { promoBar:     parsed.promoBar    } : {}),
     ...(parsed.newsletter  ? { newsletter:   parsed.newsletter  } : {}),
     ...(parsed.trustBadges ? { trustBadges:  parsed.trustBadges } : {}),
-    ...(parsed.brandStory    ? { brandStory:   parsed.brandStory    } : {}),
-    ...(parsed.designSystem  ? { designSystem: parsed.designSystem  } : {}),
+    ...(parsed.brandStory    ? { brandStory:    parsed.brandStory    } : {}),
+    ...(parsed.designSystem  ? { designSystem:  parsed.designSystem  } : {}),
+    ...(parsed.designTokens  ? { designTokens:  parsed.designTokens  } : {}),
   };
 
   return {
