@@ -133,6 +133,8 @@ export interface GeneratedStoreConfig {
   template?: import('../data/templates').Template;
   primaryColor: string;
   design: StoreDesign;
+  /** Store-level category from Claude (e.g. "Coffee", "Furniture") — used for Pexels image search */
+  storeCategory?: string;
 }
 
 import { getProductImage } from './productImages';
@@ -184,8 +186,9 @@ export function buildStoreConfig(parsed: ClaudeStoreResponse): GeneratedStoreCon
   };
 
   return {
-    storeName:    parsed.storeName,
-    primaryColor: parsed.primaryColor,
+    storeName:     parsed.storeName,
+    primaryColor:  parsed.primaryColor,
+    storeCategory: parsed.category ?? '',
     // template intentionally omitted — design tokens handle all visuals
     design,
   };

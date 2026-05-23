@@ -40,6 +40,7 @@ export async function generateStoreWithClaude(
   advanced?: AdvancedOptions,
 ): Promise<GeneratedStoreConfig | null> {
   try {
+    // 1. Generate store design + content from Claude
     const res = await fetch('/api/generate-store', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -47,7 +48,36 @@ export async function generateStoreWithClaude(
     });
     if (!res.ok) return null;
     const text = await res.text();
-    return parseStoreResponse(text);
+    const config = parseStoreResponse(text);
+    if (!config) return null;
+
+    // 2. Upgrade product images via Pexels (server-side, API key stays hidden)
+    try {
+      const imgRes = await fetch('/api/product-images', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          products: config.design.products.map(p => ({ name: p.name, category: p.category })),
+          storeCategory: config.storeCategory ?? '',
+        }),
+      });
+
+      if (imgRes.ok) {
+        const { images } = await imgRes.json() as {
+          images: Array<{ name: string; url: string | null }>;
+        };
+
+        // Replace static pool URLs with Pexels URLs (skip if Pexels returned null)
+        config.design.products = config.design.products.map(p => {
+          const found = images.find(img => img.name === p.name);
+          return found?.url ? { ...p, image: found.url } : p;
+        });
+      }
+    } catch {
+      // Silently fall back to static pool images — store still works
+    }
+
+    return config;
   } catch {
     return null;
   }
