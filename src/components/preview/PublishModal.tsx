@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Globe, Rocket, Check, ExternalLink, ArrowLeft, Loader2 } from 'lucide-react';
+import { X, Globe, Rocket, Check, ExternalLink, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import type { Store } from '@/src/context/StoreContext';
 
 interface PublishModalProps {
@@ -14,6 +14,7 @@ interface PublishModalProps {
 }
 
 type Step = 'form' | 'processing' | 'success';
+type CheckStatus = 'idle' | 'checking' | 'available' | 'taken';
 
 const PROCESSING_STEPS = [
   'Registering subdomain...',
@@ -22,6 +23,7 @@ const PROCESSING_STEPS = [
 ];
 
 const BASE_DOMAIN = 'storee.io';
+const DEBOUNCE_MS = 600;
 
 function slugify(text: string): string {
   return text
@@ -35,6 +37,19 @@ function isValidSubdomain(value: string): boolean {
   return /^[a-z0-9]([a-z0-9-]{1,48}[a-z0-9])?$/.test(value);
 }
 
+function getFormatError(value: string): string {
+  if (!value) return '';
+  if (/[^a-z0-9-]/.test(value))
+    return 'Only lowercase letters (a–z), numbers (0–9), and hyphens (-) are allowed.';
+  if (/^-|-$/.test(value))
+    return 'Cannot start or end with a hyphen.';
+  if (value.length < 3)
+    return 'Must be at least 3 characters.';
+  if (value.length > 50)
+    return 'Cannot exceed 50 characters.';
+  return '';
+}
+
 export default function PublishModal({ store, onPublish, onClose, fixedSubdomain }: PublishModalProps) {
   const defaultSub = fixedSubdomain ?? slugify(store.domain.replace(`.${BASE_DOMAIN}`, '') || store.name);
   const [subdomain, setSubdomain] = useState(defaultSub);
@@ -42,10 +57,44 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
   const [processStep, setProcessStep] = useState(0);
   const [publishedUrl, setPublishedUrl] = useState(fixedSubdomain ? `${fixedSubdomain}.${BASE_DOMAIN}` : '');
   const [formError, setFormError] = useState('');
+  const [checkStatus, setCheckStatus] = useState<CheckStatus>('idle');
 
   const apiResultRef = useRef<{ success: boolean; error?: string } | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The store's own published subdomain — upsert is fine for re-publishing
+  const ownSubdomain = store.publishedDomain ?? '';
 
-  // When fixedSubdomain is provided we skip the form and fire the API immediately on mount
+  // ── Availability check ────────────────────────────────────────────────────
+  const checkAvailability = useCallback(async (sub: string) => {
+    // Own subdomain is always OK (upsert will update it)
+    if (sub === ownSubdomain) {
+      setCheckStatus('available');
+      return;
+    }
+    setCheckStatus('checking');
+    try {
+      const res = await fetch(`/api/publish-store?subdomain=${encodeURIComponent(sub)}`);
+      if (!res.ok) { setCheckStatus('idle'); return; }
+      const { available } = await res.json() as { available: boolean };
+      setCheckStatus(available ? 'available' : 'taken');
+    } catch {
+      setCheckStatus('idle');
+    }
+  }, [ownSubdomain]);
+
+  // ── Debounced check on input change ──────────────────────────────────────
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!isValidSubdomain(subdomain)) {
+      setCheckStatus('idle');
+      return;
+    }
+    setCheckStatus('checking');
+    debounceRef.current = setTimeout(() => checkAvailability(subdomain), DEBOUNCE_MS);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [subdomain, checkAvailability]);
+
+  // ── fixedSubdomain: skip form, fire API immediately ──────────────────────
   useEffect(() => {
     if (!fixedSubdomain) return;
     apiResultRef.current = null;
@@ -75,17 +124,45 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const validationError = subdomain.length > 0 && !isValidSubdomain(subdomain)
-    ? 'Only lowercase letters, numbers, and hyphens. Must start and end with a letter or number.'
-    : '';
+  const formatError = getFormatError(subdomain);
 
   const handleSubdomainChange = (val: string) => {
-    setSubdomain(val.toLowerCase().replace(/[^a-z0-9-]/g, ''));
+    // Strip disallowed chars immediately as user types
+    const cleaned = val.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    setSubdomain(cleaned);
     setFormError('');
   };
 
-  const startPublish = () => {
-    if (!isValidSubdomain(subdomain)) return;
+  const startPublish = async () => {
+    if (formatError || !subdomain) return;
+
+    // If check is still in flight, wait for it
+    if (checkStatus === 'checking') {
+      await checkAvailability(subdomain);
+    }
+
+    // Re-read check status after potential await
+    // We call checkAvailability directly so we need to get the final answer
+    // by doing a fresh check if still idle/unknown
+    if (checkStatus !== 'available' && subdomain !== ownSubdomain) {
+      // Do an immediate synchronous check
+      setCheckStatus('checking');
+      try {
+        const res = await fetch(`/api/publish-store?subdomain=${encodeURIComponent(subdomain)}`);
+        const { available } = await res.json() as { available: boolean };
+        if (!available) {
+          setCheckStatus('taken');
+          setFormError('This subdomain is already taken. Please choose another.');
+          return;
+        }
+        setCheckStatus('available');
+      } catch {
+        setFormError('Could not verify subdomain. Please try again.');
+        setCheckStatus('idle');
+        return;
+      }
+    }
+
     const url = `${subdomain}.${BASE_DOMAIN}`;
     setPublishedUrl(url);
     setFormError('');
@@ -151,6 +228,45 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
     return () => clearTimeout(t);
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Derived: is publish button enabled? ──────────────────────────────────
+  const canPublish =
+    !!subdomain &&
+    !formatError &&
+    !formError &&
+    checkStatus !== 'taken' &&
+    checkStatus !== 'checking';
+
+  // ── Inline status indicator ───────────────────────────────────────────────
+  const renderCheckIndicator = () => {
+    if (!subdomain || formatError) return null;
+    if (checkStatus === 'checking') {
+      return (
+        <p className="text-xs text-slate-400 mt-1.5 flex items-center gap-1">
+          <Loader2 className="w-3 h-3 animate-spin" />
+          Checking availability…
+        </p>
+      );
+    }
+    if (checkStatus === 'available') {
+      return (
+        <p className="text-xs text-emerald-600 mt-1.5 flex items-center gap-1">
+          <Check className="w-3 h-3" />
+          <span className="font-mono font-medium">{subdomain}.{BASE_DOMAIN}</span>
+          <span className="text-emerald-500">is available</span>
+        </p>
+      );
+    }
+    if (checkStatus === 'taken') {
+      return (
+        <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
+          <AlertCircle className="w-3 h-3" />
+          This subdomain is already taken. Try another.
+        </p>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
@@ -199,31 +315,47 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
               <div className="mb-5">
                 <label className="block text-sm font-medium text-slate-700 mb-2">Store URL</label>
                 <div className={`flex items-center border rounded-xl overflow-hidden transition-colors ${
-                  validationError || formError
+                  formatError || formError || checkStatus === 'taken'
                     ? 'border-red-300 ring-2 ring-red-100'
+                    : checkStatus === 'available'
+                    ? 'border-emerald-400 ring-2 ring-emerald-100'
                     : 'border-slate-200 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100'
                 }`}>
                   <input
                     value={subdomain}
                     onChange={e => handleSubdomainChange(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && canPublish) startPublish(); }}
                     placeholder="your-store"
                     className="flex-1 px-4 py-3 text-sm font-mono text-slate-900 outline-none bg-transparent"
                     autoFocus
                     spellCheck={false}
+                    maxLength={50}
                   />
-                  <span className="px-4 py-3 bg-slate-50 text-sm text-slate-400 font-mono border-l border-slate-200 whitespace-nowrap flex-shrink-0">
+                  {/* Right adornment: spinner / check / x */}
+                  <div className="px-3 flex-shrink-0">
+                    {checkStatus === 'checking' && isValidSubdomain(subdomain) && (
+                      <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+                    )}
+                    {checkStatus === 'available' && (
+                      <Check className="w-4 h-4 text-emerald-500" />
+                    )}
+                    {checkStatus === 'taken' && (
+                      <AlertCircle className="w-4 h-4 text-red-500" />
+                    )}
+                  </div>
+                  <span className="pr-4 py-3 bg-slate-50 text-sm text-slate-400 font-mono border-l border-slate-200 whitespace-nowrap flex-shrink-0 pl-3">
                     .{BASE_DOMAIN}
                   </span>
                 </div>
-                {(validationError || formError) && (
-                  <p className="text-xs text-red-500 mt-1.5">{validationError || formError}</p>
-                )}
-                {!validationError && !formError && subdomain && (
-                  <p className="text-xs text-slate-400 mt-1.5 flex items-center gap-1">
-                    <Check className="w-3 h-3 text-emerald-500" />
-                    Your store will be live at <span className="font-mono text-slate-600">{subdomain}.{BASE_DOMAIN}</span>
-                  </p>
-                )}
+
+                {/* Status message below input */}
+                {(formatError || formError)
+                  ? <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                      {formatError || formError}
+                    </p>
+                  : renderCheckIndicator()
+                }
               </div>
 
               <div className="bg-slate-50 rounded-xl p-4 mb-5">
@@ -240,7 +372,7 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
 
               <button
                 onClick={startPublish}
-                disabled={!subdomain || !!validationError}
+                disabled={!canPublish}
                 className="w-full flex items-center justify-center gap-2 py-3 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
               >
                 <Rocket className="w-4 h-4" />
