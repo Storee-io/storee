@@ -2,7 +2,19 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { CSSProperties } from 'react';
-import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, Copy, MessageCircle, MapPin, Phone, Mail, ChevronDown, User, LogOut, Package, Eye, EyeOff } from 'lucide-react';
+import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, Copy, MessageCircle, MapPin, Phone, Mail, ChevronDown, User, LogOut, Package, Eye, EyeOff,
+  // EmojiIcon pool
+  Wrench, Truck, Shield, Lock, Trophy, Award, Medal, Leaf, Sprout, Zap, Battery, Rocket,
+  Flame, DollarSign, TrendingUp, BarChart2, Target, Clock, Smartphone, Laptop, Monitor,
+  Palette, Lightbulb, Sparkles, CheckCircle, Globe, Gift, Key, Smile, Users, Home, Car,
+  Plane, Moon, Sun, Snowflake, Music, Coffee, Gem, Dumbbell, Activity, Flower2, ThumbsUp,
+  GraduationCap, Bell, ClipboardList, Utensils, RefreshCw, HelpCircle, AlertCircle,
+  Settings, Hammer, ShieldCheck, Music2, Brain, Handshake, BookOpen, Layers, Wand2, Crown,
+  Wheat, Droplets, Wind, Thermometer, Camera, Video, Image, FileText, PenTool, Scissors,
+  Brush, Paintbrush, Feather, Compass, Navigation, Map, Globe2, Trees, Mountain, Waves,
+  Anchor, Ship, Bus, Bike, Headphones, Mic, Radio, Tv, Watch, Ruler, Calculator, Briefcase,
+  Building, Store as StoreIcon, ShoppingBag, CreditCard, Banknote, Coins, Timer,
+} from 'lucide-react';
 import type { Store, ShippingSettings, ShippingMethod, PaymentSettings, PaymentMethod } from '../../context/StoreContext';
 import { DEFAULT_SHIPPING_METHODS, DEFAULT_PAYMENT_METHODS } from '../../context/StoreContext';
 import type { StoreDesign, RichProduct, DesignSystem, DesignTokens } from '../../lib/claudeApi';
@@ -31,6 +43,98 @@ function execCommandCopy(text: string) {
 }
 
 export type DeviceMode = 'desktop' | 'tablet' | 'mobile';
+
+// ── Emoji → Lucide icon mapping ───────────────────────────────────────────────
+// Maps the emoji strings Claude generates in features/trustBadges/stats
+// to crisp SVG Lucide icons. Falls back to emoji text if no match found.
+
+type LucideComp = React.ComponentType<{ size?: number; color?: string; strokeWidth?: number; className?: string }>;
+
+const EMOJI_ICON_MAP: Record<string, LucideComp> = {
+  // Tools & Build
+  '🔧': Wrench,   '🔩': Wrench,   '⚙️': Settings,  '🛠️': Hammer,   '🪛': Wrench,
+  // Shipping & Delivery
+  '🚚': Truck,    '🚛': Truck,    '📦': Package,   '🚜': Truck,
+  // Security & Trust
+  '🛡️': Shield,  '🔒': Lock,     '🔐': Lock,      '✅': ShieldCheck, '🔓': ShieldCheck,
+  // Quality & Awards
+  '⭐': Star,     '🌟': Star,     '🏆': Trophy,    '🥇': Medal,     '🎖️': Award,    '🏅': Award,
+  // Nature & Organic
+  '🌿': Leaf,     '🌱': Sprout,   '🍃': Leaf,      '🌾': Wheat,     '🌲': Trees,    '🌳': Trees,
+  '🌻': Sun,      '🌺': Flower2,  '🌸': Flower2,
+  // Energy & Performance
+  '⚡': Zap,      '🔋': Battery,  '🚀': Rocket,    '🔥': Flame,
+  // Money & Finance
+  '💰': Coins,    '💵': DollarSign, '💳': CreditCard, '💴': Banknote, '💶': Banknote,
+  // Data & Analytics
+  '📈': TrendingUp, '📊': BarChart2, '🎯': Target,
+  // Communication
+  '💬': MessageCircle, '📞': Phone, '☎️': Phone, '✉️': Mail, '📧': Mail, '📢': Mic,
+  // Time
+  '⏰': Clock,    '🕐': Clock,    '⌚': Watch,     '⏱️': Timer,
+  // Technology
+  '📱': Smartphone, '💻': Laptop, '🖥️': Monitor,  '📺': Tv,       '📷': Camera,   '🎬': Video,
+  '🎧': Headphones, '🎤': Mic,    '📻': Radio,
+  // Creative & Design
+  '🎨': Palette,  '💡': Lightbulb, '✨': Sparkles, '🪄': Wand2,   '🖌️': Paintbrush, '✏️': PenTool,
+  '✂️': Scissors, '🪶': Feather,
+  // Love & Wellness
+  '❤️': Heart,   '💙': Heart,    '💚': Heart,    '💜': Heart,    '🧡': Heart,    '🤍': Heart,
+  '😊': Smile,   '😍': Heart,    '🧘': Activity,  '🏋️': Dumbbell, '💪': Dumbbell,
+  // People & Social
+  '👤': User,    '👥': Users,    '🤝': Handshake, '👍': ThumbsUp,
+  // Navigation & Location
+  '🌍': Globe,   '🌎': Globe,    '🌏': Globe2,   '📍': MapPin,   '🗺️': Map,
+  '🧭': Compass,
+  // Home & Life
+  '🏠': Home,    '🏡': Home,     '🏗️': Building, '🏪': StoreIcon,
+  // Transport
+  '🚗': Car,     '🚙': Car,      '✈️': Plane,    '🚢': Ship,     '⚓': Anchor,
+  '🚌': Bus,     '🚲': Bike,
+  // Weather & Nature elements
+  '🌙': Moon,    '☀️': Sun,      '❄️': Snowflake, '💧': Droplets, '🌊': Waves,
+  '💨': Wind,    '🌡️': Thermometer, '⛰️': Mountain,
+  // Music & Entertainment
+  '🎵': Music,   '🎶': Music2,   '🎸': Music,    '🥁': Music2,
+  // Food & Drink
+  '☕': Coffee,  '🍵': Coffee,   '🍽️': Utensils, '🍴': Utensils,
+  // Luxury & Special
+  '💎': Gem,     '👑': Crown,    '🎁': Gift,     '🎉': Sparkles,
+  // Knowledge & Education
+  '📚': BookOpen, '📖': BookOpen, '🎓': GraduationCap, '🧠': Brain,
+  // Misc utility
+  '🔑': Key,     '🗝️': Key,     '🔔': Bell,     '📋': ClipboardList, '📄': FileText,
+  '🔄': RefreshCw, '❓': HelpCircle, '❗': AlertCircle, '📏': Ruler,
+  '🧮': Calculator, '🗂️': Layers, '💼': Briefcase, '🧳': Briefcase,
+  '🔭': Compass, '🧪': Activity,
+};
+
+/**
+ * Renders a crisp Lucide SVG icon for known emojis, falls back to emoji text.
+ * Use this anywhere Claude generates an `icon` string field.
+ */
+function EmojiIcon({
+  emoji,
+  size = 24,
+  color,
+  strokeWidth = 1.75,
+  className = '',
+}: {
+  emoji: string;
+  size?: number;
+  color?: string;
+  strokeWidth?: number;
+  className?: string;
+}) {
+  // Normalize: trim + strip variation selectors (U+FE0F etc.)
+  const key = emoji?.trim().replace(/[︎️]/g, '') ?? '';
+  const LucideIcon = EMOJI_ICON_MAP[key] ?? EMOJI_ICON_MAP[emoji?.trim() ?? ''];
+  if (LucideIcon) {
+    return <LucideIcon size={size} color={color} strokeWidth={strokeWidth} className={className} />;
+  }
+  // Fallback: render emoji as text
+  return <span className={className} style={{ fontSize: `${size}px`, lineHeight: 1 }}>{emoji}</span>;
+}
 
 interface CartItem { product: RichProduct; qty: number; }
 type StorePage = 'home' | 'product' | 'cart' | 'checkout' | 'success' | 'myorders' | 'wishlist';
@@ -1026,7 +1130,7 @@ function TrustBadgesRow({ badges, primaryColor, dark = false, device }: { badges
         <div className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-2.5 gap-4' : 'py-3.5 gap-6'} flex items-center justify-center flex-wrap`}>
           {badges.map((b, i) => (
             <div key={i} className="flex items-center gap-1.5">
-              <span className={isMobile ? 'text-sm' : 'text-base'}>{b.icon}</span>
+              <EmojiIcon emoji={b.icon} size={isMobile ? 14 : 16} color={dark ? 'rgba(255,255,255,0.6)' : '#555'} strokeWidth={1.75} />
               <span className={`${isMobile ? 'text-[11px]' : 'text-xs'} font-semibold ${dark ? 'text-white/60' : 'text-gray-600'}`}>{b.text}</span>
             </div>
           ))}
@@ -1781,8 +1885,8 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
         <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-6'}`}>
           {features.map((f, i) => (
             <div key={i} className="flex items-start gap-4 p-6 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: alpha(primaryColor, 0.1) }}>
-                {f.icon}
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: alpha(primaryColor, 0.1) }}>
+                <EmojiIcon emoji={f.icon} size={20} color={primaryColor} strokeWidth={1.75} />
               </div>
               <div>
                 <h3 className="text-sm font-black uppercase tracking-wide text-gray-900 mb-1">{f.title}</h3>
@@ -1977,7 +2081,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
               <div>
                 <div className="h-0.5 w-8 mb-4" style={{ background: primaryColor }} />
                 <span className="text-4xl font-black leading-none text-white/15 block mb-3">{String(i + 1).padStart(2, '0')}</span>
-                <p className="text-2xl mb-2.5">{f.icon}</p>
+                <div className="mb-2.5"><EmojiIcon emoji={f.icon} size={28} color="rgba(255,255,255,0.7)" strokeWidth={1.5} /></div>
                 <h3 className="text-sm font-black uppercase tracking-widest text-white mb-2">{f.title}</h3>
                 <p className="text-xs text-white/40 leading-relaxed">{f.description}</p>
               </div>
@@ -2177,7 +2281,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
         <div className={`grid ${isMobile ? 'grid-cols-1 divide-y' : 'grid-cols-3 divide-x'}`} style={{ borderColor: '#e8e3db' }}>
           {features.map((f, i) => (
             <div key={i} className={`text-center ${isMobile ? 'px-4 py-5' : 'px-8 py-8'}`}>
-              <div className="text-3xl mb-4">{f.icon}</div>
+              <div className="mb-4"><EmojiIcon emoji={f.icon} size={28} color={primaryColor} strokeWidth={1.5} /></div>
               <h3 className="text-xs font-bold tracking-[0.2em] mb-2" style={{ color: '#2a2420', fontFamily: 'system-ui' }}>{f.title.toUpperCase()}</h3>
               <p className="text-xs leading-relaxed" style={{ color: '#8a7a6a', fontFamily: 'system-ui' }}>{f.description}</p>
             </div>
@@ -2409,8 +2513,8 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
         <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-5'}`}>
           {features.map((f, i) => (
             <div key={i} className="bg-white/75 backdrop-blur rounded-3xl p-7 shadow-sm hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-4" style={{ background: `linear-gradient(135deg, ${alpha(primaryColor, 0.15)}, ${alpha(accentColor, 0.15)})` }}>
-                {f.icon}
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style={{ background: `linear-gradient(135deg, ${alpha(primaryColor, 0.15)}, ${alpha(accentColor, 0.15)})` }}>
+                <EmojiIcon emoji={f.icon} size={24} color={primaryColor} strokeWidth={1.75} />
               </div>
               <h3 className="text-sm font-bold text-gray-900 mb-2">{f.title}</h3>
               <p className="text-xs text-gray-500 leading-relaxed">{f.description}</p>
@@ -2635,7 +2739,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
           {features.map((f, i) => (
             <div key={i} className="rounded-3xl p-7 text-center hover:scale-102 transition-transform"
               style={{ background: [alpha(primaryColor, 0.12), alpha(accentColor, 0.12), alpha(primaryColor, 0.07)][i], transition: 'transform 0.2s ease' }}>
-              <div className="text-4xl mb-4">{f.icon}</div>
+              <div className="mb-4"><EmojiIcon emoji={f.icon} size={36} color={primaryColor} strokeWidth={1.5} /></div>
               <h3 className="text-sm font-black text-gray-900 mb-2">{f.title}</h3>
               <p className="text-xs text-gray-600 leading-relaxed">{f.description}</p>
             </div>
@@ -4395,8 +4499,8 @@ function FeaturesSection({ features, tt, primaryColor, device, motion, elevation
               {/* Big emoji block */}
               <div className="flex-shrink-0 flex items-center justify-center"
                 style={{ width: isMobile ? '80px' : '120px', height: isMobile ? '80px' : '120px',
-                  background: alpha(pc, 0.1), borderRadius: '24px', fontSize: isMobile ? '2.5rem' : '3.5rem' }}>
-                {f.icon}
+                  background: alpha(pc, 0.1), borderRadius: '24px' }}>
+                <EmojiIcon emoji={f.icon} size={isMobile ? 36 : 52} color={pc} strokeWidth={1.5} />
               </div>
               {/* Text */}
               <div className={isMobile ? 'text-center' : ''}>
@@ -4429,7 +4533,9 @@ function FeaturesSection({ features, tt, primaryColor, device, motion, elevation
               }}
               onMouseEnter={e => { if (motion !== 'none') (e.currentTarget as HTMLElement).style.transform = getHoverScale(motion); }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}>
-              <div style={{ fontSize: i === 0 ? '3rem' : '2rem', marginBottom: '12px' }}>{f.icon}</div>
+              <div style={{ marginBottom: '12px' }}>
+                <EmojiIcon emoji={f.icon} size={i === 0 ? 40 : 28} color={i === 0 ? (isDark(pc) ? '#fff' : '#000') : pc} strokeWidth={1.5} />
+              </div>
               <h3 className="mb-2" style={{ ...headingStyle(tt, i === 0 ? 1.0 : 0.875), color: i === 0 ? (isDark(pc) ? '#fff' : '#000') : tt.textPrimary }}>{f.title}</h3>
               <p className="text-xs" style={{ ...bodyStyle(tt), color: i === 0 ? (isDark(pc) ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)') : tt.textSecondary }}>{f.description}</p>
             </div>
@@ -4449,7 +4555,9 @@ function FeaturesSection({ features, tt, primaryColor, device, motion, elevation
               boxShadow: getElevationShadow(elevation), transition: getMotionTransition(motion) }}
             onMouseEnter={e => { if (motion !== 'none') (e.currentTarget as HTMLElement).style.transform = getHoverScale(motion); }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}>
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: alpha(pc, 0.1) }}>{f.icon}</div>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: alpha(pc, 0.1) }}>
+              <EmojiIcon emoji={f.icon} size={20} color={pc} strokeWidth={1.75} />
+            </div>
             <div>
               <h3 className="text-sm mb-1" style={{ ...headingStyle(tt, 0.875), color: tt.textPrimary }}>{f.title}</h3>
               <p className="text-xs" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>{f.description}</p>
@@ -5269,7 +5377,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
             <p className="text-xs font-bold uppercase tracking-widest" style={{ color: tt.textMuted }}>Why choose us</p>
             {features.slice(0, 4).map((f, i) => (
               <div key={i} className="flex items-center gap-3 py-2">
-                <span className="text-2xl">{f.icon}</span>
+                <EmojiIcon emoji={f.icon} size={22} color={tt.textSecondary} strokeWidth={1.75} />
                 <div>
                   <p className="text-sm font-semibold" style={{ color: tt.textPrimary }}>{f.title}</p>
                   <p className="text-xs" style={{ color: tt.textSecondary }}>{f.description}</p>
@@ -5493,7 +5601,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
               {features.map((f, i) => (
                 <div key={i} className="flex flex-col gap-3">
                   <div className="h-px w-12" style={{ background: pc }} />
-                  <span className="text-3xl">{f.icon}</span>
+                  <EmojiIcon emoji={f.icon} size={28} color={pc} strokeWidth={1.5} />
                   <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: tt.textPrimary }}>{f.title}</h3>
                   <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
                 </div>
@@ -5828,7 +5936,7 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
               {features.slice(0, 4).map((f, i) => (
                 <div key={i} className="flex flex-col items-center text-center gap-2 p-5 rounded-2xl"
                   style={{ background: tt.pageBg, border: `1px solid ${tt.surfaceBorder}`, boxShadow: getElevationShadow(elevation) }}>
-                  <span className="text-3xl">{f.icon}</span>
+                  <EmojiIcon emoji={f.icon} size={28} color={pc} strokeWidth={1.5} />
                   <h3 className="text-xs font-black uppercase tracking-wider" style={{ color: tt.textPrimary }}>{f.title}</h3>
                   <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
                 </div>
