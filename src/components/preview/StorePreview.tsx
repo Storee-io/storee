@@ -1106,15 +1106,16 @@ function PromoBar({ text, primaryColor }: { text: string; primaryColor: string }
 
 function StatsRow({ stats, primaryColor, dark = false, device }: { stats: Array<{ value: string; label: string }>; primaryColor: string; dark?: boolean; device?: DeviceMode }) {
   const isMobile = device === 'mobile';
+  const tt = getDefaultTokenTheme(primaryColor);
   if (!stats?.length) return null;
   return (
-    <div className={`border-y ${dark ? 'border-white/10' : 'border-gray-100'}`}>
+    <div className="border-y" style={{ borderColor: dark ? 'rgba(255,255,255,0.1)' : tt.divider }}>
       <div className="max-w-6xl mx-auto px-5">
-        <div className={`grid grid-cols-3 divide-x ${dark ? 'divide-white/10' : 'divide-gray-100'}`}>
+        <div className="grid grid-cols-3 divide-x" style={{ borderColor: dark ? 'rgba(255,255,255,0.1)' : tt.divider }}>
           {stats.map((s, i) => (
             <div key={i} className={`text-center px-4 ${isMobile ? 'py-5' : 'py-8'}`}>
               <p className={`font-black ${isMobile ? 'text-2xl' : 'text-3xl'}`} style={{ color: primaryColor }}>{s.value}</p>
-              <p className={`text-xs mt-1 font-medium tracking-wide ${dark ? 'text-white/50' : 'text-gray-500'}`}>{s.label}</p>
+              <p className="text-xs mt-1 font-medium tracking-wide" style={{ color: dark ? 'rgba(255,255,255,0.5)' : tt.textMuted }}>{s.label}</p>
             </div>
           ))}
         </div>
@@ -1125,15 +1126,16 @@ function StatsRow({ stats, primaryColor, dark = false, device }: { stats: Array<
 
 function TrustBadgesRow({ badges, primaryColor, dark = false, device }: { badges: Array<{ icon: string; text: string }>; primaryColor: string; dark?: boolean; device?: DeviceMode }) {
   const isMobile = device === 'mobile';
+  const tt = getDefaultTokenTheme(primaryColor);
   if (!badges?.length) return null;
   return (
-    <div className={`${dark ? 'border-white/10' : 'border-gray-100'} border-y`}>
-      <div className={dark ? '' : 'bg-gray-50/70'}>
+    <div className="border-y" style={{ borderColor: dark ? 'rgba(255,255,255,0.1)' : tt.divider }}>
+      <div style={dark ? {} : { background: tt.surfaceBg, opacity: 0.97 }}>
         <div className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-2.5 gap-4' : 'py-3.5 gap-6'} flex items-center justify-center flex-wrap`}>
           {badges.map((b, i) => (
             <div key={i} className="flex items-center gap-1.5">
-              <EmojiIcon emoji={b.icon} size={isMobile ? 14 : 16} color={dark ? 'rgba(255,255,255,0.6)' : '#555'} strokeWidth={1.75} />
-              <span className={`${isMobile ? 'text-[11px]' : 'text-xs'} font-semibold ${dark ? 'text-white/60' : 'text-gray-600'}`}>{b.text}</span>
+              <EmojiIcon emoji={b.icon} size={isMobile ? 14 : 16} color={dark ? 'rgba(255,255,255,0.6)' : tt.textSecondary} strokeWidth={1.75} />
+              <span className={`${isMobile ? 'text-[11px]' : 'text-xs'} font-semibold`} style={{ color: dark ? 'rgba(255,255,255,0.6)' : tt.textSecondary }}>{b.text}</span>
             </div>
           ))}
         </div>
@@ -1151,9 +1153,10 @@ function FAQSection({ faq, primaryColor, device, dark = false, elegant = false }
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const isMobileInFaq = device === 'mobile';
+  const tt = getDefaultTokenTheme(primaryColor);
   if (!faq?.length) return null;
   return (
-    <section className={isMobileInFaq ? 'py-8' : 'py-14'} style={dark ? { background: 'rgba(255,255,255,0.03)' } : elegant ? { background: '#fdfcf8' } : {}}>
+    <section className={isMobileInFaq ? 'py-8' : 'py-14'} style={dark ? { background: 'rgba(255,255,255,0.03)' } : elegant ? { background: '#fdfcf8' } : { background: tt.pageBg }}>
       <div className="max-w-3xl mx-auto px-5">
         <div className="text-center mb-9">
           {elegant ? (
@@ -1163,18 +1166,25 @@ function FAQSection({ faq, primaryColor, device, dark = false, elegant = false }
               <div className="w-12 h-px mx-auto mt-4" style={{ background: primaryColor }} />
             </>
           ) : (
-            <h2 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>Frequently Asked Questions</h2>
+            <h2 className="text-2xl font-bold" style={{ color: dark ? '#fff' : tt.textPrimary }}>Frequently Asked Questions</h2>
           )}
         </div>
         <div className="space-y-2">
           {faq.map((item, i) => (
-            <div key={i} className={`rounded-2xl overflow-hidden border transition-all cursor-pointer ${dark ? 'border-white/10 bg-white/5' : elegant ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 hover:border-gray-200'}`}>
+            <div key={i} className="rounded-2xl overflow-hidden border transition-all cursor-pointer"
+              style={dark
+                ? { borderColor: 'rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)' }
+                : elegant
+                  ? { borderColor: tt.surfaceBorder, background: tt.surfaceBg }
+                  : { borderColor: tt.divider, background: tt.surfaceBg }}>
               <button onClick={() => setOpenIndex(openIndex === i ? null : i)} className="w-full flex items-center justify-between px-5 py-4 text-left">
-                <span className={`text-sm font-semibold pr-4 ${dark ? 'text-white' : elegant ? 'text-[#2a2420]' : 'text-gray-900'}`}>{item.q}</span>
+                <span className="text-sm font-semibold pr-4"
+                  style={{ color: dark ? '#fff' : elegant ? '#2a2420' : tt.textPrimary }}>{item.q}</span>
                 <span className="text-xl flex-shrink-0 transition-transform duration-200 font-light" style={{ color: primaryColor, display: 'inline-block', transform: openIndex === i ? 'rotate(45deg)' : 'none' }}>+</span>
               </button>
               {openIndex === i && (
-                <div className={`px-5 pb-5 text-sm leading-relaxed ${dark ? 'text-white/60' : elegant ? 'text-[#6b5e52]' : 'text-gray-500'}`} style={elegant ? { fontFamily: 'system-ui' } : {}}>
+                <div className="px-5 pb-5 text-sm leading-relaxed"
+                  style={{ color: dark ? 'rgba(255,255,255,0.6)' : elegant ? '#6b5e52' : tt.textSecondary, ...(elegant ? { fontFamily: 'system-ui' } : {}) }}>
                   {item.a}
                 </div>
               )}
@@ -1196,6 +1206,7 @@ function NewsletterSection({ newsletter, primaryColor, dark = false, elegant = f
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const isMobile = device === 'mobile';
+  const tt = getDefaultTokenTheme(primaryColor);
   if (!newsletter) return null;
   const inverted = dark || elegant;
   return (
@@ -1207,7 +1218,7 @@ function NewsletterSection({ newsletter, primaryColor, dark = false, elegant = f
           { background: `linear-gradient(135deg, ${alpha(primaryColor, 0.09)}, ${alpha(primaryColor, 0.04)})`, border: `1px solid ${alpha(primaryColor, 0.12)}` }
         }>
           <p className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-3`} style={{ color: inverted ? '#fff' : '#111' }}>{newsletter.headline}</p>
-          <p className={`text-sm ${isMobile ? 'mb-5' : 'mb-7'} leading-relaxed ${inverted ? 'text-white/60' : 'text-gray-500'}`}>{newsletter.subtext}</p>
+          <p className={`text-sm ${isMobile ? 'mb-5' : 'mb-7'} leading-relaxed`} style={{ color: inverted ? 'rgba(255,255,255,0.6)' : tt.textSecondary }}>{newsletter.subtext}</p>
           {submitted ? (
             <div className="flex items-center justify-center gap-2 text-sm font-semibold" style={{ color: inverted ? '#fff' : primaryColor }}>
               <span>✓</span> You're on the list!
@@ -1664,7 +1675,7 @@ function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onPro
                   )}
                   <button
                     onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
-                    className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110 active:scale-95"
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110 active:scale-95" style={{ background: t.surfaceBg }}
                     title="Remove from wishlist"
                   >
                     <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
@@ -1704,6 +1715,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory } = design;
   const btnText = isDark(primaryColor) ? '#fff' : '#111';
   const isMobile = device === 'mobile';
+  const tt = getDefaultTokenTheme(primaryColor);
   const [selectedCol, setSelectedCol] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const productsRef = useRef<HTMLDivElement>(null);
@@ -1711,32 +1723,32 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
   const displayed = selectedCol === 0 ? products : products.filter((_, i) => i % 2 === selectedCol - 1);
 
   return (
-    <div className="bg-white" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', background: tt.pageBg }}>
 
       <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
 
       {/* Header */}
-      <header className="bg-white/96 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-40">
+      <header className="backdrop-blur-sm border-b sticky top-0 z-40" style={{ background: `${tt.headerBg}f5`, borderColor: tt.headerBorder }}>
         <div className="max-w-6xl mx-auto px-5 h-15 flex items-center justify-between" style={{ height: '56px' }}>
-          <span className="text-sm font-black tracking-[0.18em] uppercase text-gray-900">{storeName}</span>
+          <span className="text-sm font-black tracking-[0.18em] uppercase" style={{ color: tt.textPrimary }}>{storeName}</span>
           {!isMobile ? (
             <nav className="flex gap-8">
-              {navLinks.map(l => <a key={l} onClick={scrollToProducts} className="text-xs uppercase tracking-wider text-gray-400 hover:text-gray-900 transition-colors font-medium cursor-pointer">{l}</a>)}
+              {navLinks.map(l => <a key={l} onClick={scrollToProducts} className="text-xs uppercase tracking-wider transition-colors font-medium cursor-pointer" style={{ color: tt.textMuted }}>{l}</a>)}
             </nav>
           ) : (
-            <button onClick={() => setMenuOpen(true)} className="p-2 text-gray-600 rounded-lg"><Menu className="w-5 h-5" /></button>
+            <button onClick={() => setMenuOpen(true)} className="p-2 rounded-lg" style={{ color: tt.textSecondary }}><Menu className="w-5 h-5" /></button>
           )}
           <div className="flex items-center gap-1">
-            {!isMobile && <button onClick={onSearchOpen} className="p-2 text-gray-400 hover:text-gray-700 rounded-lg transition-colors"><Search className="w-4 h-4" /></button>}
-            <button onClick={onWishlistClick} className="relative p-2 text-gray-400 hover:text-gray-700 rounded-lg transition-colors">
+            {!isMobile && <button onClick={onSearchOpen} className="p-2 rounded-lg transition-colors" style={{ color: tt.textMuted }}><Search className="w-4 h-4" /></button>}
+            <button onClick={onWishlistClick} className="relative p-2 rounded-lg transition-colors" style={{ color: tt.textMuted }}>
               <Heart className="w-4 h-4" />
               {wishlist.size > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold text-white rounded-full flex items-center justify-center bg-rose-500">{wishlist.size}</span>}
             </button>
-            <button data-cart-btn onClick={onCartClick} className="relative p-2 text-gray-400 hover:text-gray-700 rounded-lg transition-colors">
+            <button data-cart-btn onClick={onCartClick} className="relative p-2 rounded-lg transition-colors" style={{ color: tt.textMuted }}>
               <ShoppingCart className="w-4 h-4" />
               {cartCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: primaryColor }}>{cartCount}</span>}
             </button>
-            <UserProfileMenu buyerEmail={buyerEmail} onUserClick={onUserClick} onWishlistClick={onWishlistClick} wishlistCount={wishlist.size} iconColor="#9ca3af" hoverClass="hover:text-gray-700 rounded-lg" />
+            <UserProfileMenu buyerEmail={buyerEmail} onUserClick={onUserClick} onWishlistClick={onWishlistClick} wishlistCount={wishlist.size} iconColor={tt.textMuted} hoverClass="rounded-lg" />
           </div>
         </div>
       </header>
@@ -1751,9 +1763,9 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
             <div className="aspect-[4/3] overflow-hidden">
               <ProductImg src={products[0]?.image} alt="" className="w-full h-full object-cover" />
             </div>
-            <div className="absolute bottom-4 right-4 bg-white rounded-2xl px-3.5 py-2.5 shadow-lg">
-              <p className="text-[9px] text-gray-400 uppercase tracking-wider">{products[0]?.category}</p>
-              <p className="text-xs font-bold text-gray-900 max-w-[100px] truncate">{products[0]?.name}</p>
+            <div className="absolute bottom-4 right-4 rounded-2xl px-3.5 py-2.5 shadow-lg" style={{ background: tt.surfaceBg }}>
+              <p className="text-[9px] uppercase tracking-wider" style={{ color: tt.textMuted }}>{products[0]?.category}</p>
+              <p className="text-xs font-bold max-w-[100px] truncate" style={{ color: tt.textPrimary }}>{products[0]?.name}</p>
               <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{fmtPrice(products[0]?.price ?? 0)}</p>
             </div>
           </div>
@@ -1761,8 +1773,8 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
             <p className="text-[10px] font-bold uppercase tracking-[0.25em] mb-4 flex items-center gap-1.5" style={{ color: primaryColor }}>
               {collections[0]?.emoji} {tagline}
             </p>
-            <h1 className="text-4xl font-black leading-[1.05] tracking-tight text-gray-900 mb-4">{heroTitle}</h1>
-            <p className="text-sm text-gray-500 leading-relaxed mb-7">{heroSubtitle}</p>
+            <h1 className="text-4xl font-black leading-[1.05] tracking-tight mb-4" style={{ color: tt.textPrimary }}>{heroTitle}</h1>
+            <p className="text-sm leading-relaxed mb-7" style={{ color: tt.textSecondary }}>{heroSubtitle}</p>
             <button onClick={scrollToProducts} className="w-full py-3.5 text-sm font-bold uppercase tracking-wider rounded-full" style={{ background: primaryColor, color: btnText }}>
               {ctaText}
             </button>
@@ -1775,13 +1787,13 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
               <p className="text-[10px] font-bold uppercase tracking-[0.28em] mb-5 flex items-center gap-1.5" style={{ color: primaryColor }}>
                 {collections[0]?.emoji} {tagline}
               </p>
-              <h1 className="text-5xl font-black leading-[1.02] tracking-tight text-gray-900 mb-5">{heroTitle}</h1>
-              <p className="text-sm text-gray-500 leading-relaxed mb-8 max-w-sm">{heroSubtitle}</p>
+              <h1 className="text-5xl font-black leading-[1.02] tracking-tight mb-5" style={{ color: tt.textPrimary }}>{heroTitle}</h1>
+              <p className="text-sm leading-relaxed mb-8 max-w-sm" style={{ color: tt.textSecondary }}>{heroSubtitle}</p>
               <div className="flex items-center gap-4">
                 <button onClick={scrollToProducts} className="px-7 py-3 text-xs font-bold uppercase tracking-wider rounded-full hover:opacity-85 transition-opacity" style={{ background: primaryColor, color: btnText }}>
                   {ctaText}
                 </button>
-                <button onClick={scrollToProducts} className="text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-700 transition-colors flex items-center gap-1.5">
+                <button onClick={scrollToProducts} className="text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-1.5" style={{ color: tt.textMuted }}>
                   Explore <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -1791,20 +1803,20 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
                 <ProductImg src={products[0]?.image} alt="" className="w-full h-full object-cover" />
               </div>
               {/* Floating product card */}
-              <div className="absolute -bottom-6 -left-8 bg-white rounded-2xl p-4 shadow-2xl border border-gray-50/80" style={{ maxWidth: '190px' }}>
+              <div className="absolute -bottom-6 -left-8 rounded-2xl p-4 shadow-2xl" style={{ maxWidth: '190px', background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}` }}>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0">
                     <ProductImg src={products[1]?.image} alt="" className="w-full h-full object-cover" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[9px] text-gray-400 uppercase tracking-wider">{products[1]?.category}</p>
-                    <p className="text-xs font-bold text-gray-900 truncate">{products[1]?.name}</p>
+                    <p className="text-[9px] uppercase tracking-wider" style={{ color: tt.textMuted }}>{products[1]?.category}</p>
+                    <p className="text-xs font-bold truncate" style={{ color: tt.textPrimary }}>{products[1]?.name}</p>
                     <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{fmtPrice(products[1]?.price ?? 0)}</p>
                   </div>
                 </div>
               </div>
               {/* Collection pill */}
-              <div className="absolute -top-4 -right-4 bg-white rounded-full px-4 py-2 shadow-xl border border-gray-100 text-xs font-bold text-gray-700">
+              <div className="absolute -top-4 -right-4 rounded-full px-4 py-2 shadow-xl text-xs font-bold" style={{ background: tt.surfaceBg, borderColor: tt.divider, border: `1px solid ${tt.divider}`, color: tt.textSecondary }}>
                 {collections[1]?.emoji} {collections[1]?.name}
               </div>
             </div>
@@ -1813,7 +1825,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
       )}
 
       {/* Collections strip */}
-      <div className="border-y border-gray-100 bg-white">
+      <div className="border-y" style={{ background: tt.pageBg, borderColor: tt.divider }}>
         <div className="max-w-6xl mx-auto px-5 py-3 flex gap-2.5 overflow-x-auto">
           {collections.map((c, i) => (
             <button key={i} onClick={() => setSelectedCol(i)} className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold tracking-wide uppercase transition-all"
@@ -1829,8 +1841,8 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
       <section ref={productsRef} className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
         <div className="flex items-end justify-between mb-8">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.22em] text-gray-400 mb-1.5">Curated Selection</p>
-            <h2 className="text-xl font-black tracking-tight text-gray-900">Featured Products</h2>
+            <p className="text-[10px] uppercase tracking-[0.22em] mb-1.5" style={{ color: tt.textMuted }}>Curated Selection</p>
+            <h2 className="text-xl font-black tracking-tight" style={{ color: tt.textPrimary }}>Featured Products</h2>
           </div>
           <button onClick={scrollToProducts} className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 hover:gap-2.5 transition-all" style={{ color: primaryColor }}>
             View All <ArrowRight className="w-3.5 h-3.5" />
@@ -1839,7 +1851,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
         <div className={`grid ${gridCols(device)} gap-4`}>
           {displayed.map(p => (
             <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
-              <div className="relative overflow-hidden rounded-2xl bg-gray-100 mb-3" style={{ aspectRatio: isMobile ? '3/4' : '3/4' }}>
+              <div className="relative overflow-hidden rounded-2xl mb-3" style={{ aspectRatio: isMobile ? '3/4' : '3/4', background: tt.surfaceBg }}>
                 <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 {p.badge && (
                   <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{ background: primaryColor }}>{p.badge}</span>
@@ -1858,14 +1870,14 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
                   onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
                   className={`absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow transition-all hover:scale-110 active:scale-95 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'}`}
                 >
-                  <Heart className={`w-3.5 h-3.5 transition-colors ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+                  <Heart className={`w-3.5 h-3.5 transition-colors ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
                 </button>
               </div>
-              <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">{p.category}</p>
-              <p className="text-sm font-bold text-gray-900 truncate">{p.name}</p>
+              <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
+              <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-sm font-black text-gray-900">{fmtPrice(p.price)}</span>
-                {p.originalPrice && <span className="text-xs text-gray-400 line-through">{fmtPrice(p.originalPrice)}</span>}
+                <span className="text-sm font-black" style={{ color: tt.textPrimary }}>{fmtPrice(p.price)}</span>
+                {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
               </div>
             </div>
           ))}
@@ -1877,7 +1889,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
         <section className={isMobile ? 'py-8' : 'py-14'} style={{ background: '#f5f4f0' }}>
           <div className="max-w-2xl mx-auto px-5 text-center">
             <div className="text-4xl mb-5 opacity-20" style={{ color: primaryColor }}>"</div>
-            <p className={`${isMobile ? 'text-base' : 'text-lg'} font-medium text-gray-700 leading-relaxed italic`}>{brandStory}</p>
+            <p className={`${isMobile ? 'text-base' : 'text-lg'} font-medium leading-relaxed italic`} style={{ color: tt.textSecondary }}>{brandStory}</p>
           </div>
         </section>
       )}
@@ -1886,13 +1898,13 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
       <section className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
         <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-6'}`}>
           {features.map((f, i) => (
-            <div key={i} className="flex items-start gap-4 p-6 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all">
+            <div key={i} className="flex items-start gap-4 p-6 rounded-2xl border hover:shadow-md transition-all" style={{ borderColor: tt.divider }}>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: alpha(primaryColor, 0.1) }}>
                 <EmojiIcon emoji={f.icon} size={20} color={primaryColor} strokeWidth={1.75} />
               </div>
               <div>
-                <h3 className="text-sm font-black uppercase tracking-wide text-gray-900 mb-1">{f.title}</h3>
-                <p className="text-xs text-gray-500 leading-relaxed">{f.description}</p>
+                <h3 className="text-sm font-black uppercase tracking-wide mb-1" style={{ color: tt.textPrimary }}>{f.title}</h3>
+                <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
               </div>
             </div>
           ))}
@@ -1902,20 +1914,20 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
       {/* Testimonials */}
       <section style={{ background: '#f5f4f0' }} className={isMobile ? 'py-8' : 'py-14'}>
         <div className="max-w-6xl mx-auto px-5">
-          <p className="text-[10px] uppercase tracking-[0.25em] text-gray-400 mb-2 text-center">Reviews</p>
-          <h2 className="text-xl font-black text-gray-900 text-center mb-9">What Customers Say</h2>
+          <p className="text-[10px] uppercase tracking-[0.25em] mb-2 text-center" style={{ color: tt.textMuted }}>Reviews</p>
+          <h2 className="text-xl font-black text-center mb-9" style={{ color: tt.textPrimary }}>What Customers Say</h2>
           <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
             {testimonials.map((t, i) => (
-              <div key={i} className="bg-white rounded-3xl p-6 shadow-sm">
+              <div key={i} className="rounded-3xl p-6 shadow-sm" style={{ background: tt.surfaceBg }}>
                 <Stars n={t.rating} />
-                <p className="text-sm text-gray-600 leading-relaxed mt-3 mb-5 italic">"{t.text}"</p>
-                <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+                <p className="text-sm leading-relaxed mt-3 mb-5 italic" style={{ color: tt.textSecondary }}>"{t.text}"</p>
+                <div className="flex items-center gap-3 pt-3 border-t" style={{ borderColor: tt.divider }}>
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: primaryColor }}>
                     {t.author[0]}
                   </div>
                   <div>
-                    <p className="text-xs font-black uppercase tracking-wide text-gray-900">{t.author}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{t.role}</p>
+                    <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>{t.author}</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: tt.textMuted }}>{t.role}</p>
                   </div>
                 </div>
               </div>
@@ -1929,11 +1941,11 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
       {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} device={device} />}
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 py-10 bg-white">
+      <footer className="border-t py-10" style={{ background: tt.pageBg, borderColor: tt.divider }}>
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm font-black uppercase tracking-[0.18em] text-gray-900">{storeName}</span>
-          <p className="text-xs text-gray-400 italic">{tagline}</p>
-          <p className="text-xs text-gray-400">© 2026 {storeName} · Powered by Storee</p>
+          <span className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: tt.textPrimary }}>{storeName}</span>
+          <p className="text-xs italic" style={{ color: tt.textMuted }}>{tagline}</p>
+          <p className="text-xs" style={{ color: tt.textMuted }}>© 2026 {storeName} · Powered by Storee</p>
         </div>
       </footer>
     </div>
@@ -2140,6 +2152,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory } = design;
   const btnText = isDark(primaryColor) ? '#fff' : '#2a2420';
   const isMobile = device === 'mobile';
+  const tt = getDefaultTokenTheme(primaryColor);
   const [selectedCol, setSelectedCol] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const productsRef = useRef<HTMLDivElement>(null);
@@ -2231,7 +2244,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
         <div className={`grid ${gridCols(device)} gap-6`}>
           {displayed.map(p => (
             <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
-              <div className="relative overflow-hidden mb-4 bg-gray-100" style={{ aspectRatio: '3/4' }}>
+              <div className="relative overflow-hidden mb-4" style={{ aspectRatio: '3/4', background: tt.surfaceBg }}>
                 <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover transition-transform duration-1000" style={{ transform: 'scale(1)', transition: 'transform 1s ease' }} />
                 {p.badge && (
                   <span className="absolute top-3 left-3 text-[9px] font-bold tracking-widest px-2.5 py-1 text-white" style={{ background: primaryColor, letterSpacing: '0.15em', fontFamily: 'system-ui' }}>
@@ -2242,7 +2255,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
                   onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
                   className={`absolute top-3 right-3 w-8 h-8 bg-white/80 backdrop-blur flex items-center justify-center transition-all hover:scale-110 active:scale-95 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'}`}
                 >
-                  <Heart className={`w-3.5 h-3.5 transition-colors ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-500'}`} />
+                  <Heart className={`w-3.5 h-3.5 transition-colors ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
                 </button>
                 {/* Add to bag — always visible on mobile, hover on desktop */}
                 <div className={`absolute bottom-0 inset-x-0 transition-transform duration-300 ${isMobile ? '' : 'translate-y-full group-hover:translate-y-0'}`}
@@ -2300,7 +2313,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
           </div>
           <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-6`}>
             {testimonials.map((t, i) => (
-              <div key={i} className="p-7 bg-white relative overflow-hidden" style={{ borderLeft: `3px solid ${primaryColor}` }}>
+              <div key={i} className="p-7 relative overflow-hidden" style={{ background: tt.surfaceBg, borderLeft: `3px solid ${primaryColor}` }}>
                 <div className="text-5xl font-black leading-none absolute top-3 right-5 opacity-6" style={{ color: primaryColor }}>❝</div>
                 <Stars n={t.rating} />
                 <p className="text-sm leading-loose italic mt-4 mb-6" style={{ color: '#4a3d32' }}>"{t.text}"</p>
@@ -2338,6 +2351,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [] } = design;
   const btnText = isDark(primaryColor) ? '#fff' : '#fff';
   const isMobile = device === 'mobile';
+  const tt = getDefaultTokenTheme(primaryColor);
   const [selectedCol, setSelectedCol] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const productsRef = useRef<HTMLDivElement>(null);
@@ -2345,37 +2359,37 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
   const displayed = selectedCol === 0 ? products : products.filter((_, i) => i % 2 === selectedCol - 1);
 
   return (
-    <div className="bg-white" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif' }}>
+    <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif', background: tt.pageBg }}>
 
       <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
 
       {/* Header */}
-      <header className="bg-white/85 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-40">
+      <header className="backdrop-blur-xl border-b sticky top-0 z-40" style={{ background: `${tt.headerBg}d9`, borderColor: tt.headerBorder }}>
         <div className="max-w-6xl mx-auto px-5 flex items-center justify-between" style={{ height: '56px' }}>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-2xl flex items-center justify-center text-xs font-bold text-white shadow-md" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})` }}>
               {storeName[0]}
             </div>
-            <span className="text-sm font-bold text-gray-900">{storeName}</span>
+            <span className="text-sm font-bold" style={{ color: tt.textPrimary }}>{storeName}</span>
           </div>
           {!isMobile ? (
             <nav className="flex gap-6">
-              {navLinks.map(l => <a key={l} onClick={scrollToProducts} className="text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium cursor-pointer">{l}</a>)}
+              {navLinks.map(l => <a key={l} onClick={scrollToProducts} className="text-sm transition-colors font-medium cursor-pointer" style={{ color: tt.textSecondary }}>{l}</a>)}
             </nav>
           ) : (
-            <button onClick={() => setMenuOpen(true)} className="p-2 text-gray-600 rounded-xl"><Menu className="w-5 h-5" /></button>
+            <button onClick={() => setMenuOpen(true)} className="p-2 rounded-xl" style={{ color: tt.textSecondary }}><Menu className="w-5 h-5" /></button>
           )}
           <div className="flex items-center gap-1">
-            {!isMobile && <button onClick={onSearchOpen} className="p-2 text-gray-400 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition-colors"><Search className="w-4 h-4" /></button>}
-            <button onClick={onWishlistClick} className="relative p-2 text-gray-400 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition-colors">
+            {!isMobile && <button onClick={onSearchOpen} className="p-2 rounded-xl transition-colors" style={{ color: tt.textMuted }}><Search className="w-4 h-4" /></button>}
+            <button onClick={onWishlistClick} className="relative p-2 rounded-xl transition-colors" style={{ color: tt.textMuted }}>
               <Heart className="w-4 h-4" />
               {wishlist.size > 0 && <span className="absolute top-0.5 right-0.5 w-4 h-4 text-[9px] font-bold text-white rounded-full flex items-center justify-center bg-rose-500">{wishlist.size}</span>}
             </button>
-            <button data-cart-btn onClick={onCartClick} className="relative p-2 text-gray-400 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition-colors">
+            <button data-cart-btn onClick={onCartClick} className="relative p-2 rounded-xl transition-colors" style={{ color: tt.textMuted }}>
               <ShoppingCart className="w-4 h-4" />
               {cartCount > 0 && <span className="absolute top-0.5 right-0.5 w-4 h-4 text-[9px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: primaryColor }}>{cartCount}</span>}
             </button>
-            <UserProfileMenu buyerEmail={buyerEmail} onUserClick={onUserClick} onWishlistClick={onWishlistClick} wishlistCount={wishlist.size} iconColor="#9ca3af" hoverClass="hover:text-gray-700 rounded-xl hover:bg-gray-100" />
+            <UserProfileMenu buyerEmail={buyerEmail} onUserClick={onUserClick} onWishlistClick={onWishlistClick} wishlistCount={wishlist.size} iconColor={tt.textMuted} hoverClass="rounded-xl" />
           </div>
         </div>
       </header>
@@ -2388,8 +2402,8 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-5" style={{ background: alpha(primaryColor, 0.1), color: primaryColor }}>
             ✦ {tagline}
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 leading-tight tracking-tight mb-4">{heroTitle}</h1>
-          <p className="text-gray-500 text-sm mb-7 leading-relaxed">{heroSubtitle}</p>
+          <h1 className="text-4xl font-bold leading-tight tracking-tight mb-4" style={{ color: tt.textPrimary }}>{heroTitle}</h1>
+          <p className="text-sm mb-7 leading-relaxed" style={{ color: tt.textSecondary }}>{heroSubtitle}</p>
           <button onClick={scrollToProducts} className="w-full py-3.5 text-sm font-semibold rounded-2xl shadow-lg" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})`, color: btnText }}>
             {ctaText}
           </button>
@@ -2397,11 +2411,11 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
           <div className="mt-7 flex gap-3 overflow-x-auto pb-1">
             {products.slice(0, 4).map(p => (
               <div key={p.id} className="flex-shrink-0 w-32 rounded-2xl overflow-hidden shadow-md cursor-pointer" onClick={() => onProductClick(p)}>
-                <div className="h-28 bg-gray-100">
+                <div className="h-28" style={{ background: tt.surfaceBg }}>
                   <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
                 </div>
-                <div className="p-2 bg-white">
-                  <p className="text-[11px] font-semibold text-gray-900 truncate">{p.name}</p>
+                <div className="p-2" style={{ background: tt.surfaceBg }}>
+                  <p className="text-[11px] font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
                   <p className="text-[11px] font-bold mt-0.5" style={{ color: primaryColor }}>{fmtPrice(p.price)}</p>
                 </div>
               </div>
@@ -2415,19 +2429,19 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6" style={{ background: alpha(primaryColor, 0.1), color: primaryColor }}>
                 ✦ {tagline}
               </div>
-              <h1 className="text-5xl font-bold text-gray-900 leading-[1.05] tracking-tight mb-5">{heroTitle}</h1>
-              <p className="text-gray-500 text-base mb-8 max-w-sm leading-relaxed">{heroSubtitle}</p>
+              <h1 className="text-5xl font-bold leading-[1.05] tracking-tight mb-5" style={{ color: tt.textPrimary }}>{heroTitle}</h1>
+              <p className="text-base mb-8 max-w-sm leading-relaxed" style={{ color: tt.textSecondary }}>{heroSubtitle}</p>
               <div className="flex flex-wrap gap-3 mb-8">
                 <button onClick={scrollToProducts} className="px-7 py-3.5 text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl hover:opacity-90 transition-all" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})`, color: btnText }}>
                   {ctaText}
                 </button>
-                <button onClick={scrollToProducts} className="px-7 py-3.5 text-sm font-semibold rounded-2xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all">
+                <button onClick={scrollToProducts} className="px-7 py-3.5 text-sm font-semibold rounded-2xl border transition-all" style={{ borderColor: tt.surfaceBorder, color: tt.textSecondary, background: 'transparent' }}>
                   Learn More
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
                 {collections.map((c, i) => (
-                  <span key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-100 text-gray-600">
+                  <span key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium" style={{ background: tt.surfaceBg, color: tt.textSecondary }}>
                     {c.emoji} {c.name}
                   </span>
                 ))}
@@ -2464,11 +2478,11 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
       {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} device={device} />}
 
       {/* Products */}
-      <section ref={productsRef} className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`} style={{ borderTop: '1px solid #f0f0f0' }}>
+      <section ref={productsRef} className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`} style={{ borderTop: `1px solid ${tt.divider}` }}>
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Featured Products</h2>
-            <p className="text-sm text-gray-400 mt-1">{tagline}</p>
+            <h2 className="text-2xl font-bold tracking-tight" style={{ color: tt.textPrimary }}>Featured Products</h2>
+            <p className="text-sm mt-1" style={{ color: tt.textMuted }}>{tagline}</p>
           </div>
           <button onClick={scrollToProducts} className="text-sm font-semibold flex items-center gap-1.5 hover:gap-2.5 transition-all" style={{ color: primaryColor }}>
             View All <ArrowRight className="w-4 h-4" />
@@ -2476,29 +2490,30 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
         </div>
         <div className={`grid ${gridCols(device)} gap-5`}>
           {displayed.map(p => (
-            <div key={p.id} className="group bg-white rounded-3xl border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer" onClick={() => onProductClick(p)}>
-              <div className="relative aspect-square overflow-hidden bg-gray-50">
+            <div key={p.id} className="group rounded-3xl border overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer" style={{ background: tt.surfaceBg, borderColor: tt.divider }} onClick={() => onProductClick(p)}>
+              <div className="relative aspect-square overflow-hidden" style={{ background: tt.surfaceBg }}>
                 <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 {p.badge && (
                   <span className="absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-full text-white shadow-sm" style={{ background: primaryColor }}>{p.badge}</span>
                 )}
                 <button
                   onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
-                  className={`absolute top-3 right-3 w-9 h-9 bg-white rounded-2xl shadow flex items-center justify-center transition-all hover:scale-110 active:scale-95 hover:bg-gray-50 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'}`}
+                  className={`absolute top-3 right-3 w-9 h-9 rounded-2xl shadow flex items-center justify-center transition-all hover:scale-110 active:scale-95 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'}`}
+                  style={{ background: tt.surfaceBg }}
                 >
-                  <Heart className={`w-4 h-4 transition-colors ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+                  <Heart className={`w-4 h-4 transition-colors ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
                 </button>
               </div>
               <div className={isMobile ? 'p-3' : 'p-4'}>
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: alpha(primaryColor, 0.1), color: primaryColor }}>{p.category}</span>
                 </div>
-                <p className="text-sm font-bold text-gray-900 truncate">{p.name}</p>
-                {!isMobile && <p className="text-xs text-gray-400 mt-0.5 truncate">{p.description}</p>}
+                <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+                {!isMobile && <p className="text-xs mt-0.5 truncate" style={{ color: tt.textMuted }}>{p.description}</p>}
                 <div className="flex items-center justify-between mt-2.5">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-sm font-bold text-gray-900">{fmtPrice(p.price)}</span>
-                    {p.originalPrice && !isMobile && <span className="text-xs text-gray-400 line-through">{fmtPrice(p.originalPrice)}</span>}
+                    <span className="text-sm font-bold" style={{ color: tt.textPrimary }}>{fmtPrice(p.price)}</span>
+                    {p.originalPrice && !isMobile && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
                   </div>
                   <button onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; const _card = _btn.closest('.group') as HTMLElement ?? _btn; const _wrap = _card.querySelector('.relative.overflow-hidden, .relative.aspect-square, .relative.rounded-2xl') as HTMLElement | null; const _img = (_wrap ?? _card).querySelector('img') as HTMLElement | null; onAddToCart(p, (_img ?? _wrap ?? _btn).getBoundingClientRect()); }} className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-xl text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: primaryColor }}>
                     Add
@@ -2518,8 +2533,8 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style={{ background: `linear-gradient(135deg, ${alpha(primaryColor, 0.15)}, ${alpha(accentColor, 0.15)})` }}>
                 <EmojiIcon emoji={f.icon} size={24} color={primaryColor} strokeWidth={1.75} />
               </div>
-              <h3 className="text-sm font-bold text-gray-900 mb-2">{f.title}</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">{f.description}</p>
+              <h3 className="text-sm font-bold mb-2" style={{ color: tt.textPrimary }}>{f.title}</h3>
+              <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
             </div>
           ))}
         </div>
@@ -2527,19 +2542,19 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
 
       {/* Testimonials */}
       <section className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
-        <h2 className="text-2xl font-bold text-gray-900 text-center mb-9">Loved by Customers</h2>
+        <h2 className="text-2xl font-bold text-center mb-9" style={{ color: tt.textPrimary }}>Loved by Customers</h2>
         <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
           {testimonials.map((t, i) => (
             <div key={i} className="rounded-3xl p-6 border-l-4" style={{ background: alpha(i === 0 ? primaryColor : accentColor, 0.05), borderLeftColor: i === 0 ? primaryColor : accentColor }}>
               <Stars n={t.rating} />
-              <p className="text-sm text-gray-700 leading-relaxed mt-3 mb-5">"{t.text}"</p>
+              <p className="text-sm leading-relaxed mt-3 mb-5" style={{ color: tt.textSecondary }}>"{t.text}"</p>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style={{ background: i === 0 ? primaryColor : accentColor }}>
                   {t.author[0]}
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-gray-900">{t.author}</p>
-                  <p className="text-[10px] text-gray-400">{t.role}</p>
+                  <p className="text-xs font-bold" style={{ color: tt.textPrimary }}>{t.author}</p>
+                  <p className="text-[10px]" style={{ color: tt.textMuted }}>{t.role}</p>
                 </div>
               </div>
             </div>
@@ -2552,16 +2567,16 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
       {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} device={device} />}
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 bg-gray-50 py-10">
+      <footer className="border-t py-10" style={{ background: tt.surfaceBg, borderColor: tt.divider }}>
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold text-white" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})` }}>
               {storeName[0]}
             </div>
-            <span className="text-sm font-bold text-gray-900">{storeName}</span>
+            <span className="text-sm font-bold" style={{ color: tt.textPrimary }}>{storeName}</span>
           </div>
-          <p className="text-xs text-gray-400">{tagline}</p>
-          <p className="text-xs text-gray-400">© 2026 {storeName} · Powered by Storee</p>
+          <p className="text-xs" style={{ color: tt.textMuted }}>{tagline}</p>
+          <p className="text-xs" style={{ color: tt.textMuted }}>© 2026 {storeName} · Powered by Storee</p>
         </div>
       </footer>
     </div>
@@ -2575,6 +2590,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [] } = design;
   const heroTextColor = isDark(primaryColor) ? '#fff' : '#111';
   const isMobile = device === 'mobile';
+  const tt = getDefaultTokenTheme(primaryColor);
   const [selectedCol, setSelectedCol] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const productsRef = useRef<HTMLDivElement>(null);
@@ -2582,16 +2598,16 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
   const displayed = selectedCol === 0 ? products : products.filter((_, i) => i % 2 === selectedCol - 1);
 
   return (
-    <div className="bg-white" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', background: tt.pageBg }}>
 
       <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
 
       {/* Header */}
-      <header className="bg-white border-b-2 border-gray-100 sticky top-0 z-40">
+      <header className="border-b-2 sticky top-0 z-40" style={{ background: tt.headerBg, borderColor: tt.headerBorder }}>
         <div className="max-w-6xl mx-auto px-5 flex items-center justify-between" style={{ height: '56px' }}>
           <div className="flex items-center gap-2">
             <span className="text-xl">{collections[0]?.emoji}</span>
-            <span className="text-sm font-black text-gray-900">{storeName}</span>
+            <span className="text-sm font-black" style={{ color: tt.textPrimary }}>{storeName}</span>
           </div>
           {!isMobile ? (
             <nav className="flex gap-2">
@@ -2603,18 +2619,18 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
               ))}
             </nav>
           ) : (
-            <button onClick={() => setMenuOpen(true)} className="p-2 text-gray-700"><Menu className="w-5 h-5" /></button>
+            <button onClick={() => setMenuOpen(true)} className="p-2" style={{ color: tt.textSecondary }}><Menu className="w-5 h-5" /></button>
           )}
           <div className="flex items-center gap-1">
             <button onClick={onWishlistClick} className="relative p-2">
-              <Heart className="w-5 h-5 text-gray-700" />
+              <Heart className="w-5 h-5" style={{ color: tt.textSecondary }} />
               {wishlist.size > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-black text-white rounded-full flex items-center justify-center bg-rose-500">{wishlist.size}</span>}
             </button>
             <button data-cart-btn onClick={onCartClick} className="relative p-2">
-              <ShoppingCart className="w-5 h-5 text-gray-700" />
+              <ShoppingCart className="w-5 h-5" style={{ color: tt.textSecondary }} />
               {cartCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-black text-white rounded-full flex items-center justify-center" style={{ background: accentColor }}>{cartCount}</span>}
             </button>
-            <UserProfileMenu buyerEmail={buyerEmail} onUserClick={onUserClick} onWishlistClick={onWishlistClick} wishlistCount={wishlist.size} iconColor="#374151" />
+            <UserProfileMenu buyerEmail={buyerEmail} onUserClick={onUserClick} onWishlistClick={onWishlistClick} wishlistCount={wishlist.size} iconColor={tt.textSecondary} />
           </div>
         </div>
       </header>
@@ -2635,7 +2651,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
             </h1>
             <p className={`text-sm mb-8 max-w-sm leading-relaxed ${isMobile ? 'text-center' : ''}`} style={{ color: `${heroTextColor}cc` }}>{heroSubtitle}</p>
             <div className={`flex items-center gap-3 flex-wrap ${isMobile ? 'justify-center' : ''}`}>
-              <button onClick={scrollToProducts} className="px-7 py-3.5 text-sm font-black rounded-2xl shadow-xl hover:scale-105 transition-transform bg-white" style={{ color: primaryColor }}>
+              <button onClick={scrollToProducts} className="px-7 py-3.5 text-sm font-black rounded-2xl shadow-xl hover:scale-105 transition-transform" style={{ background: tt.surfaceBg, color: primaryColor }}>
                 {ctaText} 🛍️
               </button>
               <button onClick={scrollToProducts} className="px-7 py-3.5 text-sm font-bold rounded-2xl border-2 hover:bg-white/12 transition-colors" style={{ borderColor: `${heroTextColor}40`, color: heroTextColor }}>
@@ -2648,12 +2664,12 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
             <div className="bg-white/18 rounded-[2rem] p-4 backdrop-blur">
               <div className="grid grid-cols-2 gap-3">
                 {products.slice(0, 4).map((p, i) => (
-                  <div key={p.id} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform cursor-pointer" onClick={() => onProductClick(p)}>
+                  <div key={p.id} className="rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform cursor-pointer" style={{ background: tt.surfaceBg }} onClick={() => onProductClick(p)}>
                     <div className="aspect-square">
                       <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
                     </div>
                     <div className="p-2.5">
-                      <p className="text-xs font-bold text-gray-900 truncate">{p.name}</p>
+                      <p className="text-xs font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
                       <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{fmtPrice(p.price)}</p>
                     </div>
                   </div>
@@ -2671,11 +2687,11 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
       </section>
 
       {/* Collections */}
-      <section className="py-5 bg-white">
+      <section className="py-5" style={{ background: tt.pageBg }}>
         <div className="max-w-6xl mx-auto px-5 flex gap-3 overflow-x-auto">
           {collections.map((c, i) => (
             <button key={i} onClick={() => setSelectedCol(i)} className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold border-2 transition-all hover:scale-105"
-              style={selectedCol === i ? { background: primaryColor, borderColor: primaryColor, color: heroTextColor } : { borderColor: '#e5e7eb', color: '#374151' }}>
+              style={selectedCol === i ? { background: primaryColor, borderColor: primaryColor, color: heroTextColor } : { borderColor: tt.surfaceBorder, color: tt.textPrimary }}>
               <span className="text-base">{c.emoji}</span> {c.name}
             </button>
           ))}
@@ -2687,8 +2703,8 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
       <section ref={productsRef} className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-12'}`}>
         <div className="flex items-end justify-between mb-7">
           <div>
-            <h2 className="text-2xl font-black text-gray-900">{collections[0]?.emoji} Our Picks</h2>
-            <p className="text-sm text-gray-400 mt-1">{tagline}</p>
+            <h2 className="text-2xl font-black" style={{ color: tt.textPrimary }}>{collections[0]?.emoji} Our Picks</h2>
+            <p className="text-sm mt-1" style={{ color: tt.textMuted }}>{tagline}</p>
           </div>
           <button onClick={scrollToProducts} className="text-sm font-black flex items-center gap-1.5 hover:gap-2.5 transition-all" style={{ color: primaryColor }}>
             See All <ArrowRight className="w-4 h-4" />
@@ -2696,10 +2712,10 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
         <div className={`grid ${gridCols(device)} gap-4`}>
           {displayed.map((p, idx) => (
-            <div key={p.id} className="group bg-white rounded-3xl overflow-hidden border-2 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
-              style={{ borderColor: alpha(idx % 2 === 0 ? primaryColor : accentColor, 0.25) }}
+            <div key={p.id} className="group rounded-3xl overflow-hidden border-2 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+              style={{ background: tt.surfaceBg, borderColor: alpha(idx % 2 === 0 ? primaryColor : accentColor, 0.25) }}
               onClick={() => onProductClick(p)}>
-              <div className="relative aspect-square overflow-hidden bg-gray-50">
+              <div className="relative aspect-square overflow-hidden" style={{ background: tt.surfaceBg }}>
                 <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 {p.badge && (
                   <span className="absolute top-3 left-3 text-[10px] font-black px-3 py-1.5 rounded-full text-white shadow-lg" style={{ background: idx % 2 === 0 ? primaryColor : accentColor }}>
@@ -2710,16 +2726,16 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
                   onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
                   className={`absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow transition-all hover:scale-110 active:scale-95 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'}`}
                 >
-                  <Heart className={`w-3.5 h-3.5 transition-colors ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+                  <Heart className={`w-3.5 h-3.5 transition-colors ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
                 </button>
               </div>
               <div className={isMobile ? 'p-3' : 'p-4'}>
                 <p className="text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mb-1.5" style={{ background: alpha(primaryColor, 0.1), color: primaryColor }}>{p.category}</p>
-                <p className="text-sm font-black text-gray-900 truncate">{p.name}</p>
+                <p className="text-sm font-black truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
                 <div className="flex items-center justify-between mt-2.5">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className="text-sm font-black truncate" style={{ color: primaryColor }}>{fmtPrice(p.price)}</span>
-                    {p.originalPrice && !isMobile && <span className="text-xs text-gray-400 line-through flex-shrink-0">{fmtPrice(p.originalPrice)}</span>}
+                    {p.originalPrice && !isMobile && <span className="text-xs line-through flex-shrink-0" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
                   </div>
                   <button
                     onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; const _card = _btn.closest('.group') as HTMLElement ?? _btn; const _wrap = _card.querySelector('.relative.overflow-hidden, .relative.aspect-square, .relative.rounded-2xl') as HTMLElement | null; const _img = (_wrap ?? _card).querySelector('img') as HTMLElement | null; onAddToCart(p, (_img ?? _wrap ?? _btn).getBoundingClientRect()); }}
@@ -2742,8 +2758,8 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
             <div key={i} className="rounded-3xl p-7 text-center hover:scale-102 transition-transform"
               style={{ background: [alpha(primaryColor, 0.12), alpha(accentColor, 0.12), alpha(primaryColor, 0.07)][i], transition: 'transform 0.2s ease' }}>
               <div className="mb-4"><EmojiIcon emoji={f.icon} size={36} color={primaryColor} strokeWidth={1.5} /></div>
-              <h3 className="text-sm font-black text-gray-900 mb-2">{f.title}</h3>
-              <p className="text-xs text-gray-600 leading-relaxed">{f.description}</p>
+              <h3 className="text-sm font-black mb-2" style={{ color: tt.textPrimary }}>{f.title}</h3>
+              <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
             </div>
           ))}
         </div>
@@ -2751,19 +2767,19 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
 
       {/* Testimonials */}
       <section className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-12'}`}>
-        <h2 className="text-2xl font-black text-gray-900 text-center mb-8">Happy Customers 🤩</h2>
+        <h2 className="text-2xl font-black text-center mb-8" style={{ color: tt.textPrimary }}>Happy Customers 🤩</h2>
         <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
           {testimonials.map((t, i) => (
             <div key={i} className="rounded-3xl p-6 border-2" style={{ borderColor: alpha(i === 0 ? primaryColor : accentColor, 0.25) }}>
               <Stars n={t.rating} />
-              <p className="text-sm text-gray-700 leading-relaxed mt-3 mb-5">"{t.text}"</p>
+              <p className="text-sm leading-relaxed mt-3 mb-5" style={{ color: tt.textSecondary }}>"{t.text}"</p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-base font-black text-white flex-shrink-0" style={{ background: i === 0 ? primaryColor : accentColor }}>
                   {t.author[0]}
                 </div>
                 <div>
-                  <p className="text-xs font-black text-gray-900">{t.author}</p>
-                  <p className="text-[10px] text-gray-400">{t.role}</p>
+                  <p className="text-xs font-black" style={{ color: tt.textPrimary }}>{t.author}</p>
+                  <p className="text-[10px]" style={{ color: tt.textMuted }}>{t.role}</p>
                 </div>
               </div>
             </div>
@@ -2808,6 +2824,7 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
   onWishlistClick?: () => void;
 }) {
   const primaryColor = store.primaryColor || '#10b981';
+  const tt = getDefaultTokenTheme(primaryColor);
   const fmtPrice = makePriceFmt(store.currency?.code ?? 'USD');
   // Option C: use design.products as primary source; fall back to template for
   // stores created before Option C (template-browsed or legacy AI stores).
@@ -2817,8 +2834,8 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
   ) as RichProduct[];
 
   return (
-    <div className="bg-white">
-      <div className="border-b border-slate-100">
+    <div style={{ background: tt.pageBg }}>
+      <div className="border-b" style={{ borderColor: tt.divider }}>
         <div className="px-6 py-4 flex items-center justify-between" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${primaryColor}05)` }}>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{ background: primaryColor }}>
@@ -2848,16 +2865,16 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
         <div className="absolute inset-0 flex items-center px-8">
           <div>
             <h1 className={`font-bold text-white mb-4 ${device === 'mobile' ? 'text-2xl' : 'text-4xl'}`}>{store.name || 'Your Store'}<br /><span className="opacity-80">Premium Quality</span></h1>
-            <button className="px-6 py-3 bg-white text-sm font-semibold rounded-xl" style={{ color: primaryColor }}>Shop Now →</button>
+            <button className="px-6 py-3 text-sm font-semibold rounded-xl" style={{ background: tt.surfaceBg, color: primaryColor }}>Shop Now →</button>
           </div>
         </div>
       </div>
       <div className="px-6 py-8">
-        <h2 className="text-xl font-bold text-slate-900 mb-6">Featured Products</h2>
+        <h2 className="text-xl font-bold mb-6" style={{ color: tt.textPrimary }}>Featured Products</h2>
         <div className={`grid ${gridCols(device)} gap-4`}>
           {products.map(p => (
-            <div key={p.id} className="group bg-white rounded-2xl overflow-hidden border border-slate-100 hover:shadow-lg transition-all cursor-pointer" onClick={() => onProductClick(p)}>
-              <div className="relative aspect-square bg-slate-50">
+            <div key={p.id} className="group rounded-2xl overflow-hidden hover:shadow-lg transition-all cursor-pointer" style={{ background: tt.surfaceBg, border: `1px solid ${tt.divider}` }} onClick={() => onProductClick(p)}>
+              <div className="relative aspect-square" style={{ background: tt.surfaceBg }}>
                 <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 {p.badge && <span className="absolute top-2 left-2 px-2 py-0.5 text-xs font-bold text-white rounded-full" style={{ background: primaryColor }}>{p.badge}</span>}
                 <button
@@ -2868,10 +2885,10 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
                 </button>
               </div>
               <div className="p-3">
-                <p className="text-xs text-slate-400 mb-1">{p.category}</p>
-                <p className="text-sm font-semibold text-slate-900 truncate">{p.name}</p>
+                <p className="text-xs mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
+                <p className="text-sm font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
                 <div className="flex items-center justify-between mt-2">
-                  <span className="font-bold text-slate-900">{fmtPrice(p.price)}</span>
+                  <span className="font-bold" style={{ color: tt.textPrimary }}>{fmtPrice(p.price)}</span>
                   <button onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; const _card = _btn.closest('.group') as HTMLElement ?? _btn; const _wrap = _card.querySelector('.relative.overflow-hidden, .relative.aspect-square, .relative.rounded-2xl') as HTMLElement | null; const _img = (_wrap ?? _card).querySelector('img') as HTMLElement | null; onAddToCart(p, (_img ?? _wrap ?? _btn).getBoundingClientRect()); }} className="px-3 py-1.5 text-xs font-semibold rounded-xl text-white" style={{ background: primaryColor }}>Add</button>
                 </div>
               </div>
@@ -2879,13 +2896,13 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
           ))}
         </div>
       </div>
-      <div className="border-t border-slate-100 px-6 py-6 bg-slate-50">
+      <div className="px-6 py-6" style={{ borderTop: `1px solid ${tt.divider}`, background: tt.surfaceBg }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold" style={{ background: primaryColor }}>{(store.name || 'S')[0]}</div>
-            <span className="font-bold text-slate-700 text-sm">{store.name}</span>
+            <span className="font-bold text-sm" style={{ color: tt.textSecondary }}>{store.name}</span>
           </div>
-          <p className="text-xs text-slate-400">© 2026 · Powered by Storee</p>
+          <p className="text-xs" style={{ color: tt.textMuted }}>© 2026 · Powered by Storee</p>
         </div>
       </div>
     </div>
@@ -3658,21 +3675,21 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
               style={isLuxury ? { animationDuration: '10s' } : undefined} />
           </motion.div>
           {!isMobile && products[1] && (
-            <div className="absolute -bottom-6 -left-8 bg-white rounded-2xl p-4 shadow-2xl" style={{ maxWidth: '180px' }}>
+            <div className="absolute -bottom-6 -left-8 rounded-2xl p-4 shadow-2xl" style={{ maxWidth: '180px', background: tt.surfaceBg }}>
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0" style={{ background: tt.pageBg }}>
                   <ProductImg src={products[1].image} alt="" className="w-full h-full object-cover" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[9px] uppercase tracking-wider text-gray-400 truncate">{products[1].category}</p>
-                  <p className="text-xs font-bold text-gray-900 truncate">{products[1].name}</p>
+                  <p className="text-[9px] uppercase tracking-wider truncate" style={{ color: tt.textMuted }}>{products[1].category}</p>
+                  <p className="text-xs font-bold truncate" style={{ color: tt.textPrimary }}>{products[1].name}</p>
                   <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{fmtPrice(products[1].price)}</p>
                 </div>
               </div>
             </div>
           )}
           {!isMobile && collections[1] && (
-            <div className="absolute -top-4 -right-4 bg-white rounded-full px-4 py-2 shadow-xl text-xs font-bold text-gray-700">
+            <div className="absolute -top-4 -right-4 rounded-full px-4 py-2 shadow-xl text-xs font-bold" style={{ background: tt.surfaceBg, color: tt.textSecondary }}>
               {collections[1].emoji} {collections[1].name}
             </div>
           )}
@@ -4128,7 +4145,7 @@ function TkGridStaggered({ products, tt, primaryColor, device, onProductClick, o
             {p.badge && <span className="absolute top-3 left-3 text-[10px] font-black uppercase px-2.5 py-1 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>{p.badge}</span>}
             <button onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
               className="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity">
-              <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+              <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
             </button>
             <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
               <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
@@ -4226,7 +4243,7 @@ function TkGridAsymmetric({ products, tt, primaryColor, device, onProductClick, 
         {p.badge && <span className="absolute top-3 left-3 text-[10px] font-black uppercase px-2.5 py-1 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>{p.badge}</span>}
         <button onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
           className="absolute top-3 right-3 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity">
-          <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+          <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
         </button>
         <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
           <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
@@ -4308,7 +4325,7 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
               onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
               className={`absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow transition-all hover:scale-110 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'}`}
             >
-              <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+              <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
             </button>
           </div>
           <div className={dv.cardPadY}>
@@ -4372,7 +4389,7 @@ function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, on
           onClick={e => { e.stopPropagation(); onToggleWishlist(featured.id); }}
           className="absolute top-4 right-4 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow"
         >
-          <Heart className={`w-3.5 h-3.5 ${wishlist.has(featured.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+          <Heart className={`w-3.5 h-3.5 ${wishlist.has(featured.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(featured.id) ? undefined : { color: tt.textMuted }} />
         </button>
       </div>
 
@@ -4387,7 +4404,7 @@ function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, on
               </span>
             )}
             <button onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }} className="absolute top-2 right-2 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity">
-              <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+              <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
             </button>
           </div>
           <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: tt.textMuted }}>{p.category}</p>
@@ -4447,8 +4464,8 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
                 {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }} className="w-8 h-8 flex-shrink-0 bg-gray-50 rounded-full flex items-center justify-center">
-                  <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-300'}`} />
+                <button onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }} className="w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center" style={{ background: tt.surfaceBg }}>
+                  <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={{ color: wishlist.has(p.id) ? undefined : tt.textMuted }} />
                 </button>
                 <button
                   onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
@@ -4495,7 +4512,7 @@ function TkGridCarousel({ products, tt, primaryColor, device, onProductClick, on
               )}
               <button onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
                 className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow">
-                <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+                <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
               </button>
               <div className={`absolute bottom-0 inset-x-0 p-3 transition-transform duration-200 ${isMobile ? '' : 'translate-y-full group-hover:translate-y-0'}`}>
                 <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
@@ -4545,7 +4562,7 @@ function TkGridSpotlight({ products, tt, primaryColor, device, onProductClick, o
           )}
           <button onClick={e => { e.stopPropagation(); onToggleWishlist(featured.id); }}
             className="absolute top-4 right-4 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center shadow">
-            <Heart className={`w-4 h-4 ${wishlist.has(featured.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+            <Heart className={`w-4 h-4 ${wishlist.has(featured.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(featured.id) ? undefined : { color: tt.textMuted }} />
           </button>
           <div className="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between">
             <div>
@@ -5938,7 +5955,7 @@ function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart
           onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
           className="absolute top-3 right-3 w-8 h-8 bg-white/80 backdrop-blur flex items-center justify-center transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
           style={{ borderRadius: '50%' }}>
-          <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-500'}`} />
+          <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
         </button>
         {/* Add to cart — slide up on hover */}
         <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
@@ -6162,7 +6179,7 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
                       onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
                       className="absolute top-2 right-2 w-7 h-7 bg-white/85 backdrop-blur flex items-center justify-center rounded-full shadow transition-all hover:scale-110 active:scale-95"
                     >
-                      <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+                      <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
                     </button>
                   </>
                 )}
