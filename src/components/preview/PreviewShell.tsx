@@ -235,16 +235,15 @@ export default function PreviewShell({ store, from = null }: Props) {
       {/* Regenerate Modal */}
       <AnimatePresence>
         {showRegenModal && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              key="regen-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/40 z-40"
-              onClick={() => setShowRegenModal(false)}
-            />
+          /* Backdrop — flex centers the modal so it never clips off-screen */
+          <motion.div
+            key="regen-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4"
+            onClick={() => setShowRegenModal(false)}
+          >
             {/* Modal */}
             <motion.div
               key="regen-modal"
@@ -252,7 +251,8 @@ export default function PreviewShell({ store, from = null }: Props) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
               transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-              className="fixed inset-x-4 top-1/2 -translate-y-1/2 sm:inset-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-[480px] bg-white rounded-2xl shadow-2xl z-50 p-6"
+              className="w-full sm:w-[480px] max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl z-50 p-6"
+              onClick={e => e.stopPropagation()}
             >
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
@@ -307,7 +307,7 @@ export default function PreviewShell({ store, from = null }: Props) {
                 </button>
               </div>
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
 
