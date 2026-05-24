@@ -125,7 +125,10 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
             <>
               <div className="flex-1 text-left min-w-0">
                 <p className="text-sm font-semibold text-slate-900 truncate">{activeStore?.name || 'My Store'}</p>
-                <p className="text-xs text-slate-500 truncate">{activeStore?.domain}</p>
+                {activeStore?.status === 'Published' && activeStore.domain
+                  ? <p className="text-xs text-slate-500 truncate">{activeStore.domain}</p>
+                  : <p className="text-xs text-amber-500 font-medium">Draft</p>
+                }
               </div>
               <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform flex-shrink-0 ${storeMenuOpen ? 'rotate-180' : ''}`} />
             </>
