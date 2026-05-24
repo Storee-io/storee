@@ -2909,6 +2909,55 @@ interface TokenTheme extends CommerceTheme {
   googleFontsUrl: string;
 }
 
+// ── Phase 3: Motion & Elevation utilities ─────────────────────────────────────
+
+type MotionLevel    = 'none' | 'subtle' | 'smooth' | 'expressive';
+type ElevationLevel = 'flat' | 'subtle' | 'raised' | 'floating';
+
+/** Returns a CSS transition string based on the motion token */
+function getMotionTransition(motion?: MotionLevel): string {
+  switch (motion) {
+    case 'none':       return 'none';
+    case 'subtle':     return 'all 150ms ease';
+    case 'smooth':     return 'all 300ms ease-in-out';
+    case 'expressive': return 'all 500ms cubic-bezier(0.34,1.56,0.64,1)';
+    default:           return 'all 200ms ease';
+  }
+}
+
+/** Returns hover scale based on motion intensity */
+function getHoverScale(motion?: MotionLevel): string {
+  switch (motion) {
+    case 'none':       return 'scale(1)';
+    case 'subtle':     return 'scale(1.02)';
+    case 'smooth':     return 'scale(1.04)';
+    case 'expressive': return 'scale(1.07)';
+    default:           return 'scale(1.03)';
+  }
+}
+
+/** Returns box-shadow CSS string based on elevation token */
+function getElevationShadow(elevation?: ElevationLevel, colorHint = 'rgba(0,0,0,1)'): string {
+  // extract rgb from hex for colored shadows
+  const shadowBase = colorHint.startsWith('#')
+    ? `rgba(${parseInt(colorHint.slice(1,3),16)},${parseInt(colorHint.slice(3,5),16)},${parseInt(colorHint.slice(5,7),16)},`
+    : 'rgba(0,0,0,';
+  switch (elevation) {
+    case 'flat':     return 'none';
+    case 'subtle':   return `0 1px 3px ${shadowBase}0.06), 0 1px 2px ${shadowBase}0.04)`;
+    case 'raised':   return `0 4px 16px ${shadowBase}0.10), 0 2px 6px ${shadowBase}0.06)`;
+    case 'floating': return `0 12px 40px ${shadowBase}0.16), 0 4px 12px ${shadowBase}0.08)`;
+    default:         return `0 2px 8px ${shadowBase}0.08)`;
+  }
+}
+
+/** Spacing multiplier: compact=0.6, comfortable=1, spacious=1.5 */
+function getSpacingPx(spacing?: string, base = 56): number {
+  if (spacing === 'compact')    return Math.round(base * 0.6);
+  if (spacing === 'spacious')   return Math.round(base * 1.5);
+  return base; // comfortable = default
+}
+
 // ── Known serif heading fonts (for CSS fallback stack) ────────────────────────
 
 const SERIF_FONTS = new Set([
@@ -3374,6 +3423,12 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
   const productGrid = dt?.productGrid ?? ds?.productGrid  ?? 'standard';
   const rawOrder    = dt?.sectionOrder ?? ds?.sectionOrder;
 
+  // Phase 3: motion & elevation from tokens
+  const motion    = (dt?.motion    ?? 'subtle')     as MotionLevel;
+  const elevation = (dt?.elevation ?? 'subtle')     as ElevationLevel;
+  const spacing   = dt?.spacing ?? 'comfortable';
+  const sectionPy = getSpacingPx(spacing, 56);
+
   const isMobile = device === 'mobile';
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedCol, setSelectedCol] = useState(0);
@@ -3418,7 +3473,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
 
       case 'products':
         return (
-          <section key="products" ref={productsRef} className="max-w-6xl mx-auto px-5" style={{ paddingTop: isMobile ? '2rem' : '3.5rem', paddingBottom: isMobile ? '2rem' : '3.5rem' }}>
+          <section key="products" ref={productsRef} className="max-w-6xl mx-auto px-5" style={{ paddingTop: isMobile ? '2rem' : `${sectionPy}px`, paddingBottom: isMobile ? '2rem' : `${sectionPy}px` }}>
             <div className="flex items-end justify-between mb-7">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.22em] mb-1.5" style={{ color: tt.textMuted }}>Curated Selection</p>
@@ -3441,10 +3496,14 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
       case 'features':
         if (!features.length) return null;
         return (
-          <section key="features" className="max-w-6xl mx-auto px-5" style={{ paddingTop: isMobile ? '2rem' : '3.5rem', paddingBottom: isMobile ? '2rem' : '3.5rem' }}>
+          <section key="features" className="max-w-6xl mx-auto px-5" style={{ paddingTop: isMobile ? '2rem' : `${sectionPy}px`, paddingBottom: isMobile ? '2rem' : `${sectionPy}px` }}>
             <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-6'}`}>
               {features.map((f, i) => (
-                <div key={i} className="flex items-start gap-4 p-6 transition-shadow hover:shadow-md" style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius }}>
+                <div key={i} className="flex items-start gap-4 p-6"
+                  style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius,
+                    boxShadow: getElevationShadow(elevation), transition: getMotionTransition(motion) }}
+                  onMouseEnter={e => { if (motion !== 'none') (e.currentTarget as HTMLElement).style.transform = getHoverScale(motion); }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}>
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: alpha(primaryColor, 0.1) }}>{f.icon}</div>
                   <div>
                     <h3 className="text-sm font-black uppercase tracking-wide mb-1" style={{ color: tt.textPrimary }}>{f.title}</h3>
@@ -4040,6 +4099,499 @@ function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart
   );
 }
 
+// ── MASONRY LAYOUT ────────────────────────────────────────────────────────────
+// Pinterest-style columns, varied card heights, image-first
+// Personality: pinterest-like, airbnb-like, art/craft/handmade stores
+
+function MasonryLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
+  const dt = design.designTokens;
+  const tt: TokenTheme = dt ? getTokenThemeV2(dt, primaryColor) : getDefaultTokenTheme(primaryColor);
+
+  const motion    = dt?.motion    as MotionLevel    | undefined;
+  const elevation = dt?.elevation as ElevationLevel | undefined;
+  const spacing   = dt?.spacing;
+
+  const { products = [], collections = [], features = [], testimonials = [],
+          tagline, promoBar, trustBadges = [], brandStory, heroTitle, heroSubtitle,
+          ctaText, navLinks = [], faq = [], stats = [], newsletter } = design;
+
+  const isMobile = device === 'mobile';
+  const [selectedCol, setSelectedCol] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const productsRef = useRef<HTMLDivElement>(null);
+  const scrollToProducts = () => productsRef.current?.scrollIntoView({ behavior: 'smooth' });
+
+  const pc = primaryColor || '#e60023';
+  const pcText = isDark(pc) ? '#ffffff' : '#000000';
+
+  const displayed = selectedCol === 0
+    ? products
+    : products.filter((_, i) => i % collections.length === selectedCol % collections.length);
+
+  const sectionPy = getSpacingPx(spacing, 56);
+
+  // Masonry aspect ratios — cycle through to give varied heights
+  const aspectRatios = ['4/5', '3/4', '1/1', '4/3', '3/4', '4/5', '1/1', '3/4', '4/5', '4/3'];
+
+  return (
+    <div style={{ background: tt.pageBg, fontFamily: tt.fontFamily }}>
+      <TkFontInjector url={tt.googleFontsUrl} />
+      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={pc} storeName={storeName} onScrollToProducts={scrollToProducts} />
+
+      {promoBar && <PromoBar text={promoBar} primaryColor={pc} />}
+
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-40 backdrop-blur-sm"
+        style={{ background: tt.headerBg + 'f0', borderBottom: `1px solid ${tt.divider}`, height: '56px' }}>
+        <div className="max-w-6xl mx-auto px-5 h-full flex items-center justify-between">
+          <span className="font-black text-sm tracking-wider" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
+          {!isMobile ? (
+            <nav className="flex gap-6">
+              {navLinks.map(l => (
+                <a key={l} onClick={scrollToProducts} className="text-xs font-medium cursor-pointer uppercase tracking-wide transition-opacity hover:opacity-50"
+                  style={{ color: tt.textSecondary }}>{l}</a>
+              ))}
+            </nav>
+          ) : (
+            <button onClick={() => setMenuOpen(true)} style={{ color: tt.textSecondary }}><Menu className="w-5 h-5" /></button>
+          )}
+          <div className="flex items-center gap-1">
+            {!isMobile && <button onClick={onSearchOpen} className="p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}><Search className="w-4 h-4" /></button>}
+            <button onClick={onWishlistClick} className="relative p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>
+              <Heart className="w-4 h-4" />
+              {wishlist.size > 0 && <span className="absolute top-0 right-0 w-3.5 h-3.5 text-[8px] font-bold text-white bg-rose-500 rounded-full flex items-center justify-center">{wishlist.size}</span>}
+            </button>
+            <button data-cart-btn onClick={onCartClick} className="relative p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>
+              <ShoppingCart className="w-4 h-4" />
+              {cartCount > 0 && <span className="absolute top-0 right-0 w-3.5 h-3.5 text-[8px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: pc }}>{cartCount}</span>}
+            </button>
+            <UserProfileMenu buyerEmail={buyerEmail} onUserClick={onUserClick} onWishlistClick={onWishlistClick} wishlistCount={wishlist.size} iconColor={tt.textSecondary} />
+          </div>
+        </div>
+      </header>
+
+      {/* ── Hero — clean, text-centered ── */}
+      <section style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${Math.round(sectionPy * 0.7)}px`, textAlign: 'center' }}>
+        <p className="text-xs uppercase tracking-[0.3em] mb-4" style={{ color: pc }}>{tagline}</p>
+        <h1 className="font-black leading-tight mx-auto px-6 mb-5"
+          style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '2rem' : '3.5rem', maxWidth: '16ch' }}>
+          {heroTitle}
+        </h1>
+        <p className="text-sm leading-relaxed mx-auto px-6 mb-8" style={{ color: tt.textSecondary, maxWidth: '45ch' }}>{heroSubtitle}</p>
+        <button onClick={scrollToProducts}
+          className="inline-flex items-center gap-2 px-7 py-3 text-sm font-bold transition-all hover:opacity-85"
+          style={{ background: pc, color: pcText, borderRadius: tt.btnRadius, transition: getMotionTransition(motion) }}>
+          {ctaText} <ArrowRight className="w-4 h-4" />
+        </button>
+      </section>
+
+      {/* ── Collections — horizontal pill scroll ── */}
+      <div style={{ borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
+        <div className="max-w-6xl mx-auto px-5 py-3 flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          {[{ name: 'All', emoji: '✦' }, ...collections].map((c, i) => (
+            <button key={i} onClick={() => setSelectedCol(i)}
+              className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-all"
+              style={selectedCol === i
+                ? { background: pc, color: pcText, borderRadius: tt.btnRadius, transition: getMotionTransition(motion) }
+                : { background: tt.surfaceBg, color: tt.textSecondary, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.btnRadius }}>
+              {c.emoji} {c.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {trustBadges.length > 0 && <TrustBadgesRow badges={trustBadges} primaryColor={pc} device={device} />}
+
+      {/* ── Masonry grid ── */}
+      <section ref={productsRef} className="max-w-6xl mx-auto px-4"
+        style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+        <div style={{
+          columnCount: isMobile ? 2 : 3,
+          columnGap: '12px',
+        }}>
+          {displayed.map((p, idx) => (
+            <div key={p.id}
+              style={{
+                breakInside: 'avoid',
+                marginBottom: '12px',
+                borderRadius: tt.surfaceRadius,
+                overflow: 'hidden',
+                cursor: 'pointer',
+                background: tt.surfaceBg,
+                boxShadow: getElevationShadow(elevation),
+                transition: getMotionTransition(motion),
+              }}
+              onClick={() => onProductClick(p)}
+              onMouseEnter={e => {
+                if (motion !== 'none') {
+                  (e.currentTarget as HTMLElement).style.transform = getHoverScale(motion);
+                  (e.currentTarget as HTMLElement).style.boxShadow = getElevationShadow('raised');
+                }
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+                (e.currentTarget as HTMLElement).style.boxShadow = getElevationShadow(elevation);
+              }}
+            >
+              {/* Image with varying aspect ratio */}
+              <div style={{ aspectRatio: aspectRatios[idx % aspectRatios.length], position: 'relative', overflow: 'hidden' }}>
+                <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                {p.badge && (
+                  <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5"
+                    style={{ background: pc, color: pcText, borderRadius: '999px' }}>{p.badge}</span>
+                )}
+                <button
+                  onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
+                  className="absolute top-2 right-2 w-7 h-7 bg-white/85 backdrop-blur flex items-center justify-center rounded-full shadow transition-all hover:scale-110 active:scale-95"
+                >
+                  <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+                </button>
+              </div>
+
+              {/* Card info */}
+              <div className="p-3">
+                <p className="text-xs font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+                <div className="flex items-center justify-between mt-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-black" style={{ color: pc }}>{fmtPrice(p.price)}</span>
+                    {p.originalPrice && <span className="text-[10px] line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
+                  </div>
+                  <button
+                    onClick={e => { e.stopPropagation(); const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); onAddToCart(p, rect); }}
+                    className="w-7 h-7 flex items-center justify-center text-white text-sm font-bold rounded-full transition-all hover:opacity-85 active:scale-95"
+                    style={{ background: pc, transition: getMotionTransition(motion) }}
+                  >+</button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Features */}
+      {features.length > 0 && (
+        <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
+          <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+            <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-4 gap-6'}`}>
+              {features.slice(0, 4).map((f, i) => (
+                <div key={i} className="flex flex-col items-center text-center gap-2 p-5 rounded-2xl"
+                  style={{ background: tt.pageBg, border: `1px solid ${tt.surfaceBorder}`, boxShadow: getElevationShadow(elevation) }}>
+                  <span className="text-3xl">{f.icon}</span>
+                  <h3 className="text-xs font-black uppercase tracking-wider" style={{ color: tt.textPrimary }}>{f.title}</h3>
+                  <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Testimonials — masonry style */}
+      {testimonials.length > 0 && (
+        <section>
+          <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+            <h2 className="text-lg font-black mb-8 text-center" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>What they say</h2>
+            <div style={{ columnCount: isMobile ? 1 : 3, columnGap: '16px' }}>
+              {testimonials.map((t, i) => (
+                <div key={i} style={{ breakInside: 'avoid', marginBottom: '16px', padding: '16px', background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius, boxShadow: getElevationShadow(elevation) }}>
+                  <Stars n={t.rating} />
+                  <p className="text-xs italic leading-relaxed mt-2 mb-3" style={{ color: tt.textSecondary }}>"{t.text}"</p>
+                  <p className="text-[10px] font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>{t.author}</p>
+                  <p className="text-[10px]" style={{ color: tt.textMuted }}>{t.role}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {brandStory && (
+        <section style={{ background: alpha(pc, 0.05), borderTop: `1px solid ${tt.divider}` }}>
+          <div className="max-w-2xl mx-auto px-5 text-center" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+            <p className="text-4xl mb-4 opacity-25" style={{ color: pc }}>"</p>
+            <p className="text-sm leading-relaxed italic" style={{ color: tt.textSecondary }}>{brandStory}</p>
+          </div>
+        </section>
+      )}
+
+      {stats && stats.length > 0 && <StatsRow stats={stats} primaryColor={pc} device={device} />}
+      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={pc} device={device} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={pc} device={device} />}
+
+      <footer style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '1.5rem', paddingBottom: '1.5rem' }}>
+        <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <span className="text-sm font-black tracking-wider" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
+          <p className="text-xs italic" style={{ color: tt.textMuted }}>{tagline}</p>
+          <p className="text-xs" style={{ color: tt.textMuted }}>© 2026 {storeName} · Powered by Storee</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+// ── FULLSCREEN LAYOUT ─────────────────────────────────────────────────────────
+// Immersive viewport sections, cinematic, one story at a time
+// Personality: zara-like, luxury fashion, high-end brands
+
+function FullscreenLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
+  const dt = design.designTokens;
+  const tt: TokenTheme = dt ? getTokenThemeV2(dt, primaryColor) : getDefaultTokenTheme(primaryColor);
+
+  const motion    = dt?.motion    as MotionLevel    | undefined;
+  const elevation = dt?.elevation as ElevationLevel | undefined;
+  const spacing   = dt?.spacing;
+
+  const { products = [], collections = [], features = [], testimonials = [],
+          tagline, promoBar, brandStory, heroTitle, heroSubtitle, ctaText,
+          navLinks = [], faq = [], stats = [], newsletter, trustBadges = [] } = design;
+
+  const isMobile = device === 'mobile';
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const pc = primaryColor || '#ffffff';
+  const pcText = isDark(pc) ? '#ffffff' : '#000000';
+  const isDarkBg = isDark(tt.pageBg);
+
+  // Spotlight products — up to 5 featured
+  const spotlightProducts = products.slice(0, Math.min(5, products.length));
+  const restProducts = products.slice(5);
+
+  const scrollToSlide = (idx: number) => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const slide = container.children[idx] as HTMLElement;
+    slide?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setActiveSlide(idx);
+  };
+
+  return (
+    <div style={{ background: tt.pageBg, fontFamily: tt.fontFamily, color: tt.textPrimary }}>
+      <TkFontInjector url={tt.googleFontsUrl} />
+      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={pc} storeName={storeName} onScrollToProducts={() => scrollToSlide(1)} />
+
+      {promoBar && <PromoBar text={promoBar} primaryColor={pc} />}
+
+      {/* ── Floating header (always on top) ── */}
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6"
+        style={{ height: '56px', background: 'transparent', pointerEvents: 'none' }}>
+        <span className="text-sm font-black tracking-[0.2em] uppercase pointer-events-auto"
+          style={{ fontFamily: tt.headingFont, color: isDarkBg ? '#ffffff' : tt.textPrimary,
+            textShadow: isDarkBg ? '0 1px 8px rgba(0,0,0,0.5)' : 'none' }}>{storeName}</span>
+        <div className="flex items-center gap-1 pointer-events-auto">
+          {!isMobile && (
+            <nav className="flex gap-6 mr-3">
+              {navLinks.slice(0, 4).map(l => (
+                <a key={l} onClick={() => scrollToSlide(1)}
+                  className="text-xs uppercase tracking-widest font-medium cursor-pointer transition-opacity hover:opacity-60"
+                  style={{ color: isDarkBg ? 'rgba(255,255,255,0.7)' : tt.textSecondary }}>{l}</a>
+              ))}
+            </nav>
+          )}
+          <button onClick={onWishlistClick} className="relative p-2 transition-opacity hover:opacity-70"
+            style={{ color: isDarkBg ? 'rgba(255,255,255,0.8)' : tt.textSecondary }}>
+            <Heart className="w-4 h-4" />
+            {wishlist.size > 0 && <span className="absolute top-0 right-0 w-3.5 h-3.5 text-[8px] font-bold text-white bg-rose-500 rounded-full flex items-center justify-center">{wishlist.size}</span>}
+          </button>
+          <button data-cart-btn onClick={onCartClick} className="relative p-2 transition-opacity hover:opacity-70"
+            style={{ color: isDarkBg ? 'rgba(255,255,255,0.8)' : tt.textSecondary }}>
+            <ShoppingCart className="w-4 h-4" />
+            {cartCount > 0 && <span className="absolute top-0 right-0 w-3.5 h-3.5 text-[8px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: pc }}>{cartCount}</span>}
+          </button>
+          {isMobile && (
+            <button onClick={() => setMenuOpen(true)} className="p-2" style={{ color: isDarkBg ? 'rgba(255,255,255,0.8)' : tt.textSecondary }}><Menu className="w-5 h-5" /></button>
+          )}
+        </div>
+      </header>
+
+      {/* ── Slide dot nav (right side) ── */}
+      {spotlightProducts.length > 1 && !isMobile && (
+        <div className="fixed right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2">
+          {spotlightProducts.map((_, i) => (
+            <button key={i} onClick={() => scrollToSlide(i)}
+              className="transition-all"
+              style={{
+                width: activeSlide === i ? '8px' : '6px',
+                height: activeSlide === i ? '24px' : '6px',
+                borderRadius: '999px',
+                background: isDarkBg
+                  ? (activeSlide === i ? '#ffffff' : 'rgba(255,255,255,0.3)')
+                  : (activeSlide === i ? tt.textPrimary : tt.textMuted),
+                transition: getMotionTransition(motion),
+              }} />
+          ))}
+        </div>
+      )}
+
+      {/* ── Fullscreen product slides ── */}
+      <div ref={scrollContainerRef}>
+        {spotlightProducts.map((p, idx) => (
+          <section key={p.id}
+            style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'flex-end', overflow: 'hidden' }}
+            onMouseEnter={() => setActiveSlide(idx)}
+          >
+            {/* Full-bleed background image */}
+            <div className="absolute inset-0">
+              <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+              <div className="absolute inset-0" style={{
+                background: isDarkBg
+                  ? 'linear-gradient(to top, rgba(0,0,0,0.85) 35%, rgba(0,0,0,0.15) 70%, transparent)'
+                  : 'linear-gradient(to top, rgba(0,0,0,0.70) 30%, rgba(0,0,0,0.1) 70%, transparent)',
+              }} />
+              {/* Subtle left accent line */}
+              <div className="absolute left-0 top-16 bottom-16 w-0.5" style={{ background: pc, opacity: 0.7 }} />
+            </div>
+
+            {/* Content */}
+            <div className="relative w-full max-w-6xl mx-auto px-8 pb-16 pt-24">
+              <div className={isMobile ? '' : 'max-w-lg'}>
+                {p.badge && (
+                  <span className="inline-block text-[10px] font-black uppercase tracking-widest px-3 py-1 mb-4 rounded-full"
+                    style={{ background: pc, color: pcText }}>{p.badge}</span>
+                )}
+                <p className="text-xs uppercase tracking-[0.25em] mb-3 text-white/50">{p.category}</p>
+                <h2 className="font-black text-white leading-tight mb-3"
+                  style={{ fontFamily: tt.headingFont, fontSize: isMobile ? '2rem' : '3rem' }}>{p.name}</h2>
+                <p className="text-white/65 text-sm leading-relaxed mb-6 max-w-sm">{p.description}</p>
+                <div className="flex items-center gap-4">
+                  <span className="text-2xl font-black text-white">{fmtPrice(p.price)}</span>
+                  {p.originalPrice && <span className="text-lg line-through text-white/40">{fmtPrice(p.originalPrice)}</span>}
+                </div>
+                <div className="flex items-center gap-3 mt-5">
+                  <button
+                    onClick={() => { const rect = undefined; onAddToCart(p, rect); }}
+                    className="px-8 py-3.5 text-sm font-bold transition-all hover:opacity-90 active:scale-95"
+                    style={{ background: pc, color: pcText, borderRadius: tt.btnRadius, boxShadow: getElevationShadow('raised'), transition: getMotionTransition(motion) }}
+                  >Add to Cart</button>
+                  <button onClick={() => onProductClick(p)}
+                    className="px-6 py-3.5 text-sm font-medium text-white border border-white/25 hover:bg-white/10 transition-colors"
+                    style={{ borderRadius: tt.btnRadius }}>View Details</button>
+                  <button
+                    onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
+                    className="w-11 h-11 flex items-center justify-center border border-white/25 text-white hover:bg-white/10 transition-colors"
+                    style={{ borderRadius: tt.btnRadius }}>
+                    <Heart className={`w-4 h-4 ${wishlist.has(p.id) ? 'fill-rose-400 text-rose-400' : ''}`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Slide counter */}
+              <div className="absolute bottom-6 right-8 text-white/30 text-xs font-black tracking-widest">
+                {String(idx + 1).padStart(2, '0')} / {String(spotlightProducts.length).padStart(2, '0')}
+              </div>
+
+              {/* Scroll hint on first slide */}
+              {idx === 0 && (
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-white/30 animate-bounce">
+                  <ChevronDown className="w-4 h-4" />
+                  <span className="text-[9px] uppercase tracking-widest">Scroll</span>
+                </div>
+              )}
+            </div>
+          </section>
+        ))}
+      </div>
+
+      {/* ── Rest of products grid (after the cinematic slides) ── */}
+      {restProducts.length > 0 && (
+        <section style={{ paddingTop: '4rem', paddingBottom: '4rem' }}>
+          <div className="max-w-6xl mx-auto px-5">
+            <h2 className="font-black text-xl mb-8 uppercase tracking-widest" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>More Products</h2>
+            {/* Collections filter */}
+            <div className="flex gap-2 mb-6 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+              {collections.map((c, i) => (
+                <button key={i}
+                  className="flex-shrink-0 px-4 py-1.5 text-xs font-bold uppercase tracking-widest border transition-all"
+                  style={{ borderColor: tt.surfaceBorder, color: tt.textSecondary, borderRadius: tt.btnRadius }}>
+                  {c.emoji} {c.name}
+                </button>
+              ))}
+            </div>
+            <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} gap-4`}>
+              {restProducts.map(p => (
+                <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
+                  <div className="relative overflow-hidden" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius }}>
+                    <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    {p.badge && (
+                      <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5 rounded-full"
+                        style={{ background: pc, color: pcText }}>{p.badge}</span>
+                    )}
+                    <button
+                      onClick={e => { e.stopPropagation(); const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); onAddToCart(p, rect); }}
+                      className="absolute bottom-0 inset-x-0 py-2.5 text-[10px] font-bold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-all"
+                      style={{ background: pc, color: pcText }}>Add to cart</button>
+                  </div>
+                  <div className="mt-2 px-0.5">
+                    <p className="text-xs font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+                    <span className="text-xs font-black" style={{ color: tt.textPrimary }}>{fmtPrice(p.price)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Features */}
+      {features.length > 0 && (
+        <section style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '4rem', paddingBottom: '4rem' }}>
+          <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-6' : 'grid-cols-3 gap-10'}`}>
+            {features.map((f, i) => (
+              <div key={i} className="flex flex-col gap-3">
+                <div className="h-px w-8" style={{ background: pc }} />
+                <span className="text-3xl">{f.icon}</span>
+                <h3 className="text-sm font-black uppercase tracking-widest" style={{ color: tt.textPrimary }}>{f.title}</h3>
+                <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {testimonials.length > 0 && (
+        <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, paddingTop: '4rem', paddingBottom: '4rem' }}>
+          <div className="max-w-6xl mx-auto px-5">
+            <h2 className="font-black text-xl mb-10 uppercase tracking-widest text-center" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>Voices</h2>
+            <div className={`grid ${isMobile ? 'grid-cols-1 gap-5' : 'grid-cols-3 gap-8'}`}>
+              {testimonials.map((t, i) => (
+                <div key={i} className="flex flex-col gap-3">
+                  <Stars n={t.rating} />
+                  <p className="text-sm italic leading-relaxed" style={{ color: tt.textSecondary }}>"{t.text}"</p>
+                  <div className="h-px" style={{ background: tt.divider }} />
+                  <p className="text-xs font-black uppercase tracking-widest" style={{ color: tt.textPrimary }}>{t.author}</p>
+                  <p className="text-[10px]" style={{ color: tt.textMuted }}>{t.role}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {brandStory && (
+        <section style={{ paddingTop: '4rem', paddingBottom: '4rem', borderTop: `1px solid ${tt.divider}` }}>
+          <div className="max-w-2xl mx-auto px-5 text-center">
+            <p className="text-5xl font-black mb-6 opacity-15" style={{ color: tt.textPrimary, fontFamily: tt.headingFont }}>"</p>
+            <p className="text-base leading-relaxed italic" style={{ color: tt.textSecondary }}>{brandStory}</p>
+          </div>
+        </section>
+      )}
+
+      {stats && stats.length > 0 && <StatsRow stats={stats} primaryColor={pc} device={device} dark={isDark(tt.pageBg)} />}
+      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={pc} device={device} dark={isDark(tt.pageBg)} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={pc} device={device} dark={isDark(tt.pageBg)} />}
+
+      <footer style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '2rem', paddingBottom: '2rem' }}>
+        <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <span className="text-sm font-black uppercase tracking-widest" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
+          <p className="text-xs italic" style={{ color: tt.textMuted }}>{tagline}</p>
+          <p className="text-xs" style={{ color: tt.textMuted }}>© 2026 {storeName} · Powered by Storee</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
 
 interface StorePreviewProps {
@@ -4221,13 +4773,11 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
     // Phase 1: route to new layout types based on layoutType token
     if (design.designTokens || design.designSystem) {
       const layoutType = design.designTokens?.layoutType ?? 'standard';
-      if (layoutType === 'app-like') {
-        content = <AppLikeLayout {...props} />;
-      } else if (layoutType === 'editorial') {
-        content = <EditorialLayout {...props} />;
-      } else {
-        content = <TokenLayout {...props} />;
-      }
+      if      (layoutType === 'app-like')   content = <AppLikeLayout   {...props} />;
+      else if (layoutType === 'editorial')  content = <EditorialLayout  {...props} />;
+      else if (layoutType === 'masonry')    content = <MasonryLayout    {...props} />;
+      else if (layoutType === 'fullscreen') content = <FullscreenLayout {...props} />;
+      else                                  content = <TokenLayout      {...props} />;
     } else {
       switch (design.layoutStyle) {
         case 'minimal':  content = <MinimalLayout {...props} />; break;

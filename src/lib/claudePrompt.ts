@@ -29,7 +29,7 @@ The JSON must exactly match this shape:
     "heroStyle": "string (one of: centered, split, fullscreen, minimal)",
     "productGrid": "string (one of: standard, magazine, list)",
     "sectionOrder": ["hero", "...all 9 remaining sections in your chosen order"],
-    "layoutType": "string (one of: standard, app-like, editorial — see PERSONALITY MAPPING)",
+    "layoutType": "string (one of: standard, app-like, editorial, masonry, fullscreen — see PERSONALITY MAPPING)",
     "spacing": "string (one of: compact, comfortable, spacious)",
     "density": "string (one of: dense, normal, airy)",
     "elevation": "string (one of: flat, subtle, raised, floating)",
@@ -192,6 +192,8 @@ layoutType values:
   standard   → default for most stores
   app-like   → mobile-app feel: compact rows, story circles, bottom navigation
   editorial  → magazine feel: big typography, asymmetric grid, lots of whitespace
+  masonry    → pinterest-style: visual columns with varied card heights, image-first
+  fullscreen → immersive: each section fills the viewport, scroll-snap, cinematic
 
 WhatsApp-like / chat-app style:
   layoutType: "app-like", spacing: "compact", density: "dense", motion: "subtle", elevation: "flat"
@@ -222,6 +224,30 @@ Spotify / dark music style:
   pageBg: "#121212", surfaceBg: "#242424", headerBg: "#000000", textPrimary: "#ffffff"
   primaryColor: "#1DB954", accentColor: "#1ed760", btnRadius: "999px", cardRadius: "8px"
   personality: "spotify-like"
+
+Pinterest / visual-first / art / photography / handmade:
+  layoutType: "masonry", spacing: "comfortable", density: "normal", motion: "smooth", elevation: "subtle"
+  pageBg: "#ffffff", surfaceBg: "#f9f9f9", headerBg: "#ffffff", textPrimary: "#111111"
+  primaryColor: (pick from brand), btnRadius: "999px", cardRadius: "16px"
+  personality: "pinterest-like"
+
+ZARA / high fashion / cinematic / luxury immersive:
+  layoutType: "fullscreen", spacing: "spacious", density: "airy", motion: "smooth", elevation: "flat"
+  pageBg: "#0a0a0a", surfaceBg: "#141414", headerBg: "transparent", textPrimary: "#ffffff"
+  primaryColor: "#ffffff", accentColor: "#d4af37", btnRadius: "0px", cardRadius: "0px"
+  personality: "zara-like"
+
+TikTok Shop / viral / energetic / Gen-Z:
+  layoutType: "app-like", spacing: "compact", density: "dense", motion: "expressive", elevation: "raised"
+  pageBg: "#010101", surfaceBg: "#161823", headerBg: "#010101", textPrimary: "#ffffff"
+  primaryColor: "#fe2c55", accentColor: "#25f4ee", btnRadius: "4px", cardRadius: "8px"
+  personality: "tiktok-like"
+
+Airbnb / clean marketplace / card-heavy:
+  layoutType: "masonry", spacing: "comfortable", density: "normal", motion: "smooth", elevation: "subtle"
+  pageBg: "#ffffff", surfaceBg: "#ffffff", headerBg: "#ffffff", textPrimary: "#222222"
+  primaryColor: "#ff385c", accentColor: "#e61e4d", btnRadius: "8px", cardRadius: "12px"
+  personality: "airbnb-like"
 
 For any other prompt that doesn't match a known personality, use layoutType: "standard"
 and choose spacing/density/elevation/motion that fits the brand mood.

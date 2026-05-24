@@ -62,11 +62,13 @@ export interface DesignTokens {
   // ── Phase 1: Layout engine + personality tokens ───────────────────────────
   /**
    * Structural layout type.
-   * standard  → default token-driven layout (existing behaviour)
-   * app-like  → mobile-app skeleton: fixed bottom nav, story circles, list rows
-   * editorial → magazine skeleton: asymmetric grid, big typography, lots of air
+   * standard   → default token-driven layout (existing behaviour)
+   * app-like   → mobile-app skeleton: fixed bottom nav, story circles, list rows
+   * editorial  → magazine skeleton: asymmetric grid, big typography, lots of air
+   * masonry    → pinterest-style columns, varied card heights, visual-first
+   * fullscreen → immersive viewport sections with scroll snap, one hero product at a time
    */
-  layoutType?: 'standard' | 'app-like' | 'editorial';
+  layoutType?: 'standard' | 'app-like' | 'editorial' | 'masonry' | 'fullscreen';
   /** Spacing scale applied across padding/margin/gap */
   spacing?: 'compact' | 'comfortable' | 'spacious';
   /** Content density — how much info is packed per screen */
