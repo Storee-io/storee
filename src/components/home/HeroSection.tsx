@@ -287,6 +287,7 @@ export default function HeroSection() {
       ...designOverride,
       ...(selectedCurr ? { currency: selectedCurr } : {}),
       ...(selectedLang ? { language: selectedLang } : {}),
+      prompt,
     };
 
     // Save to localStorage (fast, instant access on same browser)

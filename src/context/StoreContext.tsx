@@ -131,6 +131,8 @@ export interface Store {
   font?: string;
   mood?: string;
   audience?: string;
+  // Original generation prompt — used by Regenerate flow
+  prompt?: string;
 }
 
 export interface GenerationState {
