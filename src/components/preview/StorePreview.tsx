@@ -240,14 +240,29 @@ function FlyingDot({ item, primaryColor }: { item: FlyItem; primaryColor: string
 
 const PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='3'%3E%3Crect width='4' height='3' fill='%23f1f5f9'/%3E%3C/svg%3E";
 
-function ProductImg({ src, alt, className, style }: { src?: string; alt?: string; className?: string; style?: CSSProperties }) {
+function ProductImg({ src, alt, className, style, fallback }: { src?: string; alt?: string; className?: string; style?: CSSProperties; fallback?: string }) {
+  const [imgSrc, setImgSrc] = React.useState(src || PLACEHOLDER);
+  const triedFallback = React.useRef(false);
+
+  React.useEffect(() => {
+    setImgSrc(src || PLACEHOLDER);
+    triedFallback.current = false;
+  }, [src]);
+
   return (
     <img
-      src={src || PLACEHOLDER}
+      src={imgSrc}
       alt={alt || ''}
       className={className}
       style={style}
-      onError={e => { e.currentTarget.src = PLACEHOLDER; }}
+      onError={() => {
+        if (!triedFallback.current && fallback && fallback !== imgSrc) {
+          triedFallback.current = true;
+          setImgSrc(fallback);
+        } else {
+          setImgSrc(PLACEHOLDER);
+        }
+      }}
     />
   );
 }
@@ -557,7 +572,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
                 {cart.map(({ product: p, qty }) => (
                   <div key={p.id} className="flex gap-4 px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
                     <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0" style={{ background: t.inputBg }}>
-                      <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                      <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: t.textMuted }}>{p.category}</p>
@@ -880,7 +895,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             {cart.map(({ product: p, qty }) => (
               <div key={p.id} className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0" style={{ background: t.inputBg }}>
-                  <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                  <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium truncate" style={{ color: t.textPrimary }}>{p.name}</p>
@@ -1433,7 +1448,7 @@ function SearchOverlay({ open, onClose, products, primaryColor, onProductClick, 
             <button key={p.id} onClick={() => { onProductClick(p); onClose(); setQuery(''); }}
               className="w-full flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-0">
               <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
-                <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
@@ -1667,7 +1682,7 @@ function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onPro
                 onClick={() => onProductClick(p)}
               >
                 <div className="relative aspect-square" style={{ background: t.inputBg }}>
-                  <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                  <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                   {p.badge && (
                     <span className="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: t.primary }}>
                       {p.badge}
@@ -1852,7 +1867,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
           {displayed.map(p => (
             <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
               <div className="relative overflow-hidden rounded-2xl mb-3" style={{ aspectRatio: isMobile ? '3/4' : '3/4', background: tt.surfaceBg }}>
-                <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 {p.badge && (
                   <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{ background: primaryColor }}>{p.badge}</span>
                 )}
@@ -2052,7 +2067,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
           {displayed.map((p, idx) => (
             <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
               <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '3/4' }}>
-                <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700" style={{ transition: 'transform 0.7s ease' }} />
+                <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700" style={{ transition: 'transform 0.7s ease' }} />
                 {/* Overlay gradient at bottom */}
                 <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-black/80 to-transparent" />
                 {p.badge && (
@@ -2245,7 +2260,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
           {displayed.map(p => (
             <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
               <div className="relative overflow-hidden mb-4" style={{ aspectRatio: '3/4', background: tt.surfaceBg }}>
-                <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover transition-transform duration-1000" style={{ transform: 'scale(1)', transition: 'transform 1s ease' }} />
+                <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover transition-transform duration-1000" style={{ transform: 'scale(1)', transition: 'transform 1s ease' }} />
                 {p.badge && (
                   <span className="absolute top-3 left-3 text-[9px] font-bold tracking-widest px-2.5 py-1 text-white" style={{ background: primaryColor, letterSpacing: '0.15em', fontFamily: 'system-ui' }}>
                     {p.badge.toUpperCase()}
@@ -2412,7 +2427,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
             {products.slice(0, 4).map(p => (
               <div key={p.id} className="flex-shrink-0 w-32 rounded-2xl overflow-hidden shadow-md cursor-pointer" onClick={() => onProductClick(p)}>
                 <div className="h-28" style={{ background: tt.surfaceBg }}>
-                  <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                  <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                 </div>
                 <div className="p-2" style={{ background: tt.surfaceBg }}>
                   <p className="text-[11px] font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
@@ -2458,7 +2473,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
                     onClick={() => onProductClick(p)}
                   >
                     <div className="relative w-full h-full">
-                      <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                      <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                       <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/65 to-transparent">
                         <p className="text-white text-xs font-semibold truncate">{p.name}</p>
                         <p className="text-white/80 text-xs">{fmtPrice(p.price)}</p>
@@ -2492,7 +2507,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
           {displayed.map(p => (
             <div key={p.id} className="group rounded-3xl border overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer" style={{ background: tt.surfaceBg, borderColor: tt.divider }} onClick={() => onProductClick(p)}>
               <div className="relative aspect-square overflow-hidden" style={{ background: tt.surfaceBg }}>
-                <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 {p.badge && (
                   <span className="absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-full text-white shadow-sm" style={{ background: primaryColor }}>{p.badge}</span>
                 )}
@@ -2666,7 +2681,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
                 {products.slice(0, 4).map((p, i) => (
                   <div key={p.id} className="rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition-transform cursor-pointer" style={{ background: tt.surfaceBg }} onClick={() => onProductClick(p)}>
                     <div className="aspect-square">
-                      <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                      <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                     </div>
                     <div className="p-2.5">
                       <p className="text-xs font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
@@ -2716,7 +2731,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
               style={{ background: tt.surfaceBg, borderColor: alpha(idx % 2 === 0 ? primaryColor : accentColor, 0.25) }}
               onClick={() => onProductClick(p)}>
               <div className="relative aspect-square overflow-hidden" style={{ background: tt.surfaceBg }}>
-                <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 {p.badge && (
                   <span className="absolute top-3 left-3 text-[10px] font-black px-3 py-1.5 rounded-full text-white shadow-lg" style={{ background: idx % 2 === 0 ? primaryColor : accentColor }}>
                     {p.badge}
@@ -2875,7 +2890,7 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
           {products.map(p => (
             <div key={p.id} className="group rounded-2xl overflow-hidden hover:shadow-lg transition-all cursor-pointer" style={{ background: tt.surfaceBg, border: `1px solid ${tt.divider}` }} onClick={() => onProductClick(p)}>
               <div className="relative aspect-square" style={{ background: tt.surfaceBg }}>
-                <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 {p.badge && <span className="absolute top-2 left-2 px-2 py-0.5 text-xs font-bold text-white rounded-full" style={{ background: primaryColor }}>{p.badge}</span>}
                 <button
                   onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
@@ -4028,7 +4043,7 @@ function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts, h
                 zIndex: 3 - i,
                 transition: 'transform 0.3s ease',
               }}>
-              <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+              <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
               {/* Top label on front card */}
               {i === 0 && (
                 <div className="absolute bottom-0 left-0 right-0 p-3" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)' }}>
@@ -4141,7 +4156,7 @@ function TkGridStaggered({ products, tt, primaryColor, device, onProductClick, o
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'}
         >
           <div className="relative overflow-hidden mb-3" style={{ aspectRatio: i % 3 === 1 ? '4/5' : '3/4', borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
-            <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+            <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
             {p.badge && <span className="absolute top-3 left-3 text-[10px] font-black uppercase px-2.5 py-1 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>{p.badge}</span>}
             <button onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
               className="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity">
@@ -4202,7 +4217,7 @@ function TkGridOverlapping({ products, tt, primaryColor, device, onProductClick,
               onMouseLeave={e => { if (!isMobile) { (e.currentTarget as HTMLElement).style.transform = 'scale(1) translateY(0)'; (e.currentTarget as HTMLElement).style.zIndex = String(ci + 1); } }}
             >
               <div className="relative overflow-hidden" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', background: tt.surfaceBg }}>
-                <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                 {p.badge && <span className="absolute top-3 left-3 text-[10px] font-black uppercase px-2.5 py-1 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>{p.badge}</span>}
                 {/* Bottom overlay */}
                 <div className="absolute bottom-0 left-0 right-0 p-4" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }}>
@@ -4239,7 +4254,7 @@ function TkGridAsymmetric({ products, tt, primaryColor, device, onProductClick, 
   const ProductCard = ({ p, aspect }: { p: RichProduct; aspect: string }) => (
     <div className="group cursor-pointer" onClick={() => onProductClick(p)}>
       <div className="relative overflow-hidden mb-3" style={{ aspectRatio: aspect, borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
-        <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+        <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
         {p.badge && <span className="absolute top-3 left-3 text-[10px] font-black uppercase px-2.5 py-1 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>{p.badge}</span>}
         <button onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
           className="absolute top-3 right-3 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity">
@@ -4306,7 +4321,7 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
       {products.map((p) => (
         <motion.div key={p.id} className="group cursor-pointer" variants={doStagger ? cardVariant : undefined} onClick={() => onProductClick(p)}>
           <div className="relative overflow-hidden mb-3" style={{ aspectRatio: dv.cardAspect, borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
-            <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+            <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
             {p.badge && (
               <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>
                 {p.badge}
@@ -4397,7 +4412,7 @@ function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, on
       {rest.slice(0, isMobile ? 4 : 4).map(p => (
         <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
           <div className="relative overflow-hidden mb-3" style={{ aspectRatio: '1/1', borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
-            <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             {p.badge && (
               <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>
                 {p.badge}
@@ -4445,7 +4460,7 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
           onClick={() => onProductClick(p)}
         >
           <div className={`${imgSize} flex-shrink-0 overflow-hidden`} style={{ borderRadius: tt.surfaceRadius, background: tt.inputBg }}>
-            <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           </div>
           <div className="flex-1 min-w-0 flex flex-col justify-between">
             <div>
@@ -4505,7 +4520,7 @@ function TkGridCarousel({ products, tt, primaryColor, device, onProductClick, on
             onClick={() => onProductClick(p)}
           >
             <div className="relative overflow-hidden mb-3" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius }}>
-              <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
               {p.badge && (
                 <span className="absolute top-3 left-3 text-[10px] font-black uppercase px-2.5 py-1 text-white"
                   style={{ background: primaryColor, borderRadius: tt.btnRadius }}>{p.badge}</span>
@@ -4584,7 +4599,7 @@ function TkGridSpotlight({ products, tt, primaryColor, device, onProductClick, o
         {rest.map(p => (
           <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
             <div className="relative overflow-hidden mb-2" style={{ aspectRatio: '1/1', borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
-              <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               {p.badge && <span className="absolute top-2 left-2 text-[8px] font-black uppercase px-1.5 py-0.5 text-white"
                 style={{ background: primaryColor, borderRadius: tt.btnRadius }}>{p.badge}</span>}
               <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
@@ -5515,7 +5530,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
             {filtered.map(p => (
               <div key={p.id} className="cursor-pointer group" onClick={() => onProductClick(p)}>
                 <div className="relative aspect-square rounded-lg overflow-hidden mb-2">
-                  <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                   <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 55%)' }} />
                   <button
                     onClick={e => { e.stopPropagation(); const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); onAddToCart(p, rect); }}
@@ -5536,7 +5551,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
           <div className="flex flex-col gap-1 pb-2">
             {filtered.map(p => (
               <div key={p.id} className="relative cursor-pointer overflow-hidden" style={{ height: '280px' }} onClick={() => onProductClick(p)}>
-                <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                 {/* Dark gradient overlay */}
                 <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 50%)' }} />
                 {/* Badge top-left */}
@@ -5579,7 +5594,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
                 onClick={() => onProductClick(p)}
               >
                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                  <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                  <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
@@ -5610,7 +5625,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
               >
                 {/* Round product image */}
                 <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 shadow-sm">
-                  <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                  <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                 </div>
 
                 {/* Content */}
@@ -5946,7 +5961,7 @@ function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart
   return (
     <div className="group cursor-pointer" onClick={() => onProductClick(p)}>
       <div className="relative overflow-hidden" style={{ aspectRatio: featured ? '16/9' : '3/4', borderRadius: tt.surfaceRadius }}>
-        <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+        <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
         {p.badge && (
           <span className="absolute top-3 left-3 text-[9px] font-black uppercase tracking-wider px-2.5 py-1"
             style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: '999px' }}>{p.badge}</span>
@@ -6157,7 +6172,7 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
             >
               {/* Image */}
               <div style={{ aspectRatio: aspectRatios[idx % aspectRatios.length], position: 'relative', overflow: 'hidden' }}>
-                <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                 {isInstagram ? (
                   /* Instagram hover overlay */
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 opacity-0 hover:opacity-100 transition-opacity"
@@ -6372,7 +6387,7 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
           >
             {/* Full-bleed background image */}
             <div className="absolute inset-0">
-              <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+              <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
               <div className="absolute inset-0" style={{
                 background: isDarkBg
                   ? 'linear-gradient(to top, rgba(0,0,0,0.85) 35%, rgba(0,0,0,0.15) 70%, transparent)'
@@ -6451,7 +6466,7 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
               {restProducts.map(p => (
                 <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
                   <div className="relative overflow-hidden" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius }}>
-                    <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     {p.badge && (
                       <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5 rounded-full"
                         style={{ background: pc, color: pcText }}>{p.badge}</span>

@@ -68,9 +68,13 @@ export async function generateStoreWithClaude(
         };
 
         // Replace static pool URLs with Pexels URLs (skip if Pexels returned null)
+        // Keep the original Unsplash URL as imageFallback so ProductImg can
+        // retry it if the Pexels URL fails (deleted photo, CDN issue, etc.)
         config.design.products = config.design.products.map(p => {
           const found = images.find(img => img.name === p.name);
-          return found?.url ? { ...p, image: found.url } : p;
+          return found?.url
+            ? { ...p, image: found.url, imageFallback: p.image }
+            : p;
         });
       }
     } catch {

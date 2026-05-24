@@ -10,6 +10,8 @@ export interface RichProduct {
   price: number;
   originalPrice?: number;
   image: string;
+  /** Unsplash fallback URL — used if primary (Pexels) image fails to load */
+  imageFallback?: string;
   category: string;
   badge?: string;
   description: string;
