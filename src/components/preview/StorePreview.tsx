@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { CSSProperties } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, Copy, MessageCircle, MapPin, Phone, Mail, ChevronDown, User, LogOut, Package, Eye, EyeOff,
   // EmojiIcon pool
   Wrench, Truck, Shield, Lock, Trophy, Award, Medal, Leaf, Sprout, Zap, Battery, Rocket,
@@ -3044,118 +3046,101 @@ function getAnimArchetype(personality?: string, motion?: string): AnimArchetype 
   return 'default';
 }
 
-// ── CSS Keyframes injector ────────────────────────────────────────────────────
+// ── CSS injector (CSS-only effects that Framer doesn't handle) ────────────────
 function AnimationInjector() {
   return (
     <style>{`
-      @keyframes sk-fadeUp   { from { opacity:0; transform:translateY(28px); } to { opacity:1; transform:translateY(0); } }
-      @keyframes sk-fadeIn   { from { opacity:0; } to { opacity:1; } }
-      @keyframes sk-slideLeft{ from { opacity:0; transform:translateX(32px); } to { opacity:1; transform:translateX(0); } }
-      @keyframes sk-stagger  { from { opacity:0; transform:translateY(18px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
-      @keyframes sk-glow     { 0%,100% { box-shadow: 0 0 0 0 var(--sk-glow-color,rgba(99,102,241,0)); } 50% { box-shadow: 0 0 18px 4px var(--sk-glow-color,rgba(99,102,241,0.45)); } }
-      @keyframes sk-gradShift{ 0% { background-position:0% 50%; } 50% { background-position:100% 50%; } 100% { background-position:0% 50%; } }
-      @keyframes sk-kenBurns { from { transform:scale(1); } to { transform:scale(1.06); } }
-      @keyframes sk-pulseRing{ 0% { transform:scale(1); opacity:.7; } 70% { transform:scale(2.2); opacity:0; } 100% { transform:scale(2.2); opacity:0; } }
-
-      .sk-reveal            { opacity:0; }
-      .sk-reveal.sk-visible { animation-fill-mode:both; animation-timing-function:ease-out; }
-
-      /* luxury — slow fade-up */
-      .sk-reveal.sk-visible.sk-arch-luxury  { animation-name:sk-fadeUp; animation-duration:700ms; }
-      /* tech — slide from right */
-      .sk-reveal.sk-visible.sk-arch-tech    { animation-name:sk-slideLeft; animation-duration:450ms; animation-timing-function:cubic-bezier(0.22,1,0.36,1); }
-      /* fashion — fade-up, tighter */
-      .sk-reveal.sk-visible.sk-arch-fashion { animation-name:sk-stagger; animation-duration:550ms; animation-timing-function:cubic-bezier(0.16,1,0.3,1); }
-      /* hype — snap with spring */
-      .sk-reveal.sk-visible.sk-arch-hype    { animation-name:sk-stagger; animation-duration:380ms; animation-timing-function:cubic-bezier(0.34,1.56,0.64,1); }
-      /* default — simple fade-up */
-      .sk-reveal.sk-visible.sk-arch-default { animation-name:sk-fadeUp; animation-duration:500ms; }
-
-      /* Glow ring on CTA buttons for tech/hype */
+      /* Glow ring on CTA buttons — CSS ::after pseudo-element */
+      @keyframes sk-glow { 0%,100% { box-shadow:0 0 0 0 var(--sk-glow-color,rgba(99,102,241,0)); } 50% { box-shadow:0 0 18px 4px var(--sk-glow-color,rgba(99,102,241,0.45)); } }
       .sk-glow-btn { position:relative; overflow:visible; }
-      .sk-glow-btn::after {
-        content:''; position:absolute; inset:0;
-        border-radius:inherit;
-        animation: sk-glow 2.4s ease-in-out infinite;
-      }
+      .sk-glow-btn::after { content:''; position:absolute; inset:0; border-radius:inherit; animation:sk-glow 2.4s ease-in-out infinite; }
 
-      /* Animated gradient header for tech */
-      .sk-grad-header {
-        background-size:200% 200%;
-        animation: sk-gradShift 6s ease infinite;
-      }
+      /* Animated gradient header — background-position keyframe */
+      @keyframes sk-gradShift { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
+      .sk-grad-header { background-size:200% 200%; animation:sk-gradShift 6s ease infinite; }
 
-      /* Ken-Burns on hero image for luxury */
-      .sk-ken-burns { animation: sk-kenBurns 12s ease-out forwards; }
+      /* Ken-Burns slow zoom on hero images */
+      @keyframes sk-kenBurns { from{transform:scale(1);} to{transform:scale(1.06);} }
+      .sk-ken-burns { animation:sk-kenBurns 12s ease-out forwards; }
     `}</style>
   );
 }
 
-// ── useScrollReveal hook ──────────────────────────────────────────────────────
-function useScrollReveal(archetype: AnimArchetype, delayMs = 0) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || archetype === 'default') {
-      // still reveal but without arch class
-    }
-    if (!el) return;
-    el.classList.add('sk-reveal', `sk-arch-${archetype}`);
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setTimeout(() => {
-            el.classList.add('sk-visible');
-            el.style.animationDelay = `${delayMs}ms`;
-          }, delayMs);
-          obs.unobserve(el);
-        }
-      },
-      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [archetype, delayMs]);
-  return ref;
-}
+// ── Framer Motion: per-archetype reveal variants ──────────────────────────────
+const REVEAL_VARIANTS: Record<AnimArchetype, Variants> = {
+  luxury: {
+    hidden:  { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.75, ease: [0.25, 0.1, 0.25, 1] } },
+  },
+  tech: {
+    hidden:  { opacity: 0, x: 28 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } },
+  },
+  fashion: {
+    hidden:  { opacity: 0, y: 20, scale: 0.97 },
+    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] } },
+  },
+  hype: {
+    hidden:  { opacity: 0, y: 20, scale: 0.95 },
+    visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 220, damping: 18 } },
+  },
+  default: {
+    hidden:  { opacity: 0, y: 22 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+  },
+};
 
-// ── RevealWrapper component ───────────────────────────────────────────────────
+// Stagger container — children animate in sequence
+const STAGGER_CONTAINER: Variants = {
+  hidden:  {},
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+};
+
+const STAGGER_CONTAINER_SLOW: Variants = {
+  hidden:  {},
+  visible: { transition: { staggerChildren: 0.14, delayChildren: 0.1 } },
+};
+
+// ── RevealWrapper — Framer whileInView scroll-triggered reveal ────────────────
 function RevealWrapper({
   archetype,
-  delay = 0,
   children,
   className = '',
   style,
 }: {
   archetype: AnimArchetype;
-  delay?: number;
+  delay?: number;   // kept for API compat, unused (use stagger instead)
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const ref = useScrollReveal(archetype, delay);
+  const variants = REVEAL_VARIANTS[archetype] ?? REVEAL_VARIANTS.default;
   return (
-    <div ref={ref} className={className} style={style}>
+    <motion.div
+      className={className}
+      style={style}
+      variants={variants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-40px' }}
+    >
       {children}
-    </div>
+    </motion.div>
   );
 }
 
-// ── useParallax hook (luxury hero image) ─────────────────────────────────────
+// ── useParallax — Framer useScroll + useTransform ─────────────────────────────
 function useParallax(strength = 0.12) {
   const ref = useRef<HTMLDivElement>(null);
+  const { scrollY } = useScroll();
+  const [elemTop, setElemTop] = useState(0);
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const onScroll = () => {
-      const rect = el.getBoundingClientRect();
-      const offset = (window.innerHeight / 2 - rect.top - rect.height / 2) * strength;
-      el.style.transform = `translateY(${offset.toFixed(1)}px)`;
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [strength]);
-  return ref;
+    if (ref.current) setElemTop(ref.current.getBoundingClientRect().top + window.scrollY);
+  }, []);
+  const range: [number, number] = [elemTop - 600, elemTop + 600];
+  const offset = strength * 120;
+  const y = useTransform(scrollY, range, [offset, -offset]);
+  return { ref, y };
 }
 
 // ── getGlowStyle — pulsing glow for CTA buttons (tech / hype) ────────────────
@@ -3378,17 +3363,19 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts }
   const isLuxury = arch === 'luxury';
   const isTechHype = arch === 'tech' || arch === 'hype';
 
-  // staggered in-load animation for hero text lines
-  const fadeDelay = (n: number) => ({
-    animation: `sk-fadeUp ${isLuxury ? '900ms' : '550ms'} ease-out ${n * (isLuxury ? 180 : 100)}ms both`,
-  } as React.CSSProperties);
+  // Framer stagger container — children animate in sequence on mount
+  const heroStagger: Variants = {
+    hidden:  {},
+    visible: { transition: { staggerChildren: isLuxury ? 0.18 : 0.1, delayChildren: 0.1 } },
+  };
+  const heroItem = REVEAL_VARIANTS[arch] ?? REVEAL_VARIANTS.default;
 
   return (
     <section className="relative overflow-hidden" style={{ minHeight: isMobile ? '60vh' : '70vh' }}>
       {bgImage && (
         <>
           <div className="absolute inset-0 overflow-hidden">
-            {/* Ken-Burns slow zoom for luxury archetype */}
+            {/* Ken-Burns slow zoom for luxury archetype (CSS only — scale doesn't need spring) */}
             <ProductImg src={bgImage} alt=""
               className={`w-full h-full object-cover${isLuxury ? ' sk-ken-burns' : ''}`}
               style={isLuxury ? { transformOrigin: 'center center', animationDuration: '14s' } : undefined} />
@@ -3396,26 +3383,33 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts }
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.65) 100%)' }} />
         </>
       )}
-      <div className="relative z-10 flex flex-col items-center justify-center text-center px-5" style={{ minHeight: isMobile ? '60vh' : '70vh', padding: isMobile ? '60px 20px' : '80px 40px' }}>
+      <motion.div
+        className="relative z-10 flex flex-col items-center justify-center text-center px-5"
+        style={{ minHeight: isMobile ? '60vh' : '70vh', padding: isMobile ? '60px 20px' : '80px 40px' }}
+        variants={heroStagger} initial="hidden" animate="visible"
+      >
         {tagline && (
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] mb-4" style={{ ...fadeDelay(0), color: alpha(primaryColor, 0.9) }}>
+          <motion.p variants={heroItem} className="text-xs font-semibold uppercase tracking-[0.3em] mb-4" style={{ color: alpha(primaryColor, 0.9) }}>
             {collections[0]?.emoji} {tagline}
-          </p>
+          </motion.p>
         )}
-        <h1 className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.4 : 4.0), ...fadeDelay(1), color: bgImage ? '#ffffff' : tt.textPrimary }}>
+        <motion.h1 variants={heroItem} className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.4 : 4.0), color: bgImage ? '#ffffff' : tt.textPrimary }}>
           {heroTitle}
-        </h1>
-        <p className="mb-8 max-w-lg" style={{ ...bodyStyle(tt), ...fadeDelay(2), fontSize: '0.875rem', color: bgImage ? 'rgba(255,255,255,0.82)' : tt.textSecondary }}>
+        </motion.h1>
+        <motion.p variants={heroItem} className="mb-8 max-w-lg" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: bgImage ? 'rgba(255,255,255,0.82)' : tt.textSecondary }}>
           {heroSubtitle}
-        </p>
+        </motion.p>
         {/* Glow CTA for tech/hype archetypes */}
-        <button
+        <motion.button
+          variants={heroItem}
           onClick={onScrollToProducts}
-          className={`px-8 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity${isTechHype ? ' sk-glow-btn' : ''}`}
-          style={{ ...fadeDelay(3), background: primaryColor, color: btnText, borderRadius: tt.btnRadius, ...(isTechHype ? getGlowCssVar(primaryColor) : {}) }}>
+          whileHover={{ scale: 1.04, opacity: 0.92 }}
+          whileTap={{ scale: 0.97 }}
+          className={`px-8 py-3.5 text-sm font-bold${isTechHype ? ' sk-glow-btn' : ''}`}
+          style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius, ...(isTechHype ? getGlowCssVar(primaryColor) : {}) }}>
           {ctaText}
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
     </section>
   );
 }
@@ -3432,45 +3426,53 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
   const arch = getAnimArchetype(tt.personality, tt.motion);
   const isLuxury = arch === 'luxury';
   const isTechHype = arch === 'tech' || arch === 'hype';
-  const parallaxRef = useParallax(isLuxury ? 0.08 : 0);
-  const fadeDelay = (n: number) => ({
-    animation: `sk-fadeUp ${isLuxury ? '800ms' : '500ms'} ease-out ${n * 120}ms both`,
-  } as React.CSSProperties);
+  const { ref: parallaxRef, y: parallaxY } = useParallax(isLuxury ? 0.08 : 0);
+
+  const heroStagger: Variants = {
+    hidden:  {},
+    visible: { transition: { staggerChildren: isLuxury ? 0.16 : 0.1, delayChildren: 0.08 } },
+  };
+  const heroItem = REVEAL_VARIANTS[arch] ?? REVEAL_VARIANTS.default;
 
   return (
     <section style={{ background: tt.pageBg }}>
       <div className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-10 flex flex-col gap-8' : 'py-16 grid grid-cols-2 gap-14 items-center'}`}>
-        <div>
+        <motion.div variants={heroStagger} initial="hidden" animate="visible">
           {tagline && (
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] mb-5" style={{ ...fadeDelay(0), color: primaryColor }}>
+            <motion.p variants={heroItem} className="text-[10px] font-bold uppercase tracking-[0.3em] mb-5" style={{ color: primaryColor }}>
               {collections[0]?.emoji} {tagline}
-            </p>
+            </motion.p>
           )}
-          <h1 className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.4 : 3.6), ...fadeDelay(1), color: tt.textPrimary }}>
+          <motion.h1 variants={heroItem} className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.4 : 3.6), color: tt.textPrimary }}>
             {heroTitle}
-          </h1>
-          <p className="mb-8 max-w-sm" style={{ ...bodyStyle(tt), ...fadeDelay(2), fontSize: '0.875rem', color: tt.textSecondary }}>
+          </motion.h1>
+          <motion.p variants={heroItem} className="mb-8 max-w-sm" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>
             {heroSubtitle}
-          </p>
-          <div className="flex items-center gap-4" style={fadeDelay(3)}>
-            <button
+          </motion.p>
+          <motion.div variants={heroItem} className="flex items-center gap-4">
+            <motion.button
               onClick={onScrollToProducts}
-              className={`px-7 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity${isTechHype ? ' sk-glow-btn' : ''}`}
+              whileHover={{ scale: 1.04, opacity: 0.92 }}
+              whileTap={{ scale: 0.97 }}
+              className={`px-7 py-3.5 text-sm font-bold${isTechHype ? ' sk-glow-btn' : ''}`}
               style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius, ...(isTechHype ? getGlowCssVar(primaryColor) : {}) }}>
               {ctaText}
-            </button>
+            </motion.button>
             <button onClick={onScrollToProducts} className="text-xs font-semibold flex items-center gap-1.5 hover:opacity-70 transition-opacity" style={{ color: tt.textMuted }}>
               Explore <ArrowRight className="w-3.5 h-3.5" />
             </button>
-          </div>
-        </div>
-        <div className="relative">
-          {/* Parallax wrapper for luxury archetype */}
-          <div ref={isLuxury ? parallaxRef : undefined} className="overflow-hidden shadow-2xl" style={{ aspectRatio: '4/5', borderRadius: tt.surfaceRadius }}>
+          </motion.div>
+        </motion.div>
+        <motion.div className="relative" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, delay: 0.25, ease: [0.25, 0.1, 0.25, 1] }}>
+          {/* Parallax wrapper — Framer motion.div with y spring transform */}
+          <motion.div
+            ref={parallaxRef}
+            style={{ aspectRatio: '4/5', borderRadius: tt.surfaceRadius, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', ...(isLuxury ? { y: parallaxY } : {}) }}
+          >
             <ProductImg src={products[0]?.image} alt=""
               className={`w-full h-full object-cover${isLuxury ? ' sk-ken-burns' : ''}`}
               style={isLuxury ? { animationDuration: '10s' } : undefined} />
-          </div>
+          </motion.div>
           {!isMobile && products[1] && (
             <div className="absolute -bottom-6 -left-8 bg-white rounded-2xl p-4 shadow-2xl" style={{ maxWidth: '180px' }}>
               <div className="flex items-center gap-3">
@@ -3490,7 +3492,7 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
               {collections[1].emoji} {collections[1].name}
             </div>
           )}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -4054,13 +4056,21 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
   const isMobile = device === 'mobile';
   const arch = getAnimArchetype(tt.personality, tt.motion);
   const doStagger = arch === 'fashion' || arch === 'hype' || arch === 'luxury';
-  const staggerStyle = (i: number): React.CSSProperties => doStagger ? {
-    animation: `sk-stagger 500ms cubic-bezier(0.16,1,0.3,1) ${80 + i * 60}ms both`,
-  } : {};
+  const cardVariant = REVEAL_VARIANTS[arch] ?? REVEAL_VARIANTS.default;
+  const staggerContainer: Variants = {
+    hidden:  {},
+    visible: { transition: { staggerChildren: arch === 'luxury' ? 0.1 : 0.07, delayChildren: 0.05 } },
+  };
   return (
-    <div className={`grid ${gridCols(device)} gap-4 md:gap-5`}>
-      {products.map((p, i) => (
-        <div key={p.id} className="group cursor-pointer" style={staggerStyle(i)} onClick={() => onProductClick(p)}>
+    <motion.div
+      className={`grid ${gridCols(device)} gap-4 md:gap-5`}
+      variants={doStagger ? staggerContainer : undefined}
+      initial={doStagger ? 'hidden' : undefined}
+      whileInView={doStagger ? 'visible' : undefined}
+      viewport={{ once: true, margin: '-30px' }}
+    >
+      {products.map((p) => (
+        <motion.div key={p.id} className="group cursor-pointer" variants={doStagger ? cardVariant : undefined} onClick={() => onProductClick(p)}>
           <div className="relative overflow-hidden mb-3" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
             <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
             {p.badge && (
@@ -4090,9 +4100,9 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
             <span className="text-sm font-black" style={{ color: tt.primary }}>{fmtPrice(p.price)}</span>
             {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
           </div>
-        </div>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }
 
@@ -4478,7 +4488,7 @@ type SectionVariants = NonNullable<import('../../../src/lib/claudeApi').DesignTo
 
 // ── Features variants ─────────────────────────────────────────────────────────
 
-function FeaturesSection({ features, tt, primaryColor, device, motion, elevation, sectionPy, variant }: {
+function FeaturesSection({ features, tt, primaryColor, device, motion: motionLevel, elevation, sectionPy, variant }: {
   features: Array<{ icon: string; title: string; description: string }>;
   tt: TokenTheme; primaryColor: string; device: DeviceMode;
   motion: MotionLevel; elevation: ElevationLevel; sectionPy: number;
@@ -4486,8 +4496,12 @@ function FeaturesSection({ features, tt, primaryColor, device, motion, elevation
 }) {
   const isMobile = device === 'mobile';
   const pc = primaryColor;
-  const cardStagger = (i: number): React.CSSProperties =>
-    motion !== 'none' ? { animation: `sk-stagger 520ms cubic-bezier(0.16,1,0.3,1) ${i * 90}ms both` } : {};
+  const arch = getAnimArchetype(tt.personality, tt.motion);
+  const featureCardVariant = REVEAL_VARIANTS[arch] ?? REVEAL_VARIANTS.default;
+  const featureStagger: Variants = {
+    hidden:  {},
+    visible: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } },
+  };
 
   if (variant === 'alternating') {
     return (
@@ -4529,9 +4543,9 @@ function FeaturesSection({ features, tt, primaryColor, device, motion, elevation
                 border: `1px solid ${i === 0 ? 'transparent' : tt.surfaceBorder}`,
                 borderRadius: tt.surfaceRadius,
                 boxShadow: getElevationShadow(elevation),
-                transition: getMotionTransition(motion),
+                transition: getMotionTransition(motionLevel),
               }}
-              onMouseEnter={e => { if (motion !== 'none') (e.currentTarget as HTMLElement).style.transform = getHoverScale(motion); }}
+              onMouseEnter={e => { if (motionLevel !== 'none') (e.currentTarget as HTMLElement).style.transform = getHoverScale(motionLevel); }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}>
               <div style={{ marginBottom: '12px' }}>
                 <EmojiIcon emoji={f.icon} size={i === 0 ? 40 : 28} color={i === 0 ? (isDark(pc) ? '#fff' : '#000') : pc} strokeWidth={1.5} />
@@ -4548,13 +4562,19 @@ function FeaturesSection({ features, tt, primaryColor, device, motion, elevation
   // Default: icons
   return (
     <section className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
-      <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-6'}`}>
+      <motion.div
+        className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-6'}`}
+        variants={motionLevel !== 'none' ? featureStagger : undefined}
+        initial={motionLevel !== 'none' ? 'hidden' : undefined}
+        whileInView={motionLevel !== 'none' ? 'visible' : undefined}
+        viewport={{ once: true, margin: '-30px' }}
+      >
         {features.map((f, i) => (
-          <div key={i} className="flex items-start gap-4 p-6"
-            style={{ ...cardStagger(i), background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius,
-              boxShadow: getElevationShadow(elevation), transition: getMotionTransition(motion) }}
-            onMouseEnter={e => { if (motion !== 'none') (e.currentTarget as HTMLElement).style.transform = getHoverScale(motion); }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}>
+          <motion.div key={i} className="flex items-start gap-4 p-6"
+            variants={motionLevel !== 'none' ? featureCardVariant : undefined}
+            whileHover={motionLevel !== 'none' ? { scale: parseFloat(getHoverScale(motionLevel).replace('scale(','').replace(')','')) } : undefined}
+            style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius,
+              boxShadow: getElevationShadow(elevation), transition: getMotionTransition(motionLevel) }}>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: alpha(pc, 0.1) }}>
               <EmojiIcon emoji={f.icon} size={20} color={pc} strokeWidth={1.75} />
             </div>
@@ -4562,9 +4582,9 @@ function FeaturesSection({ features, tt, primaryColor, device, motion, elevation
               <h3 className="text-sm mb-1" style={{ ...headingStyle(tt, 0.875), color: tt.textPrimary }}>{f.title}</h3>
               <p className="text-xs" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>{f.description}</p>
             </div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </section>
   );
 }
