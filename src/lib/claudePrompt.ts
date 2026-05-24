@@ -58,8 +58,13 @@ The JSON must exactly match this shape:
   "promoBar": "string (short promo, max 12 words)",
   "newsletter": { "headline": "string (4-6 words)", "subtext": "string (10-15 words)" },
   "trustBadges": [{ "icon": "string (emoji)", "text": "string (3-5 words)" }],
-  "brandStory": "string (authentic 25-35 word origin or mission)"
+  "brandStory": "string (authentic 25-35 word origin or mission)",
+  "scrollingItems": ["string", "..."],
+  "instagramPosts": [{ "caption": "string (max 10 words)", "likes": number, "comments": number }]
 }
+
+scrollingItems and instagramPosts are OPTIONAL — only include them if you put
+"scrollingBanner" or "instagramFeed" in sectionOrder.
 
 ════════════════════════════════════════════════════════
 DESIGNER GUIDELINES — designTokens
@@ -175,13 +180,29 @@ productGrid:
   magazine   → first product large featured, rest 3-col (editorial, fashion, food)
   list       → full-width rows with description (few products, tech specs, books)
 
-sectionOrder — always include all 10 sections, in your chosen narrative flow:
+sectionOrder — always include all 10 core sections, plus optional bonus sections:
+
+Core sections (always include all 10):
   hero, trust, collections, products, features, testimonials, stats, brandStory, faq, newsletter
-  Storytelling tips:
+
+Optional bonus sections (add when they enhance the brand story):
+  scrollingBanner — auto-scrolling marquee strip. Use for: fashion, streetwear, beauty, lifestyle.
+                    Place after hero or between sections for rhythm. Requires scrollingItems array
+                    (8-12 short phrases like product names, brand slogans, or keywords).
+                    Example items: ["NEW SEASON", "FREE SHIPPING", "Silk Serum — Rp 299K", "★★★★★ 4.9 rating"]
+
+  instagramFeed   — photo grid mimicking an Instagram feed. Use for: lifestyle, fashion, food,
+                    beauty, travel. Place before newsletter. Requires instagramPosts array
+                    (6-9 objects with caption, likes, comments).
+                    Example: [{ "caption": "Sunday morning glow ☀️", "likes": 1243, "comments": 38 }]
+
+Storytelling tips:
   - Lead with products for impulse categories (fashion, food, beauty)
   - Lead with trust for new/unknown brands
   - Put features before products for complex items (tech, fitness equipment)
   - stats after testimonials for extra social proof
+  - scrollingBanner after hero adds energy for trend-driven brands
+  - instagramFeed before newsletter adds social proof and lifestyle appeal
   - Always end with faq and/or newsletter
 
 ── PHASE 1: PERSONALITY MAPPING ────────────────────────

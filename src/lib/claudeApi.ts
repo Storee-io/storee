@@ -57,7 +57,8 @@ export interface DesignTokens {
   heroStyle: 'centered' | 'split' | 'fullscreen' | 'minimal';
   productGrid: 'standard' | 'magazine' | 'list';
   sectionOrder: Array<'hero' | 'trust' | 'collections' | 'products' | 'features'
-                     | 'testimonials' | 'stats' | 'brandStory' | 'faq' | 'newsletter'>;
+                     | 'testimonials' | 'stats' | 'brandStory' | 'faq' | 'newsletter'
+                     | 'scrollingBanner' | 'instagramFeed'>;
 
   // ── Phase 1: Layout engine + personality tokens ───────────────────────────
   /**
@@ -89,7 +90,8 @@ export interface DesignSystem {
   buttonStyle: 'pill' | 'rounded' | 'square';
   productGrid: 'standard' | 'magazine' | 'list';
   sectionOrder: Array<'hero' | 'trust' | 'collections' | 'products' | 'features'
-                     | 'testimonials' | 'stats' | 'brandStory' | 'faq' | 'newsletter'>;
+                     | 'testimonials' | 'stats' | 'brandStory' | 'faq' | 'newsletter'
+                     | 'scrollingBanner' | 'instagramFeed'>;
 }
 
 export interface StoreDesign {
@@ -114,6 +116,10 @@ export interface StoreDesign {
   newsletter?: { headline: string; subtext: string };
   trustBadges?: Array<{ icon: string; text: string }>;
   brandStory?: string;
+  /** Scrolling marquee banner — array of short phrases / product names */
+  scrollingItems?: string[];
+  /** Instagram-feed section caption overrides (optional, uses products if absent) */
+  instagramPosts?: Array<{ caption: string; likes: number; comments: number }>;
 }
 
 export interface ClaudeStoreResponse {
@@ -144,6 +150,8 @@ export interface ClaudeStoreResponse {
   newsletter?: { headline: string; subtext: string };
   trustBadges?: Array<{ icon: string; text: string }>;
   brandStory?: string;
+  scrollingItems?: string[];
+  instagramPosts?: Array<{ caption: string; likes: number; comments: number }>;
   designSystem?: DesignSystem;
   designTokens?: DesignTokens;
 }
@@ -201,9 +209,11 @@ export function buildStoreConfig(parsed: ClaudeStoreResponse): GeneratedStoreCon
     ...(parsed.promoBar    ? { promoBar:     parsed.promoBar    } : {}),
     ...(parsed.newsletter  ? { newsletter:   parsed.newsletter  } : {}),
     ...(parsed.trustBadges ? { trustBadges:  parsed.trustBadges } : {}),
-    ...(parsed.brandStory    ? { brandStory:    parsed.brandStory    } : {}),
-    ...(parsed.designSystem  ? { designSystem:  parsed.designSystem  } : {}),
-    ...(parsed.designTokens  ? { designTokens:  parsed.designTokens  } : {}),
+    ...(parsed.brandStory      ? { brandStory:      parsed.brandStory      } : {}),
+    ...(parsed.scrollingItems  ? { scrollingItems:  parsed.scrollingItems  } : {}),
+    ...(parsed.instagramPosts  ? { instagramPosts:  parsed.instagramPosts  } : {}),
+    ...(parsed.designSystem    ? { designSystem:    parsed.designSystem    } : {}),
+    ...(parsed.designTokens    ? { designTokens:    parsed.designTokens    } : {}),
   };
 
   return {

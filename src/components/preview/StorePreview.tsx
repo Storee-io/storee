@@ -3408,6 +3408,129 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
   );
 }
 
+// ── SCROLLING BANNER SECTION ──────────────────────────────────────────────────
+// Auto-scrolling marquee strip — energetic, fashion/lifestyle brand accent
+
+function ScrollingBannerSection({ design, primaryColor, tt }: { design: StoreDesign; primaryColor: string; tt: TokenTheme }) {
+  const pc = primaryColor;
+  const pcText = isDark(pc) ? '#ffffff' : '#000000';
+
+  // Use scrollingItems if provided, else generate from product names + brand phrases
+  const rawItems: string[] = (design as StoreDesign & { scrollingItems?: string[] }).scrollingItems
+    ?? design.products.slice(0, 6).map(p => p.name).concat(
+      design.features?.slice(0, 3).map(f => f.title) ?? []
+    );
+  // Duplicate items enough to fill a seamless loop
+  const items = rawItems.length < 4 ? [...rawItems, ...rawItems, ...rawItems] : [...rawItems, ...rawItems];
+
+  return (
+    <div style={{ background: pc, overflow: 'hidden', paddingTop: '12px', paddingBottom: '12px', position: 'relative' }}>
+      <style>{`
+        @keyframes storee-marquee {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-50%); }
+        }
+        .storee-marquee-track {
+          display: flex;
+          width: max-content;
+          animation: storee-marquee 28s linear infinite;
+        }
+        .storee-marquee-track:hover { animation-play-state: paused; }
+      `}</style>
+      <div className="storee-marquee-track">
+        {items.map((item, i) => (
+          <span key={i} className="flex items-center gap-0 flex-shrink-0">
+            <span className="text-sm font-bold uppercase tracking-widest px-6 whitespace-nowrap"
+              style={{ color: pcText }}>{item}</span>
+            <span style={{ color: pcText, opacity: 0.45, fontSize: '10px' }}>✦</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── INSTAGRAM FEED SECTION ────────────────────────────────────────────────────
+// Lifestyle photo grid — square images with like/comment counts, profile header
+
+function InstagramFeedSection({ design, primaryColor, tt, device, onProductClick }: {
+  design: StoreDesign; primaryColor: string; tt: TokenTheme; device: string;
+  onProductClick: (p: RichProduct) => void;
+}) {
+  const pc = primaryColor;
+  const pcText = isDark(pc) ? '#ffffff' : '#000000';
+  const isMobile = device === 'mobile';
+
+  type InstaPost = { caption: string; likes: number; comments: number };
+  const posts: InstaPost[] = (design as StoreDesign & { instagramPosts?: InstaPost[] }).instagramPosts
+    ?? design.products.slice(0, 9).map((p, i) => ({
+      caption: p.description,
+      likes: 800 + i * 317 + (p.price % 500),
+      comments: 12 + i * 7,
+    }));
+
+  const cols = isMobile ? 3 : 4;
+  const displayPosts = posts.slice(0, cols === 3 ? 9 : 8);
+  const productForPost = (i: number) => design.products[i % design.products.length];
+
+  return (
+    <section style={{ background: tt.pageBg, borderTop: `1px solid ${tt.divider}` }}>
+      <div className="max-w-6xl mx-auto px-5 py-10">
+        {/* Section header — looks like an IG profile strip */}
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-black"
+            style={{ background: `linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)`, color: '#fff' }}>
+            {(design.products[0]?.name?.[0] ?? '✦')}
+          </div>
+          <div>
+            <p className="text-sm font-black" style={{ color: tt.textPrimary }}>@{design.products[0]?.category?.toLowerCase().replace(/\s+/g, '_') ?? 'store'}</p>
+            <p className="text-xs" style={{ color: tt.textMuted }}>Shop our latest posts</p>
+          </div>
+          <a href="#" className="ml-auto text-xs font-bold px-4 py-2 rounded-full border transition-all hover:opacity-75"
+            style={{ borderColor: pc, color: pc }}>Follow</a>
+        </div>
+
+        {/* Photo grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: '3px' }}>
+          {displayPosts.map((post, i) => {
+            const prod = productForPost(i);
+            return (
+              <div key={i} className="relative group cursor-pointer overflow-hidden"
+                style={{ aspectRatio: '1/1' }}
+                onClick={() => onProductClick(prod)}
+              >
+                <ProductImg src={prod.image} alt={prod.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                {/* Hover overlay */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  style={{ background: 'rgba(0,0,0,0.5)' }}>
+                  <p className="text-white text-xs font-semibold text-center px-2 leading-tight line-clamp-2">{post.caption}</p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="text-white text-xs flex items-center gap-1">
+                      <Heart className="w-3 h-3 fill-white" /> {post.likes.toLocaleString()}
+                    </span>
+                    <span className="text-white text-xs flex items-center gap-1">
+                      <svg viewBox="0 0 24 24" fill="white" className="w-3 h-3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                      {post.comments}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* View more link */}
+        <div className="flex items-center justify-center mt-6">
+          <button className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:opacity-70 transition-opacity"
+            style={{ color: tt.textMuted }}>
+            View more on Instagram <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── TOKEN LAYOUT — main component ─────────────────────────────────────────────
 
 function TokenLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
@@ -3563,6 +3686,12 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
       case 'newsletter':
         if (!newsletter) return null;
         return <NewsletterSection key="newsletter" newsletter={newsletter} primaryColor={primaryColor} device={device} dark={isDarkPalette} elegant={isWarmPalette} />;
+
+      case 'scrollingBanner':
+        return <ScrollingBannerSection key="scrollingBanner" design={design} primaryColor={primaryColor} tt={tt} />;
+
+      case 'instagramFeed':
+        return <InstagramFeedSection key="instagramFeed" design={design} primaryColor={primaryColor} tt={tt} device={device} onProductClick={onProductClick} />;
 
       default:
         return null;
