@@ -34,7 +34,15 @@ The JSON must exactly match this shape:
     "density": "string (one of: dense, normal, airy)",
     "elevation": "string (one of: flat, subtle, raised, floating)",
     "motion": "string (one of: none, subtle, smooth, expressive)",
-    "personality": "string (optional — free text describing the UI personality, e.g. 'whatsapp-like', 'apple-like')"
+    "personality": "string (optional — free text describing the UI personality, e.g. 'whatsapp-like', 'apple-like')",
+    "sectionVariants": {
+      "features":     "string (one of: icons, alternating, bento)",
+      "testimonials": "string (one of: cards, carousel, wall)",
+      "stats":        "string (one of: numbers, cards)",
+      "brandStory":   "string (one of: quote, split, timeline)",
+      "faq":          "string (one of: accordion, grid)",
+      "newsletter":   "string (one of: centered, banner)"
+    }
   },
   "heroTitle": "string (punchy 3-7 word headline, brand-specific, e.g. 'Speed. Style. Supremacy.')",
   "heroSubtitle": "string (compelling 15-22 word product promise for the target customer)",
@@ -185,6 +193,35 @@ productGrid — choose based on product count and brand feel:
   list      → full-width rows with description (few products, tech specs, books)
   carousel  → horizontal scroll snap, one card at a time (mobile-first, new arrivals, seasonal)
   spotlight → 1 featured hero card + 4-col mini grid below (premium/hero product highlight)
+
+sectionVariants — choose a visual variant for each section:
+
+  features:
+    icons       → icon in colored circle + title + description (universal default)
+    alternating → each feature as large left/right alternating block with big emoji (storytelling)
+    bento       → varied-size bento grid cards (tech, modern, startup)
+
+  testimonials:
+    cards    → 3-col review cards with avatar initial (default)
+    carousel → one big centered quote at a time with dot navigation (luxury, editorial)
+    wall     → scattered/masonry wall of quote bubbles (social-proof heavy, beauty, fashion)
+
+  stats:
+    numbers → large centered number + label row (default)
+    cards   → each stat in its own card with icon + colored accent (tech, startup)
+
+  brandStory:
+    quote    → large centered italic quote (default)
+    split    → product image left + story text right (lifestyle, founder-led)
+    timeline → 3-step founding story as horizontal timeline (heritage, craft)
+
+  faq:
+    accordion → expandable questions (default, works everywhere)
+    grid      → 2-col grid of visible Q&A cards (when FAQs are short and punchy)
+
+  newsletter:
+    centered → centered card with gradient bg (default)
+    banner   → full-width bold color banner (high-energy, fashion, streetwear)
 
 sectionOrder — always include all 10 core sections, plus optional bonus sections:
 

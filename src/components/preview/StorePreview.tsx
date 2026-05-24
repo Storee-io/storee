@@ -3975,6 +3975,431 @@ function InstagramFeedSection({ design, primaryColor, tt, device, onProductClick
   );
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// SECTION VARIANTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+type SectionVariants = NonNullable<import('../../../src/lib/claudeApi').DesignTokens['sectionVariants']>;
+
+// ── Features variants ─────────────────────────────────────────────────────────
+
+function FeaturesSection({ features, tt, primaryColor, device, motion, elevation, sectionPy, variant }: {
+  features: Array<{ icon: string; title: string; description: string }>;
+  tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  motion: MotionLevel; elevation: ElevationLevel; sectionPy: number;
+  variant: SectionVariants['features'];
+}) {
+  const isMobile = device === 'mobile';
+  const pc = primaryColor;
+
+  if (variant === 'alternating') {
+    return (
+      <section className="max-w-5xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+        <div className="space-y-12">
+          {features.map((f, i) => (
+            <div key={i}
+              className={`flex ${isMobile ? 'flex-col gap-5' : i % 2 === 0 ? 'flex-row gap-14' : 'flex-row-reverse gap-14'} items-center`}>
+              {/* Big emoji block */}
+              <div className="flex-shrink-0 flex items-center justify-center"
+                style={{ width: isMobile ? '80px' : '120px', height: isMobile ? '80px' : '120px',
+                  background: alpha(pc, 0.1), borderRadius: '24px', fontSize: isMobile ? '2.5rem' : '3.5rem' }}>
+                {f.icon}
+              </div>
+              {/* Text */}
+              <div className={isMobile ? 'text-center' : ''}>
+                <div style={{ width: '32px', height: '3px', background: pc, marginBottom: '12px', margin: isMobile ? '0 auto 12px' : '0 0 12px' }} />
+                <h3 className="font-black text-lg mb-3" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{f.title}</h3>
+                <p className="text-sm leading-relaxed max-w-sm" style={{ color: tt.textSecondary }}>{f.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (variant === 'bento') {
+    // Bento: first card spans 2 cols
+    const bentoSizes = ['col-span-2', 'col-span-1', 'col-span-1'];
+    return (
+      <section className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+        <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-4'}`}>
+          {features.map((f, i) => (
+            <div key={i}
+              className={`p-7 ${!isMobile ? bentoSizes[i] ?? 'col-span-1' : ''}`}
+              style={{
+                background: i === 0 ? pc : tt.surfaceBg,
+                border: `1px solid ${i === 0 ? 'transparent' : tt.surfaceBorder}`,
+                borderRadius: tt.surfaceRadius,
+                boxShadow: getElevationShadow(elevation),
+                transition: getMotionTransition(motion),
+              }}
+              onMouseEnter={e => { if (motion !== 'none') (e.currentTarget as HTMLElement).style.transform = getHoverScale(motion); }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}>
+              <div style={{ fontSize: i === 0 ? '3rem' : '2rem', marginBottom: '12px' }}>{f.icon}</div>
+              <h3 className="font-black mb-2" style={{ color: i === 0 ? (isDark(pc) ? '#fff' : '#000') : tt.textPrimary, fontSize: i === 0 ? '1.1rem' : '0.9rem' }}>{f.title}</h3>
+              <p className="text-xs leading-relaxed" style={{ color: i === 0 ? (isDark(pc) ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)') : tt.textSecondary }}>{f.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  // Default: icons
+  return (
+    <section className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+      <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-6'}`}>
+        {features.map((f, i) => (
+          <div key={i} className="flex items-start gap-4 p-6"
+            style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius,
+              boxShadow: getElevationShadow(elevation), transition: getMotionTransition(motion) }}
+            onMouseEnter={e => { if (motion !== 'none') (e.currentTarget as HTMLElement).style.transform = getHoverScale(motion); }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: alpha(pc, 0.1) }}>{f.icon}</div>
+            <div>
+              <h3 className="text-sm font-black uppercase tracking-wide mb-1" style={{ color: tt.textPrimary }}>{f.title}</h3>
+              <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ── Testimonials variants ─────────────────────────────────────────────────────
+
+function TestimonialsSection({ testimonials, tt, primaryColor, device, sectionPy, variant }: {
+  testimonials: Array<{ text: string; author: string; role: string; rating: number }>;
+  tt: TokenTheme; primaryColor: string; device: DeviceMode; sectionPy: number;
+  variant: SectionVariants['testimonials'];
+}) {
+  const isMobile = device === 'mobile';
+  const pc = primaryColor;
+  const [active, setActive] = useState(0);
+
+  if (variant === 'carousel') {
+    const t = testimonials[active];
+    return (
+      <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
+        <div className="max-w-3xl mx-auto px-5 text-center" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+          <p className="text-[10px] uppercase tracking-[0.25em] mb-8" style={{ color: tt.textMuted }}>Customer Reviews</p>
+          {/* Big quote mark */}
+          <div className="text-6xl font-black leading-none mb-4 select-none" style={{ color: alpha(pc, 0.2), fontFamily: 'Georgia, serif' }}>"</div>
+          <p className={`${isMobile ? 'text-base' : 'text-xl'} font-medium leading-relaxed italic mb-8`}
+            style={{ color: tt.textPrimary }}>{t.text}</p>
+          <Stars n={t.rating} />
+          <div className="mt-4">
+            <p className="text-sm font-black" style={{ color: tt.textPrimary }}>{t.author}</p>
+            <p className="text-xs mt-0.5" style={{ color: tt.textMuted }}>{t.role}</p>
+          </div>
+          {/* Dot nav */}
+          <div className="flex items-center justify-center gap-2 mt-8">
+            {testimonials.map((_, i) => (
+              <button key={i} onClick={() => setActive(i)}
+                className="rounded-full transition-all duration-200"
+                style={{ width: active === i ? '24px' : '8px', height: '8px', background: active === i ? pc : alpha(pc, 0.25) }} />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (variant === 'wall') {
+    const rotations = [-1.5, 0.8, -0.5, 1.2, -0.9, 0.4];
+    return (
+      <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
+        <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+          <p className="text-[10px] uppercase tracking-[0.25em] mb-2 text-center" style={{ color: tt.textMuted }}>What People Say</p>
+          <h2 className="text-xl font-black text-center mb-10" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>Real Reviews</h2>
+          <div className={`${isMobile ? 'columns-1' : 'columns-3'} gap-4`}>
+            {testimonials.map((t, i) => (
+              <div key={i}
+                className="break-inside-avoid mb-4 p-5 inline-block w-full"
+                style={{
+                  background: i % 3 === 0 ? pc : tt.pageBg,
+                  borderRadius: tt.surfaceRadius,
+                  border: `1px solid ${i % 3 === 0 ? 'transparent' : tt.surfaceBorder}`,
+                  transform: isMobile ? 'none' : `rotate(${rotations[i % rotations.length]}deg)`,
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                }}>
+                <Stars n={t.rating} />
+                <p className="text-sm leading-relaxed mt-2 mb-3 italic"
+                  style={{ color: i % 3 === 0 ? (isDark(pc) ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.85)') : tt.textSecondary }}>
+                  "{t.text}"
+                </p>
+                <p className="text-xs font-black"
+                  style={{ color: i % 3 === 0 ? (isDark(pc) ? '#fff' : '#000') : tt.textPrimary }}>
+                  {t.author}
+                </p>
+                <p className="text-[10px] mt-0.5"
+                  style={{ color: i % 3 === 0 ? (isDark(pc) ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)') : tt.textMuted }}>
+                  {t.role}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Default: cards
+  return (
+    <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
+      <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+        <p className="text-[10px] uppercase tracking-[0.25em] mb-2 text-center" style={{ color: tt.textMuted }}>Reviews</p>
+        <h2 className="text-xl font-black text-center mb-9" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>What Customers Say</h2>
+        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
+          {testimonials.map((t, i) => (
+            <div key={i} className="p-6" style={{ background: tt.pageBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius }}>
+              <Stars n={t.rating} />
+              <p className="text-sm leading-relaxed mt-3 mb-5 italic" style={{ color: tt.textSecondary }}>"{t.text}"</p>
+              <div className="flex items-center gap-3 pt-3" style={{ borderTop: `1px solid ${tt.divider}` }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: pc }}>{t.author[0]}</div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>{t.author}</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: tt.textMuted }}>{t.role}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Stats variants ────────────────────────────────────────────────────────────
+
+function StatsSection({ stats, primaryColor, device, tt, sectionPy, variant }: {
+  stats: Array<{ value: string; label: string }>;
+  primaryColor: string; device: DeviceMode; tt: TokenTheme; sectionPy: number;
+  variant: SectionVariants['stats'];
+}) {
+  const isMobile = device === 'mobile';
+  const pc = primaryColor;
+  const statIcons = ['📈', '⭐', '🚚', '🎯', '💬', '🏆'];
+
+  if (variant === 'cards') {
+    return (
+      <section style={{ background: tt.pageBg, borderTop: `1px solid ${tt.divider}` }}>
+        <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+          <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
+            {stats.map((s, i) => (
+              <div key={i} className="p-7 flex flex-col gap-3"
+                style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius, borderTop: `3px solid ${pc}` }}>
+                <span className="text-2xl">{statIcons[i % statIcons.length]}</span>
+                <div>
+                  <p className="text-3xl font-black tracking-tight" style={{ color: pc, fontFamily: tt.headingFont }}>{s.value}</p>
+                  <p className="text-xs uppercase tracking-widest mt-1" style={{ color: tt.textMuted }}>{s.label}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Default: numbers row
+  return <StatsRow stats={stats} primaryColor={pc} device={device} />;
+}
+
+// ── BrandStory variants ───────────────────────────────────────────────────────
+
+function BrandStorySection({ brandStory, products, tt, primaryColor, device, sectionPy, variant }: {
+  brandStory: string; products: RichProduct[];
+  tt: TokenTheme; primaryColor: string; device: DeviceMode; sectionPy: number;
+  variant: SectionVariants['brandStory'];
+}) {
+  const isMobile = device === 'mobile';
+  const pc = primaryColor;
+
+  if (variant === 'split') {
+    return (
+      <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}` }}>
+        <div className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-10 flex flex-col gap-8' : 'grid grid-cols-2 gap-12 items-center'}`}
+          style={isMobile ? {} : { paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+          {/* Image */}
+          <div className="overflow-hidden" style={{ aspectRatio: '4/3', borderRadius: tt.surfaceRadius }}>
+            <ProductImg src={products[0]?.image} alt="" className="w-full h-full object-cover" />
+          </div>
+          {/* Text */}
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.35em] mb-4" style={{ color: pc }}>Our Story</p>
+            <div style={{ width: '40px', height: '3px', background: pc, marginBottom: '20px' }} />
+            <p className="leading-relaxed" style={{ color: tt.textSecondary, fontSize: isMobile ? '0.95rem' : '1.05rem' }}>{brandStory}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (variant === 'timeline') {
+    // Split story into ≤3 sentences
+    const sentences = brandStory.match(/[^.!?]+[.!?]+/g)?.slice(0, 3) ?? [brandStory];
+    const stepIcons = ['🌱', '🚀', '⭐'];
+    return (
+      <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}` }}>
+        <div className="max-w-5xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+          <p className="text-[10px] uppercase tracking-[0.35em] text-center mb-10" style={{ color: pc }}>Our Journey</p>
+          <div className={`${isMobile ? 'flex flex-col gap-8' : 'grid grid-cols-3 gap-8 relative'}`}>
+            {/* connector line */}
+            {!isMobile && <div className="absolute top-6 left-[calc(16.666%+12px)] right-[calc(16.666%+12px)] h-px" style={{ background: alpha(pc, 0.2) }} />}
+            {sentences.map((s, i) => (
+              <div key={i} className={`flex ${isMobile ? 'flex-row gap-4 items-start' : 'flex-col items-center text-center gap-3'}`}>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl flex-shrink-0 z-10"
+                  style={{ background: i === 0 ? pc : tt.pageBg, border: `2px solid ${pc}`, fontSize: '1.3rem' }}>
+                  {stepIcons[i]}
+                </div>
+                <p className="text-sm leading-relaxed" style={{ color: tt.textSecondary }}>{s.trim()}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Default: quote
+  return (
+    <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}` }}>
+      <div className="max-w-2xl mx-auto px-5 text-center" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+        <div className="text-4xl mb-5 opacity-20 select-none" style={{ color: pc, fontFamily: tt.headingFont }}>"</div>
+        <p className={`${isMobile ? 'text-base' : 'text-lg'} font-medium leading-relaxed italic`} style={{ color: tt.textSecondary }}>{brandStory}</p>
+      </div>
+    </section>
+  );
+}
+
+// ── FAQ variants ──────────────────────────────────────────────────────────────
+
+function FaqSection({ faq, tt, primaryColor, device, sectionPy, variant }: {
+  faq: Array<{ q: string; a: string }>;
+  tt: TokenTheme; primaryColor: string; device: DeviceMode; sectionPy: number;
+  variant: SectionVariants['faq'];
+}) {
+  const isMobile = device === 'mobile';
+  const pc = primaryColor;
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  if (variant === 'grid') {
+    return (
+      <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}` }}>
+        <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-center mb-2" style={{ color: tt.textMuted }}>FAQ</p>
+          <h2 className="text-xl font-black text-center mb-9" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>Common Questions</h2>
+          <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+            {faq.map((item, i) => (
+              <div key={i} className="p-5" style={{ background: tt.pageBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius, borderLeft: `3px solid ${pc}` }}>
+                <p className="text-sm font-black mb-2" style={{ color: tt.textPrimary }}>{item.q}</p>
+                <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{item.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Default: accordion
+  return (
+    <section style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+      <div className="max-w-3xl mx-auto px-5">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-center mb-2" style={{ color: tt.textMuted }}>FAQ</p>
+        <h2 className="text-xl font-black text-center mb-9" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>Frequently Asked</h2>
+        <div className="space-y-2">
+          {faq.map((item, i) => (
+            <div key={i} className="overflow-hidden cursor-pointer"
+              style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius }}>
+              <button onClick={() => setOpenIndex(openIndex === i ? null : i)}
+                className="w-full flex items-center justify-between px-5 py-4 text-left gap-4">
+                <span className="text-sm font-semibold" style={{ color: tt.textPrimary }}>{item.q}</span>
+                <span className="text-lg flex-shrink-0 transition-transform duration-200 font-light"
+                  style={{ color: pc, display: 'inline-block', transform: openIndex === i ? 'rotate(45deg)' : 'none' }}>+</span>
+              </button>
+              {openIndex === i && (
+                <div className="px-5 pb-5 text-sm leading-relaxed" style={{ color: tt.textSecondary }}>{item.a}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Newsletter variants ───────────────────────────────────────────────────────
+
+function NewsletterSectionV2({ newsletter, tt, primaryColor, device, sectionPy, variant }: {
+  newsletter: { headline: string; subtext: string };
+  tt: TokenTheme; primaryColor: string; device: DeviceMode; sectionPy: number;
+  variant: SectionVariants['newsletter'];
+}) {
+  const isMobile = device === 'mobile';
+  const pc = primaryColor;
+  const pcText = isDark(pc) ? '#fff' : '#000';
+  const [email, setEmail] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  const submitBtn = (
+    <button onClick={() => email && setSubmitted(true)}
+      className="px-6 py-3 text-sm font-bold flex-shrink-0 transition-opacity hover:opacity-90"
+      style={{ background: pc, color: pcText, borderRadius: tt.btnRadius }}>
+      {submitted ? '✓ Subscribed!' : 'Subscribe'}
+    </button>
+  );
+  const emailInput = (invert: boolean) => (
+    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Your email address"
+      className="flex-1 px-4 py-3 text-sm outline-none"
+      style={{
+        background: invert ? 'rgba(255,255,255,0.15)' : tt.surfaceBg,
+        border: `1px solid ${invert ? 'rgba(255,255,255,0.25)' : tt.surfaceBorder}`,
+        color: invert ? '#fff' : tt.textPrimary,
+        borderRadius: tt.btnRadius,
+      }} />
+  );
+
+  if (variant === 'banner') {
+    return (
+      <section style={{ background: pc }}>
+        <div className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-10 flex flex-col gap-6' : 'flex items-center justify-between gap-10'}`}
+          style={isMobile ? {} : { paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+          <div>
+            <h2 className={`font-black leading-tight ${isMobile ? 'text-xl' : 'text-2xl'}`}
+              style={{ fontFamily: tt.headingFont, color: isDark(pc) ? '#fff' : '#000' }}>{newsletter.headline}</h2>
+            <p className="text-sm mt-1" style={{ color: isDark(pc) ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }}>{newsletter.subtext}</p>
+          </div>
+          <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-2 ${isMobile ? '' : 'min-w-[380px]'}`}>
+            {emailInput(isDark(pc))}
+            {submitted ? <div className="px-4 py-3 text-sm font-bold" style={{ color: isDark(pc) ? '#fff' : '#000' }}>✓ You're in!</div> : submitBtn}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Default: centered card
+  return (
+    <section style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+      <div className="max-w-xl mx-auto px-5">
+        <div className={`rounded-3xl ${isMobile ? 'p-5' : 'p-8'} text-center`}
+          style={{ background: `linear-gradient(135deg, ${alpha(pc, 0.09)}, ${alpha(pc, 0.04)})`, border: `1px solid ${alpha(pc, 0.12)}` }}>
+          <p className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-3`} style={{ color: tt.textPrimary }}>{newsletter.headline}</p>
+          <p className={`text-sm ${isMobile ? 'mb-5' : 'mb-7'} leading-relaxed`} style={{ color: tt.textSecondary }}>{newsletter.subtext}</p>
+          <div className={`flex ${isMobile ? 'flex-col' : ''} gap-2`}>
+            {emailInput(false)}
+            {submitted ? <div className="py-3 text-sm font-semibold" style={{ color: pc }}>✓ You're on the list!</div> : submitBtn}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── TOKEN LAYOUT — main component ─────────────────────────────────────────────
 
 function TokenLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
@@ -4070,74 +4495,27 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
 
       case 'features':
         if (!features.length) return null;
-        return (
-          <section key="features" className="max-w-6xl mx-auto px-5" style={{ paddingTop: isMobile ? '2rem' : `${sectionPy}px`, paddingBottom: isMobile ? '2rem' : `${sectionPy}px` }}>
-            <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-6'}`}>
-              {features.map((f, i) => (
-                <div key={i} className="flex items-start gap-4 p-6"
-                  style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius,
-                    boxShadow: getElevationShadow(elevation), transition: getMotionTransition(motion) }}
-                  onMouseEnter={e => { if (motion !== 'none') (e.currentTarget as HTMLElement).style.transform = getHoverScale(motion); }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: alpha(primaryColor, 0.1) }}>{f.icon}</div>
-                  <div>
-                    <h3 className="text-sm font-black uppercase tracking-wide mb-1" style={{ color: tt.textPrimary }}>{f.title}</h3>
-                    <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        );
+        return <FeaturesSection key="features" features={features} tt={tt} primaryColor={primaryColor} device={device} motion={motion} elevation={elevation} sectionPy={sectionPy} variant={dt?.sectionVariants?.features} />;
 
       case 'testimonials':
         if (!testimonials.length) return null;
-        return (
-          <section key="testimonials" style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
-            <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: isMobile ? '2rem' : '3.5rem', paddingBottom: isMobile ? '2rem' : '3.5rem' }}>
-              <p className="text-[10px] uppercase tracking-[0.25em] mb-2 text-center" style={{ color: tt.textMuted }}>Reviews</p>
-              <h2 className="text-xl font-black text-center mb-9" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>What Customers Say</h2>
-              <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
-                {testimonials.map((t, i) => (
-                  <div key={i} className="p-6" style={{ background: tt.pageBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius }}>
-                    <Stars n={t.rating} />
-                    <p className="text-sm leading-relaxed mt-3 mb-5 italic" style={{ color: tt.textSecondary }}>"{t.text}"</p>
-                    <div className="flex items-center gap-3 pt-3" style={{ borderTop: `1px solid ${tt.divider}` }}>
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: primaryColor }}>{t.author[0]}</div>
-                      <div>
-                        <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>{t.author}</p>
-                        <p className="text-[10px] mt-0.5" style={{ color: tt.textMuted }}>{t.role}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        );
+        return <TestimonialsSection key="testimonials" testimonials={testimonials} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={dt?.sectionVariants?.testimonials} />;
 
       case 'stats':
         if (!stats.length) return null;
-        return <StatsRow key="stats" stats={stats} primaryColor={primaryColor} device={device} />;
+        return <StatsSection key="stats" stats={stats} primaryColor={primaryColor} device={device} tt={tt} sectionPy={sectionPy} variant={dt?.sectionVariants?.stats} />;
 
       case 'brandStory':
         if (!brandStory) return null;
-        return (
-          <section key="brandStory" style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}` }}>
-            <div className="max-w-2xl mx-auto px-5 text-center" style={{ paddingTop: isMobile ? '2rem' : '3.5rem', paddingBottom: isMobile ? '2rem' : '3.5rem' }}>
-              <div className="text-4xl mb-5 opacity-20" style={{ color: primaryColor, fontFamily: tt.headingFont }}>"</div>
-              <p className={`${isMobile ? 'text-base' : 'text-lg'} font-medium leading-relaxed italic`} style={{ color: tt.textSecondary }}>{brandStory}</p>
-            </div>
-          </section>
-        );
+        return <BrandStorySection key="brandStory" brandStory={brandStory} products={products} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={dt?.sectionVariants?.brandStory} />;
 
       case 'faq':
         if (!faq.length) return null;
-        return <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} dark={isDarkPalette} elegant={isWarmPalette} />;
+        return <FaqSection key="faq" faq={faq} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={dt?.sectionVariants?.faq} />;
 
       case 'newsletter':
         if (!newsletter) return null;
-        return <NewsletterSection key="newsletter" newsletter={newsletter} primaryColor={primaryColor} device={device} dark={isDarkPalette} elegant={isWarmPalette} />;
+        return <NewsletterSectionV2 key="newsletter" newsletter={newsletter} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={dt?.sectionVariants?.newsletter} />;
 
       case 'scrollingBanner':
         return <ScrollingBannerSection key="scrollingBanner" design={design} primaryColor={primaryColor} tt={tt} />;

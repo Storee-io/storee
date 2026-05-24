@@ -80,6 +80,15 @@ export interface DesignTokens {
   motion?: 'none' | 'subtle' | 'smooth' | 'expressive';
   /** Free-text personality hint Claude used, e.g. "whatsapp-like" */
   personality?: string;
+  /** Per-section variant overrides */
+  sectionVariants?: {
+    features?:     'icons' | 'alternating' | 'bento';
+    testimonials?: 'cards' | 'carousel' | 'wall';
+    stats?:        'numbers' | 'cards';
+    brandStory?:   'quote' | 'split' | 'timeline';
+    faq?:          'accordion' | 'grid';
+    newsletter?:   'centered' | 'banner';
+  };
 }
 
 /** @deprecated use DesignTokens instead — kept for stores generated before v2 */
