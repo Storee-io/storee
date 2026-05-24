@@ -267,22 +267,42 @@ Core section types (always include all 10):
   hero, trust, collections, products, features, testimonials, stats, brandStory, faq, newsletter
 
 Optional bonus types (add when they enhance the brand story):
-  scrollingBanner — auto-scrolling marquee. Place after hero or between sections.
-                    Add "variant": "default". Requires scrollingItems array (8-12 short phrases).
-  instagramFeed   — photo grid. Place before newsletter. Add "variant": "default".
-                    Requires instagramPosts array (6-9 objects: caption, likes, comments).
+  scrollingBanner  — auto-scrolling marquee. Place after hero or between sections.
+                     Add "variant": "default". Requires scrollingItems array (8-12 short phrases).
+  instagramFeed    — photo grid. Place before newsletter. Add "variant": "default".
+                     Requires instagramPosts array (6-9 objects: caption, likes, comments).
+  editorialBanner  — full-width mid-page impact moment: big background image + headline + CTA.
+                     Use between products and testimonials for editorial/fashion/luxury brands.
+                     Variants: left | center | overlay
+  countdown        — urgency / launch timer section with large animated digits.
+                     Use for limited drops, flash sales, product launches.
+                     Variants: centered | banner | minimal
+  categorySpotlight — hero-sized spotlight on ONE featured collection with product mosaic.
+                     Use to hero-promote a flagship category (e.g. "The Essentials Edit").
+                     Variants: editorial | split | immersive
 
 Variant options per type:
-  hero          → centered | split | fullscreen | minimal | editorial | video | stacked | asymmetrical
-  products      → standard | magazine | list | carousel | spotlight
-  features      → icons | alternating | bento
-  testimonials  → cards | carousel | wall
-  stats         → numbers | cards
-  brandStory    → quote | split | timeline
-  faq           → accordion | grid
-  newsletter    → centered | banner
-  trust         → (no variant, set null)
-  collections   → (no variant, set null)
+  hero             → centered | split | fullscreen | minimal | editorial | video | stacked | asymmetrical | chat | cinematic | fashion
+  products         → standard | magazine | list | carousel | spotlight
+  features         → icons | alternating | bento
+  testimonials     → cards | carousel | wall
+  stats            → numbers | cards
+  brandStory       → quote | split | timeline
+  faq              → accordion | grid
+  newsletter       → centered | banner
+  trust            → (no variant, set null)
+  collections      → (no variant, set null)
+  editorialBanner  → left | center | overlay
+  countdown        → centered | banner | minimal
+  categorySpotlight → editorial | split | immersive
+
+New hero variants:
+  chat       → conversational UI: store "sends" product cards as chat bubbles (WhatsApp/iMessage feel).
+               Best for: lifestyle brands, food, pets, casual fashion, chat-app personality stores.
+  cinematic  → ultra-dark full-bleed background image, minimal text at bottom third, very theatrical.
+               Best for: luxury, perfume, watches, high-end fashion, ZARA-like brands.
+  fashion    → multi-image mosaic: 2-3 overlapping/staggered product images + bold headline.
+               Best for: fashion, beauty, accessories, Instagram-aesthetic brands.
 
 Storytelling tips:
   - Lead with products for impulse categories (fashion, food, beauty)
@@ -291,6 +311,9 @@ Storytelling tips:
   - stats after testimonials for extra social proof
   - scrollingBanner after hero adds energy for trend-driven brands
   - instagramFeed before newsletter adds social proof and lifestyle appeal
+  - editorialBanner between products and testimonials creates a dramatic pause
+  - countdown before products creates launch/drop urgency
+  - categorySpotlight after collections spotlights your hero category
   - Always end with faq and/or newsletter
 
 ── PHASE 1: PERSONALITY MAPPING ────────────────────────

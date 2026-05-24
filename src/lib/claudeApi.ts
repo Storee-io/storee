@@ -92,7 +92,8 @@ export interface DesignTokens {
   sections: Array<{
     type: 'hero' | 'trust' | 'collections' | 'products' | 'features'
         | 'testimonials' | 'stats' | 'brandStory' | 'faq' | 'newsletter'
-        | 'scrollingBanner' | 'instagramFeed';
+        | 'scrollingBanner' | 'instagramFeed'
+        | 'editorialBanner' | 'countdown' | 'categorySpotlight';
     variant?: string;
     /** Fine-grained per-section visual overrides — see SectionProps */
     props?: HeroSectionProps | FeaturesSectionProps | ProductsSectionProps;
@@ -118,7 +119,8 @@ export interface DesignTokens {
   /** @deprecated use sections[].variant instead */
   sectionOrder?: Array<'hero' | 'trust' | 'collections' | 'products' | 'features'
                       | 'testimonials' | 'stats' | 'brandStory' | 'faq' | 'newsletter'
-                      | 'scrollingBanner' | 'instagramFeed'>;
+                      | 'scrollingBanner' | 'instagramFeed'
+                      | 'editorialBanner' | 'countdown' | 'categorySpotlight'>;
 
   // ── Phase 1: Layout engine + personality tokens ───────────────────────────
   /**

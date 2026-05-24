@@ -4134,6 +4134,168 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
   );
 }
 
+// ── Hero: CINEMATIC ───────────────────────────────────────────────────────────
+
+function TkHeroCinematic({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
+  design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onScrollToProducts: () => void; heroProps?: HeroP;
+}) {
+  const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
+  const isMobile = device === 'mobile';
+  const bg = products[0]?.image || products[1]?.image;
+  const heroH = isMobile ? '85vh' : '92vh';
+
+  return (
+    <section style={{ position: 'relative', height: heroH, minHeight: isMobile ? '500px' : '600px', overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
+      {/* Background image */}
+      {bg && <ProductImg src={bg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+      {/* Dark overlay gradient */}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.15) 100%)' }} />
+      {/* Optional film grain */}
+      <div style={{ position: 'absolute', inset: 0, opacity: 0.03, pointerEvents: 'none', backgroundImage: 'repeating-radial-gradient(circle at 1px 1px, rgba(255,255,255,0.4) 1px, transparent 0)', backgroundSize: '3px 3px' }} />
+      {/* Text — bottom-left third */}
+      <div style={{ position: 'relative', zIndex: 1, padding: isMobile ? '0 24px 48px' : '0 72px 80px', maxWidth: isMobile ? '100%' : '55%' }}>
+        <motion.div initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.25, 0.46, 0.45, 0.94] }}>
+          {tagline && (
+            <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.55em', color: 'rgba(255,255,255,0.5)', marginBottom: '20px', fontWeight: 400, fontFamily: tt.headingFont }}>{tagline}</p>
+          )}
+          <h1 style={{ ...headingStyle(tt, isMobile ? 2.4 : 4.0), color: '#fff', marginBottom: '20px', lineHeight: 1.0, fontWeight: 900 }}>{heroTitle}</h1>
+          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '36px', maxWidth: '40ch', lineHeight: 1.6 }}>{heroSubtitle}</p>
+          {/* Minimal text+arrow CTA */}
+          <button onClick={onScrollToProducts}
+            style={{ background: 'none', border: 'none', color: '#fff', fontSize: '12px', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', padding: 0 }}>
+            {ctaText}
+            <span style={{ display: 'inline-block', transition: 'transform 0.25s' }}>→</span>
+          </button>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// ── Hero: CHAT ────────────────────────────────────────────────────────────────
+
+function TkHeroChat({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
+  design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onScrollToProducts: () => void; heroProps?: HeroP;
+}) {
+  const { heroTitle, ctaText, products = [] } = design;
+  const isMobile = device === 'mobile';
+  const pc = primaryColor;
+  const pcText = isDark(pc) ? '#fff' : '#000';
+  const product = products[0];
+
+  type ChatMsg = { id: number; side: 'store' | 'user'; type: 'text' | 'product' | 'cta'; text?: string; visible: boolean };
+  const [messages, setMessages] = useState<ChatMsg[]>([
+    { id: 0, side: 'store', type: 'text',    text: heroTitle,                         visible: false },
+    { id: 1, side: 'user',  type: 'text',    text: 'Show me what you have 👀',         visible: false },
+    { id: 2, side: 'store', type: 'product', text: product ? product.name : 'Product', visible: false },
+    { id: 3, side: 'store', type: 'cta',     text: ctaText,                            visible: false },
+  ]);
+
+  useEffect(() => {
+    const delays = [400, 1200, 2200, 3200];
+    delays.forEach((d, i) => {
+      const t = setTimeout(() => {
+        setMessages(prev => prev.map(m => m.id === i ? { ...m, visible: true } : m));
+      }, d);
+      return () => clearTimeout(t);
+    });
+  }, []);
+
+  return (
+    <section style={{ background: tt.pageBg, padding: isMobile ? '48px 20px 64px' : '80px 40px 96px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {messages.map(msg => !msg.visible ? null : (
+          <motion.div key={msg.id} initial={{ opacity: 0, y: 16, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.35, ease: 'easeOut' }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: msg.side === 'store' ? 'flex-end' : 'flex-start' }}>
+            {msg.type === 'text' && (
+              <div style={{ maxWidth: '80%', padding: '12px 16px', borderRadius: '20px', background: msg.side === 'store' ? pc : tt.surfaceBg, color: msg.side === 'store' ? pcText : tt.textPrimary, fontSize: '14px', lineHeight: 1.5, border: msg.side === 'user' ? `1px solid ${tt.surfaceBorder}` : 'none' }}>
+                {msg.text}
+              </div>
+            )}
+            {msg.type === 'product' && product && (
+              <div style={{ width: '220px', borderRadius: '16px', overflow: 'hidden', background: tt.surfaceBg, border: `1px solid ${alpha(pc, 0.25)}` }}>
+                <div style={{ height: '140px', overflow: 'hidden' }}>
+                  <ProductImg src={product.image} alt={product.name} fallback={product.imageFallback} className="w-full h-full object-cover" />
+                </div>
+                <div style={{ padding: '12px' }}>
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: tt.textPrimary, marginBottom: '4px' }}>{product.name}</p>
+                  <p style={{ fontSize: '14px', fontWeight: 700, color: pc }}>{product.price}</p>
+                </div>
+              </div>
+            )}
+            {msg.type === 'cta' && (
+              <button onClick={onScrollToProducts}
+                style={{ padding: '12px 24px', background: pc, color: pcText, borderRadius: '20px', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer', letterSpacing: '0.04em' }}>
+                {msg.text} →
+              </button>
+            )}
+          </motion.div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ── Hero: FASHION ─────────────────────────────────────────────────────────────
+
+function TkHeroFashion({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
+  design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onScrollToProducts: () => void; heroProps?: HeroP;
+}) {
+  const { heroTitle, ctaText, products = [], tagline } = design;
+  const isMobile = device === 'mobile';
+  const pc = primaryColor;
+  const btnText = isDark(pc) ? '#fff' : '#000';
+  const heroH = isMobile ? '70vh' : '90vh';
+
+  if (isMobile) {
+    return (
+      <section style={{ position: 'relative', height: heroH, minHeight: '480px', overflow: 'hidden' }}>
+        {products[0] && <ProductImg src={products[0].image} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.1) 55%)' }} />
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 24px 40px', zIndex: 1 }}>
+          {tagline && <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.4em', color: 'rgba(255,255,255,0.55)', marginBottom: '10px', fontWeight: 400 }}>{tagline}</p>}
+          <h1 style={{ ...headingStyle(tt, 2.2), color: '#fff', marginBottom: '20px' }}>{heroTitle}</h1>
+          <button onClick={onScrollToProducts} style={{ padding: '12px 28px', background: pc, color: btnText, borderRadius: tt.btnRadius, fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}>{ctaText}</button>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section style={{ height: heroH, minHeight: '600px', display: 'flex', overflow: 'hidden', position: 'relative' }}>
+      {/* Left: big product image 60% */}
+      <div style={{ width: '60%', position: 'relative', overflow: 'hidden', padding: '8px 4px 8px 8px' }}>
+        {products[0] && (
+          <div style={{ width: '100%', height: '100%', borderRadius: tt.surfaceRadius, overflow: 'hidden', position: 'relative' }}>
+            <ProductImg src={products[0].image} alt="" className="w-full h-full object-cover" />
+            {/* Bottom scrim for text */}
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.0) 50%)' }} />
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 40px 40px', zIndex: 1 }}>
+              {tagline && <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.4em', color: 'rgba(255,255,255,0.55)', marginBottom: '12px', fontWeight: 400 }}>{tagline}</p>}
+              <h1 style={{ ...headingStyle(tt, 3.2), color: '#fff', marginBottom: '24px', maxWidth: '18ch' }}>{heroTitle}</h1>
+              <button onClick={onScrollToProducts} style={{ padding: '13px 32px', background: pc, color: btnText, borderRadius: tt.btnRadius, fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}>{ctaText}</button>
+            </div>
+          </div>
+        )}
+      </div>
+      {/* Right: two stacked images 40% */}
+      <div style={{ width: '40%', display: 'flex', flexDirection: 'column', gap: '8px', padding: '8px 8px 8px 4px' }}>
+        <div style={{ flex: 1, borderRadius: tt.surfaceRadius, overflow: 'hidden', position: 'relative' }}>
+          {products[1] && <ProductImg src={products[1].image} alt="" className="w-full h-full object-cover" />}
+          <div style={{ position: 'absolute', inset: 0, border: `1px solid ${alpha('#fff', 0.08)}`, borderRadius: tt.surfaceRadius, pointerEvents: 'none' }} />
+        </div>
+        <div style={{ flex: 1, borderRadius: tt.surfaceRadius, overflow: 'hidden', position: 'relative', marginTop: '4px' }}>
+          {products[2] && <ProductImg src={products[2].image} alt="" className="w-full h-full object-cover" />}
+          <div style={{ position: 'absolute', inset: 0, border: `1px solid ${alpha('#fff', 0.08)}`, borderRadius: tt.surfaceRadius, pointerEvents: 'none' }} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── Layout Mutation: STAGGERED ────────────────────────────────────────────────
 // Cards offset vertically in alternating rhythm — visual flow, not static grid
 
@@ -5184,6 +5346,298 @@ function NewsletterSectionV2({ newsletter, tt, primaryColor, device, sectionPy, 
   );
 }
 
+// ── EDITORIAL BANNER SECTION ─────────────────────────────────────────────────
+
+function EditorialBannerSection({ design, tt, primaryColor, device, variant = 'center', sectionPy }: {
+  design: StoreDesign; tt: TokenTheme; primaryColor: string;
+  device: DeviceMode; variant?: string; sectionPy: number;
+}) {
+  const isMobile = device === 'mobile';
+  const pc = primaryColor;
+  const btnText = isDark(pc) ? '#fff' : '#000';
+  const { heroTitle, heroSubtitle, ctaText, tagline, products = [] } = design;
+  const bgImg = products[0]?.image;
+  const heroH = isMobile ? '400px' : '520px';
+
+  if (variant === 'left' && !isMobile) {
+    return (
+      <section style={{ display: 'flex', height: heroH, overflow: 'hidden' }}>
+        {/* Left: text */}
+        <div style={{ width: '50%', background: tt.pageBg, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 56px' }}>
+          <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}>
+            {tagline && <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.3em', color: pc, marginBottom: '16px', fontWeight: 700 }}>{tagline}</p>}
+            <h2 style={{ ...headingStyle(tt, 2.4), color: tt.textPrimary, marginBottom: '16px' }}>{heroTitle}</h2>
+            <p style={{ ...bodyStyle(tt), color: tt.textSecondary, marginBottom: '32px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{heroSubtitle}</p>
+            <button onClick={() => {}} style={{ alignSelf: 'flex-start', padding: '12px 28px', background: pc, color: btnText, borderRadius: tt.btnRadius, fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}>{ctaText}</button>
+          </motion.div>
+        </div>
+        {/* Right: image */}
+        <div style={{ width: '50%', position: 'relative', overflow: 'hidden' }}>
+          {bgImg && <ProductImg src={bgImg} alt="" className="w-full h-full object-cover" />}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.25), transparent)' }} />
+        </div>
+      </section>
+    );
+  }
+
+  if (variant === 'overlay') {
+    return (
+      <section style={{ position: 'relative', height: heroH, overflow: 'hidden' }}>
+        {bgImg && <ProductImg src={bgImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.62)' }} />
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}
+          style={{ position: 'absolute', bottom: '10%', left: 0, right: 0, padding: isMobile ? '0 24px' : '0 60px' }}>
+          {tagline && <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.3em', color: alpha(pc, 0.9), marginBottom: '12px', fontWeight: 700 }}>{tagline}</p>}
+          <h2 style={{ ...headingStyle(tt, isMobile ? 2 : 2.8), color: '#fff', marginBottom: '12px', maxWidth: '20ch' }}>{heroTitle}</h2>
+          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', marginBottom: '28px', maxWidth: '45ch', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{heroSubtitle}</p>
+          <button onClick={() => {}} style={{ padding: '12px 28px', background: pc, color: btnText, borderRadius: tt.btnRadius, fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}>{ctaText}</button>
+        </motion.div>
+      </section>
+    );
+  }
+
+  // center (default)
+  return (
+    <section style={{ position: 'relative', height: heroH, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {bgImg && <ProductImg src={bgImg} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.1) 100%)' }} />
+      <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}
+        style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: isMobile ? '0 24px' : '0 60px', maxWidth: '700px' }}>
+        {tagline && <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.3em', color: alpha(pc, 0.9), marginBottom: '12px', fontWeight: 700 }}>{tagline}</p>}
+        <h2 style={{ ...headingStyle(tt, isMobile ? 2 : 2.8), color: '#fff', marginBottom: '12px' }}>{heroTitle}</h2>
+        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', marginBottom: '28px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{heroSubtitle}</p>
+        <button onClick={() => {}} style={{ padding: '12px 32px', background: pc, color: btnText, borderRadius: tt.btnRadius, fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}>{ctaText}</button>
+      </motion.div>
+    </section>
+  );
+}
+
+// ── COUNTDOWN SECTION ─────────────────────────────────────────────────────────
+
+function CountdownSection({ design, tt, primaryColor, device, variant = 'centered', sectionPy }: {
+  design: StoreDesign; tt: TokenTheme; primaryColor: string;
+  device: DeviceMode; variant?: string; sectionPy: number;
+}) {
+  const isMobile = device === 'mobile';
+  const pc = primaryColor;
+  const pcText = isDark(pc) ? '#fff' : '#000';
+  const { promoBar } = design;
+
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const endMs = Date.now() + 3 * 24 * 60 * 60 * 1000;
+    const diff = endMs - Date.now();
+    return {
+      days: Math.floor(diff / 86400000),
+      hours: Math.floor((diff % 86400000) / 3600000),
+      minutes: Math.floor((diff % 3600000) / 60000),
+      seconds: Math.floor((diff % 60000) / 1000),
+      endMs,
+    };
+  });
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const diff = Math.max(0, timeLeft.endMs - Date.now());
+      setTimeLeft(prev => ({
+        ...prev,
+        days: Math.floor(diff / 86400000),
+        hours: Math.floor((diff % 86400000) / 3600000),
+        minutes: Math.floor((diff % 3600000) / 60000),
+        seconds: Math.floor((diff % 60000) / 1000),
+      }));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [timeLeft.endMs]);
+
+  const units = [
+    { label: 'Days',    value: timeLeft.days },
+    { label: 'Hours',   value: timeLeft.hours },
+    { label: 'Minutes', value: timeLeft.minutes },
+    { label: 'Seconds', value: timeLeft.seconds },
+  ];
+
+  const heading = promoBar || 'Limited Time Offer';
+
+  if (variant === 'banner') {
+    return (
+      <section style={{ background: pc, paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+        <div className="max-w-4xl mx-auto px-5 text-center">
+          <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.25em', color: isDark(pc) ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.55)', marginBottom: '8px', fontWeight: 600 }}>Ends in</p>
+          <h2 style={{ ...headingStyle(tt, isMobile ? 1.1 : 1.4), color: pcText, marginBottom: '28px' }}>{heading}</h2>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: isMobile ? '12px' : '24px' }}>
+            {units.map(u => (
+              <div key={u.label} style={{ textAlign: 'center', minWidth: isMobile ? '56px' : '72px' }}>
+                <motion.span key={u.value} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
+                  style={{ display: 'block', fontSize: isMobile ? '2.2rem' : '3rem', fontWeight: 900, lineHeight: 1, color: pcText, fontFamily: tt.headingFont }}>
+                  {String(u.value).padStart(2, '0')}
+                </motion.span>
+                <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: isDark(pc) ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)', fontWeight: 600 }}>{u.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (variant === 'minimal') {
+    return (
+      <section style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+        <div className="max-w-4xl mx-auto px-5 text-center">
+          <h2 style={{ ...headingStyle(tt, isMobile ? 1.0 : 1.2), color: tt.textPrimary, marginBottom: '24px' }}>{heading}</h2>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: isMobile ? '16px' : '32px', alignItems: 'baseline' }}>
+            {units.map(u => (
+              <div key={u.label} style={{ textAlign: 'center' }}>
+                <motion.span key={u.value} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
+                  style={{ display: 'block', fontSize: isMobile ? '2.8rem' : '4rem', fontWeight: 900, lineHeight: 1, color: pc, fontFamily: tt.headingFont }}>
+                  {String(u.value).padStart(2, '0')}
+                </motion.span>
+                <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: tt.textMuted, fontWeight: 600, marginTop: '6px', display: 'block' }}>{u.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // centered (default)
+  return (
+    <section style={{ background: tt.surfaceBg, paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+      <div className="max-w-4xl mx-auto px-5 text-center">
+        <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.25em', color: pc, marginBottom: '8px', fontWeight: 700 }}>Ends in</p>
+        <h2 style={{ ...headingStyle(tt, isMobile ? 1.1 : 1.4), color: tt.textPrimary, marginBottom: '32px' }}>{heading}</h2>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: isMobile ? '10px' : '20px' }}>
+          {units.map(u => (
+            <div key={u.label} style={{ textAlign: 'center' }}>
+              <div style={{ width: isMobile ? '64px' : '88px', height: isMobile ? '64px' : '88px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: tt.pageBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius }}>
+                <motion.span key={u.value} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
+                  style={{ fontSize: isMobile ? '1.7rem' : '2.4rem', fontWeight: 900, lineHeight: 1, color: tt.textPrimary, fontFamily: tt.headingFont }}>
+                  {String(u.value).padStart(2, '0')}
+                </motion.span>
+              </div>
+              <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.15em', color: tt.textMuted, fontWeight: 600, marginTop: '8px', display: 'block' }}>{u.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── CATEGORY SPOTLIGHT SECTION ────────────────────────────────────────────────
+
+function CategorySpotlightSection({ design, tt, primaryColor, device, variant = 'editorial', sectionPy, onProductClick }: {
+  design: StoreDesign; tt: TokenTheme; primaryColor: string;
+  device: DeviceMode; variant?: string; sectionPy: number;
+  onProductClick: (p: RichProduct) => void;
+}) {
+  const isMobile = device === 'mobile';
+  const pc = primaryColor;
+  const btnText = isDark(pc) ? '#fff' : '#000';
+  const { products = [], collections = [], tagline, ctaText } = design;
+  const collection = collections[0];
+  const spotlightProducts = products.slice(0, 4);
+
+  if (variant === 'split') {
+    return (
+      <section style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', minHeight: isMobile ? 'auto' : '520px', overflow: 'hidden' }}>
+        {/* Left: big image */}
+        <div style={{ flex: isMobile ? 'none' : '1 1 50%', position: 'relative', height: isMobile ? '280px' : 'auto', overflow: 'hidden' }}>
+          {spotlightProducts[0] && <ProductImg src={spotlightProducts[0].image} alt={spotlightProducts[0].name} fallback={spotlightProducts[0].imageFallback} className="w-full h-full object-cover" />}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, transparent 60%, rgba(0,0,0,0.15))' }} />
+        </div>
+        {/* Right: product list */}
+        <div style={{ flex: isMobile ? 'none' : '1 1 50%', background: tt.surfaceBg, padding: isMobile ? '32px 24px' : '48px 48px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          {collection && <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.25em', color: pc, marginBottom: '8px', fontWeight: 700 }}>{collection.emoji} {collection.name}</p>}
+          <h2 style={{ ...headingStyle(tt, isMobile ? 1.4 : 1.8), color: tt.textPrimary, marginBottom: '28px' }}>{tagline || 'Discover the Collection'}</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {spotlightProducts.slice(1, 4).map(p => (
+              <div key={p.id} onClick={() => onProductClick(p)} style={{ display: 'flex', gap: '16px', cursor: 'pointer', padding: '12px', borderRadius: tt.surfaceRadius, border: `1px solid ${tt.surfaceBorder}`, background: tt.pageBg, transition: 'transform 0.2s' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'translateX(4px)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'none'}>
+                <div style={{ width: '60px', height: '60px', borderRadius: tt.surfaceRadius, overflow: 'hidden', flexShrink: 0 }}>
+                  <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
+                </div>
+                <div>
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: tt.textPrimary, marginBottom: '4px' }}>{p.name}</p>
+                  <p style={{ fontSize: '12px', color: pc, fontWeight: 700 }}>{p.price}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (variant === 'immersive') {
+    return (
+      <section style={{ position: 'relative', background: isDark(tt.pageBg) ? tt.pageBg : '#0a0a0a', overflow: 'hidden', padding: `${sectionPy}px 0` }}>
+        {/* Huge background text */}
+        {collection && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 0 }}>
+            <span style={{ fontSize: 'clamp(6rem, 18vw, 16rem)', fontWeight: 900, fontFamily: tt.headingFont, color: 'rgba(255,255,255,0.04)', textTransform: 'uppercase', whiteSpace: 'nowrap', letterSpacing: '-0.04em' }}>{collection.name}</span>
+          </div>
+        )}
+        <div className="max-w-6xl mx-auto px-5" style={{ position: 'relative', zIndex: 1 }}>
+          {collection && <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.3em', color: pc, marginBottom: '12px', fontWeight: 700, textAlign: 'center' }}>{collection.emoji} {collection.name}</p>}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: isMobile ? '12px' : '20px', flexWrap: isMobile ? 'wrap' : 'nowrap', alignItems: 'flex-end' }}>
+            {spotlightProducts.slice(0, 4).map((p, i) => {
+              const offsets = [0, -24, -12, -36];
+              return (
+                <motion.div key={p.id} onClick={() => onProductClick(p)} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.12, duration: 0.6 }}
+                  style={{ cursor: 'pointer', flexShrink: 0, width: isMobile ? 'calc(50% - 6px)' : '200px', marginBottom: isMobile ? 0 : `${offsets[i]}px`, borderRadius: tt.surfaceRadius, overflow: 'hidden', border: `1px solid rgba(255,255,255,0.08)` }}>
+                  <div style={{ height: isMobile ? '180px' : '280px', overflow: 'hidden' }}>
+                    <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
+                  </div>
+                  <div style={{ padding: '12px', background: 'rgba(255,255,255,0.04)' }}>
+                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 600, marginBottom: '2px' }}>{p.name}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // editorial (default)
+  return (
+    <section style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+      <div className="max-w-6xl mx-auto px-5">
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '32px' : '60px', alignItems: isMobile ? 'flex-start' : 'center' }}>
+          {/* Left: editorial text */}
+          <div style={{ flex: '0 0 auto', maxWidth: isMobile ? '100%' : '300px' }}>
+            {collection && <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.35em', color: pc, marginBottom: '12px', fontWeight: 700 }}>{collection.emoji} {collection.name}</p>}
+            <h2 style={{ ...headingStyle(tt, isMobile ? 1.6 : 2.2), color: tt.textPrimary, marginBottom: '16px' }}>{tagline || 'The Collection'}</h2>
+            <div style={{ width: '32px', height: '2px', background: pc, marginBottom: '16px' }} />
+            <p style={{ ...bodyStyle(tt), color: tt.textSecondary, marginBottom: '28px', lineHeight: 1.7 }}>{collection?.name ? `Explore our ${collection.name} range` : 'Handpicked for you'}</p>
+            <button onClick={() => {}} style={{ padding: '10px 24px', background: pc, color: btnText, borderRadius: tt.btnRadius, fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}>{ctaText || 'Shop Now'}</button>
+          </div>
+          {/* Right: 2-col micro-grid */}
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+            {spotlightProducts.slice(0, 4).map((p, i) => (
+              <motion.div key={p.id} onClick={() => onProductClick(p)} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }}
+                style={{ cursor: 'pointer', borderRadius: tt.surfaceRadius, overflow: 'hidden', position: 'relative' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'scale(1.02)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'none'}>
+                <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: tt.surfaceBg }}>
+                  <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
+                </div>
+                <div style={{ padding: '10px 0 4px' }}>
+                  <p style={{ fontSize: '12px', fontWeight: 600, color: tt.textPrimary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── TOKEN LAYOUT — main component ─────────────────────────────────────────────
 
 function TokenLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
@@ -5265,6 +5719,9 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
           case 'video':         return <TkHeroVideo         key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
           case 'stacked':       return <TkHeroStacked       key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
           case 'asymmetrical':  return <TkHeroAsymmetrical  key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
+          case 'cinematic':    return <TkHeroCinematic    key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
+          case 'chat':         return <TkHeroChat         key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
+          case 'fashion':      return <TkHeroFashion      key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
           default:              return <TkHeroSplit          key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} fmtPrice={fmtPrice} heroProps={heroProps} />;
         }
 
@@ -5348,6 +5805,15 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
 
       case 'instagramFeed':
         return <InstagramFeedSection key="instagramFeed" design={design} primaryColor={primaryColor} tt={tt} device={device} onProductClick={onProductClick} />;
+
+      case 'editorialBanner':
+        return <EditorialBannerSection key="editorialBanner" design={design} tt={tt} primaryColor={primaryColor} device={device} variant={variant ?? undefined} sectionPy={sectionPy} />;
+
+      case 'countdown':
+        return <CountdownSection key="countdown" design={design} tt={tt} primaryColor={primaryColor} device={device} variant={variant ?? undefined} sectionPy={sectionPy} />;
+
+      case 'categorySpotlight':
+        return <CategorySpotlightSection key="categorySpotlight" design={design} tt={tt} primaryColor={primaryColor} device={device} variant={variant ?? undefined} sectionPy={sectionPy} onProductClick={onProductClick} />;
 
       default:
         return null;
