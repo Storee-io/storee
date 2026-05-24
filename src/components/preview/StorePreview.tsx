@@ -3022,6 +3022,8 @@ interface TokenTheme extends CommerceTheme {
   bodyTracking:    string;  // letter-spacing for body text
   // Layout mutation
   compositionStyle: 'grid' | 'staggered' | 'overlapping' | 'asymmetric';
+  // Density — how much info is packed per card / per section
+  density: 'dense' | 'normal' | 'airy';
   // Animation
   personality?: string;
   motion?: string;
@@ -3274,6 +3276,24 @@ function getSpacingPx(spacing?: string, base = 56): number {
   return base; // comfortable = default
 }
 
+type DensityLevel = 'dense' | 'normal' | 'airy';
+interface DensityVars {
+  cardAspect: string;
+  gridGap: string;
+  cardPadY: string;
+  fontSize: string;
+  showCategory: boolean;
+  showDesc: boolean;
+  infoGap: string;
+}
+function getDensityVars(density?: DensityLevel): DensityVars {
+  switch (density) {
+    case 'dense': return { cardAspect: '4/5', gridGap: 'gap-3', cardPadY: 'pt-2', fontSize: 'text-xs', showCategory: true, showDesc: true, infoGap: 'mt-0.5' };
+    case 'airy':  return { cardAspect: '2/3', gridGap: 'gap-6 md:gap-8', cardPadY: 'pt-4', fontSize: 'text-sm', showCategory: false, showDesc: false, infoGap: 'mt-2' };
+    default:      return { cardAspect: '3/4', gridGap: 'gap-4 md:gap-5', cardPadY: 'pt-3', fontSize: 'text-sm', showCategory: true, showDesc: false, infoGap: 'mt-1' };
+  }
+}
+
 // ── Known serif heading fonts (for CSS fallback stack) ────────────────────────
 
 const SERIF_FONTS = new Set([
@@ -3337,6 +3357,7 @@ function getTokenThemeV2(dt: DesignTokens, primaryColor: string): TokenTheme {
     bodyTracking:    dt.bodyTracking    ?? '0',
     // Layout mutation
     compositionStyle: dt.compositionStyle ?? 'grid',
+    density: dt.density ?? 'normal',
     // Animation archetype context
     personality: dt.personality,
     motion:      dt.motion,
@@ -3365,6 +3386,7 @@ function getDefaultTokenTheme(primaryColor: string): TokenTheme {
     headingScale: 1.0, headingWeight: 800, headingTracking: '-0.02em',
     headingLeading: 1.05, bodyLeading: 1.6, bodyTracking: '0',
     compositionStyle: 'grid',
+    density: 'normal',
     personality: undefined, motion: 'subtle',
   };
 }
@@ -3389,6 +3411,7 @@ function getTokenThemeV1(ds: DesignSystem, primaryColor: string): TokenTheme {
     headingScale: 1.0, headingWeight: 800, headingTracking: '-0.02em',
     headingLeading: 1.05, bodyLeading: 1.6, bodyTracking: '0',
     compositionStyle: 'grid',
+    density: 'normal',
     personality: undefined, motion: 'subtle',
   };
 }
@@ -4220,9 +4243,10 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
     hidden:  {},
     visible: { transition: { staggerChildren: arch === 'luxury' ? 0.1 : 0.07, delayChildren: 0.05 } },
   };
+  const dv = getDensityVars(tt.density);
   return (
     <motion.div
-      className={`grid ${gridCols(device)} gap-4 md:gap-5`}
+      className={`grid ${gridCols(device)} ${dv.gridGap}`}
       variants={doStagger ? staggerContainer : undefined}
       initial={doStagger ? 'hidden' : undefined}
       whileInView={doStagger ? 'visible' : undefined}
@@ -4230,7 +4254,7 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
     >
       {products.map((p) => (
         <motion.div key={p.id} className="group cursor-pointer" variants={doStagger ? cardVariant : undefined} onClick={() => onProductClick(p)}>
-          <div className="relative overflow-hidden mb-3" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
+          <div className="relative overflow-hidden mb-3" style={{ aspectRatio: dv.cardAspect, borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
             <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
             {p.badge && (
               <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>
@@ -4253,11 +4277,16 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
               <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
             </button>
           </div>
-          <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
-          <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm font-black" style={{ color: tt.primary }}>{fmtPrice(p.price)}</span>
-            {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
+          <div className={dv.cardPadY}>
+            {dv.showCategory && <p className={`${dv.fontSize} uppercase tracking-wider mb-0.5`} style={{ color: tt.textMuted }}>{p.category}</p>}
+            <p className={`${dv.fontSize} font-bold truncate ${dv.infoGap}`} style={{ color: tt.textPrimary }}>{p.name}</p>
+            {dv.showDesc && p.description && (
+              <p className="text-[11px] line-clamp-2 mt-0.5" style={{ color: tt.textSecondary }}>{p.description}</p>
+            )}
+            <div className={`flex items-center gap-2 ${dv.infoGap}`}>
+              <span className={`${dv.fontSize} font-black`} style={{ color: tt.primary }}>{fmtPrice(p.price)}</span>
+              {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
+            </div>
           </div>
         </motion.div>
       ))}
@@ -4351,16 +4380,19 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
 }) {
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  const dv = getDensityVars(tt.density);
+  const rowPad = tt.density === 'dense' ? '10px' : tt.density === 'airy' ? '20px' : '16px';
+  const imgSize = tt.density === 'dense' ? 'w-20 h-20' : tt.density === 'airy' ? 'w-36 h-36' : 'w-28 h-28';
   return (
-    <div className="space-y-4">
+    <div className={tt.density === 'dense' ? 'space-y-2' : tt.density === 'airy' ? 'space-y-6' : 'space-y-4'}>
       {products.map(p => (
         <div
           key={p.id}
           className="group flex gap-5 cursor-pointer hover:shadow-md transition-shadow"
-          style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius, padding: '16px' }}
+          style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius, padding: rowPad }}
           onClick={() => onProductClick(p)}
         >
-          <div className="w-28 h-28 flex-shrink-0 overflow-hidden" style={{ borderRadius: tt.surfaceRadius, background: tt.inputBg }}>
+          <div className={`${imgSize} flex-shrink-0 overflow-hidden`} style={{ borderRadius: tt.surfaceRadius, background: tt.inputBg }}>
             <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           </div>
           <div className="flex-1 min-w-0 flex flex-col justify-between">
@@ -4370,9 +4402,9 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
                   {p.badge}
                 </span>
               )}
-              <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
-              <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
-              <p className="text-xs leading-relaxed mt-1 line-clamp-2" style={{ color: tt.textSecondary }}>{p.description}</p>
+              {dv.showCategory && <p className={`${dv.fontSize} uppercase tracking-wider mb-1`} style={{ color: tt.textMuted }}>{p.category}</p>}
+              <p className={`${dv.fontSize} font-bold truncate`} style={{ color: tt.textPrimary }}>{p.name}</p>
+              {(dv.showDesc || tt.density === 'normal') && <p className="text-xs leading-relaxed mt-1 line-clamp-2" style={{ color: tt.textSecondary }}>{p.description}</p>}
             </div>
             <div className="flex items-center justify-between mt-3 gap-3">
               <div className="flex items-center gap-2">
@@ -4720,17 +4752,21 @@ function FeaturesSection({ features, tt, primaryColor, device, motion: motionLev
   }
 
   // Default: icons
+  const dv = getDensityVars(tt.density);
+  const cardPad = tt.density === 'dense' ? 'p-3' : tt.density === 'airy' ? 'p-8' : 'p-6';
+  const iconGap = tt.density === 'dense' ? 'gap-3' : tt.density === 'airy' ? 'gap-5' : 'gap-4';
+  const gridGap = tt.density === 'dense' ? 'gap-3' : tt.density === 'airy' ? 'gap-8' : 'gap-6';
   return (
     <section className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
       <motion.div
-        className={`grid ${isMobile ? 'grid-cols-1 gap-4' : `grid-cols-${columns ?? 3} gap-6`}`}
+        className={`grid ${isMobile ? 'grid-cols-1 gap-4' : `grid-cols-${columns ?? 3} ${gridGap}`}`}
         variants={motionLevel !== 'none' ? featureStagger : undefined}
         initial={motionLevel !== 'none' ? 'hidden' : undefined}
         whileInView={motionLevel !== 'none' ? 'visible' : undefined}
         viewport={{ once: true, margin: '-30px' }}
       >
         {features.map((f, i) => (
-          <motion.div key={i} className="flex items-start gap-4 p-6"
+          <motion.div key={i} className={`flex items-start ${iconGap} ${cardPad}`}
             variants={motionLevel !== 'none' ? featureCardVariant : undefined}
             whileHover={motionLevel !== 'none' ? { scale: parseFloat(getHoverScale(motionLevel).replace('scale(','').replace(')','')) } : undefined}
             style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius,
@@ -4740,7 +4776,8 @@ function FeaturesSection({ features, tt, primaryColor, device, motion: motionLev
             </div>
             <div>
               <h3 className="text-sm mb-1" style={{ ...headingStyle(tt, 0.875), color: tt.textPrimary }}>{f.title}</h3>
-              <p className="text-xs" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>{f.description}</p>
+              {(tt.density !== 'dense') && <p className="text-xs" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>{f.description}</p>}
+              {tt.density === 'dense' && <p className="text-[11px] line-clamp-1" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>{f.description}</p>}
             </div>
           </motion.div>
         ))}
