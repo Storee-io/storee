@@ -3065,6 +3065,10 @@ interface TokenTheme extends CommerceTheme {
   styleMix?: string[];
   // Content / copy presentation style
   contentStyle?: 'conversational' | 'formal' | 'playful' | 'editorial' | 'minimal';
+  // Card visual treatment
+  cardStyle?: 'floating' | 'ghost' | 'bordered' | 'filled';
+  // Hover interaction style
+  hoverStyle?: 'lift' | 'glow' | 'scale' | 'none';
 }
 
 // ── Phase 3: Motion & Elevation utilities ─────────────────────────────────────
@@ -3356,6 +3360,65 @@ function getContentStyleVars(cs?: ContentStyleLevel): ContentStyleVars {
   }
 }
 
+// ── headlineSize → rem multiplier ────────────────────────────────────────────
+type HeadlineSizeLevel = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+function getHeadlineSizeMultiplier(size?: HeadlineSizeLevel): number {
+  switch (size) {
+    case 'sm':  return 0.85;
+    case 'lg':  return 1.2;
+    case 'xl':  return 1.5;
+    case '2xl': return 1.8;
+    case '3xl': return 2.2;
+    default:    return 1.0; // 'md'
+  }
+}
+
+// ── Card style → CSS object ───────────────────────────────────────────────────
+type CardStyleLevel = 'floating' | 'ghost' | 'bordered' | 'filled';
+interface CardStyleVars {
+  background: string;
+  border: string;
+  boxShadow: string;
+}
+function getCardStyleVars(cardStyle: CardStyleLevel | undefined, tt: TokenTheme): CardStyleVars {
+  switch (cardStyle) {
+    case 'floating': return {
+      background: tt.surfaceBg,
+      border: `1px solid transparent`,
+      boxShadow: `0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08)`,
+    };
+    case 'ghost': return {
+      background: 'transparent',
+      border: `1px solid ${tt.surfaceBorder}`,
+      boxShadow: 'none',
+    };
+    case 'bordered': return {
+      background: tt.surfaceBg,
+      border: `2px solid ${tt.surfaceBorder}`,
+      boxShadow: 'none',
+    };
+    default: return { // 'filled'
+      background: tt.surfaceBg,
+      border: `1px solid ${tt.surfaceBorder}`,
+      boxShadow: `0 2px 8px rgba(0,0,0,0.06)`,
+    };
+  }
+}
+
+// ── Hover style → Framer Motion whileHover object ────────────────────────────
+type HoverStyleLevel = 'lift' | 'glow' | 'scale' | 'none';
+function getHoverMotion(hoverStyle: HoverStyleLevel | undefined, primaryColor?: string): import('framer-motion').TargetAndTransition {
+  switch (hoverStyle) {
+    case 'lift':  return { y: -4, boxShadow: '0 12px 40px rgba(0,0,0,0.15)' };
+    case 'scale': return { scale: 1.03 };
+    case 'glow':  return primaryColor
+      ? { scale: 1.02, boxShadow: `0 0 24px ${alpha(primaryColor, 0.35)}` }
+      : { scale: 1.02 };
+    case 'none':  return {};
+    default:      return { y: -2 }; // subtle lift by default
+  }
+}
+
 // ── Known serif heading fonts (for CSS fallback stack) ────────────────────────
 
 const SERIF_FONTS = new Set([
@@ -3429,6 +3492,9 @@ function getTokenThemeV2(dt: DesignTokens, primaryColor: string): TokenTheme {
     styleMix: dt.styleMix,
     // Content style
     contentStyle: dt.contentStyle,
+    // Card + hover style
+    cardStyle:  dt.cardStyle,
+    hoverStyle: dt.hoverStyle,
   };
 }
 
@@ -3521,10 +3587,11 @@ function TkFontInjector({ url }: { url: string }) {
 // ── Hero section props helpers ────────────────────────────────────────────────
 
 type HeroP = {
-  textAlign?:  'left' | 'center' | 'right';
-  imageRatio?: 'portrait' | 'square' | 'landscape';
-  ctaStyle?:   'filled' | 'outline' | 'text';
-  accentLine?: boolean;
+  textAlign?:    'left' | 'center' | 'right';
+  imageRatio?:   'portrait' | 'square' | 'landscape';
+  ctaStyle?:     'filled' | 'outline' | 'text';
+  accentLine?:   boolean;
+  headlineSize?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 };
 
 function heroImageAspect(ratio?: HeroP['imageRatio']): string {
@@ -3599,7 +3666,7 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts, 
           </motion.p>
         )}
         {heroProps.accentLine && <motion.div variants={heroItem} style={{ width: '40px', height: '3px', background: primaryColor, marginBottom: '16px' }} />}
-        <motion.h1 variants={heroItem} className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.4 : 4.0), color: bgImage ? '#ffffff' : tt.textPrimary }}>
+        <motion.h1 variants={heroItem} className="mb-5" style={{ ...headingStyle(tt, (isMobile ? 2.4 : 4.0) * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: bgImage ? '#ffffff' : tt.textPrimary }}>
           {heroTitle}
         </motion.h1>
         <motion.p variants={heroItem} className="mb-8 max-w-lg" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: bgImage ? 'rgba(255,255,255,0.82)' : tt.textSecondary }}>
@@ -3657,7 +3724,7 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
             </motion.p>
           )}
           {heroProps.accentLine && <motion.div variants={heroItem} style={{ width: '40px', height: '3px', background: primaryColor, marginBottom: '16px' }} />}
-          <motion.h1 variants={heroItem} className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.4 : 3.6), color: tt.textPrimary }}>
+          <motion.h1 variants={heroItem} className="mb-5" style={{ ...headingStyle(tt, (isMobile ? 2.4 : 3.6) * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: tt.textPrimary }}>
             {heroTitle}
           </motion.h1>
           <motion.p variants={heroItem} className="mb-8 max-w-sm" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>
@@ -3736,7 +3803,7 @@ function TkHeroFullscreen({ design, tt, primaryColor, device, onScrollToProducts
             {tagline}
           </p>
         )}
-        <h1 className="mb-5 text-white" style={headingStyle(tt, isMobile ? 3.2 : 5.5)}>
+        <h1 className="mb-5 text-white" style={headingStyle(tt, (isMobile ? 3.2 : 5.5) * getHeadlineSizeMultiplier(heroProps.headlineSize))}>
           {heroTitle}
         </h1>
         <p className="mb-8 max-w-md" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: 'rgba(255,255,255,0.75)' }}>
@@ -3776,7 +3843,7 @@ function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts, h
           </p>
         )}
         {heroProps.accentLine && <div style={{ width: '40px', height: '3px', background: primaryColor, marginBottom: '16px', margin: textAlign === 'center' ? '0 auto 16px' : '0 0 16px' }} />}
-        <h1 className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.2 : 3.6), color: tt.textPrimary }}>
+        <h1 className="mb-5" style={{ ...headingStyle(tt, (isMobile ? 2.2 : 3.6) * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: tt.textPrimary }}>
           {heroTitle}
         </h1>
         <p className="mb-8 max-w-xl mx-auto" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>
@@ -3836,7 +3903,7 @@ function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts,
         <div className="relative z-10 flex flex-col px-6 pt-16 pb-10 gap-8">
           <div>
             {tagline && <p className="text-[10px] uppercase tracking-[0.35em] mb-4" style={{ color: primaryColor }}>{tagline}</p>}
-            <h1 style={{ ...headingStyle(tt, 2.6), color: tt.textPrimary }}>
+            <h1 style={{ ...headingStyle(tt, 2.6 * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: tt.textPrimary }}>
               {bigWord}<br /><span style={{ color: primaryColor }}>{restWords}</span>
             </h1>
             <p className="mt-4 mb-6" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>{heroSubtitle}</p>
@@ -3861,7 +3928,7 @@ function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts,
           {/* Text col */}
           <div className="pr-8">
             {tagline && <p className="text-[10px] uppercase tracking-[0.4em] mb-6" style={{ color: primaryColor }}>{tagline}</p>}
-            <h1 style={{ ...headingStyle(tt, 5.0), color: tt.textPrimary }}>
+            <h1 style={{ ...headingStyle(tt, 5.0 * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: tt.textPrimary }}>
               {bigWord}<br />
               <span style={{ color: primaryColor }}>{restWords}</span>
             </h1>
@@ -3955,7 +4022,7 @@ function TkHeroVideo({ design, tt, primaryColor, device, onScrollToProducts, her
             <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/70">{tagline}</p>
           </div>
         )}
-        <h1 className="mb-5 text-white" style={headingStyle(tt, isMobile ? 3.5 : 6.0)}>
+        <h1 className="mb-5 text-white" style={headingStyle(tt, (isMobile ? 3.5 : 6.0) * getHeadlineSizeMultiplier(heroProps.headlineSize))}>
           {heroTitle}
         </h1>
         <p className="mb-8 max-w-sm" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)' }}>
@@ -4010,7 +4077,7 @@ function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts, h
               {collections[0]?.emoji} {tagline}
             </p>
           )}
-          <h1 className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.4 : 3.8), color: tt.textPrimary }}>
+          <h1 className="mb-5" style={{ ...headingStyle(tt, (isMobile ? 2.4 : 3.8) * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: tt.textPrimary }}>
             {heroTitle}
           </h1>
           <p className="mb-8 max-w-sm" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>{heroSubtitle}</p>
@@ -4082,7 +4149,7 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
         )}
         <div className="relative z-10 absolute bottom-0 left-0 right-0 px-6 pb-10">
           {tagline && <p className="text-[9px] uppercase tracking-[0.35em] mb-3 text-white/60">{tagline}</p>}
-          <h1 className="mb-3 text-white" style={headingStyle(tt, 2.6)}>{heroTitle}</h1>
+          <h1 className="mb-3 text-white" style={headingStyle(tt, 2.6 * getHeadlineSizeMultiplier(heroProps.headlineSize))}>{heroTitle}</h1>
           <p className="text-xs mb-5 max-w-xs" style={{ ...bodyStyle(tt), color: 'rgba(255,255,255,0.65)' }}>{heroSubtitle}</p>
           <button onClick={onScrollToProducts} className="px-6 py-3 text-xs font-bold uppercase tracking-wider"
             style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>{ctaText}</button>
@@ -4116,7 +4183,7 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
         {tagline && (
           <p className="text-[9px] uppercase tracking-[0.5em] mb-8" style={{ color: tt.textMuted }}>{tagline}</p>
         )}
-        <h1 className="mb-6" style={{ ...headingStyle(tt, 3.6), color: tt.textPrimary }}>
+        <h1 className="mb-6" style={{ ...headingStyle(tt, 3.6 * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: tt.textPrimary }}>
           {heroTitle}
         </h1>
         <div style={{ width: '32px', height: '2px', background: primaryColor, marginBottom: '20px' }} />
@@ -4159,7 +4226,7 @@ function TkHeroCinematic({ design, tt, primaryColor, device, onScrollToProducts,
           {tagline && (
             <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.55em', color: 'rgba(255,255,255,0.5)', marginBottom: '20px', fontWeight: 400, fontFamily: tt.headingFont }}>{tagline}</p>
           )}
-          <h1 style={{ ...headingStyle(tt, isMobile ? 2.4 : 4.0), color: '#fff', marginBottom: '20px', lineHeight: 1.0, fontWeight: 900 }}>{heroTitle}</h1>
+          <h1 style={{ ...headingStyle(tt, (isMobile ? 2.4 : 4.0) * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: '#fff', marginBottom: '20px', lineHeight: 1.0, fontWeight: 900 }}>{heroTitle}</h1>
           <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '36px', maxWidth: '40ch', lineHeight: 1.6 }}>{heroSubtitle}</p>
           {/* Minimal text+arrow CTA */}
           <button onClick={onScrollToProducts}
@@ -4257,7 +4324,7 @@ function TkHeroFashion({ design, tt, primaryColor, device, onScrollToProducts, h
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.1) 55%)' }} />
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 24px 40px', zIndex: 1 }}>
           {tagline && <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.4em', color: 'rgba(255,255,255,0.55)', marginBottom: '10px', fontWeight: 400 }}>{tagline}</p>}
-          <h1 style={{ ...headingStyle(tt, 2.2), color: '#fff', marginBottom: '20px' }}>{heroTitle}</h1>
+          <h1 style={{ ...headingStyle(tt, 2.2 * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: '#fff', marginBottom: '20px' }}>{heroTitle}</h1>
           <button onClick={onScrollToProducts} style={{ padding: '12px 28px', background: pc, color: btnText, borderRadius: tt.btnRadius, fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}>{ctaText}</button>
         </div>
       </section>
@@ -4275,7 +4342,7 @@ function TkHeroFashion({ design, tt, primaryColor, device, onScrollToProducts, h
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.0) 50%)' }} />
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 40px 40px', zIndex: 1 }}>
               {tagline && <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.4em', color: 'rgba(255,255,255,0.55)', marginBottom: '12px', fontWeight: 400 }}>{tagline}</p>}
-              <h1 style={{ ...headingStyle(tt, 3.2), color: '#fff', marginBottom: '24px', maxWidth: '18ch' }}>{heroTitle}</h1>
+              <h1 style={{ ...headingStyle(tt, 3.2 * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: '#fff', marginBottom: '24px', maxWidth: '18ch' }}>{heroTitle}</h1>
               <button onClick={onScrollToProducts} style={{ padding: '13px 32px', background: pc, color: btnText, borderRadius: tt.btnRadius, fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}>{ctaText}</button>
             </div>
           </div>
@@ -4311,13 +4378,12 @@ function TkGridStaggered({ products, tt, primaryColor, device, onProductClick, o
   return (
     <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: '20px', alignItems: 'start' }}>
       {products.map((p, i) => (
-        <div key={p.id} className="group cursor-pointer"
-          style={{ marginTop: isMobile ? 0 : `${offsets[i % offsets.length]}px`, transition: 'transform 0.2s ease' }}
+        <motion.div key={p.id} className="group cursor-pointer"
+          style={{ marginTop: isMobile ? 0 : `${offsets[i % offsets.length]}px`, ...(tt.cardStyle ? { ...getCardStyleVars(tt.cardStyle, tt), borderRadius: tt.surfaceRadius, overflow: 'hidden' } : {}) }}
           onClick={() => onProductClick(p)}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px)'}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'}
+          whileHover={getHoverMotion(tt.hoverStyle, primaryColor)}
         >
-          <div className="relative overflow-hidden mb-3" style={{ aspectRatio: i % 3 === 1 ? '4/5' : '3/4', borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
+          <div className="relative overflow-hidden mb-3" style={{ aspectRatio: i % 3 === 1 ? '4/5' : '3/4', borderRadius: tt.cardStyle ? 0 : tt.surfaceRadius, background: tt.cardStyle ? 'transparent' : tt.surfaceBg }}>
             <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
             {p.badge && <span className="absolute top-3 left-3 text-[10px] font-black uppercase px-2.5 py-1 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>{p.badge}</span>}
             <button onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
@@ -4330,13 +4396,15 @@ function TkGridStaggered({ products, tt, primaryColor, device, onProductClick, o
                 style={{ background: primaryColor, borderRadius: tt.btnRadius }}>+ Add to Cart</button>
             </div>
           </div>
-          <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
-          <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm font-black" style={{ color: primaryColor }}>{fmtPrice(p.price)}</span>
-            {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
+          <div style={tt.cardStyle ? { padding: '0 10px 10px' } : undefined}>
+            <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
+            <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-sm font-black" style={{ color: primaryColor }}>{fmtPrice(p.price)}</span>
+              {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
+            </div>
           </div>
-        </div>
+        </motion.div>
       ))}
     </div>
   );
@@ -4472,6 +4540,8 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
   };
   const dv = getDensityVars(tt.density);
   const cv = getContentStyleVars(tt.contentStyle);
+  const cs = getCardStyleVars(tt.cardStyle, tt);
+  const hasCardWrapper = !!tt.cardStyle;
   return (
     <motion.div
       className={`grid ${gridCols(device)} ${dv.gridGap}`}
@@ -4481,8 +4551,11 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
       viewport={{ once: true, margin: '-30px' }}
     >
       {products.map((p) => (
-        <motion.div key={p.id} className="group cursor-pointer" variants={doStagger ? cardVariant : undefined} onClick={() => onProductClick(p)}>
-          <div className="relative overflow-hidden mb-3" style={{ aspectRatio: dv.cardAspect, borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
+        <motion.div key={p.id} className="group cursor-pointer" variants={doStagger ? cardVariant : undefined} onClick={() => onProductClick(p)}
+          whileHover={getHoverMotion(tt.hoverStyle, primaryColor)}
+          style={hasCardWrapper ? { ...cs, borderRadius: tt.surfaceRadius, overflow: 'hidden' } : undefined}
+        >
+          <div className="relative overflow-hidden mb-3" style={{ aspectRatio: dv.cardAspect, borderRadius: hasCardWrapper ? 0 : tt.surfaceRadius, background: hasCardWrapper ? 'transparent' : tt.surfaceBg }}>
             <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
             {p.badge && (
               <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>
@@ -4505,7 +4578,7 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
               <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
             </button>
           </div>
-          <div className={dv.cardPadY}>
+          <div className={dv.cardPadY} style={hasCardWrapper ? { paddingLeft: '12px', paddingRight: '12px' } : undefined}>
             {dv.showCategory && <p className={`${dv.fontSize} font-medium mb-0.5`} style={{ color: tt.textMuted, textTransform: cv.categoryTransform, letterSpacing: cv.labelTracking }}>{p.category}</p>}
             <p className={`${dv.fontSize} font-bold truncate ${dv.infoGap}`} style={{ color: tt.textPrimary }}>{p.name}</p>
             {dv.showDesc && p.description && (
@@ -4572,8 +4645,11 @@ function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, on
 
       {/* Remaining products */}
       {rest.slice(0, isMobile ? 4 : 4).map(p => (
-        <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
-          <div className="relative overflow-hidden mb-3" style={{ aspectRatio: '1/1', borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
+        <motion.div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}
+          whileHover={getHoverMotion(tt.hoverStyle, primaryColor)}
+          style={tt.cardStyle ? { ...getCardStyleVars(tt.cardStyle, tt), borderRadius: tt.surfaceRadius, overflow: 'hidden' } : undefined}
+        >
+          <div className="relative overflow-hidden mb-3" style={{ aspectRatio: '1/1', borderRadius: tt.cardStyle ? 0 : tt.surfaceRadius, background: tt.cardStyle ? 'transparent' : tt.surfaceBg }}>
             <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             {p.badge && (
               <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>
@@ -4584,17 +4660,19 @@ function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, on
               <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
             </button>
           </div>
-          <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: tt.textMuted }}>{p.category}</p>
-          <p className="text-xs font-bold truncate mb-1" style={{ color: tt.textPrimary }}>{p.name}</p>
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-black" style={{ color: tt.primary }}>{fmtPrice(p.price)}</span>
-            <button
-              onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
-              className="text-[10px] font-bold px-2.5 py-1 text-white flex-shrink-0"
-              style={{ background: primaryColor, borderRadius: tt.btnRadius }}
-            >Add</button>
+          <div style={tt.cardStyle ? { paddingLeft: '10px', paddingRight: '10px', paddingBottom: '10px' } : undefined}>
+            <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: tt.textMuted }}>{p.category}</p>
+            <p className="text-xs font-bold truncate mb-1" style={{ color: tt.textPrimary }}>{p.name}</p>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-black" style={{ color: tt.primary }}>{fmtPrice(p.price)}</span>
+              <button
+                onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
+                className="text-[10px] font-bold px-2.5 py-1 text-white flex-shrink-0"
+                style={{ background: primaryColor, borderRadius: tt.btnRadius }}
+              >Add</button>
+            </div>
           </div>
-        </div>
+        </motion.div>
       ))}
     </div>
   );
@@ -4614,12 +4692,15 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
   const imgSize = tt.density === 'dense' ? 'w-20 h-20' : tt.density === 'airy' ? 'w-36 h-36' : 'w-28 h-28';
   return (
     <div className={tt.density === 'dense' ? 'space-y-2' : tt.density === 'airy' ? 'space-y-6' : 'space-y-4'}>
-      {products.map(p => (
-        <div
+      {products.map(p => {
+        const lcs = getCardStyleVars(tt.cardStyle, tt);
+        return (
+        <motion.div
           key={p.id}
-          className="group flex gap-5 cursor-pointer hover:shadow-md transition-shadow"
-          style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius, padding: rowPad }}
+          className="group flex gap-5 cursor-pointer"
+          style={{ ...lcs, borderRadius: tt.surfaceRadius, padding: rowPad }}
           onClick={() => onProductClick(p)}
+          whileHover={getHoverMotion(tt.hoverStyle, primaryColor)}
         >
           <div className={`${imgSize} flex-shrink-0 overflow-hidden`} style={{ borderRadius: tt.surfaceRadius, background: tt.inputBg }}>
             <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -4654,8 +4735,9 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
               </div>
             </div>
           </div>
-        </div>
-      ))}
+        </motion.div>
+        );
+      })}
     </div>
   );
 }
@@ -4676,12 +4758,13 @@ function TkGridCarousel({ products, tt, primaryColor, device, onProductClick, on
       <div className="flex gap-4 overflow-x-auto pb-4 px-5"
         style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
         {products.map(p => (
-          <div key={p.id}
+          <motion.div key={p.id}
             className="group cursor-pointer flex-shrink-0"
-            style={{ scrollSnapAlign: 'start', width: cardW }}
+            style={{ scrollSnapAlign: 'start', width: cardW, ...(tt.cardStyle ? { ...getCardStyleVars(tt.cardStyle, tt), borderRadius: tt.surfaceRadius, overflow: 'hidden' } : {}) }}
             onClick={() => onProductClick(p)}
+            whileHover={getHoverMotion(tt.hoverStyle, primaryColor)}
           >
-            <div className="relative overflow-hidden mb-3" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius }}>
+            <div className="relative overflow-hidden mb-3" style={{ aspectRatio: '3/4', borderRadius: tt.cardStyle ? 0 : tt.surfaceRadius }}>
               <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
               {p.badge && (
                 <span className="absolute top-3 left-3 text-[10px] font-black uppercase px-2.5 py-1 text-white"
@@ -4697,13 +4780,15 @@ function TkGridCarousel({ products, tt, primaryColor, device, onProductClick, on
                   style={{ background: primaryColor, borderRadius: tt.btnRadius }}>+ Add to Cart</button>
               </div>
             </div>
-            <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
-            <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm font-black" style={{ color: primaryColor }}>{fmtPrice(p.price)}</span>
-              {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
+            <div style={tt.cardStyle ? { padding: '0 10px 10px' } : undefined}>
+              <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
+              <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-sm font-black" style={{ color: primaryColor }}>{fmtPrice(p.price)}</span>
+                {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
+              </div>
             </div>
-          </div>
+          </motion.div>
         ))}
         {/* Trailing padding card */}
         <div className="flex-shrink-0" style={{ width: '4px' }} />
@@ -4759,8 +4844,11 @@ function TkGridSpotlight({ products, tt, primaryColor, device, onProductClick, o
       {/* Rest in 4-col grid */}
       <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} gap-4`}>
         {rest.map(p => (
-          <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
-            <div className="relative overflow-hidden mb-2" style={{ aspectRatio: '1/1', borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
+          <motion.div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}
+            whileHover={getHoverMotion(tt.hoverStyle, primaryColor)}
+            style={tt.cardStyle ? { ...getCardStyleVars(tt.cardStyle, tt), borderRadius: tt.surfaceRadius, overflow: 'hidden' } : undefined}
+          >
+            <div className="relative overflow-hidden mb-2" style={{ aspectRatio: '1/1', borderRadius: tt.cardStyle ? 0 : tt.surfaceRadius, background: tt.cardStyle ? 'transparent' : tt.surfaceBg }}>
               <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               {p.badge && <span className="absolute top-2 left-2 text-[8px] font-black uppercase px-1.5 py-0.5 text-white"
                 style={{ background: primaryColor, borderRadius: tt.btnRadius }}>{p.badge}</span>}
@@ -4768,9 +4856,11 @@ function TkGridSpotlight({ products, tt, primaryColor, device, onProductClick, o
                 className={`absolute bottom-2 right-2 w-7 h-7 flex items-center justify-center text-white font-bold rounded-full shadow-md ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}
                 style={{ background: primaryColor }}>+</button>
             </div>
-            <p className="text-xs font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
-            <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{fmtPrice(p.price)}</p>
-          </div>
+            <div style={tt.cardStyle ? { padding: '6px 8px 8px' } : undefined}>
+              <p className="text-xs font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+              <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{fmtPrice(p.price)}</p>
+            </div>
+          </motion.div>
         ))}
       </div>
     </div>

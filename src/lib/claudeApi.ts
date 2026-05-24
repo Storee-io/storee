@@ -31,6 +31,12 @@ export interface HeroSectionProps {
   ctaStyle?: 'filled' | 'outline' | 'text';
   /** Show a short decorative colored line accent above the main heading. */
   accentLine?: boolean;
+  /**
+   * Per-hero headline size override — overrides global headingScale for this hero only.
+   * 'sm' = subtle/minimal  |  'md' = default  |  'lg' = impactful
+   * 'xl' = dramatic        |  '2xl' = editorial |  '3xl' = cinematic
+   */
+  headlineSize?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 }
 
 export interface FeaturesSectionProps {
@@ -154,6 +160,24 @@ export interface DesignTokens {
    *          section label style, nav link style.
    */
   contentStyle?: 'conversational' | 'formal' | 'playful' | 'editorial' | 'minimal';
+
+  /**
+   * Card visual style — controls how product and feature cards look.
+   * floating  → elevated card with strong shadow, slight lift on hover (premium)
+   * ghost     → transparent background, only a subtle border (minimal/editorial)
+   * bordered  → solid border, flat background, no shadow (structured/clean)
+   * filled    → solid surfaceBg fill, gentle shadow (default warm/standard)
+   */
+  cardStyle?: 'floating' | 'ghost' | 'bordered' | 'filled';
+
+  /**
+   * Hover interaction style applied to interactive cards and buttons.
+   * lift   → card rises with shadow increase (y: -4px, shadow grows)
+   * glow   → primary color glow appears on hover (colored shadow)
+   * scale  → card scales up slightly (1.03–1.05x)
+   * none   → no hover transform (purely static, accessibility-safe)
+   */
+  hoverStyle?: 'lift' | 'glow' | 'scale' | 'none';
 
   // ── Typography Intelligence ───────────────────────────────────────────────
   /**

@@ -35,6 +35,8 @@ The JSON must exactly match this shape:
     "motion": "string (one of: none, subtle, smooth, expressive)",
     "personality": "string (optional — free text describing the UI personality, e.g. 'whatsapp-like', 'apple-like')",
     "contentStyle": "string (one of: conversational, formal, playful, editorial, minimal — see CONTENT STYLE GUIDE)",
+    "cardStyle": "string (one of: floating, ghost, bordered, filled — visual style of product/feature cards)",
+    "hoverStyle": "string (one of: lift, glow, scale, none — hover interaction on cards and buttons)",
     "headingScale": "number (heading size multiplier: 0.8=minimal, 1.0=default, 1.2=bold, 1.5=dramatic)",
     "headingWeight": "number (font-weight: 300=luxury-thin, 400=elegant, 700=strong, 800=impactful, 900=maximum)",
     "headingTracking": "string (letter-spacing: '-0.05em'=ultra-tight, '0'=neutral, '0.14em'=spaced-out)",
@@ -52,7 +54,8 @@ The JSON must exactly match this shape:
           "textAlign": "string (left|center|right — optional, overrides variant default)",
           "imageRatio": "string (portrait|square|landscape — optional, for image-bearing variants)",
           "ctaStyle": "string (filled|outline|text — optional, default: filled)",
-          "accentLine": "boolean (optional — decorative colored line above heading)"
+          "accentLine": "boolean (optional — decorative colored line above heading)",
+          "headlineSize": "string (sm|md|lg|xl|2xl|3xl — optional, overrides global headingScale for this hero only)"
         }
       },
       { "type": "trust",        "variant": null },
@@ -331,61 +334,61 @@ WhatsApp-like / chat-app style:
   layoutType: "app-like", spacing: "compact", density: "dense", motion: "subtle", elevation: "flat"
   pageBg: "#ECE5DD", surfaceBg: "#ffffff", headerBg: "#075E54", textPrimary: "#111111"
   primaryColor: "#075E54", accentColor: "#25D366", btnRadius: "999px", cardRadius: "12px"
-  personality: "whatsapp-like", contentStyle: "conversational"
+  personality: "whatsapp-like", contentStyle: "conversational", cardStyle: "filled", hoverStyle: "scale"
 
 Discord-like / dark chat style:
   layoutType: "app-like", spacing: "compact", density: "dense", motion: "subtle", elevation: "flat"
   pageBg: "#313338", surfaceBg: "#2b2d31", headerBg: "#1e1f22", textPrimary: "#dbdee1"
   primaryColor: "#5865F2", accentColor: "#57F287", btnRadius: "4px", cardRadius: "8px"
-  personality: "discord-like", contentStyle: "editorial"
+  personality: "discord-like", contentStyle: "editorial", cardStyle: "bordered", hoverStyle: "lift"
 
 Apple Store / minimal clean style:
   layoutType: "editorial", spacing: "spacious", density: "airy", motion: "smooth", elevation: "subtle"
   pageBg: "#f5f5f7", surfaceBg: "#ffffff", headerBg: "#f5f5f7", textPrimary: "#1d1d1f"
   primaryColor: "#0071e3", accentColor: "#06c", btnRadius: "980px", cardRadius: "18px"
-  personality: "apple-like", contentStyle: "minimal"
+  personality: "apple-like", contentStyle: "minimal", cardStyle: "ghost", hoverStyle: "none"
 
 Notion-like / minimal document style:
   layoutType: "editorial", spacing: "comfortable", density: "normal", motion: "none", elevation: "flat"
   pageBg: "#ffffff", surfaceBg: "#f7f6f3", headerBg: "#ffffff", textPrimary: "#37352f"
   primaryColor: "#2eaadc", accentColor: "#e03e3e", btnRadius: "3px", cardRadius: "3px"
-  personality: "notion-like", contentStyle: "minimal"
+  personality: "notion-like", contentStyle: "minimal", cardStyle: "ghost", hoverStyle: "none"
 
 Spotify / dark music style:
   layoutType: "app-like", spacing: "compact", density: "dense", motion: "expressive", elevation: "raised"
   pageBg: "#121212", surfaceBg: "#242424", headerBg: "#000000", textPrimary: "#ffffff"
   primaryColor: "#1DB954", accentColor: "#1ed760", btnRadius: "999px", cardRadius: "8px"
-  personality: "spotify-like", contentStyle: "editorial"
+  personality: "spotify-like", contentStyle: "editorial", cardStyle: "floating", hoverStyle: "glow"
 
 Pinterest / visual-first / art / photography / handmade:
   layoutType: "masonry", spacing: "comfortable", density: "normal", motion: "smooth", elevation: "subtle"
   pageBg: "#ffffff", surfaceBg: "#f9f9f9", headerBg: "#ffffff", textPrimary: "#111111"
   primaryColor: (pick from brand), btnRadius: "999px", cardRadius: "16px"
-  personality: "pinterest-like", contentStyle: "conversational"
+  personality: "pinterest-like", contentStyle: "conversational", cardStyle: "filled", hoverStyle: "scale"
 
 ZARA / high fashion / cinematic / luxury immersive:
   layoutType: "fullscreen", spacing: "spacious", density: "airy", motion: "smooth", elevation: "flat"
   pageBg: "#0a0a0a", surfaceBg: "#141414", headerBg: "transparent", textPrimary: "#ffffff"
   primaryColor: "#ffffff", accentColor: "#d4af37", btnRadius: "0px", cardRadius: "0px"
-  personality: "zara-like", contentStyle: "editorial"
+  personality: "zara-like", contentStyle: "editorial", cardStyle: "ghost", hoverStyle: "lift"
 
 TikTok Shop / viral / energetic / Gen-Z:
   layoutType: "app-like", spacing: "compact", density: "dense", motion: "expressive", elevation: "raised"
   pageBg: "#010101", surfaceBg: "#161823", headerBg: "#010101", textPrimary: "#ffffff"
   primaryColor: "#fe2c55", accentColor: "#25f4ee", btnRadius: "4px", cardRadius: "8px"
-  personality: "tiktok-like", contentStyle: "playful"
+  personality: "tiktok-like", contentStyle: "playful", cardStyle: "floating", hoverStyle: "glow"
 
 Airbnb / clean marketplace / card-heavy:
   layoutType: "masonry", spacing: "comfortable", density: "normal", motion: "smooth", elevation: "subtle"
   pageBg: "#ffffff", surfaceBg: "#ffffff", headerBg: "#ffffff", textPrimary: "#222222"
   primaryColor: "#ff385c", accentColor: "#e61e4d", btnRadius: "8px", cardRadius: "12px"
-  personality: "airbnb-like", contentStyle: "formal"
+  personality: "airbnb-like", contentStyle: "formal", cardStyle: "filled", hoverStyle: "lift"
 
 Instagram / photo grid / aesthetic / lifestyle / fashion / beauty / food photography:
   layoutType: "masonry", spacing: "compact", density: "dense", motion: "smooth", elevation: "subtle"
   pageBg: "#fafafa", surfaceBg: "#ffffff", headerBg: "#ffffff", textPrimary: "#262626"
   primaryColor: "#e1306c", accentColor: "#833ab4", btnRadius: "8px", cardRadius: "3px"
-  personality: "instagram-like", contentStyle: "conversational"
+  personality: "instagram-like", contentStyle: "conversational", cardStyle: "filled", hoverStyle: "scale"
 
 Indonesian keyword mapping — treat these exactly like the English equivalents above:
   "mirip whatsapp" / "seperti whatsapp" / "kayak whatsapp" → WhatsApp-like bundle
@@ -554,15 +557,23 @@ Section props let you fine-tune individual sections beyond the variant.
 Only set props when they meaningfully differentiate the output.
 
 Hero props:
-  textAlign   → use 'left' for editorial/fashion feel, 'center' for bold/centered brands
-                'right' is unusual — use only for very deliberate asymmetric designs
-  imageRatio  → 'portrait' for clothing/fashion/beauty, 'square' for products/lifestyle,
-                'landscape' for wide scenic/food/travel images
-  ctaStyle    → 'filled' = solid button (default, most conversions)
-                'outline' = ghost button (elegant, luxury, minimal)
-                'text'    = just text + arrow (editorial, very minimal)
-  accentLine  → true for editorial/luxury/fashion where a colored rule above the heading
-                adds visual structure. Skip for casual, hype, tech stores.
+  textAlign    → use 'left' for editorial/fashion feel, 'center' for bold/centered brands
+                 'right' is unusual — use only for very deliberate asymmetric designs
+  imageRatio   → 'portrait' for clothing/fashion/beauty, 'square' for products/lifestyle,
+                 'landscape' for wide scenic/food/travel images
+  ctaStyle     → 'filled' = solid button (default, most conversions)
+                 'outline' = ghost button (elegant, luxury, minimal)
+                 'text'    = just text + arrow (editorial, very minimal)
+  accentLine   → true for editorial/luxury/fashion where a colored rule above the heading
+                 adds visual structure. Skip for casual, hype, tech stores.
+  headlineSize → overrides global headingScale for THIS hero only:
+                 'sm'  = understated (0.85rem base) — subtle, clean
+                 'md'  = default (1.0rem base) — balanced
+                 'lg'  = impactful (1.2rem base) — bold brands
+                 'xl'  = dramatic (1.5rem base) — editorial, fashion
+                 '2xl' = very large (1.8rem base) — high-impact launch
+                 '3xl' = cinematic (2.2rem base) — hero-cinematic, ZARA-like
+                 Use '3xl' for cinematic/fashion/editorial heroes. Use 'sm' for chat/minimal heroes.
 
 Features props:
   columns     → 2 = deep focus on fewer points (premium, storytelling brands)
@@ -574,6 +585,30 @@ Products props:
                 e.g. "Our Collection", "Shop the Drop", "Bestsellers"
   label       → set when "Curated Selection" doesn't fit
                 e.g. "New Arrivals", "Editor's Picks", "Just Dropped"
+
+── CARD STYLE & HOVER STYLE ─────────────────────────────
+cardStyle controls the visual treatment of ALL product and feature cards:
+  floating  → strong shadow, slight raise, cards appear to float above the page (premium, luxury)
+              good for: jewelry, skincare, high-end fashion, coffee
+  ghost     → transparent bg, only a subtle border visible (minimal, editorial)
+              good for: Apple-like, Notion-like, editorial, minimal brands
+  bordered  → solid border, flat no-shadow (structured, clean, functional)
+              good for: tech, B2B, marketplace, discord-like, structured
+  filled    → soft surfaceBg fill + gentle shadow (default warm/standard)
+              good for: most stores, casual, lifestyle, food
+
+hoverStyle controls the micro-interaction when hovering a card:
+  lift   → card rises 4px with shadow increase (elegant, satisfying — works everywhere)
+  glow   → primaryColor glow radiates outward (hype, gaming, neon brands)
+  scale  → card scales to 1.03–1.05x (playful, Instagram-like, energetic)
+  none   → no hover movement (minimal, Notion-like, static editorial)
+
+Mapping recommendations:
+  luxury / editorial / jewelry → cardStyle: "floating", hoverStyle: "lift"
+  minimal / Apple / Notion    → cardStyle: "ghost",    hoverStyle: "none"
+  hype / gaming / TikTok      → cardStyle: "floating", hoverStyle: "glow"
+  playful / lifestyle / food  → cardStyle: "filled",   hoverStyle: "scale"
+  tech / structured           → cardStyle: "bordered", hoverStyle: "lift"
 
 ════════════════════════════════════════════════════════
 CONTENT RULES
