@@ -3066,6 +3066,78 @@ function AnimationInjector() {
   );
 }
 
+// ── Haikei-style SVG decorations ─────────────────────────────────────────────
+// Organic blob paths (viewBox 0 0 200 200, centered at 100,100)
+const BLOB_PATHS = [
+  'M44.7,-76.4C58.8,-69.2,71.8,-59.1,79.6,-45.8C87.4,-32.5,90,-16.3,88.5,-1C87,14.4,81.4,28.8,73,41.7C64.6,54.6,53.4,66,40.2,74.5C27,83.1,13.5,88.8,-0.3,89.3C-14.1,89.8,-28.2,85,-40.7,77.6C-53.2,70.2,-64.1,60.1,-71.9,47.8C-79.7,35.4,-84.4,17.7,-84.8,-0.3C-85.1,-18.2,-81.1,-36.3,-72.3,-50.4C-63.5,-64.4,-50,-74.3,-35.8,-81.3C-21.6,-88.3,-10.8,-92.4,2.3,-96.1C15.4,-99.8,30.7,-83.6,44.7,-76.4Z',
+  'M39.9,-68.1C52.3,-60.7,63.2,-51,70.7,-38.8C78.2,-26.7,82.4,-13.3,82.7,0.2C83,13.7,79.3,27.4,72.4,39.5C65.6,51.6,55.5,62.2,43.4,69.1C31.3,75.9,15.6,79.1,0.9,77.7C-13.9,76.4,-27.7,70.5,-40.3,63.1C-52.9,55.7,-64.4,46.7,-71.6,34.7C-78.8,22.7,-81.8,7.7,-80.1,-6.9C-78.4,-21.5,-72.1,-35.7,-62.8,-47.4C-53.5,-59.1,-41.2,-68.3,-28.3,-75.5C-15.4,-82.7,-1.9,-87.9,10.6,-83.3C23.1,-78.8,27.5,-75.5,39.9,-68.1Z',
+  'M47.7,-80.4C62.2,-73.4,74.8,-62.1,81.6,-48C88.4,-33.9,89.4,-17,87.1,-1.3C84.8,14.4,79.1,28.8,70.8,40.9C62.4,53.1,51.3,63.1,38.7,70.1C26.2,77.1,12.1,81.2,-2.5,84.9C-17.1,88.5,-34.2,91.7,-47.4,85.2C-60.6,78.8,-69.8,62.7,-75.9,46.4C-82,30.2,-84.9,13.8,-83.9,-2.3C-82.9,-18.4,-78,-34.5,-69.8,-48.4C-61.6,-62.3,-50.1,-73.9,-36.8,-81.4C-23.5,-88.9,-8.4,-92.2,4.5,-98.8C17.3,-105.5,33.2,-87.5,47.7,-80.4Z',
+  'M38.8,-67.1C49.8,-59.5,58.2,-49,64.8,-36.9C71.4,-24.8,76.2,-11.1,76.5,2.8C76.8,16.6,72.7,30.7,65.1,42.6C57.6,54.6,46.8,64.3,34.5,71.2C22.3,78.2,8.7,82.3,-5.5,82.1C-19.7,81.9,-34.5,77.4,-46,69.2C-57.5,61.1,-65.7,49.3,-70.4,36.2C-75.1,23.1,-76.4,8.7,-73.6,-4.3C-70.8,-17.2,-63.9,-28.8,-55.1,-38.7C-46.3,-48.6,-35.5,-56.8,-23.9,-64.6C-12.3,-72.4,0.1,-79.8,13,-83.3C25.8,-86.8,27.8,-74.7,38.8,-67.1Z',
+  'M43.4,-74.7C55.9,-67.3,65.4,-55.2,72.7,-41.7C80,-28.2,85,-14.1,85.3,0.2C85.6,14.5,81.2,29,73.4,41.1C65.6,53.2,54.4,62.9,41.7,70C29,77.1,14.5,81.5,0.6,80.6C-13.3,79.7,-26.6,73.5,-39.3,65.8C-52,58.1,-64.2,48.9,-72.4,36.8C-80.7,24.7,-85.1,9.7,-83.6,-4.8C-82,-19.3,-74.5,-33.3,-65.2,-45.2C-55.8,-57.1,-44.5,-66.9,-31.9,-74.2C-19.3,-81.5,-5.8,-86.3,7.2,-87.2C20.2,-88.1,30.9,-82.1,43.4,-74.7Z',
+  'M34.4,-58.2C46,-51.6,58,-43.9,65.9,-32.7C73.7,-21.5,77.4,-6.8,75.9,7.3C74.3,21.4,67.4,34.9,58.1,45.9C48.8,57,36.9,65.5,23.9,71.3C10.8,77.1,-3.4,80.2,-16.4,77.1C-29.4,74,-41.3,64.7,-51.2,53.5C-61.2,42.4,-69.2,29.3,-72.8,15C-76.5,0.7,-75.8,-14.8,-70.4,-28.5C-65,-42.2,-54.9,-54.1,-43,-60.3C-31,-66.5,-17.2,-67,-2.8,-63.3C11.6,-59.5,22.8,-64.8,34.4,-58.2Z',
+];
+
+// Wave divider paths (viewBox "0 0 1440 80")
+const WAVE_PATHS = [
+  'M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,80 L0,80 Z',
+  'M0,60 C360,0 720,80 1080,20 C1260,0 1380,40 1440,30 L1440,80 L0,80 Z',
+  'M0,20 C180,60 360,0 540,40 C720,80 900,10 1080,50 C1260,90 1380,30 1440,50 L1440,80 L0,80 Z',
+  'M0,0 C360,70 720,10 1080,60 C1260,85 1380,50 1440,40 L1440,80 L0,80 Z',
+];
+
+/** Organic blob shape, colored with primaryColor at low opacity */
+function HaikeiBlob({
+  color, index = 0, size = 400, opacity = 0.12,
+  top, left, right, bottom, rotate = 0, className = '',
+}: {
+  color: string; index?: number; size?: number; opacity?: number;
+  top?: string | number; left?: string | number; right?: string | number;
+  bottom?: string | number; rotate?: number; className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden
+      className={`absolute pointer-events-none select-none ${className}`}
+      style={{ width: size, height: size, top, left, right, bottom,
+        transform: `rotate(${rotate}deg)`, opacity, zIndex: 0 }}
+    >
+      <path d={BLOB_PATHS[index % BLOB_PATHS.length]} fill={color} transform="translate(100 100)" />
+    </svg>
+  );
+}
+
+/** Smooth wave SVG at the bottom (or top) of a section */
+function HaikeiWave({
+  fill, flip = false, variant = 0, height = 64, className = '',
+}: {
+  fill: string; flip?: boolean; variant?: number; height?: number; className?: string;
+}) {
+  return (
+    <div
+      aria-hidden
+      className={`absolute left-0 right-0 pointer-events-none select-none ${className}`}
+      style={{ [flip ? 'top' : 'bottom']: 0, height, overflow: 'hidden', zIndex: 1 }}
+    >
+      <svg viewBox="0 0 1440 80" preserveAspectRatio="none"
+        className="w-full h-full block"
+        style={flip ? { transform: 'scaleY(-1)' } : undefined}>
+        <path d={WAVE_PATHS[variant % WAVE_PATHS.length]} fill={fill} />
+      </svg>
+    </div>
+  );
+}
+
+/** Blurred radial gradient spots — Haikei "mesh gradient" style background */
+function HaikeiMesh({ color, pageBg }: { color: string; pageBg: string }) {
+  return (
+    <div className="absolute inset-0 pointer-events-none select-none" aria-hidden style={{ zIndex: 0 }}>
+      <div className="absolute" style={{ top: '-12%', left: '-8%',  width: '55%', height: '70%', borderRadius: '50%', background: alpha(color, 0.13), filter: 'blur(80px)' }} />
+      <div className="absolute" style={{ top: '15%',  right: '-6%', width: '45%', height: '60%', borderRadius: '50%', background: alpha(color, 0.08), filter: 'blur(72px)' }} />
+      <div className="absolute" style={{ bottom: '-10%', left: '28%', width: '42%', height: '55%', borderRadius: '50%', background: alpha(color, 0.10), filter: 'blur(88px)' }} />
+    </div>
+  );
+}
+
 // ── Framer Motion: per-archetype reveal variants ──────────────────────────────
 const REVEAL_VARIANTS: Record<AnimArchetype, Variants> = {
   luxury: {
@@ -3372,7 +3444,7 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts }
 
   return (
     <section className="relative overflow-hidden" style={{ minHeight: isMobile ? '60vh' : '70vh' }}>
-      {bgImage && (
+      {bgImage ? (
         <>
           <div className="absolute inset-0 overflow-hidden">
             {/* Ken-Burns slow zoom for luxury archetype (CSS only — scale doesn't need spring) */}
@@ -3381,6 +3453,14 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts }
               style={isLuxury ? { transformOrigin: 'center center', animationDuration: '14s' } : undefined} />
           </div>
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.65) 100%)' }} />
+        </>
+      ) : (
+        /* No background image — Haikei mesh + blob decorations */
+        <>
+          <HaikeiMesh color={primaryColor} pageBg={tt.pageBg} />
+          <HaikeiBlob color={primaryColor} index={0} size={isMobile ? 280 : 420} opacity={0.10} top="-15%" right="-8%" rotate={25} />
+          <HaikeiBlob color={primaryColor} index={3} size={isMobile ? 220 : 320} opacity={0.07} bottom="-10%" left="-6%" rotate={-15} />
+          <HaikeiWave fill={tt.surfaceBg} variant={1} height={isMobile ? 40 : 56} />
         </>
       )}
       <motion.div
@@ -3435,8 +3515,13 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
   const heroItem = REVEAL_VARIANTS[arch] ?? REVEAL_VARIANTS.default;
 
   return (
-    <section style={{ background: tt.pageBg }}>
-      <div className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-10 flex flex-col gap-8' : 'py-16 grid grid-cols-2 gap-14 items-center'}`}>
+    <section className="relative overflow-hidden" style={{ background: tt.pageBg }}>
+      {/* Haikei blob accent behind the image column */}
+      <HaikeiBlob color={primaryColor} index={1} size={isMobile ? 260 : 440} opacity={0.09}
+        top={isMobile ? '-10%' : '-15%'} right={isMobile ? '-12%' : '-8%'} rotate={20} />
+      <HaikeiBlob color={primaryColor} index={4} size={isMobile ? 180 : 300} opacity={0.06}
+        bottom="-8%" left="-5%" rotate={-30} />
+      <div className={`relative z-10 max-w-6xl mx-auto px-5 ${isMobile ? 'py-10 flex flex-col gap-8' : 'py-16 grid grid-cols-2 gap-14 items-center'}`}>
         <motion.div variants={heroStagger} initial="hidden" animate="visible">
           {tagline && (
             <motion.p variants={heroItem} className="text-[10px] font-bold uppercase tracking-[0.3em] mb-5" style={{ color: primaryColor }}>
@@ -3543,8 +3628,12 @@ function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts }:
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
   return (
-    <section style={{ background: tt.pageBg, borderBottom: `1px solid ${tt.divider}` }}>
-      <div className="max-w-3xl mx-auto px-5 text-center" style={{ padding: isMobile ? '56px 20px' : '80px 40px' }}>
+    <section className="relative overflow-hidden" style={{ background: tt.pageBg, borderBottom: `1px solid ${tt.divider}` }}>
+      {/* Haikei decorations */}
+      <HaikeiBlob color={primaryColor} index={2} size={isMobile ? 200 : 340} opacity={0.08} top="-20%" right="-5%" rotate={10} />
+      <HaikeiBlob color={primaryColor} index={5} size={isMobile ? 160 : 260} opacity={0.06} bottom="-15%" left="-4%" rotate={-20} />
+      <HaikeiWave fill={tt.surfaceBg} variant={0} height={isMobile ? 36 : 52} />
+      <div className="relative z-10 max-w-3xl mx-auto px-5 text-center" style={{ padding: isMobile ? '56px 20px' : '80px 40px' }}>
         {tagline && (
           <p className="text-[10px] font-bold uppercase tracking-[0.35em] mb-5" style={{ color: primaryColor }}>
             {collections[0]?.emoji} {tagline}
@@ -3580,6 +3669,8 @@ function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts 
 
   return (
     <section style={{ background: tt.pageBg, overflow: 'hidden', minHeight: isMobile ? '80vh' : '88vh', position: 'relative' }}>
+      {/* Haikei blob accent — subtle, complements the ghost-word texture */}
+      <HaikeiBlob color={primaryColor} index={0} size={isMobile ? 220 : 380} opacity={0.06} bottom="-10%" right="-6%" rotate={40} />
       {/* Giant ghost word — decorative background text */}
       <div aria-hidden className="absolute select-none pointer-events-none"
         style={{
@@ -3759,8 +3850,12 @@ function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts }:
   const rotations = [-4, 2, -1.5];
 
   return (
-    <section style={{ background: tt.pageBg, overflow: 'hidden' }}>
-      <div className={`max-w-6xl mx-auto px-6 ${isMobile ? 'py-12 flex flex-col gap-10' : 'py-16 grid grid-cols-2 gap-12 items-center'}`}>
+    <section className="relative" style={{ background: tt.pageBg, overflow: 'hidden' }}>
+      {/* Haikei blob behind image pile */}
+      <HaikeiBlob color={primaryColor} index={3} size={isMobile ? 240 : 400} opacity={0.09}
+        top={isMobile ? '-5%' : '-10%'} right={isMobile ? '-10%' : '-6%'} rotate={-10} />
+      <HaikeiWave fill={tt.surfaceBg} variant={2} height={isMobile ? 36 : 50} />
+      <div className={`relative z-10 max-w-6xl mx-auto px-6 ${isMobile ? 'py-12 flex flex-col gap-10' : 'py-16 grid grid-cols-2 gap-12 items-center'}`}>
         {/* Text side */}
         <div className={isMobile ? 'order-2' : ''}>
           {tagline && (
@@ -3849,7 +3944,9 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
   }
 
   return (
-    <section className="overflow-hidden" style={{ height: '92vh', minHeight: '560px', display: 'flex' }}>
+    <section className="overflow-hidden relative" style={{ height: '92vh', minHeight: '560px', display: 'flex' }}>
+      {/* Haikei blob — floats in text column area */}
+      <HaikeiBlob color={primaryColor} index={4} size={320} opacity={0.08} bottom="-10%" right="-4%" rotate={15} />
       {/* Image — takes 62% width, bleeds to left edge */}
       <div className="relative overflow-hidden flex-shrink-0" style={{ width: '62%' }}>
         {products[0] && <ProductImg src={products[0].image} alt="" className="w-full h-full object-cover" />}
