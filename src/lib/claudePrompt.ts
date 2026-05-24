@@ -34,6 +34,13 @@ The JSON must exactly match this shape:
     "elevation": "string (one of: flat, subtle, raised, floating)",
     "motion": "string (one of: none, subtle, smooth, expressive)",
     "personality": "string (optional — free text describing the UI personality, e.g. 'whatsapp-like', 'apple-like')",
+    "headingScale": "number (heading size multiplier: 0.8=minimal, 1.0=default, 1.2=bold, 1.5=dramatic)",
+    "headingWeight": "number (font-weight: 300=luxury-thin, 400=elegant, 700=strong, 800=impactful, 900=maximum)",
+    "headingTracking": "string (letter-spacing: '-0.05em'=ultra-tight, '0'=neutral, '0.14em'=spaced-out)",
+    "headingLeading": "number (line-height: 0.9=ultra-tight, 1.0=tight, 1.1=balanced, 1.3=relaxed)",
+    "bodyLeading": "number (body line-height: 1.5=compact, 1.6=default, 1.8=relaxed, 2.0=airy)",
+    "bodyTracking": "string (body letter-spacing: '0'=none, '0.02em'=open, '0.04em'=airy)",
+    "compositionStyle": "string (one of: grid, staggered, overlapping, asymmetric — how product cards are laid out)",
     "sections": [
       { "type": "hero",         "variant": "string — hero variant (centered|split|fullscreen|minimal|editorial|video|stacked|asymmetrical)" },
       { "type": "trust",        "variant": null },
@@ -346,6 +353,84 @@ Indonesian keyword mapping — treat these exactly like the English equivalents 
 
 For any other prompt that doesn't match a known personality, use layoutType: "standard"
 and choose spacing/density/elevation/motion that fits the brand mood.
+
+── TYPOGRAPHY INTELLIGENCE ──────────────────────────────
+Control the typographic personality with these tokens in designTokens:
+
+  headingScale  — multiplier applied to ALL heading sizes (base = 1.0)
+    0.8  → understated, minimal, airy (clean beauty, stationary, editorial)
+    1.0  → balanced default (most stores)
+    1.2  → bold and confident (fitness, gaming, streetwear)
+    1.5  → dramatic, editorial (luxury fashion, art, high-impact brands)
+
+  headingWeight — font-weight for all headings
+    300  → thin / luxury / editorial thin (Cormorant Garamond at 300 = exquisite)
+    400  → elegant, refined (good for serif editorial fonts)
+    700  → strong, confident (default for most)
+    800  → impactful (fitness, tech, startup)
+    900  → maximum punch (streetwear, hype, bold brands)
+
+  headingTracking — letter-spacing for headings (CSS value)
+    '-0.05em'  → ultra-tight, editorial punch (bold/impactful)
+    '-0.02em'  → modern tight (clean tech, SaaS)
+    '0'        → neutral (default)
+    '0.06em'   → slightly open (luxury, refined)
+    '0.14em'   → spaced-out fashion / all-caps label look
+    '0.22em'   → very wide, capitalised label style (high-end, boutique)
+
+  headingLeading — line-height for headings
+    0.9  → ultra-tight hero text (editorial punch, bold display)
+    1.0  → tight (impactful)
+    1.1  → balanced (default)
+    1.3  → relaxed, editorial, soft
+
+  bodyLeading — line-height for body text
+    1.5  → compact (dense UIs, app-like)
+    1.6  → comfortable default
+    1.8  → relaxed reading (long-form, editorial)
+    2.0  → very airy (luxury, minimal)
+
+  bodyTracking — letter-spacing for body text
+    '0'      → none (default)
+    '0.02em' → slightly open
+    '0.04em' → airy, luxury body text
+
+Typography archetypes by brand mood:
+  luxury / jewelry / wedding:
+    headingScale: 1.2, headingWeight: 300, headingTracking: '0.08em', headingLeading: 1.1, bodyLeading: 1.9, bodyTracking: '0.02em'
+    → Use with Cormorant Garamond or Playfair Display + Lato/Karla
+  editorial / fashion magazine:
+    headingScale: 1.5, headingWeight: 900, headingTracking: '-0.04em', headingLeading: 0.9, bodyLeading: 1.6, bodyTracking: '0'
+    → Use with Bebas Neue or Anton + Inter/Barlow
+  bold / streetwear / hype:
+    headingScale: 1.3, headingWeight: 800, headingTracking: '-0.03em', headingLeading: 1.0, bodyLeading: 1.5, bodyTracking: '0'
+    → Use with Unbounded or Syne + DM Sans
+  minimal / clean tech / SaaS:
+    headingScale: 0.9, headingWeight: 700, headingTracking: '-0.02em', headingLeading: 1.1, bodyLeading: 1.6, bodyTracking: '0'
+    → Use with Space Grotesk or Plus Jakarta Sans + Inter
+  warm / artisan / organic:
+    headingScale: 1.0, headingWeight: 700, headingTracking: '0.01em', headingLeading: 1.2, bodyLeading: 1.8, bodyTracking: '0.01em'
+    → Use with Fraunces or DM Serif Display + Nunito Sans/Karla
+  app-like (Spotify/Discord/TikTok):
+    headingScale: 0.95, headingWeight: 700, headingTracking: '-0.01em', headingLeading: 1.1, bodyLeading: 1.5, bodyTracking: '0'
+
+── LAYOUT MUTATION (compositionStyle) ───────────────────
+compositionStyle controls HOW product cards are composed inside the grid section.
+Only applies when productGrid is 'standard'. Ignored for magazine/list/carousel/spotlight.
+
+  grid        → standard equal grid — default, works everywhere
+  staggered   → cards offset vertically in alternating rhythm, varied aspect ratios
+                → use for: lifestyle, beauty, artisan, markets, anything organic/playful
+  overlapping → cards physically overlap (negative margin, z-index layering), hover lifts
+                → use for: hype brands, luxury, editorial, high-drama visual stores
+  asymmetric  → alternating 3fr/2fr column pairs, different aspect ratios per pair
+                → use for: fashion, ZARA-style, editorial magazines, multi-product spotlight
+
+When to use compositionStyle:
+  - Same store, compositionStyle 'staggered' + headingTracking '0.04em' = warm artisan feel
+  - 'overlapping' + dark palette + headingWeight 800 = aggressive hype brand
+  - 'asymmetric' + headingScale 1.5 + headingWeight 300 = editorial fashion magazine
+  - Leave as 'grid' for SaaS, tech, clean stores where structure matters
 
 ════════════════════════════════════════════════════════
 CONTENT RULES

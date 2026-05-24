@@ -2907,6 +2907,15 @@ const SURFACE_RADIUS: Record<string, string> = { pill: '20px',   rounded: '16px'
 interface TokenTheme extends CommerceTheme {
   headingFont: string;
   googleFontsUrl: string;
+  // Typography intelligence
+  headingScale:   number;   // size multiplier
+  headingWeight:  number;   // font-weight
+  headingTracking: string;  // letter-spacing
+  headingLeading:  number;  // line-height
+  bodyLeading:     number;  // line-height for body text
+  bodyTracking:    string;  // letter-spacing for body text
+  // Layout mutation
+  compositionStyle: 'grid' | 'staggered' | 'overlapping' | 'asymmetric';
 }
 
 // ── Phase 3: Motion & Elevation utilities ─────────────────────────────────────
@@ -3012,6 +3021,15 @@ function getTokenThemeV2(dt: DesignTokens, primaryColor: string): TokenTheme {
     primaryContrast: isDark(primaryColor) ? '#ffffff' : '#000000',
     headingFont:     fontStack(dt.headingFont, 'heading'),
     googleFontsUrl:  buildGoogleFontsUrl(dt.headingFont, dt.bodyFont),
+    // Typography intelligence — Claude-specified or sensible defaults
+    headingScale:    dt.headingScale    ?? 1.0,
+    headingWeight:   dt.headingWeight   ?? 800,
+    headingTracking: dt.headingTracking ?? '-0.02em',
+    headingLeading:  dt.headingLeading  ?? 1.05,
+    bodyLeading:     dt.bodyLeading     ?? 1.6,
+    bodyTracking:    dt.bodyTracking    ?? '0',
+    // Layout mutation
+    compositionStyle: dt.compositionStyle ?? 'grid',
   };
 }
 
@@ -3030,6 +3048,9 @@ function getDefaultTokenTheme(primaryColor: string): TokenTheme {
     primary: pc, primaryContrast: isDark(pc) ? '#ffffff' : '#000000',
     headingFont: 'system-ui, -apple-system, sans-serif',
     googleFontsUrl: '',
+    headingScale: 1.0, headingWeight: 800, headingTracking: '-0.02em',
+    headingLeading: 1.05, bodyLeading: 1.6, bodyTracking: '0',
+    compositionStyle: 'grid',
   };
 }
 
@@ -3050,6 +3071,41 @@ function getTokenThemeV1(ds: DesignSystem, primaryColor: string): TokenTheme {
     primaryContrast: isDark(primaryColor) ? '#ffffff' : '#000000',
     headingFont: fonts.heading,
     googleFontsUrl: fonts.url,
+    headingScale: 1.0, headingWeight: 800, headingTracking: '-0.02em',
+    headingLeading: 1.05, bodyLeading: 1.6, bodyTracking: '0',
+    compositionStyle: 'grid',
+  };
+}
+
+// ── Typography Intelligence helpers ───────────────────────────────────────────
+
+/**
+ * Returns a heading style object incorporating all typography tokens.
+ * baseRem: the "neutral" font size in rem (e.g. 3 for a 3rem hero title).
+ */
+function headingStyle(
+  tt: TokenTheme,
+  baseRem: number,
+  overrides?: React.CSSProperties,
+): React.CSSProperties {
+  return {
+    fontFamily:    tt.headingFont,
+    fontSize:      `${(baseRem * tt.headingScale).toFixed(3)}rem`,
+    fontWeight:    tt.headingWeight,
+    letterSpacing: tt.headingTracking,
+    lineHeight:    tt.headingLeading,
+    ...overrides,
+  };
+}
+
+/**
+ * Returns a body/paragraph style object with line-height + tracking tokens.
+ */
+function bodyStyle(tt: TokenTheme, overrides?: React.CSSProperties): React.CSSProperties {
+  return {
+    lineHeight:    tt.bodyLeading,
+    letterSpacing: tt.bodyTracking,
+    ...overrides,
   };
 }
 
@@ -3085,10 +3141,10 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts }
             {collections[0]?.emoji} {tagline}
           </p>
         )}
-        <h1 className="font-black leading-[1.05] tracking-tight mb-5" style={{ fontFamily: tt.headingFont, fontSize: isMobile ? 'clamp(2.2rem,8vw,3rem)' : 'clamp(3rem,5vw,4.5rem)', color: bgImage ? '#ffffff' : tt.textPrimary }}>
+        <h1 className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.4 : 4.0), color: bgImage ? '#ffffff' : tt.textPrimary }}>
           {heroTitle}
         </h1>
-        <p className="text-sm leading-relaxed mb-8 max-w-lg" style={{ color: bgImage ? 'rgba(255,255,255,0.82)' : tt.textSecondary }}>
+        <p className="mb-8 max-w-lg" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: bgImage ? 'rgba(255,255,255,0.82)' : tt.textSecondary }}>
           {heroSubtitle}
         </p>
         <button onClick={onScrollToProducts} className="px-8 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>
@@ -3117,10 +3173,10 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
               {collections[0]?.emoji} {tagline}
             </p>
           )}
-          <h1 className="font-black leading-[1.03] tracking-tight mb-5" style={{ fontFamily: tt.headingFont, fontSize: isMobile ? '2.4rem' : 'clamp(2.8rem,4vw,4rem)', color: tt.textPrimary }}>
+          <h1 className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.4 : 3.6), color: tt.textPrimary }}>
             {heroTitle}
           </h1>
-          <p className="text-sm leading-relaxed mb-8 max-w-sm" style={{ color: tt.textSecondary }}>
+          <p className="mb-8 max-w-sm" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>
             {heroSubtitle}
           </p>
           <div className="flex items-center gap-4">
@@ -3182,10 +3238,10 @@ function TkHeroFullscreen({ design, tt, primaryColor, device, onScrollToProducts
             {tagline}
           </p>
         )}
-        <h1 className="font-black leading-[1.0] tracking-tight mb-5 text-white" style={{ fontFamily: tt.headingFont, fontSize: isMobile ? 'clamp(2.5rem,9vw,3.5rem)' : 'clamp(3.5rem,6vw,6rem)' }}>
+        <h1 className="mb-5 text-white" style={headingStyle(tt, isMobile ? 3.2 : 5.5)}>
           {heroTitle}
         </h1>
-        <p className="text-sm leading-relaxed mb-8 max-w-md text-white/75">
+        <p className="mb-8 max-w-md" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: 'rgba(255,255,255,0.75)' }}>
           {heroSubtitle}
         </p>
         <button onClick={onScrollToProducts} className="w-fit px-8 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>
@@ -3213,10 +3269,10 @@ function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts }:
             {collections[0]?.emoji} {tagline}
           </p>
         )}
-        <h1 className="font-black leading-[1.05] tracking-tight mb-5" style={{ fontFamily: tt.headingFont, fontSize: isMobile ? '2.2rem' : 'clamp(2.8rem,4.5vw,4rem)', color: tt.textPrimary }}>
+        <h1 className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.2 : 3.6), color: tt.textPrimary }}>
           {heroTitle}
         </h1>
-        <p className="text-sm leading-relaxed mb-8 max-w-xl mx-auto" style={{ color: tt.textSecondary }}>
+        <p className="mb-8 max-w-xl mx-auto" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>
           {heroSubtitle}
         </p>
         <button onClick={onScrollToProducts} className="px-8 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>
@@ -3266,10 +3322,10 @@ function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts 
         <div className="relative z-10 flex flex-col px-6 pt-16 pb-10 gap-8">
           <div>
             {tagline && <p className="text-[10px] uppercase tracking-[0.35em] mb-4" style={{ color: primaryColor }}>{tagline}</p>}
-            <h1 style={{ fontFamily: tt.headingFont, fontSize: '2.6rem', fontWeight: 900, lineHeight: 1.0, color: tt.textPrimary, letterSpacing: '-0.03em' }}>
+            <h1 style={{ ...headingStyle(tt, 2.6), color: tt.textPrimary }}>
               {bigWord}<br /><span style={{ color: primaryColor }}>{restWords}</span>
             </h1>
-            <p className="text-sm leading-relaxed mt-4 mb-6" style={{ color: tt.textSecondary }}>{heroSubtitle}</p>
+            <p className="mt-4 mb-6" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>{heroSubtitle}</p>
             <button onClick={onScrollToProducts} className="px-7 py-3 text-sm font-bold" style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>{ctaText}</button>
           </div>
           {products[0] && (
@@ -3291,12 +3347,12 @@ function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts 
           {/* Text col */}
           <div className="pr-8">
             {tagline && <p className="text-[10px] uppercase tracking-[0.4em] mb-6" style={{ color: primaryColor }}>{tagline}</p>}
-            <h1 style={{ fontFamily: tt.headingFont, fontSize: 'clamp(3.5rem,5.5vw,6rem)', fontWeight: 900, lineHeight: 1.0, color: tt.textPrimary, letterSpacing: '-0.04em' }}>
+            <h1 style={{ ...headingStyle(tt, 5.0), color: tt.textPrimary }}>
               {bigWord}<br />
               <span style={{ color: primaryColor }}>{restWords}</span>
             </h1>
             <div style={{ width: '48px', height: '3px', background: primaryColor, margin: '24px 0' }} />
-            <p className="text-sm leading-relaxed mb-8 max-w-xs" style={{ color: tt.textSecondary }}>{heroSubtitle}</p>
+            <p className="mb-8 max-w-xs" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>{heroSubtitle}</p>
             <div className="flex items-center gap-4">
               <button onClick={onScrollToProducts} className="px-8 py-3.5 text-sm font-bold transition-opacity hover:opacity-85"
                 style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>{ctaText}</button>
@@ -3383,11 +3439,10 @@ function TkHeroVideo({ design, tt, primaryColor, device, onScrollToProducts }: {
             <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/70">{tagline}</p>
           </div>
         )}
-        <h1 className="font-black leading-[1.0] tracking-tight mb-5 text-white"
-          style={{ fontFamily: tt.headingFont, fontSize: isMobile ? 'clamp(2.8rem,10vw,4rem)' : 'clamp(4rem,7vw,7rem)' }}>
+        <h1 className="mb-5 text-white" style={headingStyle(tt, isMobile ? 3.5 : 6.0)}>
           {heroTitle}
         </h1>
-        <p className="text-sm leading-relaxed mb-8 max-w-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>
+        <p className="mb-8 max-w-sm" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)' }}>
           {heroSubtitle}
         </p>
         <div className="flex items-center gap-5">
@@ -3432,11 +3487,10 @@ function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts }:
               {collections[0]?.emoji} {tagline}
             </p>
           )}
-          <h1 className="font-black leading-[1.05] tracking-tight mb-5"
-            style={{ fontFamily: tt.headingFont, fontSize: isMobile ? '2.4rem' : 'clamp(2.6rem,4vw,4.2rem)', color: tt.textPrimary, letterSpacing: '-0.03em' }}>
+          <h1 className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.4 : 3.8), color: tt.textPrimary }}>
             {heroTitle}
           </h1>
-          <p className="text-sm leading-relaxed mb-8 max-w-sm" style={{ color: tt.textSecondary }}>{heroSubtitle}</p>
+          <p className="mb-8 max-w-sm" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>{heroSubtitle}</p>
           <div className="flex flex-wrap items-center gap-4">
             <button onClick={onScrollToProducts}
               className="px-7 py-3.5 text-sm font-bold transition-all hover:opacity-90 active:scale-95"
@@ -3504,9 +3558,8 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
         )}
         <div className="relative z-10 absolute bottom-0 left-0 right-0 px-6 pb-10">
           {tagline && <p className="text-[9px] uppercase tracking-[0.35em] mb-3 text-white/60">{tagline}</p>}
-          <h1 className="font-black text-white leading-[1.0] tracking-tight mb-3"
-            style={{ fontFamily: tt.headingFont, fontSize: '2.6rem', letterSpacing: '-0.03em' }}>{heroTitle}</h1>
-          <p className="text-xs text-white/65 mb-5 max-w-xs leading-relaxed">{heroSubtitle}</p>
+          <h1 className="mb-3 text-white" style={headingStyle(tt, 2.6)}>{heroTitle}</h1>
+          <p className="text-xs mb-5 max-w-xs" style={{ ...bodyStyle(tt), color: 'rgba(255,255,255,0.65)' }}>{heroSubtitle}</p>
           <button onClick={onScrollToProducts} className="px-6 py-3 text-xs font-bold uppercase tracking-wider"
             style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>{ctaText}</button>
         </div>
@@ -3535,12 +3588,11 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
         {tagline && (
           <p className="text-[9px] uppercase tracking-[0.5em] mb-8" style={{ color: tt.textMuted }}>{tagline}</p>
         )}
-        <h1 className="font-black leading-[1.0] tracking-tight mb-6"
-          style={{ fontFamily: tt.headingFont, fontSize: 'clamp(2.4rem,3.5vw,4rem)', color: tt.textPrimary, letterSpacing: '-0.04em' }}>
+        <h1 className="mb-6" style={{ ...headingStyle(tt, 3.6), color: tt.textPrimary }}>
           {heroTitle}
         </h1>
         <div style={{ width: '32px', height: '2px', background: primaryColor, marginBottom: '20px' }} />
-        <p className="text-xs leading-relaxed mb-10" style={{ color: tt.textSecondary, maxWidth: '28ch' }}>{heroSubtitle}</p>
+        <p className="mb-10 text-xs" style={{ ...bodyStyle(tt), color: tt.textSecondary, maxWidth: '28ch' }}>{heroSubtitle}</p>
         <button onClick={onScrollToProducts}
           className="w-fit px-8 py-3.5 text-xs font-black uppercase tracking-widest transition-all hover:opacity-85"
           style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>{ctaText}</button>
@@ -3551,6 +3603,165 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
         </div>
       </div>
     </section>
+  );
+}
+
+// ── Layout Mutation: STAGGERED ────────────────────────────────────────────────
+// Cards offset vertically in alternating rhythm — visual flow, not static grid
+
+function TkGridStaggered({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
+  products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
+  onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
+}) {
+  const isMobile = device === 'mobile';
+  const cols = isMobile ? 2 : 3;
+  const offsets = [0, 32, 16, 48, 8, 40]; // px vertical offset per card
+  const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: '20px', alignItems: 'start' }}>
+      {products.map((p, i) => (
+        <div key={p.id} className="group cursor-pointer"
+          style={{ marginTop: isMobile ? 0 : `${offsets[i % offsets.length]}px`, transition: 'transform 0.2s ease' }}
+          onClick={() => onProductClick(p)}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px)'}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'}
+        >
+          <div className="relative overflow-hidden mb-3" style={{ aspectRatio: i % 3 === 1 ? '4/5' : '3/4', borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
+            <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+            {p.badge && <span className="absolute top-3 left-3 text-[10px] font-black uppercase px-2.5 py-1 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>{p.badge}</span>}
+            <button onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
+              className="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity">
+              <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+            </button>
+            <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
+              <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
+                className="w-full py-2.5 text-[11px] font-bold uppercase tracking-wider text-white shadow-lg"
+                style={{ background: primaryColor, borderRadius: tt.btnRadius }}>+ Add to Cart</button>
+            </div>
+          </div>
+          <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
+          <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-sm font-black" style={{ color: primaryColor }}>{fmtPrice(p.price)}</span>
+            {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Layout Mutation: OVERLAPPING ──────────────────────────────────────────────
+// Cards overlap each other with z-index depth layers — premium layered feel
+
+function TkGridOverlapping({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
+  products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
+  onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
+}) {
+  const isMobile = device === 'mobile';
+  const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  // Group into rows of 3, each row has slight x-overlap on desktop
+  const rows = [];
+  for (let i = 0; i < products.length; i += 3) rows.push(products.slice(i, i + 3));
+
+  return (
+    <div className="space-y-8">
+      {rows.map((row, ri) => (
+        <div key={ri} style={isMobile ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' } : {
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '0',
+          position: 'relative',
+        }}>
+          {row.map((p, ci) => (
+            <div key={p.id}
+              className="group cursor-pointer flex-shrink-0"
+              style={isMobile ? {} : {
+                width: '36%',
+                marginLeft: ci === 0 ? '0' : '-4%',
+                zIndex: ci + 1,
+                transition: 'transform 0.25s ease, z-index 0s',
+              }}
+              onClick={() => onProductClick(p)}
+              onMouseEnter={e => { if (!isMobile) { (e.currentTarget as HTMLElement).style.transform = 'scale(1.04) translateY(-8px)'; (e.currentTarget as HTMLElement).style.zIndex = '10'; } }}
+              onMouseLeave={e => { if (!isMobile) { (e.currentTarget as HTMLElement).style.transform = 'scale(1) translateY(0)'; (e.currentTarget as HTMLElement).style.zIndex = String(ci + 1); } }}
+            >
+              <div className="relative overflow-hidden" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', background: tt.surfaceBg }}>
+                <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                {p.badge && <span className="absolute top-3 left-3 text-[10px] font-black uppercase px-2.5 py-1 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>{p.badge}</span>}
+                {/* Bottom overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-4" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }}>
+                  <p className="text-white text-xs font-bold truncate">{p.name}</p>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <span className="text-white text-sm font-black">{fmtPrice(p.price)}</span>
+                    <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
+                      className="px-3 py-1.5 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>Add</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Layout Mutation: ASYMMETRIC ───────────────────────────────────────────────
+// Unequal column widths — 60/40 alternating, editorial rhythm
+
+function TkGridAsymmetric({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
+  products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
+  onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
+}) {
+  const isMobile = device === 'mobile';
+  const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  const pairs = [];
+  for (let i = 0; i < products.length; i += 2) pairs.push([products[i], products[i + 1]] as [RichProduct, RichProduct | undefined]);
+
+  const ProductCard = ({ p, aspect }: { p: RichProduct; aspect: string }) => (
+    <div className="group cursor-pointer" onClick={() => onProductClick(p)}>
+      <div className="relative overflow-hidden mb-3" style={{ aspectRatio: aspect, borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
+        <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+        {p.badge && <span className="absolute top-3 left-3 text-[10px] font-black uppercase px-2.5 py-1 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>{p.badge}</span>}
+        <button onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
+          className="absolute top-3 right-3 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity">
+          <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+        </button>
+        <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
+          <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
+            className="w-full py-2 text-[11px] font-bold uppercase tracking-wider text-white"
+            style={{ background: primaryColor, borderRadius: tt.btnRadius }}>+ Add</button>
+        </div>
+      </div>
+      <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: tt.textMuted }}>{p.category}</p>
+      <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+      <span className="text-sm font-black" style={{ color: primaryColor }}>{fmtPrice(p.price)}</span>
+    </div>
+  );
+
+  if (isMobile) {
+    // Mobile: 2-col standard grid
+    return (
+      <div className="grid grid-cols-2 gap-4">
+        {products.map(p => <ProductCard key={p.id} p={p} aspect="3/4" />)}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {pairs.map(([a, b], ri) => (
+        <div key={ri} style={{ display: 'grid', gridTemplateColumns: ri % 2 === 0 ? '3fr 2fr' : '2fr 3fr', gap: '16px', alignItems: 'end' }}>
+          <ProductCard p={a} aspect={ri % 2 === 0 ? '4/5' : '3/4'} />
+          {b && <ProductCard p={b} aspect={ri % 2 === 0 ? '1/1' : '4/5'} />}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -4008,8 +4219,8 @@ function FeaturesSection({ features, tt, primaryColor, device, motion, elevation
               {/* Text */}
               <div className={isMobile ? 'text-center' : ''}>
                 <div style={{ width: '32px', height: '3px', background: pc, marginBottom: '12px', margin: isMobile ? '0 auto 12px' : '0 0 12px' }} />
-                <h3 className="font-black text-lg mb-3" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{f.title}</h3>
-                <p className="text-sm leading-relaxed max-w-sm" style={{ color: tt.textSecondary }}>{f.description}</p>
+                <h3 className="mb-3" style={{ ...headingStyle(tt, 1.0), color: tt.textPrimary }}>{f.title}</h3>
+                <p className="text-sm max-w-sm" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>{f.description}</p>
               </div>
             </div>
           ))}
@@ -4037,8 +4248,8 @@ function FeaturesSection({ features, tt, primaryColor, device, motion, elevation
               onMouseEnter={e => { if (motion !== 'none') (e.currentTarget as HTMLElement).style.transform = getHoverScale(motion); }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}>
               <div style={{ fontSize: i === 0 ? '3rem' : '2rem', marginBottom: '12px' }}>{f.icon}</div>
-              <h3 className="font-black mb-2" style={{ color: i === 0 ? (isDark(pc) ? '#fff' : '#000') : tt.textPrimary, fontSize: i === 0 ? '1.1rem' : '0.9rem' }}>{f.title}</h3>
-              <p className="text-xs leading-relaxed" style={{ color: i === 0 ? (isDark(pc) ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)') : tt.textSecondary }}>{f.description}</p>
+              <h3 className="mb-2" style={{ ...headingStyle(tt, i === 0 ? 1.0 : 0.875), color: i === 0 ? (isDark(pc) ? '#fff' : '#000') : tt.textPrimary }}>{f.title}</h3>
+              <p className="text-xs" style={{ ...bodyStyle(tt), color: i === 0 ? (isDark(pc) ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)') : tt.textSecondary }}>{f.description}</p>
             </div>
           ))}
         </div>
@@ -4058,8 +4269,8 @@ function FeaturesSection({ features, tt, primaryColor, device, motion, elevation
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: alpha(pc, 0.1) }}>{f.icon}</div>
             <div>
-              <h3 className="text-sm font-black uppercase tracking-wide mb-1" style={{ color: tt.textPrimary }}>{f.title}</h3>
-              <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
+              <h3 className="text-sm mb-1" style={{ ...headingStyle(tt, 0.875), color: tt.textPrimary }}>{f.title}</h3>
+              <p className="text-xs" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>{f.description}</p>
             </div>
           </div>
         ))}
@@ -4087,8 +4298,8 @@ function TestimonialsSection({ testimonials, tt, primaryColor, device, sectionPy
           <p className="text-[10px] uppercase tracking-[0.25em] mb-8" style={{ color: tt.textMuted }}>Customer Reviews</p>
           {/* Big quote mark */}
           <div className="text-6xl font-black leading-none mb-4 select-none" style={{ color: alpha(pc, 0.2), fontFamily: 'Georgia, serif' }}>"</div>
-          <p className={`${isMobile ? 'text-base' : 'text-xl'} font-medium leading-relaxed italic mb-8`}
-            style={{ color: tt.textPrimary }}>{t.text}</p>
+          <p className={`${isMobile ? 'text-base' : 'text-xl'} font-medium italic mb-8`}
+            style={{ ...bodyStyle(tt), color: tt.textPrimary }}>{t.text}</p>
           <Stars n={t.rating} />
           <div className="mt-4">
             <p className="text-sm font-black" style={{ color: tt.textPrimary }}>{t.author}</p>
@@ -4113,7 +4324,7 @@ function TestimonialsSection({ testimonials, tt, primaryColor, device, sectionPy
       <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
         <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
           <p className="text-[10px] uppercase tracking-[0.25em] mb-2 text-center" style={{ color: tt.textMuted }}>What People Say</p>
-          <h2 className="text-xl font-black text-center mb-10" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>Real Reviews</h2>
+          <h2 className="text-center mb-10" style={{ ...headingStyle(tt, 1.25), color: tt.textPrimary }}>Real Reviews</h2>
           <div className={`${isMobile ? 'columns-1' : 'columns-3'} gap-4`}>
             {testimonials.map((t, i) => (
               <div key={i}
@@ -4126,8 +4337,8 @@ function TestimonialsSection({ testimonials, tt, primaryColor, device, sectionPy
                   boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
                 }}>
                 <Stars n={t.rating} />
-                <p className="text-sm leading-relaxed mt-2 mb-3 italic"
-                  style={{ color: i % 3 === 0 ? (isDark(pc) ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.85)') : tt.textSecondary }}>
+                <p className="text-sm mt-2 mb-3 italic"
+                  style={{ ...bodyStyle(tt), color: i % 3 === 0 ? (isDark(pc) ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.85)') : tt.textSecondary }}>
                   "{t.text}"
                 </p>
                 <p className="text-xs font-black"
@@ -4151,12 +4362,12 @@ function TestimonialsSection({ testimonials, tt, primaryColor, device, sectionPy
     <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
       <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
         <p className="text-[10px] uppercase tracking-[0.25em] mb-2 text-center" style={{ color: tt.textMuted }}>Reviews</p>
-        <h2 className="text-xl font-black text-center mb-9" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>What Customers Say</h2>
+        <h2 className="text-center mb-9" style={{ ...headingStyle(tt, 1.25), color: tt.textPrimary }}>What Customers Say</h2>
         <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
           {testimonials.map((t, i) => (
             <div key={i} className="p-6" style={{ background: tt.pageBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius }}>
               <Stars n={t.rating} />
-              <p className="text-sm leading-relaxed mt-3 mb-5 italic" style={{ color: tt.textSecondary }}>"{t.text}"</p>
+              <p className="text-sm mt-3 mb-5 italic" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>"{t.text}"</p>
               <div className="flex items-center gap-3 pt-3" style={{ borderTop: `1px solid ${tt.divider}` }}>
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: pc }}>{t.author[0]}</div>
                 <div>
@@ -4231,7 +4442,7 @@ function BrandStorySection({ brandStory, products, tt, primaryColor, device, sec
           <div>
             <p className="text-[10px] uppercase tracking-[0.35em] mb-4" style={{ color: pc }}>Our Story</p>
             <div style={{ width: '40px', height: '3px', background: pc, marginBottom: '20px' }} />
-            <p className="leading-relaxed" style={{ color: tt.textSecondary, fontSize: isMobile ? '0.95rem' : '1.05rem' }}>{brandStory}</p>
+            <p style={{ ...bodyStyle(tt), color: tt.textSecondary, fontSize: isMobile ? '0.95rem' : '1.05rem' }}>{brandStory}</p>
           </div>
         </div>
       </section>
@@ -4255,7 +4466,7 @@ function BrandStorySection({ brandStory, products, tt, primaryColor, device, sec
                   style={{ background: i === 0 ? pc : tt.pageBg, border: `2px solid ${pc}`, fontSize: '1.3rem' }}>
                   {stepIcons[i]}
                 </div>
-                <p className="text-sm leading-relaxed" style={{ color: tt.textSecondary }}>{s.trim()}</p>
+                <p className="text-sm" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>{s.trim()}</p>
               </div>
             ))}
           </div>
@@ -4269,7 +4480,7 @@ function BrandStorySection({ brandStory, products, tt, primaryColor, device, sec
     <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}` }}>
       <div className="max-w-2xl mx-auto px-5 text-center" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
         <div className="text-4xl mb-5 opacity-20 select-none" style={{ color: pc, fontFamily: tt.headingFont }}>"</div>
-        <p className={`${isMobile ? 'text-base' : 'text-lg'} font-medium leading-relaxed italic`} style={{ color: tt.textSecondary }}>{brandStory}</p>
+        <p className={`${isMobile ? 'text-base' : 'text-lg'} font-medium italic`} style={{ ...bodyStyle(tt), color: tt.textSecondary }}>{brandStory}</p>
       </div>
     </section>
   );
@@ -4291,12 +4502,12 @@ function FaqSection({ faq, tt, primaryColor, device, sectionPy, variant }: {
       <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}` }}>
         <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
           <p className="text-[10px] uppercase tracking-[0.3em] text-center mb-2" style={{ color: tt.textMuted }}>FAQ</p>
-          <h2 className="text-xl font-black text-center mb-9" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>Common Questions</h2>
+          <h2 className="text-center mb-9" style={{ ...headingStyle(tt, 1.25), color: tt.textPrimary }}>Common Questions</h2>
           <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
             {faq.map((item, i) => (
               <div key={i} className="p-5" style={{ background: tt.pageBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius, borderLeft: `3px solid ${pc}` }}>
                 <p className="text-sm font-black mb-2" style={{ color: tt.textPrimary }}>{item.q}</p>
-                <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{item.a}</p>
+                <p className="text-xs" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>{item.a}</p>
               </div>
             ))}
           </div>
@@ -4310,7 +4521,7 @@ function FaqSection({ faq, tt, primaryColor, device, sectionPy, variant }: {
     <section style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
       <div className="max-w-3xl mx-auto px-5">
         <p className="text-[10px] uppercase tracking-[0.3em] text-center mb-2" style={{ color: tt.textMuted }}>FAQ</p>
-        <h2 className="text-xl font-black text-center mb-9" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>Frequently Asked</h2>
+        <h2 className="text-center mb-9" style={{ ...headingStyle(tt, 1.25), color: tt.textPrimary }}>Frequently Asked</h2>
         <div className="space-y-2">
           {faq.map((item, i) => (
             <div key={i} className="overflow-hidden cursor-pointer"
@@ -4322,7 +4533,7 @@ function FaqSection({ faq, tt, primaryColor, device, sectionPy, variant }: {
                   style={{ color: pc, display: 'inline-block', transform: openIndex === i ? 'rotate(45deg)' : 'none' }}>+</span>
               </button>
               {openIndex === i && (
-                <div className="px-5 pb-5 text-sm leading-relaxed" style={{ color: tt.textSecondary }}>{item.a}</div>
+                <div className="px-5 pb-5 text-sm" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>{item.a}</div>
               )}
             </div>
           ))}
@@ -4369,8 +4580,7 @@ function NewsletterSectionV2({ newsletter, tt, primaryColor, device, sectionPy, 
         <div className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-10 flex flex-col gap-6' : 'flex items-center justify-between gap-10'}`}
           style={isMobile ? {} : { paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
           <div>
-            <h2 className={`font-black leading-tight ${isMobile ? 'text-xl' : 'text-2xl'}`}
-              style={{ fontFamily: tt.headingFont, color: isDark(pc) ? '#fff' : '#000' }}>{newsletter.headline}</h2>
+            <h2 style={{ ...headingStyle(tt, isMobile ? 1.25 : 1.5), color: isDark(pc) ? '#fff' : '#000' }}>{newsletter.headline}</h2>
             <p className="text-sm mt-1" style={{ color: isDark(pc) ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }}>{newsletter.subtext}</p>
           </div>
           <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-2 ${isMobile ? '' : 'min-w-[380px]'}`}>
@@ -4496,7 +4706,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
             <div className="flex items-end justify-between mb-7">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.22em] mb-1.5" style={{ color: tt.textMuted }}>Curated Selection</p>
-                <h2 className="text-xl font-black tracking-tight" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>Featured Products</h2>
+                <h2 style={{ ...headingStyle(tt, 1.25), color: tt.textPrimary }}>Featured Products</h2>
               </div>
               <button onClick={scrollToProducts} className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 hover:gap-2.5 transition-all" style={{ color: primaryColor }}>
                 View All <ArrowRight className="w-3.5 h-3.5" />
@@ -4510,6 +4720,12 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
               <TkGridCarousel  products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
             ) : gridVariant === 'spotlight' ? (
               <TkGridSpotlight products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
+            ) : tt.compositionStyle === 'staggered' ? (
+              <TkGridStaggered  products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
+            ) : tt.compositionStyle === 'overlapping' ? (
+              <TkGridOverlapping products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
+            ) : tt.compositionStyle === 'asymmetric' ? (
+              <TkGridAsymmetric  products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
             ) : (
               <TkGridStandard  products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
             )}

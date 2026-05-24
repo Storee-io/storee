@@ -94,6 +94,54 @@ export interface DesignTokens {
   motion?: 'none' | 'subtle' | 'smooth' | 'expressive';
   /** Free-text personality hint Claude used, e.g. "whatsapp-like" */
   personality?: string;
+
+  // ── Typography Intelligence ───────────────────────────────────────────────
+  /**
+   * Heading size multiplier — scales ALL heading sizes up or down.
+   * 0.8 = understated/minimal  |  1.0 = balanced (default)
+   * 1.2 = impactful            |  1.5 = dramatic/editorial
+   */
+  headingScale?: number;
+  /**
+   * Heading font weight.
+   * 300 = luxury/editorial thin  |  400 = elegant  |  700 = strong
+   * 800 = impactful              |  900 = maximum contrast
+   */
+  headingWeight?: number;
+  /**
+   * Heading letter-spacing (CSS value).
+   * '-0.05em' = very tight (editorial punch)  |  '-0.02em' = modern tight
+   * '0'       = neutral                        |  '0.06em'  = airy/luxury
+   * '0.14em'  = spaced-out/fashion             |  '0.22em'  = all-caps label
+   */
+  headingTracking?: string;
+  /**
+   * Heading line-height multiplier.
+   * 0.9 = ultra-tight hero text  |  1.0 = tight
+   * 1.1 = balanced               |  1.3 = relaxed/soft
+   */
+  headingLeading?: number;
+  /**
+   * Body text line-height.
+   * 1.5 = compact  |  1.6 = comfortable (default)
+   * 1.8 = relaxed  |  2.0 = very airy
+   */
+  bodyLeading?: number;
+  /**
+   * Body text letter-spacing.
+   * '0' = none (default)  |  '0.02em' = slightly open  |  '0.04em' = airy
+   */
+  bodyTracking?: string;
+
+  // ── Layout Mutation ───────────────────────────────────────────────────────
+  /**
+   * Within-section composition style for product/feature grids.
+   * grid        = standard equal grid (default)
+   * staggered   = cards offset vertically for visual rhythm
+   * overlapping = cards overlap each other, depth layering
+   * asymmetric  = varied column widths, unequal layout
+   */
+  compositionStyle?: 'grid' | 'staggered' | 'overlapping' | 'asymmetric';
   /** @deprecated use sections[].variant instead */
   sectionVariants?: {
     features?:     'icons' | 'alternating' | 'bento';
