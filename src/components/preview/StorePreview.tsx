@@ -3713,16 +3713,107 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
       </div>
 
-      {/* ── Product list (chat-row style) ── */}
+      {/* ── Product list — personality-aware rendering ── */}
       <div ref={productsRef} style={{ background: tt.pageBg }}>
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <span className="text-4xl">🔍</span>
             <p className="text-sm font-medium" style={{ color: tt.textMuted }}>No products found</p>
           </div>
-        ) : (
+        ) : dt?.personality?.includes('spotify') ? (
+          /* ── Spotify: 2-col album art dark grid ── */
+          <div className="grid grid-cols-2 gap-3 p-4">
+            {filtered.map(p => (
+              <div key={p.id} className="cursor-pointer group" onClick={() => onProductClick(p)}>
+                <div className="relative aspect-square rounded-lg overflow-hidden mb-2">
+                  <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 55%)' }} />
+                  <button
+                    onClick={e => { e.stopPropagation(); const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); onAddToCart(p, rect); }}
+                    className="absolute bottom-2 right-2 w-9 h-9 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ background: pc, color: pcText }}
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M8 5v14l11-7z"/></svg>
+                  </button>
+                  {p.badge && <span className="absolute top-2 left-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: pc, color: pcText }}>{p.badge}</span>}
+                </div>
+                <p className="text-xs font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+                <p className="text-[10px] mt-0.5" style={{ color: tt.textMuted }}>{p.category} · {fmtPrice(p.price)}</p>
+              </div>
+            ))}
+          </div>
+        ) : dt?.personality?.includes('tiktok') ? (
+          /* ── TikTok: full-width vertical video cards ── */
+          <div className="flex flex-col gap-1 pb-2">
+            {filtered.map(p => (
+              <div key={p.id} className="relative cursor-pointer overflow-hidden" style={{ height: '280px' }} onClick={() => onProductClick(p)}>
+                <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                {/* Dark gradient overlay */}
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 50%)' }} />
+                {/* Badge top-left */}
+                {p.badge && <span className="absolute top-3 left-3 text-[10px] font-bold px-2 py-0.5 rounded-sm" style={{ background: pc, color: pcText }}>{p.badge}</span>}
+                {/* Content bottom */}
+                <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
+                  <p className="text-white font-bold text-base leading-tight">{p.name}</p>
+                  <p className="text-white/70 text-xs mt-0.5 line-clamp-1">{p.description}</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <div>
+                      {p.originalPrice && <span className="text-white/50 text-xs line-through mr-1">{fmtPrice(p.originalPrice)}</span>}
+                      <span className="font-bold text-sm" style={{ color: pc }}>{fmtPrice(p.price)}</span>
+                    </div>
+                    <button
+                      onClick={e => { e.stopPropagation(); const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); onAddToCart(p, rect); }}
+                      className="px-4 py-1.5 text-xs font-bold rounded-sm transition-all active:scale-95"
+                      style={{ background: pc, color: pcText }}
+                    >Shop Now</button>
+                  </div>
+                </div>
+                {/* Side actions (TikTok-style) */}
+                <div className="absolute right-3 bottom-16 flex flex-col items-center gap-4">
+                  <button onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }} className="flex flex-col items-center gap-0.5">
+                    <Heart className={`w-6 h-6 ${wishlist.has(p.id) ? 'fill-rose-500 text-rose-500' : 'text-white'}`} />
+                    <span className="text-white text-[9px]">{wishlist.has(p.id) ? 'Saved' : 'Save'}</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : dt?.personality?.includes('discord') ? (
+          /* ── Discord: dark channel-list rows ── */
           <div>
-            {filtered.map((p, idx) => (
+            <div className="px-4 pt-3 pb-1">
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: tt.textMuted }}>PRODUCTS — {filtered.length}</p>
+            </div>
+            {filtered.map(p => (
+              <div key={p.id}
+                className="flex items-center gap-3 px-2 mx-2 py-2 rounded-md cursor-pointer transition-colors hover:bg-white/5 active:bg-white/10"
+                onClick={() => onProductClick(p)}
+              >
+                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                  <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</span>
+                    {p.badge && <span className="text-[8px] font-bold px-1 py-0.5 rounded" style={{ background: pc, color: pcText }}>{p.badge}</span>}
+                  </div>
+                  <p className="text-[11px] truncate" style={{ color: tt.textMuted }}>{p.description}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                  <span className="text-xs font-bold" style={{ color: pc }}>{fmtPrice(p.price)}</span>
+                  <button
+                    onClick={e => { e.stopPropagation(); const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); onAddToCart(p, rect); }}
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded transition-all hover:opacity-80"
+                    style={{ background: alpha(pc, 0.2), color: pc }}
+                  >Add</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* ── Default WhatsApp-style chat rows ── */
+          <div>
+            {filtered.map((p) => (
               <div key={p.id}
                 className="flex items-center gap-3 px-4 py-3 cursor-pointer active:opacity-70 transition-opacity"
                 style={{ borderBottom: `1px solid ${tt.divider}`, background: tt.surfaceBg }}
@@ -3753,7 +3844,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
                   </div>
                 </div>
 
-                {/* Add button (pill style) */}
+                {/* Add button */}
                 <button
                   onClick={e => {
                     e.stopPropagation();
@@ -4130,8 +4221,11 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
 
   const sectionPy = getSpacingPx(spacing, 56);
 
-  // Masonry aspect ratios — cycle through to give varied heights
-  const aspectRatios = ['4/5', '3/4', '1/1', '4/3', '3/4', '4/5', '1/1', '3/4', '4/5', '4/3'];
+  const isInstagram = dt?.personality?.includes('instagram');
+  // Instagram: all square; Masonry: varied heights
+  const aspectRatios = isInstagram
+    ? Array(20).fill('1/1')
+    : ['4/5', '3/4', '1/1', '4/3', '3/4', '4/5', '1/1', '3/4', '4/5', '4/3'];
 
   return (
     <div style={{ background: tt.pageBg, fontFamily: tt.fontFamily }}>
@@ -4185,33 +4279,70 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
         </button>
       </section>
 
-      {/* ── Collections — horizontal pill scroll ── */}
-      <div style={{ borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
-        <div className="max-w-6xl mx-auto px-5 py-3 flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          {[{ name: 'All', emoji: '✦' }, ...collections].map((c, i) => (
-            <button key={i} onClick={() => setSelectedCol(i)}
-              className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-all"
-              style={selectedCol === i
-                ? { background: pc, color: pcText, borderRadius: tt.btnRadius, transition: getMotionTransition(motion) }
-                : { background: tt.surfaceBg, color: tt.textSecondary, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.btnRadius }}>
-              {c.emoji} {c.name}
-            </button>
-          ))}
+      {/* ── Collections ── */}
+      {isInstagram ? (
+        /* Instagram: story-ring circles */
+        <div style={{ borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}`, background: tt.surfaceBg }}>
+          <div className="flex gap-4 px-4 py-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+            {[{ name: 'All', emoji: '✨' }, ...collections].map((c, i) => (
+              <button key={i} onClick={() => setSelectedCol(i)} className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                {/* Instagram gradient ring */}
+                <div className="p-[2px] rounded-full" style={{
+                  background: selectedCol === i
+                    ? 'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)'
+                    : tt.surfaceBorder,
+                }}>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl"
+                    style={{ background: tt.surfaceBg, border: `2px solid ${tt.surfaceBg}` }}>
+                    {c.emoji}
+                  </div>
+                </div>
+                <span className="text-[10px] font-medium max-w-[48px] text-center leading-tight truncate"
+                  style={{ color: selectedCol === i ? tt.textPrimary : tt.textMuted }}>
+                  {c.name}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        /* Default: pill filters */
+        <div style={{ borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
+          <div className="max-w-6xl mx-auto px-5 py-3 flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+            {[{ name: 'All', emoji: '✦' }, ...collections].map((c, i) => (
+              <button key={i} onClick={() => setSelectedCol(i)}
+                className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-all"
+                style={selectedCol === i
+                  ? { background: pc, color: pcText, borderRadius: tt.btnRadius, transition: getMotionTransition(motion) }
+                  : { background: tt.surfaceBg, color: tt.textSecondary, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.btnRadius }}>
+                {c.emoji} {c.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {trustBadges.length > 0 && <TrustBadgesRow badges={trustBadges} primaryColor={pc} device={device} />}
 
-      {/* ── Masonry grid ── */}
+      {/* ── Product grid ── */}
       <section ref={productsRef} className="max-w-6xl mx-auto px-4"
-        style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
-        <div style={{
+        style={{ paddingTop: `${isInstagram ? 2 : sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+        <div style={isInstagram ? {
+          display: 'grid',
+          gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)',
+          gap: '2px',
+        } : {
           columnCount: isMobile ? 2 : 3,
           columnGap: '12px',
         }}>
           {displayed.map((p, idx) => (
             <div key={p.id}
-              style={{
+              style={isInstagram ? {
+                aspectRatio: '1/1',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                position: 'relative',
+              } : {
                 breakInside: 'avoid',
                 marginBottom: '12px',
                 borderRadius: tt.surfaceRadius,
@@ -4223,46 +4354,65 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
               }}
               onClick={() => onProductClick(p)}
               onMouseEnter={e => {
-                if (motion !== 'none') {
+                if (!isInstagram && motion !== 'none') {
                   (e.currentTarget as HTMLElement).style.transform = getHoverScale(motion);
                   (e.currentTarget as HTMLElement).style.boxShadow = getElevationShadow('raised');
                 }
               }}
               onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-                (e.currentTarget as HTMLElement).style.boxShadow = getElevationShadow(elevation);
+                if (!isInstagram) {
+                  (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = getElevationShadow(elevation);
+                }
               }}
             >
-              {/* Image with varying aspect ratio */}
+              {/* Image */}
               <div style={{ aspectRatio: aspectRatios[idx % aspectRatios.length], position: 'relative', overflow: 'hidden' }}>
                 <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                {p.badge && (
-                  <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5"
-                    style={{ background: pc, color: pcText, borderRadius: '999px' }}>{p.badge}</span>
+                {isInstagram ? (
+                  /* Instagram hover overlay */
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 opacity-0 hover:opacity-100 transition-opacity"
+                    style={{ background: 'rgba(0,0,0,0.45)' }}>
+                    <span className="text-white text-xs font-bold">{fmtPrice(p.price)}</span>
+                    <button
+                      onClick={e => { e.stopPropagation(); const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); onAddToCart(p, rect); }}
+                      className="mt-1 px-3 py-1 text-[10px] font-bold rounded-full"
+                      style={{ background: pc, color: pcText }}
+                    >Shop</button>
+                  </div>
+                ) : (
+                  <>
+                    {p.badge && (
+                      <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5"
+                        style={{ background: pc, color: pcText, borderRadius: '999px' }}>{p.badge}</span>
+                    )}
+                    <button
+                      onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
+                      className="absolute top-2 right-2 w-7 h-7 bg-white/85 backdrop-blur flex items-center justify-center rounded-full shadow transition-all hover:scale-110 active:scale-95"
+                    >
+                      <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+                    </button>
+                  </>
                 )}
-                <button
-                  onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
-                  className="absolute top-2 right-2 w-7 h-7 bg-white/85 backdrop-blur flex items-center justify-center rounded-full shadow transition-all hover:scale-110 active:scale-95"
-                >
-                  <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
-                </button>
               </div>
 
-              {/* Card info */}
-              <div className="p-3">
-                <p className="text-xs font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
-                <div className="flex items-center justify-between mt-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-black" style={{ color: pc }}>{fmtPrice(p.price)}</span>
-                    {p.originalPrice && <span className="text-[10px] line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
+              {/* Card info — hidden for Instagram (shows on hover overlay) */}
+              {!isInstagram && (
+                <div className="p-3">
+                  <p className="text-xs font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-black" style={{ color: pc }}>{fmtPrice(p.price)}</span>
+                      {p.originalPrice && <span className="text-[10px] line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
+                    </div>
+                    <button
+                      onClick={e => { e.stopPropagation(); const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); onAddToCart(p, rect); }}
+                      className="w-7 h-7 flex items-center justify-center text-white text-sm font-bold rounded-full transition-all hover:opacity-85 active:scale-95"
+                      style={{ background: pc, transition: getMotionTransition(motion) }}
+                    >+</button>
                   </div>
-                  <button
-                    onClick={e => { e.stopPropagation(); const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); onAddToCart(p, rect); }}
-                    className="w-7 h-7 flex items-center justify-center text-white text-sm font-bold rounded-full transition-all hover:opacity-85 active:scale-95"
-                    style={{ background: pc, transition: getMotionTransition(motion) }}
-                  >+</button>
                 </div>
-              </div>
+              )}
             </div>
           ))}
         </div>

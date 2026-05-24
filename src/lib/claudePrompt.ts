@@ -249,6 +249,24 @@ Airbnb / clean marketplace / card-heavy:
   primaryColor: "#ff385c", accentColor: "#e61e4d", btnRadius: "8px", cardRadius: "12px"
   personality: "airbnb-like"
 
+Instagram / photo grid / aesthetic / lifestyle / fashion / beauty / food photography:
+  layoutType: "masonry", spacing: "compact", density: "dense", motion: "smooth", elevation: "subtle"
+  pageBg: "#fafafa", surfaceBg: "#ffffff", headerBg: "#ffffff", textPrimary: "#262626"
+  primaryColor: "#e1306c", accentColor: "#833ab4", btnRadius: "8px", cardRadius: "3px"
+  personality: "instagram-like"
+
+Indonesian keyword mapping — treat these exactly like the English equivalents above:
+  "mirip whatsapp" / "seperti whatsapp" / "kayak whatsapp" → WhatsApp-like bundle
+  "mirip instagram" / "seperti instagram" / "kayak instagram" → Instagram-like bundle
+  "mirip spotify" / "seperti spotify" / "kayak spotify"     → Spotify bundle
+  "mirip tiktok" / "seperti tiktok" / "kayak tiktok"       → TikTok Shop bundle
+  "mirip discord" / "seperti discord" / "kayak discord"     → Discord-like bundle
+  "mirip apple" / "seperti apple store"                      → Apple Store bundle
+  "mirip pinterest" / "seperti pinterest"                    → Pinterest bundle
+  "mirip zara" / "seperti zara" / "luxury cinematic"         → ZARA bundle
+  "mirip airbnb" / "seperti airbnb"                          → Airbnb bundle
+  "mirip notion" / "seperti notion"                          → Notion-like bundle
+
 For any other prompt that doesn't match a known personality, use layoutType: "standard"
 and choose spacing/density/elevation/motion that fits the brand mood.
 
