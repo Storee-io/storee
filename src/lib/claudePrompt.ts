@@ -40,6 +40,7 @@ The JSON must exactly match this shape:
     "headingLeading": "number (line-height: 0.9=ultra-tight, 1.0=tight, 1.1=balanced, 1.3=relaxed)",
     "bodyLeading": "number (body line-height: 1.5=compact, 1.6=default, 1.8=relaxed, 2.0=airy)",
     "bodyTracking": "string (body letter-spacing: '0'=none, '0.02em'=open, '0.04em'=airy)",
+    "heroBg": "string (OPTIONAL — only set when user explicitly requests a specific hero background style: blob|mesh|wave|gradient)",
     "compositionStyle": "string (one of: grid, staggered, overlapping, asymmetric — how product cards are laid out)",
     "sections": [
       { "type": "hero",         "variant": "string — hero variant (centered|split|fullscreen|minimal|editorial|video|stacked|asymmetrical)" },
@@ -431,6 +432,19 @@ When to use compositionStyle:
   - 'overlapping' + dark palette + headingWeight 800 = aggressive hype brand
   - 'asymmetric' + headingScale 1.5 + headingWeight 300 = editorial fashion magazine
   - Leave as 'grid' for SaaS, tech, clean stores where structure matters
+
+── HERO BACKGROUND (heroBg) ──────────────────────────────
+heroBg is OPTIONAL. Do NOT set it unless the user explicitly requests a specific hero background style.
+Default behaviour (heroBg omitted): plain pageBg, no decoration.
+
+Only set heroBg when user prompt contains language like:
+  "blob background", "blob shapes", "organic background"  → heroBg: "blob"
+  "mesh gradient", "gradient background", "soft gradient" → heroBg: "mesh"
+  "wave", "wave background", "wave divider"               → heroBg: "wave"
+  "gradient hero", "color gradient", "ombre background"   → heroBg: "gradient"
+
+These add Haikei-style SVG decorations behind the hero content, colored with primaryColor.
+Never infer heroBg from the store type alone — only set it from explicit user words.
 
 ════════════════════════════════════════════════════════
 CONTENT RULES

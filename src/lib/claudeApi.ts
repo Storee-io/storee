@@ -133,6 +133,19 @@ export interface DesignTokens {
    */
   bodyTracking?: string;
 
+  // ── Hero background decoration ───────────────────────────────────────────
+  /**
+   * Decorative background layer shown BEHIND the hero content.
+   * Only set this when the user explicitly requests a specific background style.
+   * Leave undefined for a plain pageBg hero.
+   *
+   * blob     → organic SVG blob shapes (Haikei-style), colored with primaryColor
+   * mesh     → blurred radial gradient spots (soft, airy)
+   * wave     → wave SVG divider at hero bottom (transitions to products section)
+   * gradient → subtle gradient from primaryColor to pageBg
+   */
+  heroBg?: 'blob' | 'mesh' | 'wave' | 'gradient';
+
   // ── Layout Mutation ───────────────────────────────────────────────────────
   /**
    * Within-section composition style for product/feature grids.

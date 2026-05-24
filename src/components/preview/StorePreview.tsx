@@ -3025,6 +3025,8 @@ interface TokenTheme extends CommerceTheme {
   // Animation
   personality?: string;
   motion?: string;
+  // Hero background decoration (only when user explicitly requested)
+  heroBg?: 'blob' | 'mesh' | 'wave' | 'gradient';
 }
 
 // ── Phase 3: Motion & Elevation utilities ─────────────────────────────────────
@@ -3334,6 +3336,8 @@ function getTokenThemeV2(dt: DesignTokens, primaryColor: string): TokenTheme {
     // Animation archetype context
     personality: dt.personality,
     motion:      dt.motion,
+    // Hero background decoration
+    heroBg: dt.heroBg,
   };
 }
 
@@ -3444,7 +3448,7 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts }
 
   return (
     <section className="relative overflow-hidden" style={{ minHeight: isMobile ? '60vh' : '70vh' }}>
-      {bgImage ? (
+      {bgImage && (
         <>
           <div className="absolute inset-0 overflow-hidden">
             {/* Ken-Burns slow zoom for luxury archetype (CSS only — scale doesn't need spring) */}
@@ -3454,15 +3458,12 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts }
           </div>
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.65) 100%)' }} />
         </>
-      ) : (
-        /* No background image — Haikei mesh + blob decorations */
-        <>
-          <HaikeiMesh color={primaryColor} pageBg={tt.pageBg} />
-          <HaikeiBlob color={primaryColor} index={0} size={isMobile ? 280 : 420} opacity={0.10} top="-15%" right="-8%" rotate={25} />
-          <HaikeiBlob color={primaryColor} index={3} size={isMobile ? 220 : 320} opacity={0.07} bottom="-10%" left="-6%" rotate={-15} />
-          <HaikeiWave fill={tt.surfaceBg} variant={1} height={isMobile ? 40 : 56} />
-        </>
       )}
+      {/* Haikei decorations — only when user explicitly requested via heroBg token */}
+      {!bgImage && tt.heroBg === 'blob'     && <><HaikeiBlob color={primaryColor} index={0} size={isMobile ? 280 : 420} opacity={0.10} top="-15%" right="-8%" rotate={25} /><HaikeiBlob color={primaryColor} index={3} size={isMobile ? 220 : 320} opacity={0.07} bottom="-10%" left="-6%" rotate={-15} /></>}
+      {!bgImage && tt.heroBg === 'mesh'     && <HaikeiMesh color={primaryColor} pageBg={tt.pageBg} />}
+      {!bgImage && tt.heroBg === 'wave'     && <HaikeiWave fill={tt.surfaceBg} variant={1} height={isMobile ? 40 : 56} />}
+      {!bgImage && tt.heroBg === 'gradient' && <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse 80% 60% at 50% 0%, ${alpha(primaryColor, 0.18)} 0%, transparent 70%)`, zIndex: 0 }} />}
       <motion.div
         className="relative z-10 flex flex-col items-center justify-center text-center px-5"
         style={{ minHeight: isMobile ? '60vh' : '70vh', padding: isMobile ? '60px 20px' : '80px 40px' }}
@@ -3516,11 +3517,11 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
 
   return (
     <section className="relative overflow-hidden" style={{ background: tt.pageBg }}>
-      {/* Haikei blob accent behind the image column */}
-      <HaikeiBlob color={primaryColor} index={1} size={isMobile ? 260 : 440} opacity={0.09}
-        top={isMobile ? '-10%' : '-15%'} right={isMobile ? '-12%' : '-8%'} rotate={20} />
-      <HaikeiBlob color={primaryColor} index={4} size={isMobile ? 180 : 300} opacity={0.06}
-        bottom="-8%" left="-5%" rotate={-30} />
+      {/* Haikei decorations — only when user explicitly requested */}
+      {tt.heroBg === 'blob'     && <><HaikeiBlob color={primaryColor} index={1} size={isMobile ? 260 : 440} opacity={0.09} top={isMobile ? '-10%' : '-15%'} right={isMobile ? '-12%' : '-8%'} rotate={20} /><HaikeiBlob color={primaryColor} index={4} size={isMobile ? 180 : 300} opacity={0.06} bottom="-8%" left="-5%" rotate={-30} /></>}
+      {tt.heroBg === 'mesh'     && <HaikeiMesh color={primaryColor} pageBg={tt.pageBg} />}
+      {tt.heroBg === 'wave'     && <HaikeiWave fill={tt.surfaceBg} variant={0} height={isMobile ? 36 : 52} />}
+      {tt.heroBg === 'gradient' && <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse 70% 55% at 80% 50%, ${alpha(primaryColor, 0.15)} 0%, transparent 65%)`, zIndex: 0 }} />}
       <div className={`relative z-10 max-w-6xl mx-auto px-5 ${isMobile ? 'py-10 flex flex-col gap-8' : 'py-16 grid grid-cols-2 gap-14 items-center'}`}>
         <motion.div variants={heroStagger} initial="hidden" animate="visible">
           {tagline && (
@@ -3629,10 +3630,11 @@ function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts }:
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
   return (
     <section className="relative overflow-hidden" style={{ background: tt.pageBg, borderBottom: `1px solid ${tt.divider}` }}>
-      {/* Haikei decorations */}
-      <HaikeiBlob color={primaryColor} index={2} size={isMobile ? 200 : 340} opacity={0.08} top="-20%" right="-5%" rotate={10} />
-      <HaikeiBlob color={primaryColor} index={5} size={isMobile ? 160 : 260} opacity={0.06} bottom="-15%" left="-4%" rotate={-20} />
-      <HaikeiWave fill={tt.surfaceBg} variant={0} height={isMobile ? 36 : 52} />
+      {/* Haikei decorations — only when user explicitly requested */}
+      {tt.heroBg === 'blob'     && <><HaikeiBlob color={primaryColor} index={2} size={isMobile ? 200 : 340} opacity={0.08} top="-20%" right="-5%" rotate={10} /><HaikeiBlob color={primaryColor} index={5} size={isMobile ? 160 : 260} opacity={0.06} bottom="-15%" left="-4%" rotate={-20} /></>}
+      {tt.heroBg === 'mesh'     && <HaikeiMesh color={primaryColor} pageBg={tt.pageBg} />}
+      {tt.heroBg === 'wave'     && <HaikeiWave fill={tt.surfaceBg} variant={0} height={isMobile ? 36 : 52} />}
+      {tt.heroBg === 'gradient' && <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse 90% 60% at 50% 0%, ${alpha(primaryColor, 0.14)} 0%, transparent 70%)`, zIndex: 0 }} />}
       <div className="relative z-10 max-w-3xl mx-auto px-5 text-center" style={{ padding: isMobile ? '56px 20px' : '80px 40px' }}>
         {tagline && (
           <p className="text-[10px] font-bold uppercase tracking-[0.35em] mb-5" style={{ color: primaryColor }}>
@@ -3669,8 +3671,11 @@ function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts 
 
   return (
     <section style={{ background: tt.pageBg, overflow: 'hidden', minHeight: isMobile ? '80vh' : '88vh', position: 'relative' }}>
-      {/* Haikei blob accent — subtle, complements the ghost-word texture */}
-      <HaikeiBlob color={primaryColor} index={0} size={isMobile ? 220 : 380} opacity={0.06} bottom="-10%" right="-6%" rotate={40} />
+      {/* Haikei decorations — only when user explicitly requested */}
+      {tt.heroBg === 'blob'     && <HaikeiBlob color={primaryColor} index={0} size={isMobile ? 220 : 380} opacity={0.06} bottom="-10%" right="-6%" rotate={40} />}
+      {tt.heroBg === 'mesh'     && <HaikeiMesh color={primaryColor} pageBg={tt.pageBg} />}
+      {tt.heroBg === 'wave'     && <HaikeiWave fill={tt.surfaceBg} variant={3} height={isMobile ? 36 : 52} />}
+      {tt.heroBg === 'gradient' && <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse 60% 50% at 70% 50%, ${alpha(primaryColor, 0.12)} 0%, transparent 65%)`, zIndex: 0 }} />}
       {/* Giant ghost word — decorative background text */}
       <div aria-hidden className="absolute select-none pointer-events-none"
         style={{
@@ -3851,10 +3856,11 @@ function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts }:
 
   return (
     <section className="relative" style={{ background: tt.pageBg, overflow: 'hidden' }}>
-      {/* Haikei blob behind image pile */}
-      <HaikeiBlob color={primaryColor} index={3} size={isMobile ? 240 : 400} opacity={0.09}
-        top={isMobile ? '-5%' : '-10%'} right={isMobile ? '-10%' : '-6%'} rotate={-10} />
-      <HaikeiWave fill={tt.surfaceBg} variant={2} height={isMobile ? 36 : 50} />
+      {/* Haikei decorations — only when user explicitly requested */}
+      {tt.heroBg === 'blob'     && <HaikeiBlob color={primaryColor} index={3} size={isMobile ? 240 : 400} opacity={0.09} top={isMobile ? '-5%' : '-10%'} right={isMobile ? '-10%' : '-6%'} rotate={-10} />}
+      {tt.heroBg === 'mesh'     && <HaikeiMesh color={primaryColor} pageBg={tt.pageBg} />}
+      {tt.heroBg === 'wave'     && <HaikeiWave fill={tt.surfaceBg} variant={2} height={isMobile ? 36 : 50} />}
+      {tt.heroBg === 'gradient' && <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse 75% 60% at 60% 40%, ${alpha(primaryColor, 0.13)} 0%, transparent 70%)`, zIndex: 0 }} />}
       <div className={`relative z-10 max-w-6xl mx-auto px-6 ${isMobile ? 'py-12 flex flex-col gap-10' : 'py-16 grid grid-cols-2 gap-12 items-center'}`}>
         {/* Text side */}
         <div className={isMobile ? 'order-2' : ''}>
@@ -3945,8 +3951,10 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
 
   return (
     <section className="overflow-hidden relative" style={{ height: '92vh', minHeight: '560px', display: 'flex' }}>
-      {/* Haikei blob — floats in text column area */}
-      <HaikeiBlob color={primaryColor} index={4} size={320} opacity={0.08} bottom="-10%" right="-4%" rotate={15} />
+      {/* Haikei decorations — only when user explicitly requested */}
+      {tt.heroBg === 'blob'     && <HaikeiBlob color={primaryColor} index={4} size={320} opacity={0.08} bottom="-10%" right="-4%" rotate={15} />}
+      {tt.heroBg === 'mesh'     && <HaikeiMesh color={primaryColor} pageBg={tt.pageBg} />}
+      {tt.heroBg === 'gradient' && <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse 45% 70% at 85% 50%, ${alpha(primaryColor, 0.10)} 0%, transparent 60%)`, zIndex: 0 }} />}
       {/* Image — takes 62% width, bleeds to left edge */}
       <div className="relative overflow-hidden flex-shrink-0" style={{ width: '62%' }}>
         {products[0] && <ProductImg src={products[0].image} alt="" className="w-full h-full object-cover" />}
