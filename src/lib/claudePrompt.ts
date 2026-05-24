@@ -42,12 +42,35 @@ The JSON must exactly match this shape:
     "bodyTracking": "string (body letter-spacing: '0'=none, '0.02em'=open, '0.04em'=airy)",
     "heroBg": "string (OPTIONAL — only set when user explicitly requests a specific hero background style: blob|mesh|wave|gradient)",
     "compositionStyle": "string (one of: grid, staggered, overlapping, asymmetric — how product cards are laid out)",
+    "styleMix": ["string", "string"],
     "sections": [
-      { "type": "hero",         "variant": "string — hero variant (centered|split|fullscreen|minimal|editorial|video|stacked|asymmetrical)" },
+      {
+        "type": "hero",
+        "variant": "string — hero variant (centered|split|fullscreen|minimal|editorial|video|stacked|asymmetrical)",
+        "props": {
+          "textAlign": "string (left|center|right — optional, overrides variant default)",
+          "imageRatio": "string (portrait|square|landscape — optional, for image-bearing variants)",
+          "ctaStyle": "string (filled|outline|text — optional, default: filled)",
+          "accentLine": "boolean (optional — decorative colored line above heading)"
+        }
+      },
       { "type": "trust",        "variant": null },
       { "type": "collections",  "variant": null },
-      { "type": "products",     "variant": "string — grid variant (standard|magazine|list|carousel|spotlight)" },
-      { "type": "features",     "variant": "string — (icons|alternating|bento)" },
+      {
+        "type": "products",
+        "variant": "string — grid variant (standard|magazine|list|carousel|spotlight)",
+        "props": {
+          "title": "string (optional — overrides 'Featured Products')",
+          "label": "string (optional — overrides 'Curated Selection' label)"
+        }
+      },
+      {
+        "type": "features",
+        "variant": "string — (icons|alternating|bento)",
+        "props": {
+          "columns": "number (2|3|4 — optional, default: 3)"
+        }
+      },
       { "type": "testimonials", "variant": "string — (cards|carousel|wall)" },
       { "type": "stats",        "variant": "string — (numbers|cards)" },
       { "type": "brandStory",   "variant": "string — (quote|split|timeline)" },
@@ -445,6 +468,50 @@ Only set heroBg when user prompt contains language like:
 
 These add Haikei-style SVG decorations behind the hero content, colored with primaryColor.
 Never infer heroBg from the store type alone — only set it from explicit user words.
+
+── THEME TOKEN BLENDING (styleMix) ───────────────────────
+styleMix lets you express a hybrid visual identity by blending multiple style archetypes.
+First entry = dominant style. Subsequent entries = secondary influences.
+
+Use styleMix to derive token values that combine characteristics:
+  ["luxury", "tech"]         → dark/neutral palette, geometric serif, subtle motion
+  ["editorial", "minimal"]   → large typography, lots of whitespace, muted color
+  ["hype", "streetwear"]     → bold colors, heavy weight, expressive motion
+  ["artisan", "editorial"]   → warm neutrals, serif headings, spacious layout
+  ["futuristic", "minimal"]  → cool grays, geometric sans, sharp radius 0px
+  ["korean-beauty", "soft"]  → pastel palette, rounded elements, airy spacing
+
+Rules:
+  - styleMix drives HOW you pick tokens, not a separate rendering layer
+  - Always still output all required tokens — styleMix is the inspiration, tokens are the result
+  - Use styleMix for any store where the user's prompt implies a blended identity
+  - Max 3 entries — more than 3 dilutes the blend
+
+── SECTION PROPS ─────────────────────────────────────────
+Section props let you fine-tune individual sections beyond the variant.
+Only set props when they meaningfully differentiate the output.
+
+Hero props:
+  textAlign   → use 'left' for editorial/fashion feel, 'center' for bold/centered brands
+                'right' is unusual — use only for very deliberate asymmetric designs
+  imageRatio  → 'portrait' for clothing/fashion/beauty, 'square' for products/lifestyle,
+                'landscape' for wide scenic/food/travel images
+  ctaStyle    → 'filled' = solid button (default, most conversions)
+                'outline' = ghost button (elegant, luxury, minimal)
+                'text'    = just text + arrow (editorial, very minimal)
+  accentLine  → true for editorial/luxury/fashion where a colored rule above the heading
+                adds visual structure. Skip for casual, hype, tech stores.
+
+Features props:
+  columns     → 2 = deep focus on fewer points (premium, storytelling brands)
+                3 = standard (default, works everywhere)
+                4 = compact highlights (use only on desktop-first stores)
+
+Products props:
+  title       → set when "Featured Products" doesn't fit the brand voice
+                e.g. "Our Collection", "Shop the Drop", "Bestsellers"
+  label       → set when "Curated Selection" doesn't fit
+                e.g. "New Arrivals", "Editor's Picks", "Just Dropped"
 
 ════════════════════════════════════════════════════════
 CONTENT RULES

@@ -18,6 +18,31 @@ export interface RichProduct {
 // ── Design Tokens — Claude-as-Designer (v2: raw CSS values) ─────────────────
 // Claude generates exact color hex codes, font names, and pixel values.
 // No preset color-scheme buckets — every store gets a fully unique palette.
+// ── Per-section fine-grained props ───────────────────────────────────────────
+
+export interface HeroSectionProps {
+  /** Text alignment within the hero. Default: determined by variant. */
+  textAlign?: 'left' | 'center' | 'right';
+  /** Aspect ratio of the hero image (split / stacked / editorial variants). */
+  imageRatio?: 'portrait' | 'square' | 'landscape';
+  /** CTA button style. Default: 'filled'. */
+  ctaStyle?: 'filled' | 'outline' | 'text';
+  /** Show a short decorative colored line accent above the main heading. */
+  accentLine?: boolean;
+}
+
+export interface FeaturesSectionProps {
+  /** Number of columns in the features grid. Default: 3. */
+  columns?: 2 | 3 | 4;
+}
+
+export interface ProductsSectionProps {
+  /** Override the default "Featured Products" section title. */
+  title?: string;
+  /** Override the subtitle label above the title. */
+  label?: string;
+}
+
 export interface DesignTokens {
   // ── Color palette (Claude generates exact hex / rgba values) ──────────────
   /** Page / body background */
@@ -59,15 +84,34 @@ export interface DesignTokens {
 
   /**
    * Unified sections array — replaces sectionOrder + sectionVariants.
-   * Each entry carries both the section type and its visual variant.
-   * Example: [{ "type": "hero", "variant": "asymmetrical" }, ...]
+   * Each entry carries the section type, visual variant, and optional fine-grained props.
+   * Example: [{ "type": "hero", "variant": "split", "props": { "imageRatio": "portrait" } }]
    */
   sections: Array<{
     type: 'hero' | 'trust' | 'collections' | 'products' | 'features'
         | 'testimonials' | 'stats' | 'brandStory' | 'faq' | 'newsletter'
         | 'scrollingBanner' | 'instagramFeed';
     variant?: string;
+    /** Fine-grained per-section visual overrides — see SectionProps */
+    props?: HeroSectionProps | FeaturesSectionProps | ProductsSectionProps;
   }>;
+
+  // ── Theme Token Blending ──────────────────────────────────────────────────
+  /**
+   * Blend multiple style archetypes into a single unique identity.
+   * Claude uses these to derive token values that mix characteristics from each style.
+   * First entry is the dominant style; subsequent entries add nuance.
+   *
+   * Examples:
+   *   ["editorial", "minimal"]           → clean editorial with lots of air
+   *   ["luxury", "tech"]                 → premium feel with sharp modern edges
+   *   ["hype", "streetwear", "minimal"]  → bold but not cluttered
+   *   ["artisan", "editorial"]           → handcrafted with magazine typography
+   *
+   * Influences: typography tokens, animation archetype, color palette mood.
+   * Does NOT override explicit tokens — styleMix is the intention, tokens are the output.
+   */
+  styleMix?: string[];
 
   /** @deprecated use sections[].variant instead */
   sectionOrder?: Array<'hero' | 'trust' | 'collections' | 'products' | 'features'

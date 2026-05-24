@@ -3027,6 +3027,8 @@ interface TokenTheme extends CommerceTheme {
   motion?: string;
   // Hero background decoration (only when user explicitly requested)
   heroBg?: 'blob' | 'mesh' | 'wave' | 'gradient';
+  // Theme blending — ordered list of style archetypes Claude blended
+  styleMix?: string[];
 }
 
 // ── Phase 3: Motion & Elevation utilities ─────────────────────────────────────
@@ -3038,13 +3040,15 @@ type ElevationLevel = 'flat' | 'subtle' | 'raised' | 'floating';
 // Derived from personality slug. Drives scroll-reveal style, glow, parallax.
 type AnimArchetype = 'luxury' | 'tech' | 'fashion' | 'hype' | 'default';
 
-function getAnimArchetype(personality?: string, motion?: string): AnimArchetype {
-  if (!personality || motion === 'none') return 'default';
-  const p = personality.toLowerCase();
-  if (p.includes('zara') || p.includes('luxury') || p.includes('apple') || p.includes('notion')) return 'luxury';
-  if (p.includes('spotify') || p.includes('discord') || p.includes('airbnb')) return 'tech';
-  if (p.includes('tiktok') || p.includes('hype')) return 'hype';
-  if (p.includes('instagram') || p.includes('pinterest') || p.includes('fashion') || p.includes('editorial')) return 'fashion';
+function getAnimArchetype(personality?: string, motion?: string, styleMix?: string[]): AnimArchetype {
+  if (motion === 'none') return 'default';
+  // styleMix[0] is the dominant style — check it first
+  const dominant = styleMix?.[0]?.toLowerCase() ?? personality?.toLowerCase() ?? '';
+  if (!dominant) return 'default';
+  if (dominant.includes('zara') || dominant.includes('luxury') || dominant.includes('apple') || dominant.includes('notion') || dominant.includes('editorial')) return 'luxury';
+  if (dominant.includes('spotify') || dominant.includes('discord') || dominant.includes('airbnb') || dominant.includes('tech') || dominant.includes('futuristic')) return 'tech';
+  if (dominant.includes('tiktok') || dominant.includes('hype') || dominant.includes('streetwear')) return 'hype';
+  if (dominant.includes('instagram') || dominant.includes('pinterest') || dominant.includes('fashion') || dominant.includes('korean')) return 'fashion';
   return 'default';
 }
 
@@ -3338,6 +3342,8 @@ function getTokenThemeV2(dt: DesignTokens, primaryColor: string): TokenTheme {
     motion:      dt.motion,
     // Hero background decoration
     heroBg: dt.heroBg,
+    // Theme blending
+    styleMix: dt.styleMix,
   };
 }
 
@@ -3425,19 +3431,47 @@ function TkFontInjector({ url }: { url: string }) {
   return <style>{`@import url('${url}');`}</style>;
 }
 
+// ── Hero section props helpers ────────────────────────────────────────────────
+
+type HeroP = {
+  textAlign?:  'left' | 'center' | 'right';
+  imageRatio?: 'portrait' | 'square' | 'landscape';
+  ctaStyle?:   'filled' | 'outline' | 'text';
+  accentLine?: boolean;
+};
+
+function heroImageAspect(ratio?: HeroP['imageRatio']): string {
+  switch (ratio) {
+    case 'square':    return '1/1';
+    case 'landscape': return '4/3';
+    case 'portrait':
+    default:          return '3/4';
+  }
+}
+
+function heroCtaStyle(ctaStyle: HeroP['ctaStyle'] = 'filled', primaryColor: string, btnRadius: string, btnText: string) {
+  switch (ctaStyle) {
+    case 'outline': return { background: 'transparent', color: primaryColor, border: `2px solid ${primaryColor}`, borderRadius: btnRadius };
+    case 'text':    return { background: 'transparent', color: primaryColor, borderRadius: btnRadius, padding: '0' };
+    default:        return { background: primaryColor,  color: btnText, borderRadius: btnRadius };
+  }
+}
+
 // ── Hero: CENTERED ────────────────────────────────────────────────────────────
 
-function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts }: {
+function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
-  onScrollToProducts: () => void;
+  onScrollToProducts: () => void; heroProps?: HeroP;
 }) {
   const { heroTitle, heroSubtitle, ctaText, products = [], collections = [], tagline } = design;
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
   const bgImage = products[0]?.image;
-  const arch = getAnimArchetype(tt.personality, tt.motion);
+  const arch = getAnimArchetype(tt.personality, tt.motion, tt.styleMix);
   const isLuxury = arch === 'luxury';
   const isTechHype = arch === 'tech' || arch === 'hype';
+  const textAlign = heroProps.textAlign ?? 'center';
+  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText);
 
   // Framer stagger container — children animate in sequence on mount
   const heroStagger: Variants = {
@@ -3465,8 +3499,10 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts }
       {!bgImage && tt.heroBg === 'wave'     && <HaikeiWave fill={tt.surfaceBg} variant={1} height={isMobile ? 40 : 56} />}
       {!bgImage && tt.heroBg === 'gradient' && <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse 80% 60% at 50% 0%, ${alpha(primaryColor, 0.18)} 0%, transparent 70%)`, zIndex: 0 }} />}
       <motion.div
-        className="relative z-10 flex flex-col items-center justify-center text-center px-5"
-        style={{ minHeight: isMobile ? '60vh' : '70vh', padding: isMobile ? '60px 20px' : '80px 40px' }}
+        className="relative z-10 flex flex-col justify-center px-5"
+        style={{ minHeight: isMobile ? '60vh' : '70vh', padding: isMobile ? '60px 20px' : '80px 40px',
+          alignItems: textAlign === 'left' ? 'flex-start' : textAlign === 'right' ? 'flex-end' : 'center',
+          textAlign }}
         variants={heroStagger} initial="hidden" animate="visible"
       >
         {tagline && (
@@ -3474,6 +3510,7 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts }
             {collections[0]?.emoji} {tagline}
           </motion.p>
         )}
+        {heroProps.accentLine && <motion.div variants={heroItem} style={{ width: '40px', height: '3px', background: primaryColor, marginBottom: '16px' }} />}
         <motion.h1 variants={heroItem} className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.4 : 4.0), color: bgImage ? '#ffffff' : tt.textPrimary }}>
           {heroTitle}
         </motion.h1>
@@ -3486,9 +3523,9 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts }
           onClick={onScrollToProducts}
           whileHover={{ scale: 1.04, opacity: 0.92 }}
           whileTap={{ scale: 0.97 }}
-          className={`px-8 py-3.5 text-sm font-bold${isTechHype ? ' sk-glow-btn' : ''}`}
-          style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius, ...(isTechHype ? getGlowCssVar(primaryColor) : {}) }}>
-          {ctaText}
+          className={`px-8 py-3.5 text-sm font-bold${isTechHype && heroProps.ctaStyle !== 'outline' && heroProps.ctaStyle !== 'text' ? ' sk-glow-btn' : ''}`}
+          style={{ ...ctaStyleObj, ...(isTechHype && !heroProps.ctaStyle ? getGlowCssVar(primaryColor) : {}) }}>
+          {ctaText}{heroProps.ctaStyle === 'text' && <ArrowRight className="w-3.5 h-3.5 inline ml-1" />}
         </motion.button>
       </motion.div>
     </section>
@@ -3497,17 +3534,19 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts }
 
 // ── Hero: SPLIT ───────────────────────────────────────────────────────────────
 
-function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmtPrice }: {
+function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmtPrice, heroProps = {} }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
-  onScrollToProducts: () => void; fmtPrice: (n: number) => string;
+  onScrollToProducts: () => void; fmtPrice: (n: number) => string; heroProps?: HeroP;
 }) {
   const { heroTitle, heroSubtitle, ctaText, products = [], collections = [], tagline } = design;
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
-  const arch = getAnimArchetype(tt.personality, tt.motion);
+  const arch = getAnimArchetype(tt.personality, tt.motion, tt.styleMix);
   const isLuxury = arch === 'luxury';
   const isTechHype = arch === 'tech' || arch === 'hype';
   const { ref: parallaxRef, y: parallaxY } = useParallax(isLuxury ? 0.08 : 0);
+  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText);
+  const imgAspect = heroImageAspect(heroProps.imageRatio);
 
   const heroStagger: Variants = {
     hidden:  {},
@@ -3529,6 +3568,7 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
               {collections[0]?.emoji} {tagline}
             </motion.p>
           )}
+          {heroProps.accentLine && <motion.div variants={heroItem} style={{ width: '40px', height: '3px', background: primaryColor, marginBottom: '16px' }} />}
           <motion.h1 variants={heroItem} className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.4 : 3.6), color: tt.textPrimary }}>
             {heroTitle}
           </motion.h1>
@@ -3540,20 +3580,22 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
               onClick={onScrollToProducts}
               whileHover={{ scale: 1.04, opacity: 0.92 }}
               whileTap={{ scale: 0.97 }}
-              className={`px-7 py-3.5 text-sm font-bold${isTechHype ? ' sk-glow-btn' : ''}`}
-              style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius, ...(isTechHype ? getGlowCssVar(primaryColor) : {}) }}>
-              {ctaText}
+              className={`px-7 py-3.5 text-sm font-bold${isTechHype && !heroProps.ctaStyle ? ' sk-glow-btn' : ''}`}
+              style={{ ...ctaStyleObj, ...(isTechHype && !heroProps.ctaStyle ? getGlowCssVar(primaryColor) : {}) }}>
+              {ctaText}{heroProps.ctaStyle === 'text' && <ArrowRight className="w-3.5 h-3.5 inline ml-1" />}
             </motion.button>
-            <button onClick={onScrollToProducts} className="text-xs font-semibold flex items-center gap-1.5 hover:opacity-70 transition-opacity" style={{ color: tt.textMuted }}>
-              Explore <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            {heroProps.ctaStyle !== 'text' && (
+              <button onClick={onScrollToProducts} className="text-xs font-semibold flex items-center gap-1.5 hover:opacity-70 transition-opacity" style={{ color: tt.textMuted }}>
+                Explore <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
           </motion.div>
         </motion.div>
-        <motion.div className="relative" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, delay: 0.25, ease: [0.25, 0.1, 0.25, 1] }}>
+        <motion.div className="relative" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, delay: 0.25, ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] }}>
           {/* Parallax wrapper — Framer motion.div with y spring transform */}
           <motion.div
             ref={parallaxRef}
-            style={{ aspectRatio: '4/5', borderRadius: tt.surfaceRadius, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', ...(isLuxury ? { y: parallaxY } : {}) }}
+            style={{ aspectRatio: imgAspect, borderRadius: tt.surfaceRadius, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', ...(isLuxury ? { y: parallaxY } : {}) }}
           >
             <ProductImg src={products[0]?.image} alt=""
               className={`w-full h-full object-cover${isLuxury ? ' sk-ken-burns' : ''}`}
@@ -3586,13 +3628,14 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
 
 // ── Hero: FULLSCREEN ──────────────────────────────────────────────────────────
 
-function TkHeroFullscreen({ design, tt, primaryColor, device, onScrollToProducts }: {
+function TkHeroFullscreen({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
-  onScrollToProducts: () => void;
+  onScrollToProducts: () => void; heroProps?: HeroP;
 }) {
   const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText);
   return (
     <section className="relative" style={{ height: isMobile ? '85vh' : '92vh', minHeight: '480px' }}>
       <div className="absolute inset-0">
@@ -3611,7 +3654,8 @@ function TkHeroFullscreen({ design, tt, primaryColor, device, onScrollToProducts
         <p className="mb-8 max-w-md" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: 'rgba(255,255,255,0.75)' }}>
           {heroSubtitle}
         </p>
-        <button onClick={onScrollToProducts} className="w-fit px-8 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>
+        {heroProps.accentLine && <div style={{ width: '40px', height: '3px', background: primaryColor, marginBottom: '16px' }} />}
+        <button onClick={onScrollToProducts} className="w-fit px-8 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={ctaStyleObj}>
           {ctaText} <ArrowRight className="w-4 h-4 inline ml-1" />
         </button>
       </div>
@@ -3621,13 +3665,15 @@ function TkHeroFullscreen({ design, tt, primaryColor, device, onScrollToProducts
 
 // ── Hero: MINIMAL ─────────────────────────────────────────────────────────────
 
-function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts }: {
+function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
-  onScrollToProducts: () => void;
+  onScrollToProducts: () => void; heroProps?: HeroP;
 }) {
   const { heroTitle, heroSubtitle, ctaText, tagline, collections = [] } = design;
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText);
+  const textAlign = heroProps.textAlign ?? 'center';
   return (
     <section className="relative overflow-hidden" style={{ background: tt.pageBg, borderBottom: `1px solid ${tt.divider}` }}>
       {/* Haikei decorations — only when user explicitly requested */}
@@ -3635,20 +3681,21 @@ function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts }:
       {tt.heroBg === 'mesh'     && <HaikeiMesh color={primaryColor} pageBg={tt.pageBg} />}
       {tt.heroBg === 'wave'     && <HaikeiWave fill={tt.surfaceBg} variant={0} height={isMobile ? 36 : 52} />}
       {tt.heroBg === 'gradient' && <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse 90% 60% at 50% 0%, ${alpha(primaryColor, 0.14)} 0%, transparent 70%)`, zIndex: 0 }} />}
-      <div className="relative z-10 max-w-3xl mx-auto px-5 text-center" style={{ padding: isMobile ? '56px 20px' : '80px 40px' }}>
+      <div className="relative z-10 max-w-3xl mx-auto px-5" style={{ padding: isMobile ? '56px 20px' : '80px 40px', textAlign }}>
         {tagline && (
           <p className="text-[10px] font-bold uppercase tracking-[0.35em] mb-5" style={{ color: primaryColor }}>
             {collections[0]?.emoji} {tagline}
           </p>
         )}
+        {heroProps.accentLine && <div style={{ width: '40px', height: '3px', background: primaryColor, marginBottom: '16px', margin: textAlign === 'center' ? '0 auto 16px' : '0 0 16px' }} />}
         <h1 className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.2 : 3.6), color: tt.textPrimary }}>
           {heroTitle}
         </h1>
         <p className="mb-8 max-w-xl mx-auto" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>
           {heroSubtitle}
         </p>
-        <button onClick={onScrollToProducts} className="px-8 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>
-          {ctaText}
+        <button onClick={onScrollToProducts} className="px-8 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={ctaStyleObj}>
+          {ctaText}{heroProps.ctaStyle === 'text' && <ArrowRight className="w-3.5 h-3.5 inline ml-1" />}
         </button>
       </div>
     </section>
@@ -3658,13 +3705,15 @@ function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts }:
 // ── Hero: EDITORIAL ───────────────────────────────────────────────────────────
 // Magazine-style: giant background text, product image floats on top, off-grid
 
-function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts }: {
+function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
-  onScrollToProducts: () => void;
+  onScrollToProducts: () => void; heroProps?: HeroP;
 }) {
   const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText);
+  const imgAspect = heroImageAspect(heroProps.imageRatio);
   const words = heroTitle.split(' ');
   const bigWord = words[0] ?? heroTitle;
   const restWords = words.slice(1).join(' ');
@@ -3767,12 +3816,14 @@ function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts 
 // ── Hero: VIDEO ───────────────────────────────────────────────────────────────
 // Cinematic dark hero — simulated video with animated gradient + product image
 
-function TkHeroVideo({ design, tt, primaryColor, device, onScrollToProducts }: {
+function TkHeroVideo({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
-  onScrollToProducts: () => void;
+  onScrollToProducts: () => void; heroProps?: HeroP;
 }) {
   const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
   const isMobile = device === 'mobile';
+  const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText);
   const pc = primaryColor;
   const isLight = !isDark(pc);
   return (
@@ -3845,13 +3896,15 @@ function TkHeroVideo({ design, tt, primaryColor, device, onScrollToProducts }: {
 // ── Hero: STACKED ─────────────────────────────────────────────────────────────
 // Mood-board: 3 product images stacked/rotated, text alongside
 
-function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts }: {
+function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
-  onScrollToProducts: () => void;
+  onScrollToProducts: () => void; heroProps?: HeroP;
 }) {
   const { heroTitle, heroSubtitle, ctaText, products = [], tagline, collections = [] } = design;
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText);
+  const imgAspect = heroImageAspect(heroProps.imageRatio);
   const rotations = [-4, 2, -1.5];
 
   return (
@@ -3920,13 +3973,14 @@ function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts }:
 // ── Hero: ASYMMETRICAL ────────────────────────────────────────────────────────
 // ZARA/luxury: image bleeds edge-to-edge on left, slim text column on right
 
-function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProducts }: {
+function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
-  onScrollToProducts: () => void;
+  onScrollToProducts: () => void; heroProps?: HeroP;
 }) {
   const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText);
 
   if (isMobile) {
     // Mobile: full-bleed image with bottom text overlay
@@ -4159,7 +4213,7 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
 }) {
   const isMobile = device === 'mobile';
-  const arch = getAnimArchetype(tt.personality, tt.motion);
+  const arch = getAnimArchetype(tt.personality, tt.motion, tt.styleMix);
   const doStagger = arch === 'fashion' || arch === 'hype' || arch === 'luxury';
   const cardVariant = REVEAL_VARIANTS[arch] ?? REVEAL_VARIANTS.default;
   const staggerContainer: Variants = {
@@ -4593,15 +4647,16 @@ type SectionVariants = NonNullable<import('../../../src/lib/claudeApi').DesignTo
 
 // ── Features variants ─────────────────────────────────────────────────────────
 
-function FeaturesSection({ features, tt, primaryColor, device, motion: motionLevel, elevation, sectionPy, variant }: {
+function FeaturesSection({ features, tt, primaryColor, device, motion: motionLevel, elevation, sectionPy, variant, columns }: {
   features: Array<{ icon: string; title: string; description: string }>;
   tt: TokenTheme; primaryColor: string; device: DeviceMode;
   motion: MotionLevel; elevation: ElevationLevel; sectionPy: number;
   variant: SectionVariants['features'];
+  columns?: 2 | 3 | 4;
 }) {
   const isMobile = device === 'mobile';
   const pc = primaryColor;
-  const arch = getAnimArchetype(tt.personality, tt.motion);
+  const arch = getAnimArchetype(tt.personality, tt.motion, tt.styleMix);
   const featureCardVariant = REVEAL_VARIANTS[arch] ?? REVEAL_VARIANTS.default;
   const featureStagger: Variants = {
     hidden:  {},
@@ -4668,7 +4723,7 @@ function FeaturesSection({ features, tt, primaryColor, device, motion: motionLev
   return (
     <section className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
       <motion.div
-        className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-6'}`}
+        className={`grid ${isMobile ? 'grid-cols-1 gap-4' : `grid-cols-${columns ?? 3} gap-6`}`}
         variants={motionLevel !== 'none' ? featureStagger : undefined}
         initial={motionLevel !== 'none' ? 'hidden' : undefined}
         whileInView={motionLevel !== 'none' ? 'visible' : undefined}
@@ -5040,7 +5095,10 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
   const productGrid = dt?.productGrid ?? ds?.productGrid  ?? 'standard';
 
   // ── Unified sections resolution (new → legacy fallback → default) ────────
-  type SectionEntry = { type: string; variant?: string | null };
+  type SectionEntry = {
+    type: string; variant?: string | null;
+    props?: Partial<import('../../lib/claudeApi').HeroSectionProps & import('../../lib/claudeApi').FeaturesSectionProps & import('../../lib/claudeApi').ProductsSectionProps>;
+  };
   const DEFAULT_SECTION_TYPES = ['hero','trust','collections','products','features','testimonials','stats','brandStory','faq','newsletter'];
 
   const resolvedSections: SectionEntry[] = (() => {
@@ -5080,23 +5138,28 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
 
   // ── Section renderers ─────────────────────────────────────────────────────
 
-  const renderSection = ({ type: section, variant }: SectionEntry): React.ReactNode => {
+  const renderSection = ({ type: section, variant, props: sProps = {} }: SectionEntry): React.ReactNode => {
     // hero variant: prefer inline variant from sections[], fallback to heroStyle token
     const heroVariant = variant ?? heroStyle;
     // products variant: prefer inline variant, fallback to productGrid token
     const gridVariant = variant ?? productGrid;
 
+    // Typed section props helpers
+    const heroProps = sProps as { textAlign?: 'left'|'center'|'right'; imageRatio?: 'portrait'|'square'|'landscape'; ctaStyle?: 'filled'|'outline'|'text'; accentLine?: boolean };
+    const featProps = sProps as { columns?: 2|3|4 };
+    const prodProps = sProps as { title?: string; label?: string };
+
     switch (section) {
       case 'hero':
         switch (heroVariant) {
-          case 'centered':      return <TkHeroCentered      key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
-          case 'fullscreen':    return <TkHeroFullscreen    key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
-          case 'minimal':       return <TkHeroMinimal       key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
-          case 'editorial':     return <TkHeroEditorial     key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
-          case 'video':         return <TkHeroVideo         key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
-          case 'stacked':       return <TkHeroStacked       key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
-          case 'asymmetrical':  return <TkHeroAsymmetrical  key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
-          default:              return <TkHeroSplit          key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} fmtPrice={fmtPrice} />;
+          case 'centered':      return <TkHeroCentered      key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
+          case 'fullscreen':    return <TkHeroFullscreen    key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
+          case 'minimal':       return <TkHeroMinimal       key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
+          case 'editorial':     return <TkHeroEditorial     key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
+          case 'video':         return <TkHeroVideo         key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
+          case 'stacked':       return <TkHeroStacked       key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
+          case 'asymmetrical':  return <TkHeroAsymmetrical  key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
+          default:              return <TkHeroSplit          key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} fmtPrice={fmtPrice} heroProps={heroProps} />;
         }
 
       case 'trust':
@@ -5123,8 +5186,8 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
           <section key="products" ref={productsRef} className="max-w-6xl mx-auto px-5" style={{ paddingTop: isMobile ? '2rem' : `${sectionPy}px`, paddingBottom: isMobile ? '2rem' : `${sectionPy}px` }}>
             <div className="flex items-end justify-between mb-7">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.22em] mb-1.5" style={{ color: tt.textMuted }}>Curated Selection</p>
-                <h2 style={{ ...headingStyle(tt, 1.25), color: tt.textPrimary }}>Featured Products</h2>
+                <p className="text-[10px] uppercase tracking-[0.22em] mb-1.5" style={{ color: tt.textMuted }}>{prodProps.label ?? 'Curated Selection'}</p>
+                <h2 style={{ ...headingStyle(tt, 1.25), color: tt.textPrimary }}>{prodProps.title ?? 'Featured Products'}</h2>
               </div>
               <button onClick={scrollToProducts} className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 hover:gap-2.5 transition-all" style={{ color: primaryColor }}>
                 View All <ArrowRight className="w-3.5 h-3.5" />
@@ -5152,7 +5215,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
 
       case 'features':
         if (!features.length) return null;
-        return <FeaturesSection key="features" features={features} tt={tt} primaryColor={primaryColor} device={device} motion={motion} elevation={elevation} sectionPy={sectionPy} variant={variant as SectionVariants['features']} />;
+        return <FeaturesSection key="features" features={features} tt={tt} primaryColor={primaryColor} device={device} motion={motion} elevation={elevation} sectionPy={sectionPy} variant={variant as SectionVariants['features']} columns={featProps.columns} />;
 
       case 'testimonials':
         if (!testimonials.length) return null;
