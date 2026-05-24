@@ -3031,6 +3031,8 @@ interface TokenTheme extends CommerceTheme {
   heroBg?: 'blob' | 'mesh' | 'wave' | 'gradient';
   // Theme blending — ordered list of style archetypes Claude blended
   styleMix?: string[];
+  // Content / copy presentation style
+  contentStyle?: 'conversational' | 'formal' | 'playful' | 'editorial' | 'minimal';
 }
 
 // ── Phase 3: Motion & Elevation utilities ─────────────────────────────────────
@@ -3294,6 +3296,34 @@ function getDensityVars(density?: DensityLevel): DensityVars {
   }
 }
 
+type ContentStyleLevel = 'conversational' | 'formal' | 'playful' | 'editorial' | 'minimal';
+interface ContentStyleVars {
+  /** CSS text-transform for small section labels */
+  labelTransform: 'uppercase' | 'none';
+  /** CSS letter-spacing for small section labels */
+  labelTracking: string;
+  /** CSS font-size class for section labels */
+  labelSize: string;
+  /** CSS text-transform for button text */
+  btnTransform: 'uppercase' | 'none';
+  /** CSS letter-spacing for button text */
+  btnTracking: string;
+  /** CSS text-transform for product category tags */
+  categoryTransform: 'uppercase' | 'none';
+  /** Extra body line-height boost (in addition to bodyLeading token) */
+  bodyLoose: boolean;
+}
+function getContentStyleVars(cs?: ContentStyleLevel): ContentStyleVars {
+  switch (cs) {
+    case 'conversational': return { labelTransform: 'none',      labelTracking: '0.01em',  labelSize: 'text-xs',    btnTransform: 'none',      btnTracking: '0',        categoryTransform: 'none',      bodyLoose: true  };
+    case 'formal':         return { labelTransform: 'none',      labelTracking: '0.04em',  labelSize: 'text-xs',    btnTransform: 'none',      btnTracking: '0.03em',   categoryTransform: 'none',      bodyLoose: false };
+    case 'playful':        return { labelTransform: 'none',      labelTracking: '0.01em',  labelSize: 'text-sm',    btnTransform: 'none',      btnTracking: '0',        categoryTransform: 'none',      bodyLoose: true  };
+    case 'editorial':      return { labelTransform: 'uppercase', labelTracking: '0.18em',  labelSize: 'text-[10px]',btnTransform: 'uppercase', btnTracking: '0.12em',   categoryTransform: 'uppercase', bodyLoose: false };
+    case 'minimal':        return { labelTransform: 'none',      labelTracking: '0.06em',  labelSize: 'text-xs',    btnTransform: 'none',      btnTracking: '0.06em',   categoryTransform: 'none',      bodyLoose: false };
+    default:               return { labelTransform: 'uppercase', labelTracking: '0.12em',  labelSize: 'text-[10px]',btnTransform: 'uppercase', btnTracking: '0.08em',   categoryTransform: 'uppercase', bodyLoose: false };
+  }
+}
+
 // ── Known serif heading fonts (for CSS fallback stack) ────────────────────────
 
 const SERIF_FONTS = new Set([
@@ -3365,6 +3395,8 @@ function getTokenThemeV2(dt: DesignTokens, primaryColor: string): TokenTheme {
     heroBg: dt.heroBg,
     // Theme blending
     styleMix: dt.styleMix,
+    // Content style
+    contentStyle: dt.contentStyle,
   };
 }
 
@@ -3472,11 +3504,12 @@ function heroImageAspect(ratio?: HeroP['imageRatio']): string {
   }
 }
 
-function heroCtaStyle(ctaStyle: HeroP['ctaStyle'] = 'filled', primaryColor: string, btnRadius: string, btnText: string) {
+function heroCtaStyle(ctaStyle: HeroP['ctaStyle'] = 'filled', primaryColor: string, btnRadius: string, btnText: string, cv?: ContentStyleVars) {
+  const typo = cv ? { textTransform: cv.btnTransform as 'uppercase' | 'none', letterSpacing: cv.btnTracking } : {};
   switch (ctaStyle) {
-    case 'outline': return { background: 'transparent', color: primaryColor, border: `2px solid ${primaryColor}`, borderRadius: btnRadius };
-    case 'text':    return { background: 'transparent', color: primaryColor, borderRadius: btnRadius, padding: '0' };
-    default:        return { background: primaryColor,  color: btnText, borderRadius: btnRadius };
+    case 'outline': return { background: 'transparent', color: primaryColor, border: `2px solid ${primaryColor}`, borderRadius: btnRadius, ...typo };
+    case 'text':    return { background: 'transparent', color: primaryColor, borderRadius: btnRadius, padding: '0', ...typo };
+    default:        return { background: primaryColor,  color: btnText, borderRadius: btnRadius, ...typo };
   }
 }
 
@@ -3494,7 +3527,7 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts, 
   const isLuxury = arch === 'luxury';
   const isTechHype = arch === 'tech' || arch === 'hype';
   const textAlign = heroProps.textAlign ?? 'center';
-  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText);
+  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText, getContentStyleVars(tt.contentStyle));
 
   // Framer stagger container — children animate in sequence on mount
   const heroStagger: Variants = {
@@ -3568,7 +3601,7 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
   const isLuxury = arch === 'luxury';
   const isTechHype = arch === 'tech' || arch === 'hype';
   const { ref: parallaxRef, y: parallaxY } = useParallax(isLuxury ? 0.08 : 0);
-  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText);
+  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText, getContentStyleVars(tt.contentStyle));
   const imgAspect = heroImageAspect(heroProps.imageRatio);
 
   const heroStagger: Variants = {
@@ -3658,7 +3691,7 @@ function TkHeroFullscreen({ design, tt, primaryColor, device, onScrollToProducts
   const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
-  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText);
+  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText, getContentStyleVars(tt.contentStyle));
   return (
     <section className="relative" style={{ height: isMobile ? '85vh' : '92vh', minHeight: '480px' }}>
       <div className="absolute inset-0">
@@ -3695,7 +3728,7 @@ function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts, h
   const { heroTitle, heroSubtitle, ctaText, tagline, collections = [] } = design;
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
-  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText);
+  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText, getContentStyleVars(tt.contentStyle));
   const textAlign = heroProps.textAlign ?? 'center';
   return (
     <section className="relative overflow-hidden" style={{ background: tt.pageBg, borderBottom: `1px solid ${tt.divider}` }}>
@@ -3735,7 +3768,7 @@ function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts,
   const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
-  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText);
+  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText, getContentStyleVars(tt.contentStyle));
   const imgAspect = heroImageAspect(heroProps.imageRatio);
   const words = heroTitle.split(' ');
   const bigWord = words[0] ?? heroTitle;
@@ -3846,7 +3879,7 @@ function TkHeroVideo({ design, tt, primaryColor, device, onScrollToProducts, her
   const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
-  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText);
+  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText, getContentStyleVars(tt.contentStyle));
   const pc = primaryColor;
   const isLight = !isDark(pc);
   return (
@@ -3926,7 +3959,7 @@ function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts, h
   const { heroTitle, heroSubtitle, ctaText, products = [], tagline, collections = [] } = design;
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
-  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText);
+  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText, getContentStyleVars(tt.contentStyle));
   const imgAspect = heroImageAspect(heroProps.imageRatio);
   const rotations = [-4, 2, -1.5];
 
@@ -4003,7 +4036,7 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
   const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
-  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText);
+  const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText, getContentStyleVars(tt.contentStyle));
 
   if (isMobile) {
     // Mobile: full-bleed image with bottom text overlay
@@ -4244,6 +4277,7 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
     visible: { transition: { staggerChildren: arch === 'luxury' ? 0.1 : 0.07, delayChildren: 0.05 } },
   };
   const dv = getDensityVars(tt.density);
+  const cv = getContentStyleVars(tt.contentStyle);
   return (
     <motion.div
       className={`grid ${gridCols(device)} ${dv.gridGap}`}
@@ -4278,7 +4312,7 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
             </button>
           </div>
           <div className={dv.cardPadY}>
-            {dv.showCategory && <p className={`${dv.fontSize} uppercase tracking-wider mb-0.5`} style={{ color: tt.textMuted }}>{p.category}</p>}
+            {dv.showCategory && <p className={`${dv.fontSize} font-medium mb-0.5`} style={{ color: tt.textMuted, textTransform: cv.categoryTransform, letterSpacing: cv.labelTracking }}>{p.category}</p>}
             <p className={`${dv.fontSize} font-bold truncate ${dv.infoGap}`} style={{ color: tt.textPrimary }}>{p.name}</p>
             {dv.showDesc && p.description && (
               <p className="text-[11px] line-clamp-2 mt-0.5" style={{ color: tt.textSecondary }}>{p.description}</p>
@@ -4381,6 +4415,7 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
 }) {
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
   const dv = getDensityVars(tt.density);
+  const cv = getContentStyleVars(tt.contentStyle);
   const rowPad = tt.density === 'dense' ? '10px' : tt.density === 'airy' ? '20px' : '16px';
   const imgSize = tt.density === 'dense' ? 'w-20 h-20' : tt.density === 'airy' ? 'w-36 h-36' : 'w-28 h-28';
   return (
@@ -4402,7 +4437,7 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
                   {p.badge}
                 </span>
               )}
-              {dv.showCategory && <p className={`${dv.fontSize} uppercase tracking-wider mb-1`} style={{ color: tt.textMuted }}>{p.category}</p>}
+              {dv.showCategory && <p className={`${dv.fontSize} font-medium mb-1`} style={{ color: tt.textMuted, textTransform: cv.categoryTransform, letterSpacing: cv.labelTracking }}>{p.category}</p>}
               <p className={`${dv.fontSize} font-bold truncate`} style={{ color: tt.textPrimary }}>{p.name}</p>
               {(dv.showDesc || tt.density === 'normal') && <p className="text-xs leading-relaxed mt-1 line-clamp-2" style={{ color: tt.textSecondary }}>{p.description}</p>}
             </div>
@@ -5185,6 +5220,8 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
     const heroProps = sProps as { textAlign?: 'left'|'center'|'right'; imageRatio?: 'portrait'|'square'|'landscape'; ctaStyle?: 'filled'|'outline'|'text'; accentLine?: boolean };
     const featProps = sProps as { columns?: 2|3|4 };
     const prodProps = sProps as { title?: string; label?: string };
+    // Content style vars — drives label/button/category text presentation
+    const cv = getContentStyleVars(tt.contentStyle);
 
     switch (section) {
       case 'hero':
@@ -5223,7 +5260,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
           <section key="products" ref={productsRef} className="max-w-6xl mx-auto px-5" style={{ paddingTop: isMobile ? '2rem' : `${sectionPy}px`, paddingBottom: isMobile ? '2rem' : `${sectionPy}px` }}>
             <div className="flex items-end justify-between mb-7">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.22em] mb-1.5" style={{ color: tt.textMuted }}>{prodProps.label ?? 'Curated Selection'}</p>
+                <p className={`${cv.labelSize} font-semibold mb-1.5`} style={{ color: tt.textMuted, textTransform: cv.labelTransform, letterSpacing: cv.labelTracking }}>{prodProps.label ?? 'Curated Selection'}</p>
                 <h2 style={{ ...headingStyle(tt, 1.25), color: tt.textPrimary }}>{prodProps.title ?? 'Featured Products'}</h2>
               </div>
               <button onClick={scrollToProducts} className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 hover:gap-2.5 transition-all" style={{ color: primaryColor }}>

@@ -34,6 +34,7 @@ The JSON must exactly match this shape:
     "elevation": "string (one of: flat, subtle, raised, floating)",
     "motion": "string (one of: none, subtle, smooth, expressive)",
     "personality": "string (optional — free text describing the UI personality, e.g. 'whatsapp-like', 'apple-like')",
+    "contentStyle": "string (one of: conversational, formal, playful, editorial, minimal — see CONTENT STYLE GUIDE)",
     "headingScale": "number (heading size multiplier: 0.8=minimal, 1.0=default, 1.2=bold, 1.5=dramatic)",
     "headingWeight": "number (font-weight: 300=luxury-thin, 400=elegant, 700=strong, 800=impactful, 900=maximum)",
     "headingTracking": "string (letter-spacing: '-0.05em'=ultra-tight, '0'=neutral, '0.14em'=spaced-out)",
@@ -307,61 +308,61 @@ WhatsApp-like / chat-app style:
   layoutType: "app-like", spacing: "compact", density: "dense", motion: "subtle", elevation: "flat"
   pageBg: "#ECE5DD", surfaceBg: "#ffffff", headerBg: "#075E54", textPrimary: "#111111"
   primaryColor: "#075E54", accentColor: "#25D366", btnRadius: "999px", cardRadius: "12px"
-  personality: "whatsapp-like"
+  personality: "whatsapp-like", contentStyle: "conversational"
 
 Discord-like / dark chat style:
   layoutType: "app-like", spacing: "compact", density: "dense", motion: "subtle", elevation: "flat"
   pageBg: "#313338", surfaceBg: "#2b2d31", headerBg: "#1e1f22", textPrimary: "#dbdee1"
   primaryColor: "#5865F2", accentColor: "#57F287", btnRadius: "4px", cardRadius: "8px"
-  personality: "discord-like"
+  personality: "discord-like", contentStyle: "editorial"
 
 Apple Store / minimal clean style:
   layoutType: "editorial", spacing: "spacious", density: "airy", motion: "smooth", elevation: "subtle"
   pageBg: "#f5f5f7", surfaceBg: "#ffffff", headerBg: "#f5f5f7", textPrimary: "#1d1d1f"
   primaryColor: "#0071e3", accentColor: "#06c", btnRadius: "980px", cardRadius: "18px"
-  personality: "apple-like"
+  personality: "apple-like", contentStyle: "minimal"
 
 Notion-like / minimal document style:
   layoutType: "editorial", spacing: "comfortable", density: "normal", motion: "none", elevation: "flat"
   pageBg: "#ffffff", surfaceBg: "#f7f6f3", headerBg: "#ffffff", textPrimary: "#37352f"
   primaryColor: "#2eaadc", accentColor: "#e03e3e", btnRadius: "3px", cardRadius: "3px"
-  personality: "notion-like"
+  personality: "notion-like", contentStyle: "minimal"
 
 Spotify / dark music style:
   layoutType: "app-like", spacing: "compact", density: "dense", motion: "expressive", elevation: "raised"
   pageBg: "#121212", surfaceBg: "#242424", headerBg: "#000000", textPrimary: "#ffffff"
   primaryColor: "#1DB954", accentColor: "#1ed760", btnRadius: "999px", cardRadius: "8px"
-  personality: "spotify-like"
+  personality: "spotify-like", contentStyle: "editorial"
 
 Pinterest / visual-first / art / photography / handmade:
   layoutType: "masonry", spacing: "comfortable", density: "normal", motion: "smooth", elevation: "subtle"
   pageBg: "#ffffff", surfaceBg: "#f9f9f9", headerBg: "#ffffff", textPrimary: "#111111"
   primaryColor: (pick from brand), btnRadius: "999px", cardRadius: "16px"
-  personality: "pinterest-like"
+  personality: "pinterest-like", contentStyle: "conversational"
 
 ZARA / high fashion / cinematic / luxury immersive:
   layoutType: "fullscreen", spacing: "spacious", density: "airy", motion: "smooth", elevation: "flat"
   pageBg: "#0a0a0a", surfaceBg: "#141414", headerBg: "transparent", textPrimary: "#ffffff"
   primaryColor: "#ffffff", accentColor: "#d4af37", btnRadius: "0px", cardRadius: "0px"
-  personality: "zara-like"
+  personality: "zara-like", contentStyle: "editorial"
 
 TikTok Shop / viral / energetic / Gen-Z:
   layoutType: "app-like", spacing: "compact", density: "dense", motion: "expressive", elevation: "raised"
   pageBg: "#010101", surfaceBg: "#161823", headerBg: "#010101", textPrimary: "#ffffff"
   primaryColor: "#fe2c55", accentColor: "#25f4ee", btnRadius: "4px", cardRadius: "8px"
-  personality: "tiktok-like"
+  personality: "tiktok-like", contentStyle: "playful"
 
 Airbnb / clean marketplace / card-heavy:
   layoutType: "masonry", spacing: "comfortable", density: "normal", motion: "smooth", elevation: "subtle"
   pageBg: "#ffffff", surfaceBg: "#ffffff", headerBg: "#ffffff", textPrimary: "#222222"
   primaryColor: "#ff385c", accentColor: "#e61e4d", btnRadius: "8px", cardRadius: "12px"
-  personality: "airbnb-like"
+  personality: "airbnb-like", contentStyle: "formal"
 
 Instagram / photo grid / aesthetic / lifestyle / fashion / beauty / food photography:
   layoutType: "masonry", spacing: "compact", density: "dense", motion: "smooth", elevation: "subtle"
   pageBg: "#fafafa", surfaceBg: "#ffffff", headerBg: "#ffffff", textPrimary: "#262626"
   primaryColor: "#e1306c", accentColor: "#833ab4", btnRadius: "8px", cardRadius: "3px"
-  personality: "instagram-like"
+  personality: "instagram-like", contentStyle: "conversational"
 
 Indonesian keyword mapping — treat these exactly like the English equivalents above:
   "mirip whatsapp" / "seperti whatsapp" / "kayak whatsapp" → WhatsApp-like bundle
@@ -377,6 +378,44 @@ Indonesian keyword mapping — treat these exactly like the English equivalents 
 
 For any other prompt that doesn't match a known personality, use layoutType: "standard"
 and choose spacing/density/elevation/motion that fits the brand mood.
+
+── CONTENT STYLE GUIDE ──────────────────────────────────
+contentStyle controls how text elements are visually presented across the store:
+labels, button text, section headers, nav links, product category tags.
+
+  conversational → sentence-case everywhere, relaxed labels, no ALLCAPS
+                   body text slightly larger and looser, friendly punctuation
+                   good for: lifestyle, food, pet, kids, casual fashion
+                   example labels: "Our story" / "You might like" / "Questions?"
+
+  formal         → title-case headings, structured section labels
+                   clean and professional, modest letter-spacing
+                   good for: B2B, finance, corporate gifts, premium services
+                   example labels: "Featured Products" / "Our Commitment" / "Contact Us"
+
+  playful        → exclamation-friendly, fun mixed energy, expressive labels
+                   slightly larger body, more generous line-height
+                   good for: toys, candy, Gen-Z brands, party supplies, pets
+                   example labels: "Our faves 🎉" / "Grab yours!" / "So. Good."
+
+  editorial      → uppercase labels (ALLCAPS small), em-dashes, magazine cadence
+                   tight letter-spacing on labels, contrast between big & small text
+                   good for: fashion, luxury, art, architecture, editorial brands
+                   example labels: "CURATED SELECTION" / "THE COLLECTION" / "ABOUT THE BRAND"
+
+  minimal        → ultra-sparse: single words or 2-word phrases as labels
+                   almost no punctuation, long silence, zen-like
+                   good for: skincare, wellness, premium minimal design, Japanese aesthetics
+                   example labels: "Products" / "Story" / "Contact"
+
+Mapping by personality / brand type:
+  whatsapp-like, chat-app, friendly → contentStyle: "conversational"
+  apple-like, notion-like           → contentStyle: "minimal"
+  zara-like, luxury, fashion, editorial → contentStyle: "editorial"
+  tiktok-like, hype, Gen-Z          → contentStyle: "playful"
+  airbnb-like, marketplace          → contentStyle: "formal"
+  spotify-like, discord-like        → contentStyle: "editorial"
+  kids, food, casual, lifestyle     → contentStyle: "conversational"
 
 ── TYPOGRAPHY INTELLIGENCE ──────────────────────────────
 Control the typographic personality with these tokens in designTokens:

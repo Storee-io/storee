@@ -138,6 +138,18 @@ export interface DesignTokens {
   motion?: 'none' | 'subtle' | 'smooth' | 'expressive';
   /** Free-text personality hint Claude used, e.g. "whatsapp-like" */
   personality?: string;
+  /**
+   * Writing / copy style that shapes how text elements are presented.
+   * conversational → relaxed labels, sentence-case, no shouting
+   * formal         → structured, title-case headings, professional tone
+   * playful        → fun punctuation, mixed energy, expressive labels
+   * editorial      → uppercase labels, em-dashes, magazine cadence
+   * minimal        → ultra-sparse labels, single words, lots of silence
+   *
+   * Affects: label text-transform, letter-spacing on body, button casing,
+   *          section label style, nav link style.
+   */
+  contentStyle?: 'conversational' | 'formal' | 'playful' | 'editorial' | 'minimal';
 
   // ── Typography Intelligence ───────────────────────────────────────────────
   /**
