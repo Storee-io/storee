@@ -26,8 +26,8 @@ The JSON must exactly match this shape:
     "cardRadius": "string (border-radius for cards, e.g. '0px', '8px', '16px', '24px')",
     "btnRadius": "string (border-radius for buttons, e.g. '4px', '12px', '999px')",
     "inputRadius": "string (border-radius for inputs, e.g. '6px', '12px', '16px')",
-    "heroStyle": "string (one of: centered, split, fullscreen, minimal)",
-    "productGrid": "string (one of: standard, magazine, list)",
+    "heroStyle": "string (one of: centered, split, fullscreen, minimal, editorial, video, stacked, asymmetrical)",
+    "productGrid": "string (one of: standard, magazine, list, carousel, spotlight)",
     "sectionOrder": ["hero", "...all 9 remaining sections in your chosen order"],
     "layoutType": "string (one of: standard, app-like, editorial, masonry, fullscreen — see PERSONALITY MAPPING)",
     "spacing": "string (one of: compact, comfortable, spacious)",
@@ -170,15 +170,21 @@ inputRadius: usually same as or slightly less than btnRadius
 
 ── LAYOUT STRUCTURE ────────────────────────────────────
 heroStyle — choose based on visual storytelling:
-  centered   → large centred headline over background image (editorial, luxury)
-  split      → text left / product image right, 2-col (product-focused, versatile)
-  fullscreen → image fills viewport, headline overlaid bottom-left (fashion, dramatic)
-  minimal    → text only, no image (ultra-clean, editorial, stationery)
+  centered      → large centred headline over background image (editorial, luxury)
+  split         → text left / product image right, 2-col (product-focused, versatile)
+  fullscreen    → image fills viewport, headline overlaid bottom-left (fashion, dramatic)
+  minimal       → text only, no image (ultra-clean, editorial, stationery)
+  editorial     → giant ghost background word + floating product image, off-grid typography (magazines, art, high fashion)
+  video         → cinematic full-viewport hero, animated ken-burns image, pulsing play button (film, beauty, premium brands)
+  stacked       → 3 product images layered/rotated like a mood board + text (lifestyle, beauty, multi-product)
+  asymmetrical  → image bleeds left edge (62% width), slim text column right (ZARA-style, luxury, fashion-forward)
 
-productGrid:
-  standard   → 3-col equal grid (universal, most stores)
-  magazine   → first product large featured, rest 3-col (editorial, fashion, food)
-  list       → full-width rows with description (few products, tech specs, books)
+productGrid — choose based on product count and brand feel:
+  standard  → 3-col equal grid (universal, most stores)
+  magazine  → first product large featured, rest 3-col (editorial, fashion, food)
+  list      → full-width rows with description (few products, tech specs, books)
+  carousel  → horizontal scroll snap, one card at a time (mobile-first, new arrivals, seasonal)
+  spotlight → 1 featured hero card + 4-col mini grid below (premium/hero product highlight)
 
 sectionOrder — always include all 10 core sections, plus optional bonus sections:
 

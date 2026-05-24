@@ -54,8 +54,8 @@ export interface DesignTokens {
   inputRadius: string;
 
   // ── Layout structure ──────────────────────────────────────────────────────
-  heroStyle: 'centered' | 'split' | 'fullscreen' | 'minimal';
-  productGrid: 'standard' | 'magazine' | 'list';
+  heroStyle: 'centered' | 'split' | 'fullscreen' | 'minimal' | 'editorial' | 'video' | 'stacked' | 'asymmetrical';
+  productGrid: 'standard' | 'magazine' | 'list' | 'carousel' | 'spotlight';
   sectionOrder: Array<'hero' | 'trust' | 'collections' | 'products' | 'features'
                      | 'testimonials' | 'stats' | 'brandStory' | 'faq' | 'newsletter'
                      | 'scrollingBanner' | 'instagramFeed'>;
@@ -88,7 +88,7 @@ export interface DesignSystem {
   colorScheme: 'light' | 'dark' | 'cream' | 'slate' | 'warm';
   heroLayout: 'centered' | 'split' | 'fullscreen' | 'minimal';
   buttonStyle: 'pill' | 'rounded' | 'square';
-  productGrid: 'standard' | 'magazine' | 'list';
+  productGrid: 'standard' | 'magazine' | 'list' | 'carousel' | 'spotlight';
   sectionOrder: Array<'hero' | 'trust' | 'collections' | 'products' | 'features'
                      | 'testimonials' | 'stats' | 'brandStory' | 'faq' | 'newsletter'
                      | 'scrollingBanner' | 'instagramFeed'>;

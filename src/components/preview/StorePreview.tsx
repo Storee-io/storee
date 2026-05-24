@@ -3227,6 +3227,333 @@ function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts }:
   );
 }
 
+// ── Hero: EDITORIAL ───────────────────────────────────────────────────────────
+// Magazine-style: giant background text, product image floats on top, off-grid
+
+function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts }: {
+  design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onScrollToProducts: () => void;
+}) {
+  const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
+  const isMobile = device === 'mobile';
+  const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  const words = heroTitle.split(' ');
+  const bigWord = words[0] ?? heroTitle;
+  const restWords = words.slice(1).join(' ');
+
+  return (
+    <section style={{ background: tt.pageBg, overflow: 'hidden', minHeight: isMobile ? '80vh' : '88vh', position: 'relative' }}>
+      {/* Giant ghost word — decorative background text */}
+      <div aria-hidden className="absolute select-none pointer-events-none"
+        style={{
+          fontFamily: tt.headingFont,
+          fontSize: isMobile ? '22vw' : '17vw',
+          fontWeight: 900,
+          lineHeight: 1,
+          color: 'transparent',
+          WebkitTextStroke: `1.5px ${alpha(tt.textPrimary, 0.07)}`,
+          top: isMobile ? '-2vw' : '-1vw',
+          left: '-1vw',
+          whiteSpace: 'nowrap',
+          userSelect: 'none',
+          letterSpacing: '-0.04em',
+        }}>
+        {bigWord}
+      </div>
+
+      {isMobile ? (
+        /* Mobile: stacked */
+        <div className="relative z-10 flex flex-col px-6 pt-16 pb-10 gap-8">
+          <div>
+            {tagline && <p className="text-[10px] uppercase tracking-[0.35em] mb-4" style={{ color: primaryColor }}>{tagline}</p>}
+            <h1 style={{ fontFamily: tt.headingFont, fontSize: '2.6rem', fontWeight: 900, lineHeight: 1.0, color: tt.textPrimary, letterSpacing: '-0.03em' }}>
+              {bigWord}<br /><span style={{ color: primaryColor }}>{restWords}</span>
+            </h1>
+            <p className="text-sm leading-relaxed mt-4 mb-6" style={{ color: tt.textSecondary }}>{heroSubtitle}</p>
+            <button onClick={onScrollToProducts} className="px-7 py-3 text-sm font-bold" style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>{ctaText}</button>
+          </div>
+          {products[0] && (
+            <div className="relative mx-auto w-56">
+              <div className="overflow-hidden" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius }}>
+                <ProductImg src={products[0].image} alt="" className="w-full h-full object-cover" />
+              </div>
+              {products[1] && (
+                <div className="absolute -bottom-4 -right-6 w-24 overflow-hidden shadow-xl" style={{ aspectRatio: '1/1', borderRadius: tt.surfaceRadius }}>
+                  <ProductImg src={products[1].image} alt="" className="w-full h-full object-cover" />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Desktop: asymmetric 2-col */
+        <div className="relative z-10 grid grid-cols-[1fr_1.2fr] max-w-6xl mx-auto px-10 gap-0" style={{ minHeight: '88vh', alignItems: 'center' }}>
+          {/* Text col */}
+          <div className="pr-8">
+            {tagline && <p className="text-[10px] uppercase tracking-[0.4em] mb-6" style={{ color: primaryColor }}>{tagline}</p>}
+            <h1 style={{ fontFamily: tt.headingFont, fontSize: 'clamp(3.5rem,5.5vw,6rem)', fontWeight: 900, lineHeight: 1.0, color: tt.textPrimary, letterSpacing: '-0.04em' }}>
+              {bigWord}<br />
+              <span style={{ color: primaryColor }}>{restWords}</span>
+            </h1>
+            <div style={{ width: '48px', height: '3px', background: primaryColor, margin: '24px 0' }} />
+            <p className="text-sm leading-relaxed mb-8 max-w-xs" style={{ color: tt.textSecondary }}>{heroSubtitle}</p>
+            <div className="flex items-center gap-4">
+              <button onClick={onScrollToProducts} className="px-8 py-3.5 text-sm font-bold transition-opacity hover:opacity-85"
+                style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>{ctaText}</button>
+              <button onClick={onScrollToProducts} className="text-xs font-semibold flex items-center gap-1 hover:opacity-60 transition-opacity" style={{ color: tt.textMuted }}>
+                View collection <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+          {/* Image col — off-grid, bleeds to edge */}
+          {products[0] && (
+            <div className="relative h-full flex items-center">
+              <div className="w-full overflow-hidden" style={{ aspectRatio: '3/4', borderRadius: `${tt.surfaceRadius} 0 0 ${tt.surfaceRadius}`, maxHeight: '80vh' }}>
+                <ProductImg src={products[0].image} alt="" className="w-full h-full object-cover" />
+              </div>
+              {/* Floating mini card */}
+              {products[1] && (
+                <div className="absolute bottom-12 -left-10 shadow-2xl overflow-hidden" style={{ width: '140px', borderRadius: tt.surfaceRadius }}>
+                  <div style={{ aspectRatio: '3/4' }}>
+                    <ProductImg src={products[1].image} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="p-3" style={{ background: tt.surfaceBg }}>
+                    <p className="text-[10px] truncate" style={{ color: tt.textMuted }}>{products[1].category}</p>
+                    <p className="text-xs font-black" style={{ color: primaryColor }}>{products[1].name}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ── Hero: VIDEO ───────────────────────────────────────────────────────────────
+// Cinematic dark hero — simulated video with animated gradient + product image
+
+function TkHeroVideo({ design, tt, primaryColor, device, onScrollToProducts }: {
+  design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onScrollToProducts: () => void;
+}) {
+  const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
+  const isMobile = device === 'mobile';
+  const pc = primaryColor;
+  const isLight = !isDark(pc);
+  return (
+    <section className="relative overflow-hidden" style={{ height: isMobile ? '88vh' : '96vh', minHeight: '520px' }}>
+      <style>{`
+        @keyframes storee-video-bg {
+          0%   { transform: scale(1.0) translateX(0px); }
+          50%  { transform: scale(1.08) translateX(-20px); }
+          100% { transform: scale(1.0) translateX(0px); }
+        }
+        @keyframes storee-pulse-ring {
+          0%   { box-shadow: 0 0 0 0 ${alpha(pc, 0.5)}; }
+          70%  { box-shadow: 0 0 0 12px ${alpha(pc, 0)}; }
+          100% { box-shadow: 0 0 0 0 ${alpha(pc, 0)}; }
+        }
+      `}</style>
+
+      {/* Animated background — product image with ken-burns effect */}
+      {products[0] && (
+        <div className="absolute inset-0" style={{ animation: 'storee-video-bg 14s ease-in-out infinite' }}>
+          <ProductImg src={products[0].image} alt="" className="w-full h-full object-cover" />
+        </div>
+      )}
+
+      {/* Dark cinematic overlay with gradient */}
+      <div className="absolute inset-0" style={{
+        background: `linear-gradient(135deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 55%, ${alpha(pc, 0.25)} 100%)`,
+      }} />
+
+      {/* Grain texture overlay */}
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
+        backgroundSize: '180px',
+      }} />
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col justify-end h-full px-8 pb-16 max-w-4xl">
+        {tagline && (
+          <div className="flex items-center gap-2 mb-5">
+            <div style={{ width: '24px', height: '2px', background: pc }} />
+            <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/70">{tagline}</p>
+          </div>
+        )}
+        <h1 className="font-black leading-[1.0] tracking-tight mb-5 text-white"
+          style={{ fontFamily: tt.headingFont, fontSize: isMobile ? 'clamp(2.8rem,10vw,4rem)' : 'clamp(4rem,7vw,7rem)' }}>
+          {heroTitle}
+        </h1>
+        <p className="text-sm leading-relaxed mb-8 max-w-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>
+          {heroSubtitle}
+        </p>
+        <div className="flex items-center gap-5">
+          <button onClick={onScrollToProducts}
+            className="px-8 py-3.5 text-sm font-bold transition-all hover:opacity-90 active:scale-95"
+            style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: tt.btnRadius }}>
+            {ctaText}
+          </button>
+          {/* Play button */}
+          <button className="flex items-center gap-3 text-white/70 hover:text-white transition-colors">
+            <div className="w-11 h-11 rounded-full border border-white/30 flex items-center justify-center"
+              style={{ animation: 'storee-pulse-ring 2.5s cubic-bezier(0.455,0.03,0.515,0.955) infinite' }}>
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 ml-0.5"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+            <span className="text-xs font-semibold uppercase tracking-widest">Watch Film</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Hero: STACKED ─────────────────────────────────────────────────────────────
+// Mood-board: 3 product images stacked/rotated, text alongside
+
+function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts }: {
+  design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onScrollToProducts: () => void;
+}) {
+  const { heroTitle, heroSubtitle, ctaText, products = [], tagline, collections = [] } = design;
+  const isMobile = device === 'mobile';
+  const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  const rotations = [-4, 2, -1.5];
+
+  return (
+    <section style={{ background: tt.pageBg, overflow: 'hidden' }}>
+      <div className={`max-w-6xl mx-auto px-6 ${isMobile ? 'py-12 flex flex-col gap-10' : 'py-16 grid grid-cols-2 gap-12 items-center'}`}>
+        {/* Text side */}
+        <div className={isMobile ? 'order-2' : ''}>
+          {tagline && (
+            <p className="text-[10px] font-bold uppercase tracking-[0.35em] mb-5" style={{ color: primaryColor }}>
+              {collections[0]?.emoji} {tagline}
+            </p>
+          )}
+          <h1 className="font-black leading-[1.05] tracking-tight mb-5"
+            style={{ fontFamily: tt.headingFont, fontSize: isMobile ? '2.4rem' : 'clamp(2.6rem,4vw,4.2rem)', color: tt.textPrimary, letterSpacing: '-0.03em' }}>
+            {heroTitle}
+          </h1>
+          <p className="text-sm leading-relaxed mb-8 max-w-sm" style={{ color: tt.textSecondary }}>{heroSubtitle}</p>
+          <div className="flex flex-wrap items-center gap-4">
+            <button onClick={onScrollToProducts}
+              className="px-7 py-3.5 text-sm font-bold transition-all hover:opacity-90 active:scale-95"
+              style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>
+              {ctaText}
+            </button>
+            {/* Collection pills */}
+            {collections.slice(0, 2).map(c => (
+              <span key={c.name} className="text-xs font-semibold px-3 py-1.5 rounded-full"
+                style={{ background: alpha(primaryColor, 0.1), color: primaryColor }}>
+                {c.emoji} {c.name}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Stacked images side */}
+        <div className={`relative flex items-center justify-center ${isMobile ? 'order-1 h-64' : 'h-96'}`}>
+          {products.slice(0, 3).map((p, i) => (
+            <div key={p.id}
+              className="absolute shadow-2xl overflow-hidden"
+              style={{
+                width: isMobile ? `${140 - i * 18}px` : `${220 - i * 28}px`,
+                aspectRatio: '3/4',
+                borderRadius: tt.surfaceRadius,
+                transform: `rotate(${rotations[i]}deg) translateX(${(i - 1) * (isMobile ? 28 : 42)}px) translateY(${i * 4}px)`,
+                zIndex: 3 - i,
+                transition: 'transform 0.3s ease',
+              }}>
+              <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+              {/* Top label on front card */}
+              {i === 0 && (
+                <div className="absolute bottom-0 left-0 right-0 p-3" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)' }}>
+                  <p className="text-white text-[10px] font-bold truncate">{p.name}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Hero: ASYMMETRICAL ────────────────────────────────────────────────────────
+// ZARA/luxury: image bleeds edge-to-edge on left, slim text column on right
+
+function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProducts }: {
+  design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onScrollToProducts: () => void;
+}) {
+  const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
+  const isMobile = device === 'mobile';
+  const btnText = isDark(primaryColor) ? '#fff' : '#000';
+
+  if (isMobile) {
+    // Mobile: full-bleed image with bottom text overlay
+    return (
+      <section className="relative overflow-hidden" style={{ height: '90vh', minHeight: '500px' }}>
+        {products[0] && (
+          <div className="absolute inset-0">
+            <ProductImg src={products[0].image} alt="" className="w-full h-full object-cover" />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 55%)' }} />
+          </div>
+        )}
+        <div className="relative z-10 absolute bottom-0 left-0 right-0 px-6 pb-10">
+          {tagline && <p className="text-[9px] uppercase tracking-[0.35em] mb-3 text-white/60">{tagline}</p>}
+          <h1 className="font-black text-white leading-[1.0] tracking-tight mb-3"
+            style={{ fontFamily: tt.headingFont, fontSize: '2.6rem', letterSpacing: '-0.03em' }}>{heroTitle}</h1>
+          <p className="text-xs text-white/65 mb-5 max-w-xs leading-relaxed">{heroSubtitle}</p>
+          <button onClick={onScrollToProducts} className="px-6 py-3 text-xs font-bold uppercase tracking-wider"
+            style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>{ctaText}</button>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="overflow-hidden" style={{ height: '92vh', minHeight: '560px', display: 'flex' }}>
+      {/* Image — takes 62% width, bleeds to left edge */}
+      <div className="relative overflow-hidden flex-shrink-0" style={{ width: '62%' }}>
+        {products[0] && <ProductImg src={products[0].image} alt="" className="w-full h-full object-cover" />}
+        {/* Subtle right-edge fade into pageBg */}
+        <div className="absolute inset-y-0 right-0 w-24" style={{ background: `linear-gradient(to right, transparent, ${tt.pageBg})` }} />
+        {/* Floating badge */}
+        {products[0]?.badge && (
+          <div className="absolute top-8 left-8 px-3 py-1.5 text-xs font-black uppercase tracking-wider"
+            style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>
+            {products[0].badge}
+          </div>
+        )}
+      </div>
+
+      {/* Text column — slim, vertical centering */}
+      <div className="flex flex-col justify-center px-12 flex-1">
+        {tagline && (
+          <p className="text-[9px] uppercase tracking-[0.5em] mb-8" style={{ color: tt.textMuted }}>{tagline}</p>
+        )}
+        <h1 className="font-black leading-[1.0] tracking-tight mb-6"
+          style={{ fontFamily: tt.headingFont, fontSize: 'clamp(2.4rem,3.5vw,4rem)', color: tt.textPrimary, letterSpacing: '-0.04em' }}>
+          {heroTitle}
+        </h1>
+        <div style={{ width: '32px', height: '2px', background: primaryColor, marginBottom: '20px' }} />
+        <p className="text-xs leading-relaxed mb-10" style={{ color: tt.textSecondary, maxWidth: '28ch' }}>{heroSubtitle}</p>
+        <button onClick={onScrollToProducts}
+          className="w-fit px-8 py-3.5 text-xs font-black uppercase tracking-widest transition-all hover:opacity-85"
+          style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>{ctaText}</button>
+        {/* Scroll hint */}
+        <div className="mt-auto pt-12 flex items-center gap-2">
+          <div style={{ width: '20px', height: '1px', background: tt.divider }} />
+          <p className="text-[9px] uppercase tracking-[0.4em]" style={{ color: tt.textMuted }}>Scroll</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── Product grid: STANDARD (3-col) ────────────────────────────────────────────
 
 function TkGridStandard({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
@@ -3408,6 +3735,123 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
   );
 }
 
+// ── Product grid: CAROUSEL ────────────────────────────────────────────────────
+// Horizontal scroll snap carousel — one card at a time on mobile, peek on desktop
+
+function TkGridCarousel({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
+  products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
+  onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
+}) {
+  const isMobile = device === 'mobile';
+  const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  const cardW = isMobile ? '72vw' : '260px';
+  return (
+    <div style={{ marginLeft: '-20px', marginRight: '-20px' }}>
+      <div className="flex gap-4 overflow-x-auto pb-4 px-5"
+        style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+        {products.map(p => (
+          <div key={p.id}
+            className="group cursor-pointer flex-shrink-0"
+            style={{ scrollSnapAlign: 'start', width: cardW }}
+            onClick={() => onProductClick(p)}
+          >
+            <div className="relative overflow-hidden mb-3" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius }}>
+              <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              {p.badge && (
+                <span className="absolute top-3 left-3 text-[10px] font-black uppercase px-2.5 py-1 text-white"
+                  style={{ background: primaryColor, borderRadius: tt.btnRadius }}>{p.badge}</span>
+              )}
+              <button onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
+                className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow">
+                <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+              </button>
+              <div className={`absolute bottom-0 inset-x-0 p-3 transition-transform duration-200 ${isMobile ? '' : 'translate-y-full group-hover:translate-y-0'}`}>
+                <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
+                  className="w-full py-2.5 text-[11px] font-bold uppercase tracking-wider text-white"
+                  style={{ background: primaryColor, borderRadius: tt.btnRadius }}>+ Add to Cart</button>
+              </div>
+            </div>
+            <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
+            <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-sm font-black" style={{ color: primaryColor }}>{fmtPrice(p.price)}</span>
+              {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
+            </div>
+          </div>
+        ))}
+        {/* Trailing padding card */}
+        <div className="flex-shrink-0" style={{ width: '4px' }} />
+      </div>
+    </div>
+  );
+}
+
+// ── Product grid: SPOTLIGHT ───────────────────────────────────────────────────
+// Featured big card + 4-col mini grid — editorial/premium feel
+
+function TkGridSpotlight({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
+  products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
+  onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
+  onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
+}) {
+  const isMobile = device === 'mobile';
+  const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  const featured = products[0];
+  const rest = products.slice(1, isMobile ? 5 : 7);
+  return (
+    <div className="space-y-5">
+      {/* Featured hero card */}
+      {featured && (
+        <div className="group relative overflow-hidden cursor-pointer"
+          style={{ aspectRatio: isMobile ? '3/2' : '21/9', borderRadius: tt.surfaceRadius }}
+          onClick={() => onProductClick(featured)}>
+          <ProductImg src={featured.image} alt={featured.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%)' }} />
+          {featured.badge && (
+            <span className="absolute top-4 left-4 text-[10px] font-black uppercase px-2.5 py-1 text-white"
+              style={{ background: primaryColor, borderRadius: tt.btnRadius }}>{featured.badge}</span>
+          )}
+          <button onClick={e => { e.stopPropagation(); onToggleWishlist(featured.id); }}
+            className="absolute top-4 right-4 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center shadow">
+            <Heart className={`w-4 h-4 ${wishlist.has(featured.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-400'}`} />
+          </button>
+          <div className="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between">
+            <div>
+              <p className="text-white/70 text-[10px] uppercase tracking-wider mb-1">{featured.category}</p>
+              <p className="text-white font-bold text-lg leading-tight">{featured.name}</p>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="text-white font-black text-base">{fmtPrice(featured.price)}</span>
+                {featured.originalPrice && <span className="text-white/50 text-xs line-through">{fmtPrice(featured.originalPrice)}</span>}
+              </div>
+            </div>
+            <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(featured, btn.getBoundingClientRect()); }}
+              className="px-5 py-2.5 text-xs font-bold"
+              style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>Add to Cart</button>
+          </div>
+        </div>
+      )}
+      {/* Rest in 4-col grid */}
+      <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} gap-4`}>
+        {rest.map(p => (
+          <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
+            <div className="relative overflow-hidden mb-2" style={{ aspectRatio: '1/1', borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
+              <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              {p.badge && <span className="absolute top-2 left-2 text-[8px] font-black uppercase px-1.5 py-0.5 text-white"
+                style={{ background: primaryColor, borderRadius: tt.btnRadius }}>{p.badge}</span>}
+              <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
+                className={`absolute bottom-2 right-2 w-7 h-7 flex items-center justify-center text-white font-bold rounded-full shadow-md ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}
+                style={{ background: primaryColor }}>+</button>
+            </div>
+            <p className="text-xs font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+            <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{fmtPrice(p.price)}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── SCROLLING BANNER SECTION ──────────────────────────────────────────────────
 // Auto-scrolling marquee strip — energetic, fashion/lifestyle brand accent
 
@@ -3569,10 +4013,14 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
     switch (section) {
       case 'hero':
         switch (heroStyle) {
-          case 'centered':   return <TkHeroCentered key="hero"   design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
-          case 'fullscreen': return <TkHeroFullscreen key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
-          case 'minimal':    return <TkHeroMinimal key="hero"    design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
-          default:           return <TkHeroSplit key="hero"      design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} fmtPrice={fmtPrice} />;
+          case 'centered':      return <TkHeroCentered      key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
+          case 'fullscreen':    return <TkHeroFullscreen    key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
+          case 'minimal':       return <TkHeroMinimal       key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
+          case 'editorial':     return <TkHeroEditorial     key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
+          case 'video':         return <TkHeroVideo         key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
+          case 'stacked':       return <TkHeroStacked       key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
+          case 'asymmetrical':  return <TkHeroAsymmetrical  key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
+          default:              return <TkHeroSplit          key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} fmtPrice={fmtPrice} />;
         }
 
       case 'trust':
@@ -3606,12 +4054,16 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
                 View All <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
-            {productGrid === 'magazine' ? (
-              <TkGridMagazine products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
+            {productGrid === 'magazine'  ? (
+              <TkGridMagazine  products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
             ) : productGrid === 'list' ? (
-              <TkGridList products={displayed} tt={tt} primaryColor={primaryColor} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
+              <TkGridList      products={displayed} tt={tt} primaryColor={primaryColor} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
+            ) : productGrid === 'carousel' ? (
+              <TkGridCarousel  products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
+            ) : productGrid === 'spotlight' ? (
+              <TkGridSpotlight products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
             ) : (
-              <TkGridStandard products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
+              <TkGridStandard  products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
             )}
           </section>
         );
