@@ -3362,15 +3362,44 @@ function getContentStyleVars(cs?: ContentStyleLevel): ContentStyleVars {
 
 // ── headlineSize → rem multiplier ────────────────────────────────────────────
 type HeadlineSizeLevel = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
-function getHeadlineSizeMultiplier(size?: HeadlineSizeLevel): number {
-  switch (size) {
-    case 'sm':  return 0.85;
-    case 'lg':  return 1.2;
-    case 'xl':  return 1.5;
-    case '2xl': return 1.8;
-    case '3xl': return 2.2;
-    default:    return 1.0; // 'md'
+
+/**
+ * Absolute rem table for hero h1 font sizes.
+ * These are ABSOLUTE values (not multipliers) so they never stack with headingScale.
+ * The default 'md' column mirrors the original per-hero base sizes at headingScale=1.
+ */
+const HERO_HEADLINE_REM: Record<HeadlineSizeLevel, { mobile: number; desktop: number }> = {
+  sm:    { mobile: 1.8,  desktop: 2.6  },
+  md:    { mobile: 2.4,  desktop: 3.8  }, // neutral default
+  lg:    { mobile: 2.9,  desktop: 4.8  },
+  xl:    { mobile: 3.4,  desktop: 5.8  },
+  '2xl': { mobile: 3.9,  desktop: 6.6  },
+  '3xl': { mobile: 4.4,  desktop: 7.5  },
+};
+
+/**
+ * Build a heading style for hero h1 elements.
+ * - When headlineSize is set: uses the absolute rem table above (no headingScale stacking).
+ * - When headlineSize is absent: falls back to headingStyle(tt, baseRem) as before.
+ */
+function heroHeadingStyle(
+  tt: TokenTheme,
+  baseRemDesktop: number,
+  baseRemMobile: number,
+  headlineSize: HeadlineSizeLevel | undefined,
+  isMobile: boolean,
+  extraOverrides?: React.CSSProperties,
+): React.CSSProperties {
+  const base = isMobile ? baseRemMobile : baseRemDesktop;
+  if (!headlineSize || headlineSize === 'md') {
+    // Default: let headingStyle apply headingScale normally
+    return headingStyle(tt, base, extraOverrides);
   }
+  // Explicit headlineSize: absolute rem, preserve other font tokens
+  const rem = isMobile
+    ? HERO_HEADLINE_REM[headlineSize].mobile
+    : HERO_HEADLINE_REM[headlineSize].desktop;
+  return headingStyle(tt, base, { fontSize: `${rem}rem`, ...extraOverrides });
 }
 
 // ── Card style → CSS object ───────────────────────────────────────────────────
@@ -3666,7 +3695,7 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts, 
           </motion.p>
         )}
         {heroProps.accentLine && <motion.div variants={heroItem} style={{ width: '40px', height: '3px', background: primaryColor, marginBottom: '16px' }} />}
-        <motion.h1 variants={heroItem} className="mb-5" style={{ ...headingStyle(tt, (isMobile ? 2.4 : 4.0) * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: bgImage ? '#ffffff' : tt.textPrimary }}>
+        <motion.h1 variants={heroItem} className="mb-5" style={{ ...heroHeadingStyle(tt, 4.0, 2.4, heroProps.headlineSize, isMobile), color: bgImage ? '#ffffff' : tt.textPrimary }}>
           {heroTitle}
         </motion.h1>
         <motion.p variants={heroItem} className="mb-8 max-w-lg" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: bgImage ? 'rgba(255,255,255,0.82)' : tt.textSecondary }}>
@@ -3724,7 +3753,7 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
             </motion.p>
           )}
           {heroProps.accentLine && <motion.div variants={heroItem} style={{ width: '40px', height: '3px', background: primaryColor, marginBottom: '16px' }} />}
-          <motion.h1 variants={heroItem} className="mb-5" style={{ ...headingStyle(tt, (isMobile ? 2.4 : 3.6) * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: tt.textPrimary }}>
+          <motion.h1 variants={heroItem} className="mb-5" style={{ ...heroHeadingStyle(tt, 3.6, 2.4, heroProps.headlineSize, isMobile), color: tt.textPrimary }}>
             {heroTitle}
           </motion.h1>
           <motion.p variants={heroItem} className="mb-8 max-w-sm" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>
@@ -3803,7 +3832,7 @@ function TkHeroFullscreen({ design, tt, primaryColor, device, onScrollToProducts
             {tagline}
           </p>
         )}
-        <h1 className="mb-5 text-white" style={headingStyle(tt, (isMobile ? 3.2 : 5.5) * getHeadlineSizeMultiplier(heroProps.headlineSize))}>
+        <h1 className="mb-5 text-white" style={heroHeadingStyle(tt, 5.5, 3.2, heroProps.headlineSize, isMobile)}>
           {heroTitle}
         </h1>
         <p className="mb-8 max-w-md" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: 'rgba(255,255,255,0.75)' }}>
@@ -3843,7 +3872,7 @@ function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts, h
           </p>
         )}
         {heroProps.accentLine && <div style={{ width: '40px', height: '3px', background: primaryColor, marginBottom: '16px', margin: textAlign === 'center' ? '0 auto 16px' : '0 0 16px' }} />}
-        <h1 className="mb-5" style={{ ...headingStyle(tt, (isMobile ? 2.2 : 3.6) * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: tt.textPrimary }}>
+        <h1 className="mb-5" style={{ ...heroHeadingStyle(tt, 3.6, 2.2, heroProps.headlineSize, isMobile), color: tt.textPrimary }}>
           {heroTitle}
         </h1>
         <p className="mb-8 max-w-xl mx-auto" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>
@@ -3903,7 +3932,7 @@ function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts,
         <div className="relative z-10 flex flex-col px-6 pt-16 pb-10 gap-8">
           <div>
             {tagline && <p className="text-[10px] uppercase tracking-[0.35em] mb-4" style={{ color: primaryColor }}>{tagline}</p>}
-            <h1 style={{ ...headingStyle(tt, 2.6 * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: tt.textPrimary }}>
+            <h1 style={{ ...heroHeadingStyle(tt, 2.6, 2.6, heroProps.headlineSize, isMobile), color: tt.textPrimary }}>
               {bigWord}<br /><span style={{ color: primaryColor }}>{restWords}</span>
             </h1>
             <p className="mt-4 mb-6" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>{heroSubtitle}</p>
@@ -3928,7 +3957,7 @@ function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts,
           {/* Text col */}
           <div className="pr-8">
             {tagline && <p className="text-[10px] uppercase tracking-[0.4em] mb-6" style={{ color: primaryColor }}>{tagline}</p>}
-            <h1 style={{ ...headingStyle(tt, 5.0 * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: tt.textPrimary }}>
+            <h1 style={{ ...heroHeadingStyle(tt, 5.0, 2.6, heroProps.headlineSize, isMobile), color: tt.textPrimary }}>
               {bigWord}<br />
               <span style={{ color: primaryColor }}>{restWords}</span>
             </h1>
@@ -4022,7 +4051,7 @@ function TkHeroVideo({ design, tt, primaryColor, device, onScrollToProducts, her
             <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/70">{tagline}</p>
           </div>
         )}
-        <h1 className="mb-5 text-white" style={headingStyle(tt, (isMobile ? 3.5 : 6.0) * getHeadlineSizeMultiplier(heroProps.headlineSize))}>
+        <h1 className="mb-5 text-white" style={heroHeadingStyle(tt, 6.0, 3.5, heroProps.headlineSize, isMobile)}>
           {heroTitle}
         </h1>
         <p className="mb-8 max-w-sm" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)' }}>
@@ -4077,7 +4106,7 @@ function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts, h
               {collections[0]?.emoji} {tagline}
             </p>
           )}
-          <h1 className="mb-5" style={{ ...headingStyle(tt, (isMobile ? 2.4 : 3.8) * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: tt.textPrimary }}>
+          <h1 className="mb-5" style={{ ...heroHeadingStyle(tt, 3.8, 2.4, heroProps.headlineSize, isMobile), color: tt.textPrimary }}>
             {heroTitle}
           </h1>
           <p className="mb-8 max-w-sm" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>{heroSubtitle}</p>
@@ -4149,7 +4178,7 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
         )}
         <div className="relative z-10 absolute bottom-0 left-0 right-0 px-6 pb-10">
           {tagline && <p className="text-[9px] uppercase tracking-[0.35em] mb-3 text-white/60">{tagline}</p>}
-          <h1 className="mb-3 text-white" style={headingStyle(tt, 2.6 * getHeadlineSizeMultiplier(heroProps.headlineSize))}>{heroTitle}</h1>
+          <h1 className="mb-3 text-white" style={heroHeadingStyle(tt, 2.6, 2.6, heroProps.headlineSize, isMobile)}>{heroTitle}</h1>
           <p className="text-xs mb-5 max-w-xs" style={{ ...bodyStyle(tt), color: 'rgba(255,255,255,0.65)' }}>{heroSubtitle}</p>
           <button onClick={onScrollToProducts} className="px-6 py-3 text-xs font-bold uppercase tracking-wider"
             style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>{ctaText}</button>
@@ -4183,7 +4212,7 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
         {tagline && (
           <p className="text-[9px] uppercase tracking-[0.5em] mb-8" style={{ color: tt.textMuted }}>{tagline}</p>
         )}
-        <h1 className="mb-6" style={{ ...headingStyle(tt, 3.6 * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: tt.textPrimary }}>
+        <h1 className="mb-6" style={{ ...heroHeadingStyle(tt, 3.6, 2.6, heroProps.headlineSize, isMobile), color: tt.textPrimary }}>
           {heroTitle}
         </h1>
         <div style={{ width: '32px', height: '2px', background: primaryColor, marginBottom: '20px' }} />
@@ -4226,7 +4255,7 @@ function TkHeroCinematic({ design, tt, primaryColor, device, onScrollToProducts,
           {tagline && (
             <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.55em', color: 'rgba(255,255,255,0.5)', marginBottom: '20px', fontWeight: 400, fontFamily: tt.headingFont }}>{tagline}</p>
           )}
-          <h1 style={{ ...headingStyle(tt, (isMobile ? 2.4 : 4.0) * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: '#fff', marginBottom: '20px', lineHeight: 1.0, fontWeight: 900 }}>{heroTitle}</h1>
+          <h1 style={{ ...heroHeadingStyle(tt, 4.0, 2.4, heroProps.headlineSize, isMobile, { lineHeight: 1.0, fontWeight: 900 }), color: '#fff', marginBottom: '20px' }}>{heroTitle}</h1>
           <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '36px', maxWidth: '40ch', lineHeight: 1.6 }}>{heroSubtitle}</p>
           {/* Minimal text+arrow CTA */}
           <button onClick={onScrollToProducts}
@@ -4324,7 +4353,7 @@ function TkHeroFashion({ design, tt, primaryColor, device, onScrollToProducts, h
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.1) 55%)' }} />
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 24px 40px', zIndex: 1 }}>
           {tagline && <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.4em', color: 'rgba(255,255,255,0.55)', marginBottom: '10px', fontWeight: 400 }}>{tagline}</p>}
-          <h1 style={{ ...headingStyle(tt, 2.2 * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: '#fff', marginBottom: '20px' }}>{heroTitle}</h1>
+          <h1 style={{ ...heroHeadingStyle(tt, 2.2, 2.2, heroProps.headlineSize, isMobile), color: '#fff', marginBottom: '20px' }}>{heroTitle}</h1>
           <button onClick={onScrollToProducts} style={{ padding: '12px 28px', background: pc, color: btnText, borderRadius: tt.btnRadius, fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}>{ctaText}</button>
         </div>
       </section>
@@ -4342,7 +4371,7 @@ function TkHeroFashion({ design, tt, primaryColor, device, onScrollToProducts, h
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.0) 50%)' }} />
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 40px 40px', zIndex: 1 }}>
               {tagline && <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.4em', color: 'rgba(255,255,255,0.55)', marginBottom: '12px', fontWeight: 400 }}>{tagline}</p>}
-              <h1 style={{ ...headingStyle(tt, 3.2 * getHeadlineSizeMultiplier(heroProps.headlineSize)), color: '#fff', marginBottom: '24px', maxWidth: '18ch' }}>{heroTitle}</h1>
+              <h1 style={{ ...heroHeadingStyle(tt, 3.2, 2.2, heroProps.headlineSize, isMobile), color: '#fff', marginBottom: '24px', maxWidth: '18ch' }}>{heroTitle}</h1>
               <button onClick={onScrollToProducts} style={{ padding: '13px 32px', background: pc, color: btnText, borderRadius: tt.btnRadius, fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}>{ctaText}</button>
             </div>
           </div>
