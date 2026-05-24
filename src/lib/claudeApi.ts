@@ -58,6 +58,25 @@ export interface DesignTokens {
   productGrid: 'standard' | 'magazine' | 'list';
   sectionOrder: Array<'hero' | 'trust' | 'collections' | 'products' | 'features'
                      | 'testimonials' | 'stats' | 'brandStory' | 'faq' | 'newsletter'>;
+
+  // ── Phase 1: Layout engine + personality tokens ───────────────────────────
+  /**
+   * Structural layout type.
+   * standard  → default token-driven layout (existing behaviour)
+   * app-like  → mobile-app skeleton: fixed bottom nav, story circles, list rows
+   * editorial → magazine skeleton: asymmetric grid, big typography, lots of air
+   */
+  layoutType?: 'standard' | 'app-like' | 'editorial';
+  /** Spacing scale applied across padding/margin/gap */
+  spacing?: 'compact' | 'comfortable' | 'spacious';
+  /** Content density — how much info is packed per screen */
+  density?: 'dense' | 'normal' | 'airy';
+  /** Shadow/depth level of surfaces */
+  elevation?: 'flat' | 'subtle' | 'raised' | 'floating';
+  /** Animation intensity */
+  motion?: 'none' | 'subtle' | 'smooth' | 'expressive';
+  /** Free-text personality hint Claude used, e.g. "whatsapp-like" */
+  personality?: string;
 }
 
 /** @deprecated use DesignTokens instead — kept for stores generated before v2 */

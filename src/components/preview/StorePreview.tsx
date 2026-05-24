@@ -2966,6 +2966,24 @@ function getTokenThemeV2(dt: DesignTokens, primaryColor: string): TokenTheme {
   };
 }
 
+// ── Minimal fallback theme (no tokens, no design system) ─────────────────────
+
+function getDefaultTokenTheme(primaryColor: string): TokenTheme {
+  const pc = primaryColor || '#10b981';
+  return {
+    fontFamily: 'system-ui, -apple-system, sans-serif',
+    pageBg: '#ffffff', headerBg: '#ffffff', headerBorder: '#f0f0ee',
+    surfaceBg: '#f9f9f7', surfaceBorder: '#e5e5e0', surfaceRadius: '16px',
+    btnRadius: '12px', inputBg: '#f9f9f7', inputBorder: '#e5e5e0', inputRadius: '12px',
+    textPrimary: '#111111', textSecondary: '#555555', textMuted: '#999999', divider: '#f0f0ee',
+    successBg: '#f0fdf4', successText: '#16a34a', successBorder: '#bbf7d0',
+    dangerBg: '#fff1f2', dangerText: '#e11d48',
+    primary: pc, primaryContrast: isDark(pc) ? '#ffffff' : '#000000',
+    headingFont: 'system-ui, -apple-system, sans-serif',
+    googleFontsUrl: '',
+  };
+}
+
 // ── v1: build theme from bucket DesignSystem (legacy) ────────────────────────
 
 function getTokenThemeV1(ds: DesignSystem, primaryColor: string): TokenTheme {
@@ -3553,6 +3571,475 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
   );
 }
 
+// ── APP-LIKE LAYOUT ───────────────────────────────────────────────────────────
+// Mobile-app skeleton: story circles, product list rows, fixed bottom nav
+// Personality: WhatsApp-like, Discord-like, Spotify-like
+
+function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
+  const dt = design.designTokens;
+  const tt: TokenTheme = dt ? getTokenThemeV2(dt, primaryColor) : getDefaultTokenTheme(primaryColor);
+
+  const { products = [], collections = [], features = [], testimonials = [],
+          tagline, promoBar, trustBadges = [], brandStory, heroTitle, heroSubtitle, ctaText } = design;
+
+  const isMobile = device === 'mobile';
+  const [selectedCol, setSelectedCol] = useState(0);
+  const [searchVal, setSearchVal] = useState('');
+  const [activePage, setActivePage] = useState<'home' | 'catalog' | 'profile'>('home');
+  const productsRef = useRef<HTMLDivElement>(null);
+
+  const pc = primaryColor || '#075E54';
+  const pcText = isDark(pc) ? '#ffffff' : '#000000';
+
+  const displayed = selectedCol === 0
+    ? products
+    : products.filter((_, i) => i % collections.length === selectedCol % collections.length);
+
+  const filtered = searchVal.trim()
+    ? displayed.filter(p => p.name.toLowerCase().includes(searchVal.toLowerCase()) || p.category.toLowerCase().includes(searchVal.toLowerCase()))
+    : displayed;
+
+  return (
+    <div style={{ background: tt.pageBg, fontFamily: tt.fontFamily, minHeight: '100vh', paddingBottom: '64px', position: 'relative' }}>
+      <TkFontInjector url={tt.googleFontsUrl} />
+
+      {promoBar && <PromoBar text={promoBar} primaryColor={pc} />}
+
+      {/* ── Header ── */}
+      <header style={{ background: pc, position: 'sticky', top: 0, zIndex: 40, height: '56px' }}>
+        <div className="flex items-center justify-between px-4 h-full">
+          <span className="text-base font-bold text-white truncate max-w-[160px]">{storeName}</span>
+          <div className="flex items-center gap-1">
+            <button onClick={onWishlistClick} className="relative p-2 text-white/70 hover:text-white">
+              <Heart className="w-5 h-5" />
+              {wishlist.size > 0 && <span className="absolute top-0.5 right-0.5 w-3.5 h-3.5 text-[8px] font-bold bg-rose-500 text-white rounded-full flex items-center justify-center">{wishlist.size}</span>}
+            </button>
+            <button data-cart-btn onClick={onCartClick} className="relative p-2 text-white/70 hover:text-white">
+              <ShoppingCart className="w-5 h-5" />
+              {cartCount > 0 && <span className="absolute top-0.5 right-0.5 w-3.5 h-3.5 text-[8px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: alpha(pc, 0.9), border: '1.5px solid rgba(255,255,255,0.5)' }}>{cartCount}</span>}
+            </button>
+          </div>
+        </div>
+        {/* Search bar */}
+        <div className="px-3 pb-2.5">
+          <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: 'rgba(255,255,255,0.18)' }}>
+            <Search className="w-4 h-4 text-white/70 flex-shrink-0" />
+            <input
+              value={searchVal}
+              onChange={e => setSearchVal(e.target.value)}
+              placeholder="Search products..."
+              className="bg-transparent text-sm text-white placeholder:text-white/55 outline-none flex-1"
+            />
+          </div>
+        </div>
+      </header>
+
+      {/* ── Story circles (collections) ── */}
+      <div style={{ background: tt.surfaceBg, borderBottom: `1px solid ${tt.divider}` }}>
+        <div className="flex gap-4 px-4 py-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          {[{ name: 'All', emoji: '✨' }, ...collections].map((c, i) => (
+            <button key={i} onClick={() => setSelectedCol(i)} className="flex flex-col items-center gap-1.5 flex-shrink-0">
+              <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-all`}
+                style={selectedCol === i
+                  ? { background: pc, boxShadow: `0 0 0 3px ${tt.surfaceBg}, 0 0 0 5px ${pc}` }
+                  : { background: tt.pageBg, border: `2px solid ${tt.surfaceBorder}` }}>
+                {c.emoji}
+              </div>
+              <span className="text-[10px] font-semibold max-w-[52px] text-center leading-tight truncate"
+                style={{ color: selectedCol === i ? pc : tt.textMuted }}>
+                {c.name}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Product list (chat-row style) ── */}
+      <div ref={productsRef} style={{ background: tt.pageBg }}>
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <span className="text-4xl">🔍</span>
+            <p className="text-sm font-medium" style={{ color: tt.textMuted }}>No products found</p>
+          </div>
+        ) : (
+          <div>
+            {filtered.map((p, idx) => (
+              <div key={p.id}
+                className="flex items-center gap-3 px-4 py-3 cursor-pointer active:opacity-70 transition-opacity"
+                style={{ borderBottom: `1px solid ${tt.divider}`, background: tt.surfaceBg }}
+                onClick={() => onProductClick(p)}
+              >
+                {/* Round product image */}
+                <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 shadow-sm">
+                  <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-sm font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</span>
+                    {p.badge && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: alpha(pc, 0.12), color: pc }}>{p.badge}</span>
+                    )}
+                  </div>
+                  <p className="text-xs mt-0.5 line-clamp-1" style={{ color: tt.textSecondary }}>{p.description}</p>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <span className="text-[10px] uppercase tracking-wide" style={{ color: tt.textMuted }}>{p.category}</span>
+                    <div className="flex items-center gap-2">
+                      {p.originalPrice && (
+                        <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>
+                      )}
+                      <span className="text-sm font-bold" style={{ color: pc }}>{fmtPrice(p.price)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Add button (pill style) */}
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    onAddToCart(p, rect);
+                  }}
+                  className="flex-shrink-0 px-3 py-2 text-xs font-bold rounded-full transition-all hover:opacity-90 active:scale-95"
+                  style={{ background: pc, color: pcText }}
+                >
+                  {dt?.personality?.includes('whatsapp') ? 'Order' : '+ Add'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Features strip */}
+        {features.length > 0 && (
+          <div className="px-4 pt-6 pb-4 space-y-3" style={{ borderTop: `4px solid ${tt.divider}` }}>
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: tt.textMuted }}>Why choose us</p>
+            {features.slice(0, 4).map((f, i) => (
+              <div key={i} className="flex items-center gap-3 py-2">
+                <span className="text-2xl">{f.icon}</span>
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: tt.textPrimary }}>{f.title}</p>
+                  <p className="text-xs" style={{ color: tt.textSecondary }}>{f.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Testimonials */}
+        {testimonials.length > 0 && (
+          <div className="px-4 pt-4 pb-4 space-y-3" style={{ borderTop: `4px solid ${tt.divider}` }}>
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: tt.textMuted }}>Reviews</p>
+            {testimonials.slice(0, 3).map((t, i) => (
+              <div key={i} className="p-3 rounded-xl" style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}` }}>
+                <Stars n={t.rating} />
+                <p className="text-xs mt-1.5 italic" style={{ color: tt.textSecondary }}>"{t.text}"</p>
+                <p className="text-[10px] mt-1.5 font-semibold" style={{ color: tt.textMuted }}>— {t.author}, {t.role}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Brand story */}
+        {brandStory && (
+          <div className="px-4 py-5" style={{ borderTop: `4px solid ${tt.divider}`, background: tt.surfaceBg }}>
+            <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: tt.textMuted }}>Our Story</p>
+            <p className="text-sm leading-relaxed" style={{ color: tt.textSecondary }}>{brandStory}</p>
+          </div>
+        )}
+
+        <div className="py-4 text-center">
+          <p className="text-[10px]" style={{ color: tt.textMuted }}>© 2026 {storeName} · {tagline}</p>
+        </div>
+      </div>
+
+      {/* ── Fixed bottom navigation ── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center"
+        style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, height: '60px' }}>
+        {[
+          { id: 'home',    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>, label: 'Home' },
+          { id: 'catalog', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><rect x={3} y={3} width={7} height={7}/><rect x={14} y={3} width={7} height={7}/><rect x={14} y={14} width={7} height={7}/><rect x={3} y={14} width={7} height={7}/></svg>, label: 'Catalog' },
+          { id: 'cart',    icon: <ShoppingCart className="w-5 h-5" />, label: 'Cart', badge: cartCount },
+          { id: 'profile', icon: <User className="w-5 h-5" />, label: 'Profile' },
+        ].map(item => (
+          <button key={item.id} onClick={() => {
+            if (item.id === 'cart') onCartClick();
+            else if (item.id === 'profile') onUserClick();
+            else if (item.id === 'home') setActivePage('home');
+            else setActivePage('catalog');
+          }}
+            className="flex-1 flex flex-col items-center justify-center gap-1 h-full transition-colors"
+            style={{ color: activePage === item.id || (item.id === 'cart' && cartCount > 0) ? pc : tt.textMuted }}>
+            <div className="relative">
+              {item.icon}
+              {(item.badge ?? 0) > 0 && (
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 text-[8px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: pc }}>{item.badge}</span>
+              )}
+            </div>
+            <span className="text-[9px] font-semibold">{item.label}</span>
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+// ── EDITORIAL LAYOUT ──────────────────────────────────────────────────────────
+// Magazine skeleton: asymmetric grid, big typography, minimal UI chrome
+// Personality: Apple-like, Notion-like, editorial fashion
+
+function EditorialLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
+  const dt = design.designTokens;
+  const tt: TokenTheme = dt ? getTokenThemeV2(dt, primaryColor) : getDefaultTokenTheme(primaryColor);
+
+  const { products = [], collections = [], features = [], testimonials = [],
+          tagline, promoBar, trustBadges = [], brandStory, heroTitle, heroSubtitle, ctaText, navLinks = [], faq = [], stats = [], newsletter } = design;
+
+  const isMobile = device === 'mobile';
+  const [selectedCol, setSelectedCol] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const productsRef = useRef<HTMLDivElement>(null);
+  const scrollToProducts = () => productsRef.current?.scrollIntoView({ behavior: 'smooth' });
+
+  const pc = primaryColor || '#0071e3';
+
+  const displayed = selectedCol === 0
+    ? products
+    : products.filter((_, i) => i % collections.length === selectedCol % collections.length);
+
+  const isDarkPalette = tt.pageBg.startsWith('#0') || tt.pageBg.startsWith('#1');
+
+  return (
+    <div style={{ background: tt.pageBg, fontFamily: tt.fontFamily, color: tt.textPrimary }}>
+      <TkFontInjector url={tt.googleFontsUrl} />
+      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={pc} storeName={storeName} onScrollToProducts={scrollToProducts} />
+
+      {promoBar && <PromoBar text={promoBar} primaryColor={pc} />}
+
+      {/* ── Header — minimal, transparent ── */}
+      <header className="sticky top-0 z-40 backdrop-blur-md"
+        style={{ background: tt.headerBg + 'e8', borderBottom: `1px solid ${tt.divider}`, height: '52px' }}>
+        <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+          {/* Brand */}
+          <span className="text-sm font-black tracking-wider uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
+
+          {/* Nav — desktop only */}
+          {!isMobile && (
+            <nav className="flex gap-8">
+              {navLinks.map(l => (
+                <a key={l} onClick={scrollToProducts} className="text-xs uppercase tracking-widest font-medium cursor-pointer transition-opacity hover:opacity-50"
+                  style={{ color: tt.textSecondary, letterSpacing: '0.1em' }}>{l}</a>
+              ))}
+            </nav>
+          )}
+
+          {/* Icons */}
+          <div className="flex items-center gap-1">
+            {!isMobile && <button onClick={onSearchOpen} className="p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}><Search className="w-4 h-4" /></button>}
+            <button onClick={onWishlistClick} className="relative p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>
+              <Heart className="w-4 h-4" />
+              {wishlist.size > 0 && <span className="absolute top-0 right-0 w-3.5 h-3.5 text-[8px] font-bold text-white bg-rose-500 rounded-full flex items-center justify-center">{wishlist.size}</span>}
+            </button>
+            <button data-cart-btn onClick={onCartClick} className="relative p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>
+              <ShoppingCart className="w-4 h-4" />
+              {cartCount > 0 && <span className="absolute top-0 right-0 w-3.5 h-3.5 text-[8px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: pc }}>{cartCount}</span>}
+            </button>
+            {isMobile && <button onClick={() => setMenuOpen(true)} className="p-2" style={{ color: tt.textSecondary }}><Menu className="w-5 h-5" /></button>}
+          </div>
+        </div>
+      </header>
+
+      {/* ── Hero — full-bleed, text-first ── */}
+      <section className="relative overflow-hidden" style={{ minHeight: isMobile ? '70vh' : '85vh', display: 'flex', alignItems: 'flex-end' }}>
+        {products[0]?.image && (
+          <div className="absolute inset-0">
+            <ProductImg src={products[0].image} alt="" className="w-full h-full object-cover" />
+            <div className="absolute inset-0" style={{ background: isDarkPalette
+              ? 'linear-gradient(to top, rgba(0,0,0,0.92) 40%, rgba(0,0,0,0.3) 100%)'
+              : 'linear-gradient(to top, rgba(0,0,0,0.75) 30%, rgba(0,0,0,0.1) 100%)' }} />
+          </div>
+        )}
+        <div className="relative max-w-7xl mx-auto px-6 py-14 w-full">
+          <p className="text-xs uppercase tracking-[0.3em] mb-5 text-white/60">{tagline}</p>
+          <h1 className="font-black text-white leading-[0.95] mb-6"
+            style={{ fontFamily: tt.headingFont, fontSize: isMobile ? 'clamp(2.5rem, 12vw, 4rem)' : 'clamp(4rem, 8vw, 7rem)', letterSpacing: '-0.02em', maxWidth: '12ch' }}>
+            {heroTitle}
+          </h1>
+          {!isMobile && (
+            <p className="text-white/65 text-sm max-w-sm mb-10 leading-relaxed">{heroSubtitle}</p>
+          )}
+          <div className="flex items-center gap-3 flex-wrap">
+            <button onClick={scrollToProducts}
+              className="px-7 py-3.5 text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
+              style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: tt.btnRadius }}>
+              {ctaText}
+            </button>
+            <button onClick={scrollToProducts}
+              className="px-7 py-3.5 text-sm font-semibold text-white border border-white/30 hover:bg-white/10 transition-colors"
+              style={{ borderRadius: tt.btnRadius }}>
+              Explore ↓
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Collections — editorial tag pills ── */}
+      <div style={{ borderBottom: `1px solid ${tt.divider}`, background: tt.headerBg }}>
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          {[{ name: 'All', emoji: '✦' }, ...collections].map((c, i) => (
+            <button key={i} onClick={() => setSelectedCol(i)}
+              className="flex-shrink-0 flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest transition-all"
+              style={selectedCol === i
+                ? { background: tt.textPrimary, color: tt.pageBg, borderRadius: tt.btnRadius }
+                : { background: 'transparent', color: tt.textSecondary, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.btnRadius }}>
+              <span>{c.emoji}</span> {c.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {trustBadges.length > 0 && <TrustBadgesRow badges={trustBadges} primaryColor={pc} device={device} />}
+
+      {/* ── Asymmetric product grid ── */}
+      <section ref={productsRef} className="max-w-7xl mx-auto px-6" style={{ paddingTop: isMobile ? '2.5rem' : '5rem', paddingBottom: isMobile ? '2.5rem' : '5rem' }}>
+        <div className="flex items-end justify-between mb-8">
+          <h2 className="font-black tracking-tight" style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '1.5rem' : '2.25rem' }}>
+            Featured
+          </h2>
+          <button onClick={scrollToProducts} className="text-xs font-semibold uppercase tracking-widest flex items-center gap-1.5" style={{ color: pc }}>
+            View all <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Asymmetric: first product large (2 cols on desktop), rest standard */}
+        {isMobile ? (
+          <div className="grid grid-cols-2 gap-3">
+            {displayed.map(p => (
+              <EditorialProductCard key={p.id} p={p} tt={tt} pc={pc} fmtPrice={fmtPrice} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-5">
+            {displayed.map((p, idx) => idx === 0 ? (
+              <div key={p.id} className="col-span-2 row-span-1">
+                <EditorialProductCard p={p} tt={tt} pc={pc} fmtPrice={fmtPrice} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} featured />
+              </div>
+            ) : (
+              <EditorialProductCard key={p.id} p={p} tt={tt} pc={pc} fmtPrice={fmtPrice} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ── Features ── */}
+      {features.length > 0 && (
+        <section style={{ borderTop: `1px solid ${tt.divider}`, background: tt.surfaceBg }}>
+          <div className="max-w-7xl mx-auto px-6" style={{ paddingTop: isMobile ? '2.5rem' : '5rem', paddingBottom: isMobile ? '2.5rem' : '5rem' }}>
+            <h2 className="font-black tracking-tight mb-10" style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '1.25rem' : '1.75rem' }}>Why us</h2>
+            <div className={`grid ${isMobile ? 'grid-cols-1 gap-6' : 'grid-cols-3 gap-10'}`}>
+              {features.map((f, i) => (
+                <div key={i} className="flex flex-col gap-3">
+                  <div className="h-px w-12" style={{ background: pc }} />
+                  <span className="text-3xl">{f.icon}</span>
+                  <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: tt.textPrimary }}>{f.title}</h3>
+                  <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Testimonials ── */}
+      {testimonials.length > 0 && (
+        <section style={{ borderTop: `1px solid ${tt.divider}` }}>
+          <div className="max-w-7xl mx-auto px-6" style={{ paddingTop: isMobile ? '2.5rem' : '5rem', paddingBottom: isMobile ? '2.5rem' : '5rem' }}>
+            <h2 className="font-black tracking-tight mb-10 text-center" style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '1.25rem' : '1.75rem' }}>What people say</h2>
+            <div className={`grid ${isMobile ? 'grid-cols-1 gap-5' : 'grid-cols-3 gap-8'}`}>
+              {testimonials.map((t, i) => (
+                <div key={i} className="flex flex-col gap-3">
+                  <Stars n={t.rating} />
+                  <p className="text-sm leading-relaxed italic flex-1" style={{ color: tt.textSecondary }}>"{t.text}"</p>
+                  <div className="h-px" style={{ background: tt.divider }} />
+                  <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>{t.author}</p>
+                  <p className="text-[10px]" style={{ color: tt.textMuted }}>{t.role}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {brandStory && (
+        <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}` }}>
+          <div className="max-w-3xl mx-auto px-6 text-center" style={{ paddingTop: isMobile ? '2.5rem' : '5rem', paddingBottom: isMobile ? '2.5rem' : '5rem' }}>
+            <p className="text-4xl mb-6 opacity-20" style={{ color: pc, fontFamily: tt.headingFont }}>"</p>
+            <p className="text-base leading-relaxed italic font-medium" style={{ color: tt.textSecondary }}>{brandStory}</p>
+          </div>
+        </section>
+      )}
+
+      {stats && stats.length > 0 && <StatsRow stats={stats} primaryColor={pc} device={device} dark={isDarkPalette} />}
+      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={pc} device={device} dark={isDarkPalette} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={pc} device={device} dark={isDarkPalette} />}
+
+      {/* ── Footer ── */}
+      <footer style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '2rem', paddingBottom: '2rem' }}>
+        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <span className="text-sm font-black uppercase tracking-widest" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
+          <p className="text-xs italic" style={{ color: tt.textMuted }}>{tagline}</p>
+          <p className="text-xs" style={{ color: tt.textMuted }}>© 2026 {storeName} · Powered by Storee</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+// Editorial product card helper
+function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart, onToggleWishlist, wishlist, featured = false }: {
+  p: RichProduct; tt: TokenTheme; pc: string; fmtPrice: (n: number) => string; featured?: boolean;
+  onProductClick: (p: RichProduct) => void;
+  onAddToCart: (p: RichProduct, rect?: DOMRect) => void;
+  onToggleWishlist: (id: string) => void;
+  wishlist: Set<string>;
+}) {
+  return (
+    <div className="group cursor-pointer" onClick={() => onProductClick(p)}>
+      <div className="relative overflow-hidden" style={{ aspectRatio: featured ? '16/9' : '3/4', borderRadius: tt.surfaceRadius }}>
+        <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+        {p.badge && (
+          <span className="absolute top-3 left-3 text-[9px] font-black uppercase tracking-wider px-2.5 py-1"
+            style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: '999px' }}>{p.badge}</span>
+        )}
+        <button
+          onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
+          className="absolute top-3 right-3 w-8 h-8 bg-white/80 backdrop-blur flex items-center justify-center transition-all hover:scale-110 opacity-0 group-hover:opacity-100"
+          style={{ borderRadius: '50%' }}>
+          <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : 'text-gray-500'}`} />
+        </button>
+        {/* Add to cart — slide up on hover */}
+        <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
+          <button
+            onClick={e => { e.stopPropagation(); const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); onAddToCart(p, rect); }}
+            className="w-full py-2.5 text-xs font-bold uppercase tracking-widest text-white transition-opacity hover:opacity-90"
+            style={{ background: pc, borderRadius: tt.btnRadius }}>
+            Add to bag
+          </button>
+        </div>
+      </div>
+      <div className="mt-3 px-0.5">
+        <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
+        <p className={`font-bold truncate ${featured ? 'text-base' : 'text-sm'}`} style={{ color: tt.textPrimary }}>{p.name}</p>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-sm font-black" style={{ color: tt.textPrimary }}>{fmtPrice(p.price)}</span>
+          {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
 
 interface StorePreviewProps {
@@ -3731,9 +4218,16 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
     content = <FallbackLayout store={store} device={device} onProductClick={shared.onProductClick} onAddToCart={shared.onAddToCart} onCartClick={shared.onCartClick} cartCount={shared.cartCount} onUserClick={shared.onUserClick} buyerEmail={shared.buyerEmail} wishlist={shared.wishlist} onToggleWishlist={shared.onToggleWishlist} onWishlistClick={shared.onWishlistClick} />;
   } else {
     const props: LayoutProps = { storeName, primaryColor, design, device, fmtPrice, ...shared };
-    // Prefer TokenLayout when Claude supplied a full designSystem object
+    // Phase 1: route to new layout types based on layoutType token
     if (design.designTokens || design.designSystem) {
-      content = <TokenLayout {...props} />;
+      const layoutType = design.designTokens?.layoutType ?? 'standard';
+      if (layoutType === 'app-like') {
+        content = <AppLikeLayout {...props} />;
+      } else if (layoutType === 'editorial') {
+        content = <EditorialLayout {...props} />;
+      } else {
+        content = <TokenLayout {...props} />;
+      }
     } else {
       switch (design.layoutStyle) {
         case 'minimal':  content = <MinimalLayout {...props} />; break;

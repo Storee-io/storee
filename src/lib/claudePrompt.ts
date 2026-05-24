@@ -28,7 +28,13 @@ The JSON must exactly match this shape:
     "inputRadius": "string (border-radius for inputs, e.g. '6px', '12px', '16px')",
     "heroStyle": "string (one of: centered, split, fullscreen, minimal)",
     "productGrid": "string (one of: standard, magazine, list)",
-    "sectionOrder": ["hero", "...all 9 remaining sections in your chosen order"]
+    "sectionOrder": ["hero", "...all 9 remaining sections in your chosen order"],
+    "layoutType": "string (one of: standard, app-like, editorial — see PERSONALITY MAPPING)",
+    "spacing": "string (one of: compact, comfortable, spacious)",
+    "density": "string (one of: dense, normal, airy)",
+    "elevation": "string (one of: flat, subtle, raised, floating)",
+    "motion": "string (one of: none, subtle, smooth, expressive)",
+    "personality": "string (optional — free text describing the UI personality, e.g. 'whatsapp-like', 'apple-like')"
   },
   "heroTitle": "string (punchy 3-7 word headline, brand-specific, e.g. 'Speed. Style. Supremacy.')",
   "heroSubtitle": "string (compelling 15-22 word product promise for the target customer)",
@@ -177,6 +183,48 @@ sectionOrder — always include all 10 sections, in your chosen narrative flow:
   - Put features before products for complex items (tech, fitness equipment)
   - stats after testimonials for extra social proof
   - Always end with faq and/or newsletter
+
+── PHASE 1: PERSONALITY MAPPING ────────────────────────
+When the user's prompt references a well-known app UI or personality, translate it
+into the appropriate token bundle below. Always set personality to a short slug.
+
+layoutType values:
+  standard   → default for most stores
+  app-like   → mobile-app feel: compact rows, story circles, bottom navigation
+  editorial  → magazine feel: big typography, asymmetric grid, lots of whitespace
+
+WhatsApp-like / chat-app style:
+  layoutType: "app-like", spacing: "compact", density: "dense", motion: "subtle", elevation: "flat"
+  pageBg: "#ECE5DD", surfaceBg: "#ffffff", headerBg: "#075E54", textPrimary: "#111111"
+  primaryColor: "#075E54", accentColor: "#25D366", btnRadius: "999px", cardRadius: "12px"
+  personality: "whatsapp-like"
+
+Discord-like / dark chat style:
+  layoutType: "app-like", spacing: "compact", density: "dense", motion: "subtle", elevation: "flat"
+  pageBg: "#313338", surfaceBg: "#2b2d31", headerBg: "#1e1f22", textPrimary: "#dbdee1"
+  primaryColor: "#5865F2", accentColor: "#57F287", btnRadius: "4px", cardRadius: "8px"
+  personality: "discord-like"
+
+Apple Store / minimal clean style:
+  layoutType: "editorial", spacing: "spacious", density: "airy", motion: "smooth", elevation: "subtle"
+  pageBg: "#f5f5f7", surfaceBg: "#ffffff", headerBg: "#f5f5f7", textPrimary: "#1d1d1f"
+  primaryColor: "#0071e3", accentColor: "#06c", btnRadius: "980px", cardRadius: "18px"
+  personality: "apple-like"
+
+Notion-like / minimal document style:
+  layoutType: "editorial", spacing: "comfortable", density: "normal", motion: "none", elevation: "flat"
+  pageBg: "#ffffff", surfaceBg: "#f7f6f3", headerBg: "#ffffff", textPrimary: "#37352f"
+  primaryColor: "#2eaadc", accentColor: "#e03e3e", btnRadius: "3px", cardRadius: "3px"
+  personality: "notion-like"
+
+Spotify / dark music style:
+  layoutType: "app-like", spacing: "compact", density: "dense", motion: "expressive", elevation: "raised"
+  pageBg: "#121212", surfaceBg: "#242424", headerBg: "#000000", textPrimary: "#ffffff"
+  primaryColor: "#1DB954", accentColor: "#1ed760", btnRadius: "999px", cardRadius: "8px"
+  personality: "spotify-like"
+
+For any other prompt that doesn't match a known personality, use layoutType: "standard"
+and choose spacing/density/elevation/motion that fits the brand mood.
 
 ════════════════════════════════════════════════════════
 CONTENT RULES
