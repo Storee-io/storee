@@ -26,23 +26,26 @@ The JSON must exactly match this shape:
     "cardRadius": "string (border-radius for cards, e.g. '0px', '8px', '16px', '24px')",
     "btnRadius": "string (border-radius for buttons, e.g. '4px', '12px', '999px')",
     "inputRadius": "string (border-radius for inputs, e.g. '6px', '12px', '16px')",
+    "layoutType": "string (one of: standard, app-like, editorial, masonry, fullscreen — see PERSONALITY MAPPING)",
     "heroStyle": "string (one of: centered, split, fullscreen, minimal, editorial, video, stacked, asymmetrical)",
     "productGrid": "string (one of: standard, magazine, list, carousel, spotlight)",
-    "sectionOrder": ["hero", "...all 9 remaining sections in your chosen order"],
-    "layoutType": "string (one of: standard, app-like, editorial, masonry, fullscreen — see PERSONALITY MAPPING)",
     "spacing": "string (one of: compact, comfortable, spacious)",
     "density": "string (one of: dense, normal, airy)",
     "elevation": "string (one of: flat, subtle, raised, floating)",
     "motion": "string (one of: none, subtle, smooth, expressive)",
     "personality": "string (optional — free text describing the UI personality, e.g. 'whatsapp-like', 'apple-like')",
-    "sectionVariants": {
-      "features":     "string (one of: icons, alternating, bento)",
-      "testimonials": "string (one of: cards, carousel, wall)",
-      "stats":        "string (one of: numbers, cards)",
-      "brandStory":   "string (one of: quote, split, timeline)",
-      "faq":          "string (one of: accordion, grid)",
-      "newsletter":   "string (one of: centered, banner)"
-    }
+    "sections": [
+      { "type": "hero",         "variant": "string — hero variant (centered|split|fullscreen|minimal|editorial|video|stacked|asymmetrical)" },
+      { "type": "trust",        "variant": null },
+      { "type": "collections",  "variant": null },
+      { "type": "products",     "variant": "string — grid variant (standard|magazine|list|carousel|spotlight)" },
+      { "type": "features",     "variant": "string — (icons|alternating|bento)" },
+      { "type": "testimonials", "variant": "string — (cards|carousel|wall)" },
+      { "type": "stats",        "variant": "string — (numbers|cards)" },
+      { "type": "brandStory",   "variant": "string — (quote|split|timeline)" },
+      { "type": "faq",          "variant": "string — (accordion|grid)" },
+      { "type": "newsletter",   "variant": "string — (centered|banner)" }
+    ]
   },
   "heroTitle": "string (punchy 3-7 word headline, brand-specific, e.g. 'Speed. Style. Supremacy.')",
   "heroSubtitle": "string (compelling 15-22 word product promise for the target customer)",
@@ -223,21 +226,31 @@ sectionVariants — choose a visual variant for each section:
     centered → centered card with gradient bg (default)
     banner   → full-width bold color banner (high-energy, fashion, streetwear)
 
-sectionOrder — always include all 10 core sections, plus optional bonus sections:
+sections array — replaces the old sectionOrder + sectionVariants fields.
+Each object has { "type": "...", "variant": "..." } — type sets which section,
+variant sets its visual style. Always include all 10 core sections.
+For sections with no variant choice (trust, collections), set variant to null.
 
-Core sections (always include all 10):
+Core section types (always include all 10):
   hero, trust, collections, products, features, testimonials, stats, brandStory, faq, newsletter
 
-Optional bonus sections (add when they enhance the brand story):
-  scrollingBanner — auto-scrolling marquee strip. Use for: fashion, streetwear, beauty, lifestyle.
-                    Place after hero or between sections for rhythm. Requires scrollingItems array
-                    (8-12 short phrases like product names, brand slogans, or keywords).
-                    Example items: ["NEW SEASON", "FREE SHIPPING", "Silk Serum — Rp 299K", "★★★★★ 4.9 rating"]
+Optional bonus types (add when they enhance the brand story):
+  scrollingBanner — auto-scrolling marquee. Place after hero or between sections.
+                    Add "variant": "default". Requires scrollingItems array (8-12 short phrases).
+  instagramFeed   — photo grid. Place before newsletter. Add "variant": "default".
+                    Requires instagramPosts array (6-9 objects: caption, likes, comments).
 
-  instagramFeed   — photo grid mimicking an Instagram feed. Use for: lifestyle, fashion, food,
-                    beauty, travel. Place before newsletter. Requires instagramPosts array
-                    (6-9 objects with caption, likes, comments).
-                    Example: [{ "caption": "Sunday morning glow ☀️", "likes": 1243, "comments": 38 }]
+Variant options per type:
+  hero          → centered | split | fullscreen | minimal | editorial | video | stacked | asymmetrical
+  products      → standard | magazine | list | carousel | spotlight
+  features      → icons | alternating | bento
+  testimonials  → cards | carousel | wall
+  stats         → numbers | cards
+  brandStory    → quote | split | timeline
+  faq           → accordion | grid
+  newsletter    → centered | banner
+  trust         → (no variant, set null)
+  collections   → (no variant, set null)
 
 Storytelling tips:
   - Lead with products for impulse categories (fashion, food, beauty)

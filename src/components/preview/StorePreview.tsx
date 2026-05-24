@@ -4413,7 +4413,25 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
   // Resolve layout structure from whichever token set is active
   const heroStyle   = dt?.heroStyle   ?? ds?.heroLayout   ?? 'split';
   const productGrid = dt?.productGrid ?? ds?.productGrid  ?? 'standard';
-  const rawOrder    = dt?.sectionOrder ?? ds?.sectionOrder;
+
+  // ── Unified sections resolution (new → legacy fallback → default) ────────
+  type SectionEntry = { type: string; variant?: string | null };
+  const DEFAULT_SECTION_TYPES = ['hero','trust','collections','products','features','testimonials','stats','brandStory','faq','newsletter'];
+
+  const resolvedSections: SectionEntry[] = (() => {
+    // 1. New format: dt.sections array
+    if (dt?.sections?.length) return dt.sections;
+    // 2. Legacy: sectionOrder + sectionVariants
+    const legacyOrder = dt?.sectionOrder ?? ds?.sectionOrder;
+    if (legacyOrder?.length) {
+      return legacyOrder.map(type => ({
+        type,
+        variant: dt?.sectionVariants?.[type as keyof NonNullable<typeof dt.sectionVariants>] ?? null,
+      }));
+    }
+    // 3. Default order
+    return DEFAULT_SECTION_TYPES.map(type => ({ type, variant: null }));
+  })();
 
   // Phase 3: motion & elevation from tokens
   const motion    = (dt?.motion    ?? 'subtle')     as MotionLevel;
@@ -4434,10 +4452,15 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
 
   // ── Section renderers ─────────────────────────────────────────────────────
 
-  const renderSection = (section: string): React.ReactNode => {
+  const renderSection = ({ type: section, variant }: SectionEntry): React.ReactNode => {
+    // hero variant: prefer inline variant from sections[], fallback to heroStyle token
+    const heroVariant = variant ?? heroStyle;
+    // products variant: prefer inline variant, fallback to productGrid token
+    const gridVariant = variant ?? productGrid;
+
     switch (section) {
       case 'hero':
-        switch (heroStyle) {
+        switch (heroVariant) {
           case 'centered':      return <TkHeroCentered      key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
           case 'fullscreen':    return <TkHeroFullscreen    key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
           case 'minimal':       return <TkHeroMinimal       key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} />;
@@ -4479,13 +4502,13 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
                 View All <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
-            {productGrid === 'magazine'  ? (
+            {gridVariant === 'magazine'  ? (
               <TkGridMagazine  products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
-            ) : productGrid === 'list' ? (
+            ) : gridVariant === 'list' ? (
               <TkGridList      products={displayed} tt={tt} primaryColor={primaryColor} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
-            ) : productGrid === 'carousel' ? (
+            ) : gridVariant === 'carousel' ? (
               <TkGridCarousel  products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
-            ) : productGrid === 'spotlight' ? (
+            ) : gridVariant === 'spotlight' ? (
               <TkGridSpotlight products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
             ) : (
               <TkGridStandard  products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
@@ -4495,27 +4518,27 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
 
       case 'features':
         if (!features.length) return null;
-        return <FeaturesSection key="features" features={features} tt={tt} primaryColor={primaryColor} device={device} motion={motion} elevation={elevation} sectionPy={sectionPy} variant={dt?.sectionVariants?.features} />;
+        return <FeaturesSection key="features" features={features} tt={tt} primaryColor={primaryColor} device={device} motion={motion} elevation={elevation} sectionPy={sectionPy} variant={variant as SectionVariants['features']} />;
 
       case 'testimonials':
         if (!testimonials.length) return null;
-        return <TestimonialsSection key="testimonials" testimonials={testimonials} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={dt?.sectionVariants?.testimonials} />;
+        return <TestimonialsSection key="testimonials" testimonials={testimonials} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={variant as SectionVariants['testimonials']} />;
 
       case 'stats':
         if (!stats.length) return null;
-        return <StatsSection key="stats" stats={stats} primaryColor={primaryColor} device={device} tt={tt} sectionPy={sectionPy} variant={dt?.sectionVariants?.stats} />;
+        return <StatsSection key="stats" stats={stats} primaryColor={primaryColor} device={device} tt={tt} sectionPy={sectionPy} variant={variant as SectionVariants['stats']} />;
 
       case 'brandStory':
         if (!brandStory) return null;
-        return <BrandStorySection key="brandStory" brandStory={brandStory} products={products} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={dt?.sectionVariants?.brandStory} />;
+        return <BrandStorySection key="brandStory" brandStory={brandStory} products={products} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={variant as SectionVariants['brandStory']} />;
 
       case 'faq':
         if (!faq.length) return null;
-        return <FaqSection key="faq" faq={faq} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={dt?.sectionVariants?.faq} />;
+        return <FaqSection key="faq" faq={faq} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={variant as SectionVariants['faq']} />;
 
       case 'newsletter':
         if (!newsletter) return null;
-        return <NewsletterSectionV2 key="newsletter" newsletter={newsletter} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={dt?.sectionVariants?.newsletter} />;
+        return <NewsletterSectionV2 key="newsletter" newsletter={newsletter} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={variant as SectionVariants['newsletter']} />;
 
       case 'scrollingBanner':
         return <ScrollingBannerSection key="scrollingBanner" design={design} primaryColor={primaryColor} tt={tt} />;
@@ -4528,8 +4551,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
     }
   };
 
-  const sectionOrder = rawOrder?.length ? rawOrder
-    : ['hero', 'trust', 'collections', 'products', 'features', 'testimonials', 'stats', 'brandStory', 'faq', 'newsletter'];
+  // resolvedSections declared above — nothing to compute here
 
   // Detect dark/warm palette for FAQ and Newsletter tone
   const isDarkPalette = tt.pageBg.startsWith('#0') || tt.pageBg.startsWith('#1') || parseInt(tt.pageBg.replace('#',''), 16) < 0x333333;
@@ -4574,8 +4596,8 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
         </div>
       </header>
 
-      {/* Sections rendered in Claude-specified order */}
-      {sectionOrder.map(section => renderSection(section))}
+      {/* Sections rendered in Claude-specified order with per-section variants */}
+      {resolvedSections.map(entry => renderSection(entry))}
 
       {/* Footer */}
       <footer style={{ borderTop: `1px solid ${tt.divider}`, background: tt.headerBg, paddingTop: '2.5rem', paddingBottom: '2.5rem' }}>

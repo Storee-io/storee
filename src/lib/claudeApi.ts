@@ -56,9 +56,23 @@ export interface DesignTokens {
   // ── Layout structure ──────────────────────────────────────────────────────
   heroStyle: 'centered' | 'split' | 'fullscreen' | 'minimal' | 'editorial' | 'video' | 'stacked' | 'asymmetrical';
   productGrid: 'standard' | 'magazine' | 'list' | 'carousel' | 'spotlight';
-  sectionOrder: Array<'hero' | 'trust' | 'collections' | 'products' | 'features'
-                     | 'testimonials' | 'stats' | 'brandStory' | 'faq' | 'newsletter'
-                     | 'scrollingBanner' | 'instagramFeed'>;
+
+  /**
+   * Unified sections array — replaces sectionOrder + sectionVariants.
+   * Each entry carries both the section type and its visual variant.
+   * Example: [{ "type": "hero", "variant": "asymmetrical" }, ...]
+   */
+  sections: Array<{
+    type: 'hero' | 'trust' | 'collections' | 'products' | 'features'
+        | 'testimonials' | 'stats' | 'brandStory' | 'faq' | 'newsletter'
+        | 'scrollingBanner' | 'instagramFeed';
+    variant?: string;
+  }>;
+
+  /** @deprecated use sections[].variant instead */
+  sectionOrder?: Array<'hero' | 'trust' | 'collections' | 'products' | 'features'
+                      | 'testimonials' | 'stats' | 'brandStory' | 'faq' | 'newsletter'
+                      | 'scrollingBanner' | 'instagramFeed'>;
 
   // ── Phase 1: Layout engine + personality tokens ───────────────────────────
   /**
@@ -80,7 +94,7 @@ export interface DesignTokens {
   motion?: 'none' | 'subtle' | 'smooth' | 'expressive';
   /** Free-text personality hint Claude used, e.g. "whatsapp-like" */
   personality?: string;
-  /** Per-section variant overrides */
+  /** @deprecated use sections[].variant instead */
   sectionVariants?: {
     features?:     'icons' | 'alternating' | 'bento';
     testimonials?: 'cards' | 'carousel' | 'wall';
