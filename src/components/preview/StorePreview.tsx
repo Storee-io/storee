@@ -2916,12 +2916,152 @@ interface TokenTheme extends CommerceTheme {
   bodyTracking:    string;  // letter-spacing for body text
   // Layout mutation
   compositionStyle: 'grid' | 'staggered' | 'overlapping' | 'asymmetric';
+  // Animation
+  personality?: string;
+  motion?: string;
 }
 
 // ── Phase 3: Motion & Elevation utilities ─────────────────────────────────────
 
 type MotionLevel    = 'none' | 'subtle' | 'smooth' | 'expressive';
 type ElevationLevel = 'flat' | 'subtle' | 'raised' | 'floating';
+
+// ── Animation Archetype ───────────────────────────────────────────────────────
+// Derived from personality slug. Drives scroll-reveal style, glow, parallax.
+type AnimArchetype = 'luxury' | 'tech' | 'fashion' | 'hype' | 'default';
+
+function getAnimArchetype(personality?: string, motion?: string): AnimArchetype {
+  if (!personality || motion === 'none') return 'default';
+  const p = personality.toLowerCase();
+  if (p.includes('zara') || p.includes('luxury') || p.includes('apple') || p.includes('notion')) return 'luxury';
+  if (p.includes('spotify') || p.includes('discord') || p.includes('airbnb')) return 'tech';
+  if (p.includes('tiktok') || p.includes('hype')) return 'hype';
+  if (p.includes('instagram') || p.includes('pinterest') || p.includes('fashion') || p.includes('editorial')) return 'fashion';
+  return 'default';
+}
+
+// ── CSS Keyframes injector ────────────────────────────────────────────────────
+function AnimationInjector() {
+  return (
+    <style>{`
+      @keyframes sk-fadeUp   { from { opacity:0; transform:translateY(28px); } to { opacity:1; transform:translateY(0); } }
+      @keyframes sk-fadeIn   { from { opacity:0; } to { opacity:1; } }
+      @keyframes sk-slideLeft{ from { opacity:0; transform:translateX(32px); } to { opacity:1; transform:translateX(0); } }
+      @keyframes sk-stagger  { from { opacity:0; transform:translateY(18px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+      @keyframes sk-glow     { 0%,100% { box-shadow: 0 0 0 0 var(--sk-glow-color,rgba(99,102,241,0)); } 50% { box-shadow: 0 0 18px 4px var(--sk-glow-color,rgba(99,102,241,0.45)); } }
+      @keyframes sk-gradShift{ 0% { background-position:0% 50%; } 50% { background-position:100% 50%; } 100% { background-position:0% 50%; } }
+      @keyframes sk-kenBurns { from { transform:scale(1); } to { transform:scale(1.06); } }
+      @keyframes sk-pulseRing{ 0% { transform:scale(1); opacity:.7; } 70% { transform:scale(2.2); opacity:0; } 100% { transform:scale(2.2); opacity:0; } }
+
+      .sk-reveal            { opacity:0; }
+      .sk-reveal.sk-visible { animation-fill-mode:both; animation-timing-function:ease-out; }
+
+      /* luxury — slow fade-up */
+      .sk-reveal.sk-visible.sk-arch-luxury  { animation-name:sk-fadeUp; animation-duration:700ms; }
+      /* tech — slide from right */
+      .sk-reveal.sk-visible.sk-arch-tech    { animation-name:sk-slideLeft; animation-duration:450ms; animation-timing-function:cubic-bezier(0.22,1,0.36,1); }
+      /* fashion — fade-up, tighter */
+      .sk-reveal.sk-visible.sk-arch-fashion { animation-name:sk-stagger; animation-duration:550ms; animation-timing-function:cubic-bezier(0.16,1,0.3,1); }
+      /* hype — snap with spring */
+      .sk-reveal.sk-visible.sk-arch-hype    { animation-name:sk-stagger; animation-duration:380ms; animation-timing-function:cubic-bezier(0.34,1.56,0.64,1); }
+      /* default — simple fade-up */
+      .sk-reveal.sk-visible.sk-arch-default { animation-name:sk-fadeUp; animation-duration:500ms; }
+
+      /* Glow ring on CTA buttons for tech/hype */
+      .sk-glow-btn { position:relative; overflow:visible; }
+      .sk-glow-btn::after {
+        content:''; position:absolute; inset:0;
+        border-radius:inherit;
+        animation: sk-glow 2.4s ease-in-out infinite;
+      }
+
+      /* Animated gradient header for tech */
+      .sk-grad-header {
+        background-size:200% 200%;
+        animation: sk-gradShift 6s ease infinite;
+      }
+
+      /* Ken-Burns on hero image for luxury */
+      .sk-ken-burns { animation: sk-kenBurns 12s ease-out forwards; }
+    `}</style>
+  );
+}
+
+// ── useScrollReveal hook ──────────────────────────────────────────────────────
+function useScrollReveal(archetype: AnimArchetype, delayMs = 0) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || archetype === 'default') {
+      // still reveal but without arch class
+    }
+    if (!el) return;
+    el.classList.add('sk-reveal', `sk-arch-${archetype}`);
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => {
+            el.classList.add('sk-visible');
+            el.style.animationDelay = `${delayMs}ms`;
+          }, delayMs);
+          obs.unobserve(el);
+        }
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [archetype, delayMs]);
+  return ref;
+}
+
+// ── RevealWrapper component ───────────────────────────────────────────────────
+function RevealWrapper({
+  archetype,
+  delay = 0,
+  children,
+  className = '',
+  style,
+}: {
+  archetype: AnimArchetype;
+  delay?: number;
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const ref = useScrollReveal(archetype, delay);
+  return (
+    <div ref={ref} className={className} style={style}>
+      {children}
+    </div>
+  );
+}
+
+// ── useParallax hook (luxury hero image) ─────────────────────────────────────
+function useParallax(strength = 0.12) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onScroll = () => {
+      const rect = el.getBoundingClientRect();
+      const offset = (window.innerHeight / 2 - rect.top - rect.height / 2) * strength;
+      el.style.transform = `translateY(${offset.toFixed(1)}px)`;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [strength]);
+  return ref;
+}
+
+// ── getGlowStyle — pulsing glow for CTA buttons (tech / hype) ────────────────
+function getGlowCssVar(primaryColor: string): React.CSSProperties {
+  // inject the CSS custom property so the ::after keyframe picks it up
+  const r = parseInt(primaryColor.slice(1, 3), 16);
+  const g = parseInt(primaryColor.slice(3, 5), 16);
+  const b = parseInt(primaryColor.slice(5, 7), 16);
+  return { '--sk-glow-color': `rgba(${r},${g},${b},0.45)` } as React.CSSProperties;
+}
 
 /** Returns a CSS transition string based on the motion token */
 function getMotionTransition(motion?: MotionLevel): string {
@@ -3030,6 +3170,9 @@ function getTokenThemeV2(dt: DesignTokens, primaryColor: string): TokenTheme {
     bodyTracking:    dt.bodyTracking    ?? '0',
     // Layout mutation
     compositionStyle: dt.compositionStyle ?? 'grid',
+    // Animation archetype context
+    personality: dt.personality,
+    motion:      dt.motion,
   };
 }
 
@@ -3051,6 +3194,7 @@ function getDefaultTokenTheme(primaryColor: string): TokenTheme {
     headingScale: 1.0, headingWeight: 800, headingTracking: '-0.02em',
     headingLeading: 1.05, bodyLeading: 1.6, bodyTracking: '0',
     compositionStyle: 'grid',
+    personality: undefined, motion: 'subtle',
   };
 }
 
@@ -3074,6 +3218,7 @@ function getTokenThemeV1(ds: DesignSystem, primaryColor: string): TokenTheme {
     headingScale: 1.0, headingWeight: 800, headingTracking: '-0.02em',
     headingLeading: 1.05, bodyLeading: 1.6, bodyTracking: '0',
     compositionStyle: 'grid',
+    personality: undefined, motion: 'subtle',
   };
 }
 
@@ -3125,29 +3270,45 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts }
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
   const bgImage = products[0]?.image;
+  const arch = getAnimArchetype(tt.personality, tt.motion);
+  const isLuxury = arch === 'luxury';
+  const isTechHype = arch === 'tech' || arch === 'hype';
+
+  // staggered in-load animation for hero text lines
+  const fadeDelay = (n: number) => ({
+    animation: `sk-fadeUp ${isLuxury ? '900ms' : '550ms'} ease-out ${n * (isLuxury ? 180 : 100)}ms both`,
+  } as React.CSSProperties);
+
   return (
     <section className="relative overflow-hidden" style={{ minHeight: isMobile ? '60vh' : '70vh' }}>
       {bgImage && (
         <>
-          <div className="absolute inset-0">
-            <ProductImg src={bgImage} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 overflow-hidden">
+            {/* Ken-Burns slow zoom for luxury archetype */}
+            <ProductImg src={bgImage} alt=""
+              className={`w-full h-full object-cover${isLuxury ? ' sk-ken-burns' : ''}`}
+              style={isLuxury ? { transformOrigin: 'center center', animationDuration: '14s' } : undefined} />
           </div>
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.65) 100%)' }} />
         </>
       )}
       <div className="relative z-10 flex flex-col items-center justify-center text-center px-5" style={{ minHeight: isMobile ? '60vh' : '70vh', padding: isMobile ? '60px 20px' : '80px 40px' }}>
         {tagline && (
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] mb-4" style={{ color: alpha(primaryColor, 0.9) }}>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] mb-4" style={{ ...fadeDelay(0), color: alpha(primaryColor, 0.9) }}>
             {collections[0]?.emoji} {tagline}
           </p>
         )}
-        <h1 className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.4 : 4.0), color: bgImage ? '#ffffff' : tt.textPrimary }}>
+        <h1 className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.4 : 4.0), ...fadeDelay(1), color: bgImage ? '#ffffff' : tt.textPrimary }}>
           {heroTitle}
         </h1>
-        <p className="mb-8 max-w-lg" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: bgImage ? 'rgba(255,255,255,0.82)' : tt.textSecondary }}>
+        <p className="mb-8 max-w-lg" style={{ ...bodyStyle(tt), ...fadeDelay(2), fontSize: '0.875rem', color: bgImage ? 'rgba(255,255,255,0.82)' : tt.textSecondary }}>
           {heroSubtitle}
         </p>
-        <button onClick={onScrollToProducts} className="px-8 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>
+        {/* Glow CTA for tech/hype archetypes */}
+        <button
+          onClick={onScrollToProducts}
+          className={`px-8 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity${isTechHype ? ' sk-glow-btn' : ''}`}
+          style={{ ...fadeDelay(3), background: primaryColor, color: btnText, borderRadius: tt.btnRadius, ...(isTechHype ? getGlowCssVar(primaryColor) : {}) }}>
           {ctaText}
         </button>
       </div>
@@ -3164,23 +3325,34 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
   const { heroTitle, heroSubtitle, ctaText, products = [], collections = [], tagline } = design;
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
+  const arch = getAnimArchetype(tt.personality, tt.motion);
+  const isLuxury = arch === 'luxury';
+  const isTechHype = arch === 'tech' || arch === 'hype';
+  const parallaxRef = useParallax(isLuxury ? 0.08 : 0);
+  const fadeDelay = (n: number) => ({
+    animation: `sk-fadeUp ${isLuxury ? '800ms' : '500ms'} ease-out ${n * 120}ms both`,
+  } as React.CSSProperties);
+
   return (
     <section style={{ background: tt.pageBg }}>
       <div className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-10 flex flex-col gap-8' : 'py-16 grid grid-cols-2 gap-14 items-center'}`}>
         <div>
           {tagline && (
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] mb-5" style={{ color: primaryColor }}>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] mb-5" style={{ ...fadeDelay(0), color: primaryColor }}>
               {collections[0]?.emoji} {tagline}
             </p>
           )}
-          <h1 className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.4 : 3.6), color: tt.textPrimary }}>
+          <h1 className="mb-5" style={{ ...headingStyle(tt, isMobile ? 2.4 : 3.6), ...fadeDelay(1), color: tt.textPrimary }}>
             {heroTitle}
           </h1>
-          <p className="mb-8 max-w-sm" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>
+          <p className="mb-8 max-w-sm" style={{ ...bodyStyle(tt), ...fadeDelay(2), fontSize: '0.875rem', color: tt.textSecondary }}>
             {heroSubtitle}
           </p>
-          <div className="flex items-center gap-4">
-            <button onClick={onScrollToProducts} className="px-7 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>
+          <div className="flex items-center gap-4" style={fadeDelay(3)}>
+            <button
+              onClick={onScrollToProducts}
+              className={`px-7 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity${isTechHype ? ' sk-glow-btn' : ''}`}
+              style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius, ...(isTechHype ? getGlowCssVar(primaryColor) : {}) }}>
               {ctaText}
             </button>
             <button onClick={onScrollToProducts} className="text-xs font-semibold flex items-center gap-1.5 hover:opacity-70 transition-opacity" style={{ color: tt.textMuted }}>
@@ -3189,8 +3361,11 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
           </div>
         </div>
         <div className="relative">
-          <div className="overflow-hidden shadow-2xl" style={{ aspectRatio: '4/5', borderRadius: tt.surfaceRadius }}>
-            <ProductImg src={products[0]?.image} alt="" className="w-full h-full object-cover" />
+          {/* Parallax wrapper for luxury archetype */}
+          <div ref={isLuxury ? parallaxRef : undefined} className="overflow-hidden shadow-2xl" style={{ aspectRatio: '4/5', borderRadius: tt.surfaceRadius }}>
+            <ProductImg src={products[0]?.image} alt=""
+              className={`w-full h-full object-cover${isLuxury ? ' sk-ken-burns' : ''}`}
+              style={isLuxury ? { animationDuration: '10s' } : undefined} />
           </div>
           {!isMobile && products[1] && (
             <div className="absolute -bottom-6 -left-8 bg-white rounded-2xl p-4 shadow-2xl" style={{ maxWidth: '180px' }}>
@@ -3773,10 +3948,15 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
 }) {
   const isMobile = device === 'mobile';
+  const arch = getAnimArchetype(tt.personality, tt.motion);
+  const doStagger = arch === 'fashion' || arch === 'hype' || arch === 'luxury';
+  const staggerStyle = (i: number): React.CSSProperties => doStagger ? {
+    animation: `sk-stagger 500ms cubic-bezier(0.16,1,0.3,1) ${80 + i * 60}ms both`,
+  } : {};
   return (
     <div className={`grid ${gridCols(device)} gap-4 md:gap-5`}>
-      {products.map(p => (
-        <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
+      {products.map((p, i) => (
+        <div key={p.id} className="group cursor-pointer" style={staggerStyle(i)} onClick={() => onProductClick(p)}>
           <div className="relative overflow-hidden mb-3" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
             <ProductImg src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
             {p.badge && (
@@ -4202,6 +4382,8 @@ function FeaturesSection({ features, tt, primaryColor, device, motion, elevation
 }) {
   const isMobile = device === 'mobile';
   const pc = primaryColor;
+  const cardStagger = (i: number): React.CSSProperties =>
+    motion !== 'none' ? { animation: `sk-stagger 520ms cubic-bezier(0.16,1,0.3,1) ${i * 90}ms both` } : {};
 
   if (variant === 'alternating') {
     return (
@@ -4263,7 +4445,7 @@ function FeaturesSection({ features, tt, primaryColor, device, motion, elevation
       <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-6'}`}>
         {features.map((f, i) => (
           <div key={i} className="flex items-start gap-4 p-6"
-            style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius,
+            style={{ ...cardStagger(i), background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius,
               boxShadow: getElevationShadow(elevation), transition: getMotionTransition(motion) }}
             onMouseEnter={e => { if (motion !== 'none') (e.currentTarget as HTMLElement).style.transform = getHoverScale(motion); }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}>
@@ -4649,6 +4831,9 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
   const spacing   = dt?.spacing ?? 'comfortable';
   const sectionPy = getSpacingPx(spacing, 56);
 
+  // Animation archetype — drives scroll-reveal style, glow, parallax
+  const animArch  = getAnimArchetype(dt?.personality, dt?.motion);
+
   const isMobile = device === 'mobile';
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedCol, setSelectedCol] = useState(0);
@@ -4779,13 +4964,22 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
   return (
     <div style={{ fontFamily: tt.fontFamily, background: tt.pageBg, color: tt.textPrimary }}>
       <TkFontInjector url={tt.googleFontsUrl} />
+      <AnimationInjector />
       <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
 
       {/* Promo bar */}
       {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} />}
 
       {/* Header */}
-      <header className="sticky top-0 z-40 backdrop-blur-sm" style={{ background: tt.headerBg + 'f5', borderBottom: `1px solid ${tt.headerBorder}`, height: '56px' }}>
+      <header
+        className={`sticky top-0 z-40 backdrop-blur-sm${animArch === 'tech' ? ' sk-grad-header' : ''}`}
+        style={{
+          background: animArch === 'tech'
+            ? `linear-gradient(135deg, ${tt.headerBg}, ${tt.primary}22, ${tt.headerBg})`
+            : tt.headerBg + 'f5',
+          borderBottom: `1px solid ${tt.headerBorder}`,
+          height: '56px',
+        }}>
         <div className="max-w-6xl mx-auto px-5 h-full flex items-center justify-between">
           <span className="text-sm font-black tracking-[0.18em] uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
           {!isMobile ? (
@@ -4813,7 +5007,18 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
       </header>
 
       {/* Sections rendered in Claude-specified order with per-section variants */}
-      {resolvedSections.map(entry => renderSection(entry))}
+      {resolvedSections.map((entry, idx) => {
+        const node = renderSection(entry);
+        if (!node) return null;
+        // Hero, trust, scrollingBanner — skip reveal (above fold or already animated)
+        const noReveal = ['hero', 'trust', 'scrollingBanner'].includes(entry.type);
+        if (noReveal || motion === 'none') return node;
+        return (
+          <RevealWrapper key={entry.type} archetype={animArch} delay={0}>
+            {node}
+          </RevealWrapper>
+        );
+      })}
 
       {/* Footer */}
       <footer style={{ borderTop: `1px solid ${tt.divider}`, background: tt.headerBg, paddingTop: '2.5rem', paddingBottom: '2.5rem' }}>
