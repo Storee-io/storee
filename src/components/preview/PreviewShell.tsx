@@ -226,7 +226,13 @@ export default function PreviewShell({ store, from = null }: Props) {
             </div>
           </div>
 
-          <div className="rounded-b-2xl overflow-hidden">
+          {/*
+            transform: translateZ(0) creates a new containing block for
+            position:fixed descendants — keeps FullscreenLayout's fixed
+            header/nav inside the mock browser frame instead of escaping
+            to the real viewport.
+          */}
+          <div className="rounded-b-2xl overflow-hidden" style={{ transform: 'translateZ(0)' }}>
             <StorePreview store={store} device={device} />
           </div>
         </motion.div>

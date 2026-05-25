@@ -5864,11 +5864,12 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
         );
 
       case 'products': {
-        // Section bg alternates based on elevation — gives visual rhythm
+        // Full-width wrapper so bg covers edge-to-edge; inner section stays max-w constrained
         const prodSectionBg = elevation === 'raised' || elevation === 'floating'
           ? tt.surfaceBg : tt.pageBg;
         return (
-          <section key="products" ref={productsRef} className="max-w-6xl mx-auto px-5" style={{ paddingTop: isMobile ? '2rem' : `${sectionPy}px`, paddingBottom: isMobile ? '2rem' : `${sectionPy}px`, background: prodSectionBg }}>
+          <div key="products" style={{ background: prodSectionBg }}>
+          <section ref={productsRef} className="max-w-6xl mx-auto px-5" style={{ paddingTop: isMobile ? '2rem' : `${sectionPy}px`, paddingBottom: isMobile ? '2rem' : `${sectionPy}px` }}>
             <div className="flex items-end justify-between mb-7">
               <div>
                 {/* Accent line above heading — driven by primaryColor */}
@@ -5898,6 +5899,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
               <TkGridStandard  products={displayed} tt={tt} primaryColor={primaryColor} device={device} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />
             )}
           </section>
+          </div>
         );
       }
 
@@ -6368,40 +6370,40 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
     // ── Split: image right, large text left ──
     if (heroStyle === 'split' || heroStyle === 'asymmetrical') {
       return (
-        <section style={{ background: tt.pageBg, minHeight: isMobile ? '60vh' : '75vh', display: 'flex', alignItems: 'center' }}>
+        <section style={{ background: tt.pageBg, overflow: 'hidden' }}>
           <div className="max-w-7xl mx-auto px-6 w-full" style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-            gap: isMobile ? '2rem' : '5rem',
+            gap: isMobile ? '2rem' : '4rem',
             alignItems: 'center',
-            paddingTop: '3rem',
-            paddingBottom: '3rem',
+            paddingTop: isMobile ? '3rem' : '5rem',
+            paddingBottom: isMobile ? '3rem' : '5rem',
           }}>
-            {/* Text */}
-            <div>
+            {/* Text — minWidth:0 prevents text from overflowing grid column */}
+            <div style={{ minWidth: 0 }}>
               <p className="text-xs uppercase tracking-[0.3em] mb-5" style={{ color: pc }}>{tagline}</p>
-              <h1 style={{ ...headingStyle(tt, isMobile ? 2.4 : 4.0), color: tt.textPrimary, lineHeight: 0.93, marginBottom: '1.5rem' }}>{heroTitle}</h1>
+              <h1 style={{ ...headingStyle(tt, isMobile ? 2.2 : 3.6), color: tt.textPrimary, lineHeight: 0.93, marginBottom: '1.25rem', maxWidth: '16ch' }}>{heroTitle}</h1>
               {!isMobile && <p className="text-sm leading-relaxed mb-8" style={{ color: tt.textSecondary, maxWidth: '36ch' }}>{heroSubtitle}</p>}
               <div className="flex items-center gap-3 flex-wrap">
                 <button onClick={scrollToProducts}
                   className="text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
-                  style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: tt.btnRadius, padding: '0.875rem 1.75rem' }}>
+                  style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: tt.btnRadius, padding: '0.75rem 1.5rem' }}>
                   {ctaText}
                 </button>
                 <button onClick={scrollToProducts}
                   className="text-sm font-medium transition-colors hover:opacity-70"
-                  style={{ border: `1.5px solid ${tt.surfaceBorder}`, color: tt.textPrimary, borderRadius: tt.btnRadius, padding: '0.875rem 1.75rem' }}>
+                  style={{ border: `1.5px solid ${tt.surfaceBorder}`, color: tt.textPrimary, borderRadius: tt.btnRadius, padding: '0.75rem 1.5rem' }}>
                   Explore ↓
                 </button>
               </div>
             </div>
-            {/* Image */}
+            {/* Image — minWidth:0 + maxHeight prevents overflow */}
             {!isMobile && products[0]?.image && (
-              <div className="relative" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius, overflow: 'hidden' }}>
-                <ProductImg src={products[0].image} alt={products[0].name ?? ''} className="w-full h-full object-cover" />
+              <div style={{ minWidth: 0, position: 'relative', maxHeight: '60vh', borderRadius: tt.surfaceRadius, overflow: 'hidden' }}>
+                <ProductImg src={products[0].image} alt={products[0].name ?? ''} className="w-full h-full object-cover" style={{ maxHeight: '60vh' }} />
                 {products[1]?.image && (
                   <div className="absolute bottom-4 right-4 overflow-hidden"
-                    style={{ width: '38%', aspectRatio: '1/1', borderRadius: tt.surfaceRadius, border: `3px solid ${tt.pageBg}`, boxShadow: '0 8px 24px rgba(0,0,0,0.18)' }}>
+                    style={{ width: '34%', aspectRatio: '1/1', borderRadius: tt.surfaceRadius, border: `3px solid ${tt.pageBg}`, boxShadow: '0 8px 24px rgba(0,0,0,0.18)' }}>
                     <ProductImg src={products[1].image} alt={products[1].name ?? ''} className="w-full h-full object-cover" />
                   </div>
                 )}
