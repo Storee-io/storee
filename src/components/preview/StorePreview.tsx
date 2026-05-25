@@ -5863,13 +5863,18 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
           </div>
         );
 
-      case 'products':
+      case 'products': {
+        // Section bg alternates based on elevation — gives visual rhythm
+        const prodSectionBg = elevation === 'raised' || elevation === 'floating'
+          ? tt.surfaceBg : tt.pageBg;
         return (
-          <section key="products" ref={productsRef} className="max-w-6xl mx-auto px-5" style={{ paddingTop: isMobile ? '2rem' : `${sectionPy}px`, paddingBottom: isMobile ? '2rem' : `${sectionPy}px` }}>
+          <section key="products" ref={productsRef} className="max-w-6xl mx-auto px-5" style={{ paddingTop: isMobile ? '2rem' : `${sectionPy}px`, paddingBottom: isMobile ? '2rem' : `${sectionPy}px`, background: prodSectionBg }}>
             <div className="flex items-end justify-between mb-7">
               <div>
+                {/* Accent line above heading — driven by primaryColor */}
+                <div className="h-0.5 w-8 mb-3 rounded-full" style={{ background: primaryColor, opacity: 0.8 }} />
                 <p className={`${cv.labelSize} font-semibold mb-1.5`} style={{ color: tt.textMuted, textTransform: cv.labelTransform, letterSpacing: cv.labelTracking }}>{prodProps.label ?? 'Curated Selection'}</p>
-                <h2 style={{ ...headingStyle(tt, 1.25), color: tt.textPrimary }}>{prodProps.title ?? 'Featured Products'}</h2>
+                <h2 style={{ ...headingStyle(tt, isMobile ? 1.25 : 1.6), color: tt.textPrimary }}>{prodProps.title ?? 'Featured Products'}</h2>
               </div>
               <button onClick={scrollToProducts} className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 hover:gap-2.5 transition-all" style={{ color: primaryColor }}>
                 View All <ArrowRight className="w-3.5 h-3.5" />
@@ -5894,6 +5899,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
             )}
           </section>
         );
+      }
 
       case 'features':
         if (!features.length) return null;
@@ -6349,6 +6355,152 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
 
   const isDarkPalette = tt.pageBg.startsWith('#0') || tt.pageBg.startsWith('#1');
 
+  // Token-driven layout selectors
+  const heroStyle   = dt?.heroStyle   ?? 'editorial';
+  const productGrid = dt?.productGrid ?? 'editorial';
+  const cardVars    = getCardStyleVars(dt?.cardStyle as CardStyleLevel | undefined, tt);
+  const hoverMotion = getHoverMotion(dt?.hoverStyle as HoverStyleLevel | undefined, pc);
+  const spacing     = dt?.spacing ?? 'comfortable';
+  const sectionPy   = getSpacingPx(spacing, 56);
+
+  // Hero: 3 variants based on heroStyle token
+  const renderEditorialHero = () => {
+    // ── Split: image right, large text left ──
+    if (heroStyle === 'split' || heroStyle === 'asymmetrical') {
+      return (
+        <section style={{ background: tt.pageBg, minHeight: isMobile ? '60vh' : '75vh', display: 'flex', alignItems: 'center' }}>
+          <div className="max-w-7xl mx-auto px-6 w-full" style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+            gap: isMobile ? '2rem' : '5rem',
+            alignItems: 'center',
+            paddingTop: '3rem',
+            paddingBottom: '3rem',
+          }}>
+            {/* Text */}
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] mb-5" style={{ color: pc }}>{tagline}</p>
+              <h1 style={{ ...headingStyle(tt, isMobile ? 2.4 : 4.0), color: tt.textPrimary, lineHeight: 0.93, marginBottom: '1.5rem' }}>{heroTitle}</h1>
+              {!isMobile && <p className="text-sm leading-relaxed mb-8" style={{ color: tt.textSecondary, maxWidth: '36ch' }}>{heroSubtitle}</p>}
+              <div className="flex items-center gap-3 flex-wrap">
+                <button onClick={scrollToProducts}
+                  className="text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
+                  style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: tt.btnRadius, padding: '0.875rem 1.75rem' }}>
+                  {ctaText}
+                </button>
+                <button onClick={scrollToProducts}
+                  className="text-sm font-medium transition-colors hover:opacity-70"
+                  style={{ border: `1.5px solid ${tt.surfaceBorder}`, color: tt.textPrimary, borderRadius: tt.btnRadius, padding: '0.875rem 1.75rem' }}>
+                  Explore ↓
+                </button>
+              </div>
+            </div>
+            {/* Image */}
+            {!isMobile && products[0]?.image && (
+              <div className="relative" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius, overflow: 'hidden' }}>
+                <ProductImg src={products[0].image} alt={products[0].name ?? ''} className="w-full h-full object-cover" />
+                {products[1]?.image && (
+                  <div className="absolute bottom-4 right-4 overflow-hidden"
+                    style={{ width: '38%', aspectRatio: '1/1', borderRadius: tt.surfaceRadius, border: `3px solid ${tt.pageBg}`, boxShadow: '0 8px 24px rgba(0,0,0,0.18)' }}>
+                    <ProductImg src={products[1].image} alt={products[1].name ?? ''} className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+      );
+    }
+
+    // ── Minimal / Centered: large text, light/dark bg, no hero image ──
+    if (heroStyle === 'minimal' || heroStyle === 'centered' || heroStyle === 'stacked') {
+      return (
+        <section style={{ background: tt.surfaceBg, minHeight: isMobile ? '52vh' : '62vh', display: 'flex', alignItems: 'center' }}>
+          <div className="max-w-7xl mx-auto px-6 w-full text-center" style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
+            <p className="text-xs uppercase tracking-[0.35em] mb-6" style={{ color: pc }}>{tagline}</p>
+            <h1 style={{ ...headingStyle(tt, isMobile ? 2.8 : 5.2), color: tt.textPrimary, lineHeight: 0.9, marginBottom: '1.5rem', maxWidth: '16ch', marginLeft: 'auto', marginRight: 'auto' }}>
+              {heroTitle}
+            </h1>
+            {!isMobile && (
+              <p className="text-sm leading-relaxed mb-10 mx-auto" style={{ color: tt.textSecondary, maxWidth: '45ch' }}>{heroSubtitle}</p>
+            )}
+            <button onClick={scrollToProducts}
+              className="text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
+              style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: tt.btnRadius, padding: '0.875rem 2rem' }}>
+              {ctaText}
+            </button>
+          </div>
+        </section>
+      );
+    }
+
+    // ── Default / Editorial: full-bleed image, text at bottom ──
+    return (
+      <section className="relative overflow-hidden" style={{ minHeight: isMobile ? '70vh' : '85vh', display: 'flex', alignItems: 'flex-end' }}>
+        {products[0]?.image && (
+          <div className="absolute inset-0">
+            <ProductImg src={products[0].image} alt="" className="w-full h-full object-cover" />
+            <div className="absolute inset-0" style={{ background: isDarkPalette
+              ? 'linear-gradient(to top, rgba(0,0,0,0.92) 40%, rgba(0,0,0,0.3) 100%)'
+              : 'linear-gradient(to top, rgba(0,0,0,0.75) 30%, rgba(0,0,0,0.1) 100%)' }} />
+          </div>
+        )}
+        <div className="relative max-w-7xl mx-auto px-6 py-14 w-full">
+          <p className="text-xs uppercase tracking-[0.3em] mb-5 text-white/60">{tagline}</p>
+          <h1 className="font-black text-white leading-[0.95] mb-6"
+            style={{ fontFamily: tt.headingFont, fontSize: isMobile ? 'clamp(2.5rem, 12vw, 4rem)' : 'clamp(4rem, 8vw, 7rem)', letterSpacing: '-0.02em', maxWidth: '12ch' }}>
+            {heroTitle}
+          </h1>
+          {!isMobile && (
+            <p className="text-white/65 text-sm max-w-sm mb-10 leading-relaxed">{heroSubtitle}</p>
+          )}
+          <div className="flex items-center gap-3 flex-wrap">
+            <button onClick={scrollToProducts}
+              className="px-7 py-3.5 text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
+              style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: tt.btnRadius }}>
+              {ctaText}
+            </button>
+            <button onClick={scrollToProducts}
+              className="px-7 py-3.5 text-sm font-semibold text-white border border-white/30 hover:bg-white/10 transition-colors"
+              style={{ borderRadius: tt.btnRadius }}>
+              Explore ↓
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  };
+
+  // Product grid: switch based on productGrid token
+  const renderProductsGrid = () => {
+    const sharedProps = { products: displayed, tt, primaryColor: pc, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice };
+    switch (productGrid) {
+      case 'magazine':  return <TkGridMagazine  {...sharedProps} />;
+      case 'list':      return <TkGridList      products={displayed} tt={tt} primaryColor={pc} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />;
+      case 'carousel':  return <TkGridCarousel  {...sharedProps} />;
+      case 'spotlight': return <TkGridSpotlight {...sharedProps} />;
+      case 'standard':  return <TkGridStandard  {...sharedProps} />;
+      default: // editorial asymmetric grid
+        return isMobile ? (
+          <div className="grid grid-cols-2 gap-3">
+            {displayed.map(p => (
+              <EditorialProductCard key={p.id} p={p} tt={tt} pc={pc} fmtPrice={fmtPrice} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} cardVars={cardVars} hoverMotion={hoverMotion} />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-5">
+            {displayed.map((p, idx) => idx === 0 ? (
+              <div key={p.id} className="col-span-2 row-span-1">
+                <EditorialProductCard p={p} tt={tt} pc={pc} fmtPrice={fmtPrice} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} featured cardVars={cardVars} hoverMotion={hoverMotion} />
+              </div>
+            ) : (
+              <EditorialProductCard key={p.id} p={p} tt={tt} pc={pc} fmtPrice={fmtPrice} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} cardVars={cardVars} hoverMotion={hoverMotion} />
+            ))}
+          </div>
+        );
+    }
+  };
+
   return (
     <div style={{ background: tt.pageBg, fontFamily: tt.fontFamily, color: tt.textPrimary }}>
       <TkFontInjector url={tt.googleFontsUrl} />
@@ -6389,39 +6541,8 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
         </div>
       </header>
 
-      {/* ── Hero — full-bleed, text-first ── */}
-      <section className="relative overflow-hidden" style={{ minHeight: isMobile ? '70vh' : '85vh', display: 'flex', alignItems: 'flex-end' }}>
-        {products[0]?.image && (
-          <div className="absolute inset-0">
-            <ProductImg src={products[0].image} alt="" className="w-full h-full object-cover" />
-            <div className="absolute inset-0" style={{ background: isDarkPalette
-              ? 'linear-gradient(to top, rgba(0,0,0,0.92) 40%, rgba(0,0,0,0.3) 100%)'
-              : 'linear-gradient(to top, rgba(0,0,0,0.75) 30%, rgba(0,0,0,0.1) 100%)' }} />
-          </div>
-        )}
-        <div className="relative max-w-7xl mx-auto px-6 py-14 w-full">
-          <p className="text-xs uppercase tracking-[0.3em] mb-5 text-white/60">{tagline}</p>
-          <h1 className="font-black text-white leading-[0.95] mb-6"
-            style={{ fontFamily: tt.headingFont, fontSize: isMobile ? 'clamp(2.5rem, 12vw, 4rem)' : 'clamp(4rem, 8vw, 7rem)', letterSpacing: '-0.02em', maxWidth: '12ch' }}>
-            {heroTitle}
-          </h1>
-          {!isMobile && (
-            <p className="text-white/65 text-sm max-w-sm mb-10 leading-relaxed">{heroSubtitle}</p>
-          )}
-          <div className="flex items-center gap-3 flex-wrap">
-            <button onClick={scrollToProducts}
-              className="px-7 py-3.5 text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
-              style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: tt.btnRadius }}>
-              {ctaText}
-            </button>
-            <button onClick={scrollToProducts}
-              className="px-7 py-3.5 text-sm font-semibold text-white border border-white/30 hover:bg-white/10 transition-colors"
-              style={{ borderRadius: tt.btnRadius }}>
-              Explore ↓
-            </button>
-          </div>
-        </div>
-      </section>
+      {/* ── Hero — variant by heroStyle token ── */}
+      {renderEditorialHero()}
 
       {/* ── Collections — editorial tag pills ── */}
       <div style={{ borderBottom: `1px solid ${tt.divider}`, background: tt.headerBg }}>
@@ -6440,35 +6561,17 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
 
       {trustBadges.length > 0 && <TrustBadgesRow badges={trustBadges} primaryColor={pc} device={device} />}
 
-      {/* ── Asymmetric product grid ── */}
-      <section ref={productsRef} className="max-w-7xl mx-auto px-6" style={{ paddingTop: isMobile ? '2.5rem' : '5rem', paddingBottom: isMobile ? '2.5rem' : '5rem' }}>
+      {/* ── Product grid — variant by productGrid token ── */}
+      <section ref={productsRef} className="max-w-7xl mx-auto px-6" style={{ paddingTop: isMobile ? '2.5rem' : `${sectionPy}px`, paddingBottom: isMobile ? '2.5rem' : `${sectionPy}px` }}>
         <div className="flex items-end justify-between mb-8">
-          <h2 className="font-black tracking-tight" style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '1.5rem' : '2.25rem' }}>
+          <h2 className="font-black tracking-tight" style={{ ...headingStyle(tt, isMobile ? 1.5 : 2.25), color: tt.textPrimary }}>
             Featured
           </h2>
           <button onClick={scrollToProducts} className="text-xs font-semibold uppercase tracking-widest flex items-center gap-1.5" style={{ color: pc }}>
             View all <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
-
-        {/* Asymmetric: first product large (2 cols on desktop), rest standard */}
-        {isMobile ? (
-          <div className="grid grid-cols-2 gap-3">
-            {displayed.map(p => (
-              <EditorialProductCard key={p.id} p={p} tt={tt} pc={pc} fmtPrice={fmtPrice} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-5">
-            {displayed.map((p, idx) => idx === 0 ? (
-              <div key={p.id} className="col-span-2 row-span-1">
-                <EditorialProductCard p={p} tt={tt} pc={pc} fmtPrice={fmtPrice} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} featured />
-              </div>
-            ) : (
-              <EditorialProductCard key={p.id} p={p} tt={tt} pc={pc} fmtPrice={fmtPrice} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} />
-            ))}
-          </div>
-        )}
+        {renderProductsGrid()}
       </section>
 
       {/* ── Features ── */}
@@ -6535,16 +6638,25 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
   );
 }
 
-// Editorial product card helper
-function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart, onToggleWishlist, wishlist, featured = false }: {
+// Editorial product card helper — token-aware (cardVars + hoverMotion)
+function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart, onToggleWishlist, wishlist, featured = false, cardVars, hoverMotion }: {
   p: RichProduct; tt: TokenTheme; pc: string; fmtPrice: (n: number) => string; featured?: boolean;
+  cardVars?: CardStyleVars;
+  hoverMotion?: import('framer-motion').TargetAndTransition;
   onProductClick: (p: RichProduct) => void;
   onAddToCart: (p: RichProduct, rect?: DOMRect) => void;
   onToggleWishlist: (id: string) => void;
   wishlist: Set<string>;
 }) {
+  const cv = cardVars ?? { background: 'transparent', border: 'none', boxShadow: 'none' };
+  const wh = hoverMotion ?? { y: -2 };
   return (
-    <div className="group cursor-pointer" onClick={() => onProductClick(p)}>
+    <motion.div
+      className="group cursor-pointer"
+      onClick={() => onProductClick(p)}
+      whileHover={wh}
+      transition={{ duration: 0.22 }}
+      style={{ borderRadius: tt.surfaceRadius, ...cv }}>
       <div className="relative overflow-hidden" style={{ aspectRatio: featured ? '16/9' : '3/4', borderRadius: tt.surfaceRadius }}>
         <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
         {p.badge && (
@@ -6575,7 +6687,7 @@ function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart
           {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
