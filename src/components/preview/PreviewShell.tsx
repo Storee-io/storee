@@ -87,6 +87,8 @@ export default function PreviewShell({ store, from = null }: Props) {
         regenPrompt,
         store.currency ?? undefined,
         store.language ?? undefined,
+        undefined,                 // advanced options
+        store.variationId,         // exclude last variation → force different look
       ),
       new Promise<void>(r => setTimeout(r, 21000)),
     ]);

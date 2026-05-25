@@ -27,7 +27,7 @@ async function getLiveConfig(): Promise<{ prompt: string; model: string; maxToke
 }
 
 export async function POST(req: NextRequest) {
-  const { prompt, currency, language, advanced } = await req.json();
+  const { prompt, currency, language, advanced, variationSeed } = await req.json();
 
   if (!prompt || typeof prompt !== 'string') {
     return new Response('Missing prompt', { status: 400 });
@@ -71,6 +71,30 @@ export async function POST(req: NextRequest) {
     const off = Object.entries(advanced.features ?? {}).filter(([, v]) => !v).map(([k]) => featureMap[k] ?? k);
     if (on.length > 0) extras.push(`Definitely include these features: ${on.join(', ')}.`);
     if (off.length > 0) extras.push(`Do NOT include: ${off.join(', ')}.`);
+  }
+
+  // Inject variation seed — tells Claude which layout+visual direction to use.
+  // This ensures repeated generations of the same prompt look visually distinct.
+  // Personality keywords in the prompt (WhatsApp-like, Spotify-like, ZARA-like, etc.)
+  // always override this directive per the PERSONALITY MAPPING in the system prompt.
+  if (variationSeed) {
+    const v = variationSeed as {
+      name: string; layoutType: string; heroStyle: string; productGrid: string;
+      spacing: string; density: string; motion: string; elevation: string;
+      cardStyle: string; hoverStyle: string; compositionStyle?: string;
+      paletteHint: string; typographyHint: string;
+    };
+    extras.push(
+      `DESIGN VARIATION DIRECTIVE — "${v.name}" style (apply unless a personality keyword is detected):` +
+      ` layoutType: "${v.layoutType}", heroStyle: "${v.heroStyle}", productGrid: "${v.productGrid}",` +
+      ` spacing: "${v.spacing}", density: "${v.density}", motion: "${v.motion}", elevation: "${v.elevation}",` +
+      ` cardStyle: "${v.cardStyle}", hoverStyle: "${v.hoverStyle}"` +
+      (v.compositionStyle ? `, compositionStyle: "${v.compositionStyle}"` : '') +
+      `.` +
+      ` Color palette direction: ${v.paletteHint}.` +
+      ` Typography direction: ${v.typographyHint}.` +
+      ` Adapt these to fit the brand personality, but keep the structural tokens (layoutType, heroStyle, productGrid) exactly as specified.`
+    );
   }
 
   const userMessage = extras.length > 0 ? `${prompt}\n\n${extras.join('\n')}` : prompt;

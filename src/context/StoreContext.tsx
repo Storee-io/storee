@@ -133,6 +133,8 @@ export interface Store {
   audience?: string;
   // Original generation prompt — used by Regenerate flow
   prompt?: string;
+  // Variation preset ID used for this generation — excluded on next regenerate for diversity
+  variationId?: number;
 }
 
 export interface GenerationState {
