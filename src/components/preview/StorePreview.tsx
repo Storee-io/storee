@@ -5962,19 +5962,22 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
       <AnimationInjector />
       <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
 
-      {/* Promo bar */}
-      {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} />}
-
-      {/* Header */}
-      <header
-        className={`sticky top-0 z-40 backdrop-blur-sm${animArch === 'tech' ? ' sk-grad-header' : ''}`}
+      {/* Sticky wrapper — PromoBar + header stack together, no overlap */}
+      <div className={`sticky top-0 z-40${animArch === 'tech' ? ' sk-grad-header' : ''}`}
         style={{
           background: animArch === 'tech'
             ? `linear-gradient(135deg, ${tt.headerBg}, ${tt.primary}22, ${tt.headerBg})`
             : tt.headerBg + 'f5',
-          borderBottom: `1px solid ${tt.headerBorder}`,
-          height: '56px',
         }}>
+        {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} />}
+
+        {/* Header */}
+        <header
+          className="backdrop-blur-sm"
+          style={{
+            borderBottom: `1px solid ${tt.headerBorder}`,
+            height: '56px',
+          }}>
         <div className="max-w-6xl mx-auto px-5 h-full flex items-center justify-between">
           <span className="text-sm font-black tracking-[0.18em] uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
           {!isMobile ? (
@@ -5999,7 +6002,8 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
             <UserProfileMenu buyerEmail={buyerEmail} onUserClick={onUserClick} onWishlistClick={onWishlistClick} wishlistCount={wishlist.size} iconColor={tt.textSecondary} />
           </div>
         </div>
-      </header>
+        </header>
+      </div>
 
       {/* Sections rendered in Claude-specified order with per-section variants */}
       {resolvedSections.map((entry, idx) => {
@@ -6508,40 +6512,42 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
       <TkFontInjector url={tt.googleFontsUrl} />
       <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={pc} storeName={storeName} onScrollToProducts={scrollToProducts} />
 
-      {promoBar && <PromoBar text={promoBar} primaryColor={pc} />}
+      {/* Sticky wrapper — keeps PromoBar + header stacked without overlap */}
+      <div className="sticky top-0 z-40">
+        {promoBar && <PromoBar text={promoBar} primaryColor={pc} />}
+        {/* ── Header — minimal, transparent ── */}
+        <header className="backdrop-blur-md"
+          style={{ background: tt.headerBg + 'e8', borderBottom: `1px solid ${tt.divider}`, height: '52px' }}>
+          <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+            {/* Brand */}
+            <span className="text-sm font-black tracking-wider uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
 
-      {/* ── Header — minimal, transparent ── */}
-      <header className="sticky top-0 z-40 backdrop-blur-md"
-        style={{ background: tt.headerBg + 'e8', borderBottom: `1px solid ${tt.divider}`, height: '52px' }}>
-        <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
-          {/* Brand */}
-          <span className="text-sm font-black tracking-wider uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
+            {/* Nav — desktop only */}
+            {!isMobile && (
+              <nav className="flex gap-8">
+                {navLinks.map(l => (
+                  <a key={l} onClick={scrollToProducts} className="text-xs uppercase tracking-widest font-medium cursor-pointer transition-opacity hover:opacity-50"
+                    style={{ color: tt.textSecondary, letterSpacing: '0.1em' }}>{l}</a>
+                ))}
+              </nav>
+            )}
 
-          {/* Nav — desktop only */}
-          {!isMobile && (
-            <nav className="flex gap-8">
-              {navLinks.map(l => (
-                <a key={l} onClick={scrollToProducts} className="text-xs uppercase tracking-widest font-medium cursor-pointer transition-opacity hover:opacity-50"
-                  style={{ color: tt.textSecondary, letterSpacing: '0.1em' }}>{l}</a>
-              ))}
-            </nav>
-          )}
-
-          {/* Icons */}
-          <div className="flex items-center gap-1">
-            {!isMobile && <button onClick={onSearchOpen} className="p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}><Search className="w-4 h-4" /></button>}
-            <button onClick={onWishlistClick} className="relative p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>
-              <Heart className="w-4 h-4" />
-              {wishlist.size > 0 && <span className="absolute top-0 right-0 w-3.5 h-3.5 text-[8px] font-bold text-white bg-rose-500 rounded-full flex items-center justify-center">{wishlist.size}</span>}
-            </button>
-            <button data-cart-btn onClick={onCartClick} className="relative p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>
-              <ShoppingCart className="w-4 h-4" />
-              {cartCount > 0 && <span className="absolute top-0 right-0 w-3.5 h-3.5 text-[8px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: pc }}>{cartCount}</span>}
-            </button>
-            {isMobile && <button onClick={() => setMenuOpen(true)} className="p-2" style={{ color: tt.textSecondary }}><Menu className="w-5 h-5" /></button>}
+            {/* Icons */}
+            <div className="flex items-center gap-1">
+              {!isMobile && <button onClick={onSearchOpen} className="p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}><Search className="w-4 h-4" /></button>}
+              <button onClick={onWishlistClick} className="relative p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>
+                <Heart className="w-4 h-4" />
+                {wishlist.size > 0 && <span className="absolute top-0 right-0 w-3.5 h-3.5 text-[8px] font-bold text-white bg-rose-500 rounded-full flex items-center justify-center">{wishlist.size}</span>}
+              </button>
+              <button data-cart-btn onClick={onCartClick} className="relative p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>
+                <ShoppingCart className="w-4 h-4" />
+                {cartCount > 0 && <span className="absolute top-0 right-0 w-3.5 h-3.5 text-[8px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: pc }}>{cartCount}</span>}
+              </button>
+              {isMobile && <button onClick={() => setMenuOpen(true)} className="p-2" style={{ color: tt.textSecondary }}><Menu className="w-5 h-5" /></button>}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      </div>
 
       {/* ── Hero — variant by heroStyle token ── */}
       {renderEditorialHero()}
@@ -6735,37 +6741,39 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
       <TkFontInjector url={tt.googleFontsUrl} />
       <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={pc} storeName={storeName} onScrollToProducts={scrollToProducts} />
 
-      {promoBar && <PromoBar text={promoBar} primaryColor={pc} />}
-
-      {/* ── Header ── */}
-      <header className="sticky top-0 z-40 backdrop-blur-sm"
-        style={{ background: tt.headerBg + 'f0', borderBottom: `1px solid ${tt.divider}`, height: '56px' }}>
-        <div className="max-w-6xl mx-auto px-5 h-full flex items-center justify-between">
-          <span className="font-black text-sm tracking-wider" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
-          {!isMobile ? (
-            <nav className="flex gap-6">
-              {navLinks.map(l => (
-                <a key={l} onClick={scrollToProducts} className="text-xs font-medium cursor-pointer uppercase tracking-wide transition-opacity hover:opacity-50"
-                  style={{ color: tt.textSecondary }}>{l}</a>
-              ))}
-            </nav>
-          ) : (
-            <button onClick={() => setMenuOpen(true)} style={{ color: tt.textSecondary }}><Menu className="w-5 h-5" /></button>
-          )}
-          <div className="flex items-center gap-1">
-            {!isMobile && <button onClick={onSearchOpen} className="p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}><Search className="w-4 h-4" /></button>}
-            <button onClick={onWishlistClick} className="relative p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>
-              <Heart className="w-4 h-4" />
-              {wishlist.size > 0 && <span className="absolute top-0 right-0 w-3.5 h-3.5 text-[8px] font-bold text-white bg-rose-500 rounded-full flex items-center justify-center">{wishlist.size}</span>}
-            </button>
-            <button data-cart-btn onClick={onCartClick} className="relative p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>
-              <ShoppingCart className="w-4 h-4" />
-              {cartCount > 0 && <span className="absolute top-0 right-0 w-3.5 h-3.5 text-[8px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: pc }}>{cartCount}</span>}
-            </button>
-            <UserProfileMenu buyerEmail={buyerEmail} onUserClick={onUserClick} onWishlistClick={onWishlistClick} wishlistCount={wishlist.size} iconColor={tt.textSecondary} />
+      {/* Sticky wrapper — PromoBar + header stack together, no overlap */}
+      <div className="sticky top-0 z-40" style={{ background: tt.headerBg + 'f0' }}>
+        {promoBar && <PromoBar text={promoBar} primaryColor={pc} />}
+        {/* ── Header ── */}
+        <header className="backdrop-blur-sm"
+          style={{ borderBottom: `1px solid ${tt.divider}`, height: '56px' }}>
+          <div className="max-w-6xl mx-auto px-5 h-full flex items-center justify-between">
+            <span className="font-black text-sm tracking-wider" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
+            {!isMobile ? (
+              <nav className="flex gap-6">
+                {navLinks.map(l => (
+                  <a key={l} onClick={scrollToProducts} className="text-xs font-medium cursor-pointer uppercase tracking-wide transition-opacity hover:opacity-50"
+                    style={{ color: tt.textSecondary }}>{l}</a>
+                ))}
+              </nav>
+            ) : (
+              <button onClick={() => setMenuOpen(true)} style={{ color: tt.textSecondary }}><Menu className="w-5 h-5" /></button>
+            )}
+            <div className="flex items-center gap-1">
+              {!isMobile && <button onClick={onSearchOpen} className="p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}><Search className="w-4 h-4" /></button>}
+              <button onClick={onWishlistClick} className="relative p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>
+                <Heart className="w-4 h-4" />
+                {wishlist.size > 0 && <span className="absolute top-0 right-0 w-3.5 h-3.5 text-[8px] font-bold text-white bg-rose-500 rounded-full flex items-center justify-center">{wishlist.size}</span>}
+              </button>
+              <button data-cart-btn onClick={onCartClick} className="relative p-2 transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>
+                <ShoppingCart className="w-4 h-4" />
+                {cartCount > 0 && <span className="absolute top-0 right-0 w-3.5 h-3.5 text-[8px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: pc }}>{cartCount}</span>}
+              </button>
+              <UserProfileMenu buyerEmail={buyerEmail} onUserClick={onUserClick} onWishlistClick={onWishlistClick} wishlistCount={wishlist.size} iconColor={tt.textSecondary} />
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      </div>
 
       {/* ── Hero — clean, text-centered ── */}
       <section style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${Math.round(sectionPy * 0.7)}px`, textAlign: 'center' }}>
@@ -7024,11 +7032,12 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
       <TkFontInjector url={tt.googleFontsUrl} />
       <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={pc} storeName={storeName} onScrollToProducts={() => scrollToSlide(1)} />
 
-      {promoBar && <PromoBar text={promoBar} primaryColor={pc} />}
-
-      {/* ── Floating header (always on top) ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6"
-        style={{ height: '56px', background: 'transparent', pointerEvents: 'none' }}>
+      {/* Fixed top bar — PromoBar stacked above transparent floating header */}
+      <div className="fixed top-0 left-0 right-0 z-50" style={{ pointerEvents: 'none' }}>
+        {promoBar && <div style={{ pointerEvents: 'auto' }}><PromoBar text={promoBar} primaryColor={pc} /></div>}
+        {/* ── Floating header (always on top) ── */}
+        <header className="flex items-center justify-between px-6"
+          style={{ height: '56px', background: 'transparent', pointerEvents: 'none' }}>
         <span className="text-sm font-black tracking-[0.2em] uppercase pointer-events-auto"
           style={{ fontFamily: tt.headingFont, color: isDarkBg ? '#ffffff' : tt.textPrimary,
             textShadow: isDarkBg ? '0 1px 8px rgba(0,0,0,0.5)' : 'none' }}>{storeName}</span>
@@ -7056,7 +7065,8 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
             <button onClick={() => setMenuOpen(true)} className="p-2" style={{ color: isDarkBg ? 'rgba(255,255,255,0.8)' : tt.textSecondary }}><Menu className="w-5 h-5" /></button>
           )}
         </div>
-      </header>
+        </header>
+      </div>
 
       {/* ── Slide dot nav (right side) ── */}
       {spotlightProducts.length > 1 && !isMobile && (
