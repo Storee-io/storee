@@ -3,10 +3,11 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft, RefreshCw, X, Sparkles } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft, RefreshCw, X, Sparkles, CloudOff } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from './StorePreview';
 import PublishModal from './PublishModal';
+import UnpublishModal from './UnpublishModal';
 import { generateStoreWithClaude } from '../../lib/claudeApiClient';
 import { getGuestId } from '../../lib/guestId';
 import GeneratingOverlay from '../GeneratingOverlay';
@@ -36,6 +37,7 @@ interface Props {
 export default function PreviewShell({ store, from = null }: Props) {
   const [device, setDevice] = useState<DeviceMode>('desktop');
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [showUnpublishModal, setShowUnpublishModal] = useState(false);
   const [showRegenModal, setShowRegenModal] = useState(false);
   const [regenPrompt, setRegenPrompt] = useState(store.prompt ?? '');
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -53,6 +55,11 @@ export default function PreviewShell({ store, from = null }: Props) {
       domain: subdomain,
       publishedDomain: subdomain.replace('.storee.io', ''),
     });
+  };
+
+  const handleUnpublish = () => {
+    updateActiveStore({ status: 'Draft' });
+    setShowUnpublishModal(false);
   };
 
   const handleDashboardClick = async () => {
@@ -191,12 +198,21 @@ export default function PreviewShell({ store, from = null }: Props) {
           >
             <LayoutDashboard className="w-4 h-4" />Dashboard
           </button>
-          <button
-            onClick={() => setShowPublishModal(true)}
-            className="flex items-center gap-2 px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow-md"
-          >
-            <Rocket className="w-4 h-4" />Publish
-          </button>
+          {store.status === 'Published' ? (
+            <button
+              onClick={() => setShowUnpublishModal(true)}
+              className="flex items-center gap-2 px-5 py-2 bg-red-50 text-red-600 border border-red-200 text-sm font-semibold rounded-xl hover:bg-red-100 transition-all"
+            >
+              <CloudOff className="w-4 h-4" />Unpublish
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowPublishModal(true)}
+              className="flex items-center gap-2 px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow-md"
+            >
+              <Rocket className="w-4 h-4" />Publish
+            </button>
+          )}
         </div>
       </div>
 
@@ -331,6 +347,16 @@ export default function PreviewShell({ store, from = null }: Props) {
             store={store}
             onPublish={handlePublishComplete}
             onClose={() => setShowPublishModal(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showUnpublishModal && (
+          <UnpublishModal
+            store={store}
+            onConfirm={handleUnpublish}
+            onClose={() => setShowUnpublishModal(false)}
           />
         )}
       </AnimatePresence>
