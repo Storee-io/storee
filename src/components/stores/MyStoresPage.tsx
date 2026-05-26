@@ -148,48 +148,61 @@ export default function MyStoresPage() {
                     <div className="h-1.5 w-full flex-shrink-0" style={{ background: color }} />
 
                     <div className="p-5 flex flex-col flex-1">
-                      {/* Store header */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div
-                            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                            style={{ background: `${color}18` }}
-                          >
-                            <Store className="w-5 h-5" style={{ color }} />
-                          </div>
-                          <div className="min-w-0">
-                            <h3 className="text-sm font-semibold text-slate-800 truncate">{store.name}</h3>
+
+                      {/* ── Header: icon + info + status + delete ── */}
+                      <div className="flex items-start gap-3 mb-4">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+                          style={{ background: `${color}18` }}
+                        >
+                          <Store className="w-5 h-5" style={{ color }} />
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm font-semibold text-slate-800 truncate leading-tight">{store.name}</h3>
+                          {/* Domain — only if ever published */}
+                          {(isPublished || store.publishedDomain) ? (
                             <p className="text-xs text-slate-400 truncate flex items-center gap-1 mt-0.5">
                               <Globe className="w-3 h-3 flex-shrink-0" />
-                              {store.domain}
+                              {store.publishedDomain
+                                ? `${store.publishedDomain}.storee.io`
+                                : store.domain}
                             </p>
-                          </div>
+                          ) : (
+                            <p className="text-xs text-slate-300 mt-0.5">Not published yet</p>
+                          )}
+                          {/* Category pill inline below name */}
+                          {store.category && (
+                            <span className="inline-block mt-1.5 text-[11px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full">
+                              {store.category}
+                            </span>
+                          )}
                         </div>
 
-                        {/* Status badge */}
-                        {isPublished ? (
-                          <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            Live
-                          </span>
-                        ) : (
-                          <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-600">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                            Draft
-                          </span>
-                        )}
+                        {/* Status badge + delete stacked top-right */}
+                        <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                          {isPublished ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              Live
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-600">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                              Draft
+                            </span>
+                          )}
+                          <button
+                            onClick={() => setConfirmDelete(store.id)}
+                            title="Delete store"
+                            className="p-1 rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
 
-                      {/* Category */}
-                      {store.category && (
-                        <div className="mb-3">
-                          <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
-                            {store.category}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Stats */}
+                      {/* ── Stats ── */}
                       <div className="grid grid-cols-2 gap-2 mb-4">
                         <div className="bg-slate-50 rounded-xl p-2.5">
                           <div className="flex items-center gap-1.5 mb-0.5">
@@ -209,34 +222,34 @@ export default function MyStoresPage() {
                         </div>
                       </div>
 
-                      {/* ── Actions ── */}
-                      <div className="mt-auto pt-3 border-t border-slate-100 space-y-2">
-                        {/* Row 1: Manage (primary) + Preview */}
+                      {/* ── Actions: single row ── */}
+                      <div className="mt-auto pt-3 border-t border-slate-100">
                         <div className="flex gap-2">
+                          {/* Manage — primary */}
                           <button
                             onClick={() => handleManage(store.id)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-white rounded-xl hover:opacity-90 transition-opacity shadow-sm"
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-white rounded-xl hover:opacity-90 transition-opacity shadow-sm"
                             style={{ background: color }}
                           >
                             <Settings className="w-3.5 h-3.5" />
                             Manage
                           </button>
+
+                          {/* Preview — icon only */}
                           <Link
                             href={`/preview/${store.id}?from=/stores`}
                             onClick={() => setActiveStore(store)}
-                            className="flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                            title="Preview store"
+                            className="flex items-center justify-center w-10 rounded-xl text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors flex-shrink-0"
                           >
-                            <Eye className="w-3.5 h-3.5" />
-                            Preview
+                            <Eye className="w-4 h-4" />
                           </Link>
-                        </div>
 
-                        {/* Row 2: Publish/Unpublish/Republish (flex-1) + Delete (icon) */}
-                        <div className="flex gap-2">
+                          {/* Publish / Republish / Unpublish */}
                           {isPublished ? (
                             <button
                               onClick={() => setUnpublishStore(store)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors"
                             >
                               <CloudOff className="w-3.5 h-3.5" />
                               Unpublish
@@ -244,7 +257,7 @@ export default function MyStoresPage() {
                           ) : store.publishedDomain ? (
                             <button
                               onClick={() => openPublish(store)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-white gradient-bg rounded-xl hover:opacity-90 transition-opacity shadow-sm"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-white gradient-bg rounded-xl hover:opacity-90 transition-opacity shadow-sm"
                             >
                               <RotateCcw className="w-3.5 h-3.5" />
                               Republish
@@ -252,19 +265,12 @@ export default function MyStoresPage() {
                           ) : (
                             <button
                               onClick={() => openPublish(store)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-white gradient-bg rounded-xl hover:opacity-90 transition-opacity shadow-sm"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-white gradient-bg rounded-xl hover:opacity-90 transition-opacity shadow-sm"
                             >
                               <Rocket className="w-3.5 h-3.5" />
                               Publish
                             </button>
                           )}
-                          <button
-                            onClick={() => setConfirmDelete(store.id)}
-                            title="Delete store"
-                            className="flex items-center justify-center px-3 py-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors border border-transparent hover:border-red-100"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
                         </div>
                       </div>
                     </div>
