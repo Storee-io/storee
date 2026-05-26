@@ -148,24 +148,28 @@ export default function MyStoresPage() {
                     <div className="h-1.5 w-full flex-shrink-0" style={{ background: color }} />
 
                     <div className="p-5 flex flex-col flex-1">
-                      {/* Store header */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div
-                            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                            style={{ background: `${color}18` }}
-                          >
-                            <Store className="w-5 h-5" style={{ color }} />
-                          </div>
-                          <div className="min-w-0">
-                            <h3 className="text-sm font-semibold text-slate-800 truncate">{store.name}</h3>
+                      {/* ── Store header: icon + name + status ── */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                          style={{ background: `${color}18` }}
+                        >
+                          <Store className="w-5 h-5" style={{ color }} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm font-semibold text-slate-800 truncate leading-tight">{store.name}</h3>
+                          {/* Domain — only shown once published */}
+                          {(isPublished || store.publishedDomain) ? (
                             <p className="text-xs text-slate-400 truncate flex items-center gap-1 mt-0.5">
                               <Globe className="w-3 h-3 flex-shrink-0" />
-                              {store.domain}
+                              {store.publishedDomain
+                                ? `${store.publishedDomain}.storee.io`
+                                : store.domain}
                             </p>
-                          </div>
+                          ) : (
+                            <p className="text-xs text-slate-300 mt-0.5 italic">Not published yet</p>
+                          )}
                         </div>
-
                         {/* Status badge */}
                         {isPublished ? (
                           <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600">
@@ -180,32 +184,26 @@ export default function MyStoresPage() {
                         )}
                       </div>
 
-                      {/* Category */}
-                      {store.category && (
-                        <div className="mb-3">
-                          <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
+                      {/* ── Category + Stats row ── */}
+                      <div className="flex items-center gap-2 mb-4">
+                        {store.category && (
+                          <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full flex-shrink-0">
                             {store.category}
                           </span>
-                        </div>
-                      )}
-
-                      {/* Stats */}
-                      <div className="grid grid-cols-2 gap-2 mb-4">
-                        <div className="bg-slate-50 rounded-xl p-2.5">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <TrendingUp className="w-3.5 h-3.5 text-slate-400" />
-                            <span className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">Revenue</span>
+                        )}
+                        <div className="flex-1 grid grid-cols-2 gap-1.5">
+                          <div className="bg-slate-50 rounded-lg px-2.5 py-1.5 flex items-center gap-1.5">
+                            <TrendingUp className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                            <span className="text-xs font-bold text-slate-700 truncate">
+                              {store.currency?.symbol ?? '$'}{(store.revenue ?? 0).toLocaleString('en-US')}
+                            </span>
                           </div>
-                          <p className="text-sm font-bold text-slate-700">
-                            {store.currency?.symbol ?? '$'}{(store.revenue ?? 0).toLocaleString('en-US')}
-                          </p>
-                        </div>
-                        <div className="bg-slate-50 rounded-xl p-2.5">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <Package className="w-3.5 h-3.5 text-slate-400" />
-                            <span className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">Orders</span>
+                          <div className="bg-slate-50 rounded-lg px-2.5 py-1.5 flex items-center gap-1.5">
+                            <Package className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                            <span className="text-xs font-bold text-slate-700">
+                              {(store.orders ?? 0).toLocaleString('en-US')} orders
+                            </span>
                           </div>
-                          <p className="text-sm font-bold text-slate-700">{(store.orders ?? 0).toLocaleString('en-US')}</p>
                         </div>
                       </div>
 
