@@ -194,9 +194,10 @@ export default function PreviewShell({ store, from = null }: Props) {
           </button>
           <button
             onClick={handleDashboardClick}
-            className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
           >
-            <LayoutDashboard className="w-4 h-4" />Dashboard
+            <LayoutDashboard className="w-4 h-4" />
+            <span className="hidden sm:inline">Dashboard</span>
           </button>
           {store.status === 'Published' ? (
             <button
