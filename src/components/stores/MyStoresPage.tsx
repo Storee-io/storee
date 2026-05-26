@@ -173,7 +173,21 @@ export default function MyStoresPage() {
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <h3 className="text-sm font-semibold text-slate-800 truncate leading-tight">{store.name}</h3>
+                          {/* Name + status badge on same line */}
+                          <div className="flex items-center gap-2 min-w-0">
+                            <h3 className="text-sm font-semibold text-slate-800 truncate leading-tight">{store.name}</h3>
+                            {isPublished ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-600 flex-shrink-0">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                Live
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-600 flex-shrink-0">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                Draft
+                              </span>
+                            )}
+                          </div>
                           {/* Domain — only if ever published */}
                           {(isPublished || store.publishedDomain) ? (
                             <p className="text-xs text-slate-400 truncate flex items-center gap-1 mt-0.5">
@@ -185,27 +199,10 @@ export default function MyStoresPage() {
                           ) : (
                             <p className="text-xs text-slate-300 mt-0.5">Not published yet</p>
                           )}
-                          {/* Category pill inline below name */}
-                          {store.category && (
-                            <span className="inline-block mt-1.5 text-[11px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full">
-                              {store.category}
-                            </span>
-                          )}
                         </div>
 
-                        {/* Status badge + overflow menu */}
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          {isPublished ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              Live
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-600">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                              Draft
-                            </span>
-                          )}
+                        {/* ··· overflow menu only */}
+                        <div className="flex items-center flex-shrink-0">
 
                           {/* ··· overflow menu */}
                           <div className="relative" ref={openMenuId === store.id ? menuRef : undefined}>
@@ -238,7 +235,6 @@ export default function MyStoresPage() {
                           </div>
                         </div>
                       </div>
-
                       {/* ── Stats ── */}
                       <div className="grid grid-cols-2 gap-2 mb-4">
                         <div className="bg-slate-50 rounded-xl p-2.5">
