@@ -4,24 +4,25 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Store, Globe, Trash2, Plus, TrendingUp, Package,
-  AlertTriangle, Rocket, FileEdit, ArrowLeft, Settings, ShoppingBag,
+  AlertTriangle, Rocket, ArrowLeft, Settings, ShoppingBag,
+  Eye, RotateCcw, CloudOff,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useStore } from '@/src/context/StoreContext';
 import { useRouter } from 'next/navigation';
 import PublishModal from '@/src/components/preview/PublishModal';
+import UnpublishModal from '@/src/components/preview/UnpublishModal';
 import type { Store as StoreType } from '@/src/context/StoreContext';
 
 const DEMO_IDS = new Set(['store-1', 'store-2']);
 
 export default function MyStoresPage() {
   const { stores, deleteStore, updateActiveStore, setActiveStore, isLoadingStores } = useStore();
-  // Only show real stores (not demo placeholders) in My Stores
   const realStores = stores.filter(s => !DEMO_IDS.has(s.id));
-  const [deletingId, setDeletingId]       = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [updatingId, setUpdatingId]       = useState<string | null>(null);
-  const [publishStore, setPublishStore]   = useState<StoreType | null>(null);
+  const [deletingId, setDeletingId]         = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete]   = useState<string | null>(null);
+  const [publishStore, setPublishStore]     = useState<StoreType | null>(null);
+  const [unpublishStore, setUnpublishStore] = useState<StoreType | null>(null);
   const router = useRouter();
 
   const openPublish = (store: StoreType) => {
@@ -32,23 +33,19 @@ export default function MyStoresPage() {
   const handlePublishComplete = (subdomain: string) => {
     if (!publishStore) return;
     setActiveStore(publishStore);
-    // Record publishedDomain so subsequent "Set to Draft → Republish" uses a fixed URL
     updateActiveStore({
       status: 'Published',
       domain: subdomain,
-      // Store only the subdomain slug (e.g. "nexagear"), not the full host
       publishedDomain: publishStore.publishedDomain ?? subdomain.replace('.storee.io', ''),
     });
     setPublishStore(null);
   };
 
-  const handleDraft = (storeId: string) => {
-    const store = stores.find(s => s.id === storeId);
-    if (!store) return;
-    setUpdatingId(storeId);
-    setActiveStore(store);
+  const handleUnpublishConfirm = () => {
+    if (!unpublishStore) return;
+    setActiveStore(unpublishStore);
     updateActiveStore({ status: 'Draft' });
-    setTimeout(() => setUpdatingId(null), 600);
+    setUnpublishStore(null);
   };
 
   const handleDelete = async (storeId: string) => {
@@ -213,54 +210,58 @@ export default function MyStoresPage() {
                       </div>
 
                       {/* ── Actions ── */}
-                      <div className="mt-auto pt-3 border-t border-slate-100">
+                      <div className="mt-auto pt-3 border-t border-slate-100 space-y-2">
+                        {/* Row 1: Manage (primary) + Preview */}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleManage(store.id)}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-white rounded-xl hover:opacity-90 transition-opacity shadow-sm"
+                            style={{ background: color }}
+                          >
+                            <Settings className="w-3.5 h-3.5" />
+                            Manage
+                          </button>
+                          <Link
+                            href={`/preview/${store.id}?from=/stores`}
+                            onClick={() => setActiveStore(store)}
+                            className="flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            Preview
+                          </Link>
+                        </div>
+
+                        {/* Row 2: Publish/Unpublish/Republish (flex-1) + Delete (icon) */}
                         <div className="flex gap-2">
                           {isPublished ? (
-                            <>
-                              {/* Manage */}
-                              <button
-                                onClick={() => handleManage(store.id)}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-white rounded-xl transition-opacity hover:opacity-90"
-                                style={{ background: color }}
-                              >
-                                <Settings className="w-3.5 h-3.5" />
-                                Manage
-                              </button>
-                              {/* Unpublish */}
-                              <button
-                                onClick={() => handleDraft(store.id)}
-                                disabled={updatingId === store.id}
-                                className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-xl transition-colors disabled:opacity-50"
-                              >
-                                <FileEdit className="w-3.5 h-3.5" />
-                                {updatingId === store.id ? '…' : 'Unpublish'}
-                              </button>
-                            </>
+                            <button
+                              onClick={() => setUnpublishStore(store)}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors"
+                            >
+                              <CloudOff className="w-3.5 h-3.5" />
+                              Unpublish
+                            </button>
+                          ) : store.publishedDomain ? (
+                            <button
+                              onClick={() => openPublish(store)}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-white gradient-bg rounded-xl hover:opacity-90 transition-opacity shadow-sm"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                              Republish
+                            </button>
                           ) : (
-                            <>
-                              {/* Publish / Republish */}
-                              <button
-                                onClick={() => openPublish(store)}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-white gradient-bg rounded-xl hover:opacity-90 transition-opacity shadow-sm"
-                              >
-                                <Rocket className="w-3.5 h-3.5" />
-                                {store.publishedDomain ? 'Republish' : 'Publish'}
-                              </button>
-                              {/* Manage */}
-                              <button
-                                onClick={() => handleManage(store.id)}
-                                className="flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
-                              >
-                                <Settings className="w-3.5 h-3.5" />
-                                Manage
-                              </button>
-                            </>
+                            <button
+                              onClick={() => openPublish(store)}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-white gradient-bg rounded-xl hover:opacity-90 transition-opacity shadow-sm"
+                            >
+                              <Rocket className="w-3.5 h-3.5" />
+                              Publish
+                            </button>
                           )}
-                          {/* Delete — always last */}
                           <button
                             onClick={() => setConfirmDelete(store.id)}
-                            title="Delete"
-                            className="flex items-center justify-center px-2.5 py-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                            title="Delete store"
+                            className="flex items-center justify-center px-3 py-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors border border-transparent hover:border-red-100"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -275,14 +276,27 @@ export default function MyStoresPage() {
         )}
       </div>
 
-      {/* ── Publish Modal ── */}
+      {/* ── Publish / Republish Modal ── */}
       <AnimatePresence>
         {publishStore && (
           <PublishModal
             store={publishStore}
             onPublish={handlePublishComplete}
             onClose={() => setPublishStore(null)}
-            fixedSubdomain={publishStore.publishedDomain?.replace('.storee.io', '')}
+            {...(publishStore.publishedDomain
+              ? { fixedSubdomain: publishStore.publishedDomain }
+              : {})}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Unpublish Confirmation Modal ── */}
+      <AnimatePresence>
+        {unpublishStore && (
+          <UnpublishModal
+            store={unpublishStore}
+            onConfirm={handleUnpublishConfirm}
+            onClose={() => setUnpublishStore(null)}
           />
         )}
       </AnimatePresence>
