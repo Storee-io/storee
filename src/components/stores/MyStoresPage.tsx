@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Store, Globe, Trash2, Plus, TrendingUp, Package,
   AlertTriangle, Rocket, ArrowLeft, Settings, ShoppingBag,
-  Eye, RotateCcw, CloudOff,
+  Eye, RotateCcw, CloudOff, MoreHorizontal,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useStore } from '@/src/context/StoreContext';
@@ -23,7 +23,21 @@ export default function MyStoresPage() {
   const [confirmDelete, setConfirmDelete]   = useState<string | null>(null);
   const [publishStore, setPublishStore]     = useState<StoreType | null>(null);
   const [unpublishStore, setUnpublishStore] = useState<StoreType | null>(null);
+  const [openMenuId, setOpenMenuId]         = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // Close overflow menu on outside click
+  useEffect(() => {
+    if (!openMenuId) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [openMenuId]);
 
   const openPublish = (store: StoreType) => {
     setActiveStore(store);
@@ -179,8 +193,8 @@ export default function MyStoresPage() {
                           )}
                         </div>
 
-                        {/* Status badge + delete stacked top-right */}
-                        <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                        {/* Status badge + overflow menu */}
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
                           {isPublished ? (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -192,13 +206,36 @@ export default function MyStoresPage() {
                               Draft
                             </span>
                           )}
-                          <button
-                            onClick={() => setConfirmDelete(store.id)}
-                            title="Delete store"
-                            className="p-1 rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 transition-colors"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+
+                          {/* ··· overflow menu */}
+                          <div className="relative" ref={openMenuId === store.id ? menuRef : undefined}>
+                            <button
+                              onClick={() => setOpenMenuId(openMenuId === store.id ? null : store.id)}
+                              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                            >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </button>
+
+                            <AnimatePresence>
+                              {openMenuId === store.id && (
+                                <motion.div
+                                  initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                                  exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                                  transition={{ duration: 0.12 }}
+                                  className="absolute right-0 top-full mt-1 w-40 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden"
+                                >
+                                  <button
+                                    onClick={() => { setOpenMenuId(null); setConfirmDelete(store.id); }}
+                                    className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    Delete store
+                                  </button>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         </div>
                       </div>
 
