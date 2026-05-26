@@ -225,7 +225,7 @@ export default function MyStoresPage() {
                       {/* ── Actions: single row ── */}
                       <div className="mt-auto pt-3 border-t border-slate-100">
                         <div className="flex gap-2">
-                          {/* Manage — primary */}
+                          {/* Manage — primary, solid */}
                           <button
                             onClick={() => handleManage(store.id)}
                             className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-white rounded-xl hover:opacity-90 transition-opacity shadow-sm"
@@ -240,35 +240,35 @@ export default function MyStoresPage() {
                             href={`/preview/${store.id}?from=/stores`}
                             onClick={() => setActiveStore(store)}
                             title="Preview store"
-                            className="flex items-center justify-center w-10 rounded-xl text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors flex-shrink-0"
+                            className="flex items-center justify-center w-10 rounded-xl text-slate-400 bg-slate-100 hover:bg-slate-200 transition-colors flex-shrink-0"
                           >
                             <Eye className="w-4 h-4" />
                           </Link>
 
-                          {/* Publish / Republish / Unpublish */}
+                          {/* Publish / Republish / Unpublish — secondary, outline only */}
                           {isPublished ? (
                             <button
                               onClick={() => setUnpublishStore(store)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors"
+                              title="Unpublish store"
+                              className="flex items-center justify-center w-10 rounded-xl text-slate-400 hover:text-red-500 bg-slate-100 hover:bg-red-50 transition-colors flex-shrink-0"
                             >
-                              <CloudOff className="w-3.5 h-3.5" />
-                              Unpublish
+                              <CloudOff className="w-4 h-4" />
                             </button>
                           ) : store.publishedDomain ? (
                             <button
                               onClick={() => openPublish(store)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-white gradient-bg rounded-xl hover:opacity-90 transition-opacity shadow-sm"
+                              className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors flex-shrink-0"
                             >
                               <RotateCcw className="w-3.5 h-3.5" />
-                              Republish
+                              <span className="text-xs">Republish</span>
                             </button>
                           ) : (
                             <button
                               onClick={() => openPublish(store)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-white gradient-bg rounded-xl hover:opacity-90 transition-opacity shadow-sm"
+                              className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors flex-shrink-0"
                             >
                               <Rocket className="w-3.5 h-3.5" />
-                              Publish
+                              <span className="text-xs">Publish</span>
                             </button>
                           )}
                         </div>
