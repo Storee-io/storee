@@ -10,7 +10,7 @@ export default function PreviewByIdPage() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
-  const { addStore, setGeneratedStore, stores } = useStore();
+  const { addStore, setGeneratedStore, stores, setActiveStore } = useStore();
   const [store, setStore] = useState<Store | null>(null);
   const [notFound, setNotFound] = useState(false);
 
@@ -21,6 +21,7 @@ export default function PreviewByIdPage() {
     const inContext = stores.find(s => s.id === id);
     if (inContext) {
       setStore(inContext);
+      setActiveStore(inContext);
       setGeneratedStore(inContext);
       return;
     }

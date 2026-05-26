@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft, RefreshCw, X, Sparkles, CloudOff } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from './StorePreview';
 import PublishModal from './PublishModal';
@@ -43,11 +43,18 @@ export default function PreviewShell({ store, from = null }: Props) {
   const [isRegenerating, setIsRegenerating] = useState(false);
   const stepTimerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  const { updateActiveStore, addStore, stores, setActiveStore, setGeneratedStore, setGenerationState } = useStore();
+  const { updateActiveStore, addStore, stores, setActiveStore, setGeneratedStore, setGenerationState, activeStore } = useStore();
   const router = useRouter();
+
+  // Use activeStore from context when it matches — stays reactive after publish/unpublish
+  const liveStore = activeStore?.id === store.id ? activeStore : store;
 
   const backLabel = getBackLabel(from);
   const backHref = from ?? '/';
+
+  // Derived publish state
+  const isPublished    = liveStore.status === 'Published';
+  const hasPublishedBefore = !!liveStore.publishedDomain;
 
   const handlePublishComplete = (subdomain: string) => {
     updateActiveStore({
@@ -205,14 +212,22 @@ export default function PreviewShell({ store, from = null }: Props) {
             <span className="hidden sm:inline">Dashboard</span>
           </button>
 
-          {/* Publish / Unpublish */}
-          {store.status === 'Published' ? (
+          {/* Publish / Republish / Unpublish */}
+          {isPublished ? (
             <button
               onClick={() => setShowUnpublishModal(true)}
               className="flex items-center gap-1.5 px-2.5 sm:px-5 py-2 bg-red-50 text-red-600 border border-red-200 text-sm font-semibold rounded-xl hover:bg-red-100 transition-all"
             >
               <CloudOff className="w-4 h-4 flex-shrink-0" />
               <span className="hidden sm:inline">Unpublish</span>
+            </button>
+          ) : hasPublishedBefore ? (
+            <button
+              onClick={() => setShowPublishModal(true)}
+              className="flex items-center gap-1.5 px-2.5 sm:px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow-md"
+            >
+              <RotateCcw className="w-4 h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Republish</span>
             </button>
           ) : (
             <button
@@ -248,7 +263,7 @@ export default function PreviewShell({ store, from = null }: Props) {
               <div className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 flex items-center gap-2">
                 <Globe className="w-3.5 h-3.5 text-slate-400" />
                 <span className="text-xs text-slate-500 font-mono truncate">
-                  https://{store.domain || 'my-store.storee.io'}
+                  https://{liveStore.domain || 'my-store.storee.io'}
                 </span>
                 <div className="ml-auto w-3.5 h-3.5 rounded-full bg-green-500/20 flex items-center justify-center">
                   <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
@@ -354,9 +369,12 @@ export default function PreviewShell({ store, from = null }: Props) {
       <AnimatePresence>
         {showPublishModal && (
           <PublishModal
-            store={store}
+            store={liveStore}
             onPublish={handlePublishComplete}
             onClose={() => setShowPublishModal(false)}
+            {...(hasPublishedBefore && !isPublished
+              ? { fixedSubdomain: liveStore.publishedDomain }
+              : {})}
           />
         )}
       </AnimatePresence>
@@ -364,7 +382,7 @@ export default function PreviewShell({ store, from = null }: Props) {
       <AnimatePresence>
         {showUnpublishModal && (
           <UnpublishModal
-            store={store}
+            store={liveStore}
             onConfirm={handleUnpublish}
             onClose={() => setShowUnpublishModal(false)}
           />
