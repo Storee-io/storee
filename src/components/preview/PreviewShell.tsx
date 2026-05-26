@@ -122,6 +122,9 @@ export default function PreviewShell({ store, from = null }: Props) {
       ...(store.currency ? { currency: store.currency } : {}),
       ...(store.language ? { language: store.language } : {}),
       prompt: regenPrompt,
+      ...((aiResult as { variationId?: number } | null)?.variationId != null
+        ? { variationId: (aiResult as { variationId?: number }).variationId }
+        : {}),
     };
 
     localStorage.setItem(`storee_store_${newStore.id}`, JSON.stringify(newStore));

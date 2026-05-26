@@ -288,6 +288,9 @@ export default function HeroSection() {
       ...(selectedCurr ? { currency: selectedCurr } : {}),
       ...(selectedLang ? { language: selectedLang } : {}),
       prompt,
+      ...((aiResult as { variationId?: number } | null)?.variationId != null
+        ? { variationId: (aiResult as { variationId?: number }).variationId }
+        : {}),
     };
 
     // Save to localStorage (fast, instant access on same browser)
