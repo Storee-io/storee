@@ -151,20 +151,22 @@ export default function PreviewShell({ store, from = null }: Props) {
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col">
       {/* Toolbar */}
-      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between gap-4 flex-shrink-0 shadow-sm z-10">
-        <div className="flex items-center gap-3">
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
+        {/* Left — back + store name */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           <button
             onClick={() => router.push(backHref)}
-            className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors"
+            className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 transition-colors flex-shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm hidden sm:inline">{backLabel}</span>
           </button>
-          <div className="h-5 w-px bg-slate-200" />
-          <span className="font-semibold text-slate-900 text-sm sm:text-base">{store.name}</span>
+          <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
+          <span className="font-semibold text-slate-900 text-sm sm:text-base truncate">{store.name}</span>
         </div>
 
-        <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1">
+        {/* Center — device switcher */}
+        <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1 flex-shrink-0">
           {([
             { mode: 'desktop', Icon: Monitor },
             { mode: 'tablet', Icon: Tablet },
@@ -182,36 +184,43 @@ export default function PreviewShell({ store, from = null }: Props) {
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Regenerate button */}
+        {/* Right — action buttons, always visible */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Regenerate */}
           <button
             onClick={openRegenModal}
             disabled={isRegenerating}
-            className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40"
           >
-            <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 flex-shrink-0 ${isRegenerating ? 'animate-spin' : ''}`} />
             <span className="hidden md:inline">Regenerate</span>
           </button>
+
+          {/* Dashboard */}
           <button
             onClick={handleDashboardClick}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+            className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
           >
-            <LayoutDashboard className="w-4 h-4" />
+            <LayoutDashboard className="w-4 h-4 flex-shrink-0" />
             <span className="hidden sm:inline">Dashboard</span>
           </button>
+
+          {/* Publish / Unpublish */}
           {store.status === 'Published' ? (
             <button
               onClick={() => setShowUnpublishModal(true)}
-              className="flex items-center gap-2 px-5 py-2 bg-red-50 text-red-600 border border-red-200 text-sm font-semibold rounded-xl hover:bg-red-100 transition-all"
+              className="flex items-center gap-1.5 px-2.5 sm:px-5 py-2 bg-red-50 text-red-600 border border-red-200 text-sm font-semibold rounded-xl hover:bg-red-100 transition-all"
             >
-              <CloudOff className="w-4 h-4" />Unpublish
+              <CloudOff className="w-4 h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Unpublish</span>
             </button>
           ) : (
             <button
               onClick={() => setShowPublishModal(true)}
-              className="flex items-center gap-2 px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow-md"
+              className="flex items-center gap-1.5 px-2.5 sm:px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow-md"
             >
-              <Rocket className="w-4 h-4" />Publish
+              <Rocket className="w-4 h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Publish</span>
             </button>
           )}
         </div>
