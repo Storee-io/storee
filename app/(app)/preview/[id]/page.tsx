@@ -32,8 +32,9 @@ export default function PreviewByIdPage() {
       try {
         const loaded = JSON.parse(raw) as Store;
         setStore(loaded);
-        addStore(loaded).catch(console.error);
+        setActiveStore(loaded);
         setGeneratedStore(loaded);
+        addStore(loaded).catch(console.error);
         return;
       } catch { /* fall through */ }
     }
@@ -46,8 +47,9 @@ export default function PreviewByIdPage() {
         // Repopulate localStorage so subsequent loads are instant
         localStorage.setItem(`storee_store_${loaded.id}`, JSON.stringify(loaded));
         setStore(loaded);
-        addStore(loaded).catch(console.error);
+        setActiveStore(loaded);
         setGeneratedStore(loaded);
+        addStore(loaded).catch(console.error);
       })
       .catch(() => setNotFound(true));
   }, [params.id]); // eslint-disable-line react-hooks/exhaustive-deps

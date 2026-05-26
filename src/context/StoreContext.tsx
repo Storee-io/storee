@@ -302,6 +302,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       // Persist asynchronously
       if (userId) {
         upsertStore(updated, userId).catch(console.error);
+      } else {
+        // Guest: keep localStorage in sync so reload/navigate preserves state
+        try {
+          localStorage.setItem(`storee_store_${updated.id}`, JSON.stringify(updated));
+        } catch { /* quota */ }
       }
       return updated;
     });
