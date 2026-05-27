@@ -205,27 +205,38 @@ function FlyingDot({ item, primaryColor }: { item: FlyItem; primaryColor: string
   const fadeDurS   = `${(dur * 0.35).toFixed(2)}s`;
   const fadeDelayS = `${(dur * 0.65).toFixed(2)}s`;
 
+  // End size: shrink to ~40px on the short side, maintaining the image's aspect ratio
+  const aspect = item.startW > 0 && item.startH > 0 ? item.startW / item.startH : 1;
+  const END_SHORT = 40;
+  const endW = aspect >= 1 ? Math.round(END_SHORT * aspect) : END_SHORT;
+  const endH = aspect >= 1 ? END_SHORT : Math.round(END_SHORT / aspect);
+
+  // Border radius: start as card-like (8px), transition to circle at destination
+  const startRadius = Math.min(10, Math.min(item.startW, item.startH) * 0.1);
+  const endRadius = Math.round(Math.min(endW, endH) / 2);
+
   const dot = (
     <div
       style={{
         position: 'fixed',
         left: active ? targetX : item.startX,
         top: active ? targetY : item.startY,
-        width: active ? '8px' : `${item.startW}px`,
-        height: active ? '8px' : `${item.startH}px`,
+        width: active ? `${endW}px` : `${item.startW}px`,
+        height: active ? `${endH}px` : `${item.startH}px`,
         opacity: active ? 0 : 1,
         transform: 'translate(-50%, -50%)',
+        borderRadius: active ? `${endRadius}px` : `${startRadius}px`,
         transition: [
           `left ${durS} cubic-bezier(0.25,0.6,0.35,1)`,
           `top ${durS} cubic-bezier(0.25,0.6,0.35,1)`,
-          `width ${durS} linear`,
-          `height ${durS} linear`,
+          `width ${durS} cubic-bezier(0.25,0.6,0.35,1)`,
+          `height ${durS} cubic-bezier(0.25,0.6,0.35,1)`,
+          `border-radius ${durS} ease-in`,
           `opacity ${fadeDurS} ease-in ${fadeDelayS}`,
         ].join(', '),
         zIndex: 99999,
-        borderRadius: '12px',
         overflow: 'hidden',
-        boxShadow: active ? '0 2px 8px rgba(0,0,0,0.2)' : '0 8px 32px rgba(0,0,0,0.3)',
+        boxShadow: active ? '0 2px 12px rgba(0,0,0,0.25)' : '0 8px 32px rgba(0,0,0,0.3)',
         pointerEvents: 'none',
       }}
     >
@@ -240,6 +251,21 @@ function FlyingDot({ item, primaryColor }: { item: FlyItem; primaryColor: string
   // not the transform:translateZ(0) container in PreviewShell.
   if (typeof document === 'undefined') return null;
   return createPortal(dot, document.body);
+}
+
+// ── Cart fly source rect helper ───────────────────────────────────────────────
+// Given a button element inside a product card, finds the product image element
+// and returns its bounding rect (preserving the real image shape/aspect ratio).
+// Falls back to the card image container, then the button itself.
+function getProductImgRect(btn: HTMLElement): DOMRect {
+  const card = btn.closest('.group') as HTMLElement | null;
+  if (card) {
+    const img = card.querySelector('img') as HTMLElement | null;
+    if (img) return img.getBoundingClientRect();
+    const wrap = card.querySelector('.relative.aspect-square, .relative.aspect-\\[3\\/4\\], .relative.overflow-hidden') as HTMLElement | null;
+    if (wrap) return wrap.getBoundingClientRect();
+  }
+  return btn.getBoundingClientRect();
 }
 
 // ── Image fallback ────────────────────────────────────────────────────────────
@@ -1710,8 +1736,8 @@ function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onPro
                     <button
                       onClick={e => {
                         e.stopPropagation();
-                        const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                        onAddToCart(p, r);
+                        const btn = e.currentTarget as HTMLElement;
+                        onAddToCart(p, getProductImgRect(btn));
                       }}
                       className="flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-opacity hover:opacity-85"
                       style={{ background: t.primary, color: t.primaryContrast }}
@@ -1880,7 +1906,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
                 {/* Quick add — always visible on mobile, hover on desktop */}
                 <div className={`absolute bottom-0 inset-x-0 p-3 transition-transform duration-200 ${isMobile ? '' : 'translate-y-full group-hover:translate-y-0'}`}>
                   <button
-                    onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; const _card = _btn.closest('.group') as HTMLElement ?? _btn; const _wrap = _card.querySelector('.relative.overflow-hidden, .relative.aspect-square, .relative.rounded-2xl') as HTMLElement | null; const _img = (_wrap ?? _card).querySelector('img') as HTMLElement | null; onAddToCart(p, (_img ?? _wrap ?? _btn).getBoundingClientRect()); }}
+                    onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(_btn)); }}
                     className="w-full py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-xl text-white shadow-lg"
                     style={{ background: primaryColor }}
                   >
@@ -2088,7 +2114,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
                 {/* Always-visible price + add on mobile; hover on desktop */}
                 <div className={`absolute bottom-0 inset-x-0 p-3 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100 transition-opacity'}`}>
                   <button
-                    onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; const _card = _btn.closest('.group') as HTMLElement ?? _btn; const _wrap = _card.querySelector('.relative.overflow-hidden, .relative.aspect-square, .relative.rounded-2xl') as HTMLElement | null; const _img = (_wrap ?? _card).querySelector('img') as HTMLElement | null; onAddToCart(p, (_img ?? _wrap ?? _btn).getBoundingClientRect()); }}
+                    onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(_btn)); }}
                     className="w-full py-2.5 text-[11px] font-black uppercase tracking-wider rounded-xl text-black"
                     style={{ background: primaryColor }}
                   >
@@ -2282,7 +2308,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
                 <div className={`absolute bottom-0 inset-x-0 transition-transform duration-300 ${isMobile ? '' : 'translate-y-full group-hover:translate-y-0'}`}
                   style={{ background: 'rgba(15,10,5,0.88)' }}>
                   <button
-                    onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; const _card = _btn.closest('.group') as HTMLElement ?? _btn; const _wrap = _card.querySelector('.relative.overflow-hidden, .relative.aspect-square, .relative.rounded-2xl') as HTMLElement | null; const _img = (_wrap ?? _card).querySelector('img') as HTMLElement | null; onAddToCart(p, (_img ?? _wrap ?? _btn).getBoundingClientRect()); }}
+                    onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(_btn)); }}
                     className="w-full py-3 text-[10px] text-white border-t border-white/15 hover:bg-white/8 transition-colors"
                     style={{ letterSpacing: '0.22em', fontFamily: 'system-ui' }}
                   >
@@ -2536,7 +2562,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
                     <span className="text-sm font-bold" style={{ color: tt.textPrimary }}>{fmtPrice(p.price)}</span>
                     {p.originalPrice && !isMobile && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
                   </div>
-                  <button onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; const _card = _btn.closest('.group') as HTMLElement ?? _btn; const _wrap = _card.querySelector('.relative.overflow-hidden, .relative.aspect-square, .relative.rounded-2xl') as HTMLElement | null; const _img = (_wrap ?? _card).querySelector('img') as HTMLElement | null; onAddToCart(p, (_img ?? _wrap ?? _btn).getBoundingClientRect()); }} className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-xl text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: primaryColor }}>
+                  <button onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(_btn)); }} className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-xl text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: primaryColor }}>
                     Add
                   </button>
                 </div>
@@ -2759,7 +2785,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
                     {p.originalPrice && !isMobile && <span className="text-xs line-through flex-shrink-0" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
                   </div>
                   <button
-                    onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; const _card = _btn.closest('.group') as HTMLElement ?? _btn; const _wrap = _card.querySelector('.relative.overflow-hidden, .relative.aspect-square, .relative.rounded-2xl') as HTMLElement | null; const _img = (_wrap ?? _card).querySelector('img') as HTMLElement | null; onAddToCart(p, (_img ?? _wrap ?? _btn).getBoundingClientRect()); }}
+                    onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(_btn)); }}
                     className={`flex-shrink-0 rounded-xl font-black text-white hover:opacity-85 transition-opacity ${isMobile ? 'p-2' : 'flex items-center gap-1 px-3 py-2 text-xs'}`}
                     style={{ background: idx % 2 === 0 ? primaryColor : accentColor }}
                   >
@@ -2910,7 +2936,7 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
                 <p className="text-sm font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
                 <div className="flex items-center justify-between mt-2">
                   <span className="font-bold" style={{ color: tt.textPrimary }}>{fmtPrice(p.price)}</span>
-                  <button onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; const _card = _btn.closest('.group') as HTMLElement ?? _btn; const _wrap = _card.querySelector('.relative.overflow-hidden, .relative.aspect-square, .relative.rounded-2xl') as HTMLElement | null; const _img = (_wrap ?? _card).querySelector('img') as HTMLElement | null; onAddToCart(p, (_img ?? _wrap ?? _btn).getBoundingClientRect()); }} className="px-3 py-1.5 text-xs font-semibold rounded-xl text-white" style={{ background: primaryColor }}>Add</button>
+                  <button onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(_btn)); }} className="px-3 py-1.5 text-xs font-semibold rounded-xl text-white" style={{ background: primaryColor }}>Add</button>
                 </div>
               </div>
             </div>
@@ -4426,7 +4452,7 @@ function TkGridStaggered({ products, tt, primaryColor, device, onProductClick, o
               <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
             </button>
             <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
-              <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
+              <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
                 className="w-full py-2.5 text-[11px] font-bold uppercase tracking-wider text-white shadow-lg"
                 style={{ background: primaryColor, borderRadius: tt.btnRadius }}>+ Add to Cart</button>
             </div>
@@ -4489,7 +4515,7 @@ function TkGridOverlapping({ products, tt, primaryColor, device, onProductClick,
                   <p className="text-white text-xs font-bold truncate">{p.name}</p>
                   <div className="flex items-center justify-between mt-1.5">
                     <span className="text-white text-sm font-black">{fmtPrice(p.price)}</span>
-                    <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
+                    <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
                       className="px-3 py-1.5 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity"
                       style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>Add</button>
                   </div>
@@ -4526,7 +4552,7 @@ function TkGridAsymmetric({ products, tt, primaryColor, device, onProductClick, 
           <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
         </button>
         <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
-          <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
+          <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
             className="w-full py-2 text-[11px] font-bold uppercase tracking-wider text-white"
             style={{ background: primaryColor, borderRadius: tt.btnRadius }}>+ Add</button>
         </div>
@@ -4599,7 +4625,7 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
             )}
             <div className={`absolute bottom-0 inset-x-0 p-3 transition-transform duration-200 ${isMobile ? '' : 'translate-y-full group-hover:translate-y-0'}`}>
               <button
-                onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; const wrap = btn.closest('.group')?.querySelector('.relative.overflow-hidden') as HTMLElement | null; onAddToCart(p, (wrap ?? btn).getBoundingClientRect()); }}
+                onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
                 className="w-full py-2.5 text-[11px] font-bold uppercase tracking-wider text-white shadow-lg"
                 style={{ background: primaryColor, borderRadius: tt.btnRadius }}
               >
@@ -4662,7 +4688,7 @@ function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, on
           <div className="flex items-center justify-between">
             <span className="text-base font-black" style={{ color: primaryColor }}>{fmtPrice(featured.price)}</span>
             <button
-              onClick={e => { e.stopPropagation(); const wrap = (e.currentTarget as HTMLElement).closest('.group') as HTMLElement; onAddToCart(featured, wrap?.getBoundingClientRect()); }}
+              onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(featured, getProductImgRect(btn)); }}
               className="px-4 py-2 text-xs font-bold"
               style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}
             >
@@ -4701,7 +4727,7 @@ function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, on
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-black" style={{ color: tt.primary }}>{fmtPrice(p.price)}</span>
               <button
-                onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
+                onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
                 className="text-[10px] font-bold px-2.5 py-1 text-white flex-shrink-0"
                 style={{ background: primaryColor, borderRadius: tt.btnRadius }}
               >Add</button>
@@ -4761,7 +4787,7 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
                   <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={{ color: wishlist.has(p.id) ? undefined : tt.textMuted }} />
                 </button>
                 <button
-                  onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
+                  onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
                   className="px-4 py-2 text-xs font-bold flex-shrink-0"
                   style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}
                 >
@@ -4810,7 +4836,7 @@ function TkGridCarousel({ products, tt, primaryColor, device, onProductClick, on
                 <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
               </button>
               <div className={`absolute bottom-0 inset-x-0 p-3 transition-transform duration-200 ${isMobile ? '' : 'translate-y-full group-hover:translate-y-0'}`}>
-                <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
+                <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
                   className="w-full py-2.5 text-[11px] font-bold uppercase tracking-wider text-white"
                   style={{ background: primaryColor, borderRadius: tt.btnRadius }}>+ Add to Cart</button>
               </div>
@@ -4870,7 +4896,7 @@ function TkGridSpotlight({ products, tt, primaryColor, device, onProductClick, o
                 {featured.originalPrice && <span className="text-white/50 text-xs line-through">{fmtPrice(featured.originalPrice)}</span>}
               </div>
             </div>
-            <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(featured, btn.getBoundingClientRect()); }}
+            <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(featured, getProductImgRect(btn)); }}
               className="px-5 py-2.5 text-xs font-bold"
               style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>Add to Cart</button>
           </div>
@@ -4887,7 +4913,7 @@ function TkGridSpotlight({ products, tt, primaryColor, device, onProductClick, o
               <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               {p.badge && <span className="absolute top-2 left-2 text-[8px] font-black uppercase px-1.5 py-0.5 text-white"
                 style={{ background: primaryColor, borderRadius: tt.btnRadius }}>{p.badge}</span>}
-              <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, btn.getBoundingClientRect()); }}
+              <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
                 className={`absolute bottom-2 right-2 w-7 h-7 flex items-center justify-center text-white font-bold rounded-full shadow-md ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}
                 style={{ background: primaryColor }}>+</button>
             </div>
@@ -6136,7 +6162,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
                   <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                   <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 55%)' }} />
                   <button
-                    onClick={e => { e.stopPropagation(); const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); onAddToCart(p, rect); }}
+                    onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
                     className="absolute bottom-2 right-2 w-9 h-9 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
                     style={{ background: pc, color: pcText }}
                   >
@@ -6169,7 +6195,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
                       <span className="font-bold text-sm" style={{ color: pc }}>{fmtPrice(p.price)}</span>
                     </div>
                     <button
-                      onClick={e => { e.stopPropagation(); const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); onAddToCart(p, rect); }}
+                      onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
                       className="px-4 py-1.5 text-xs font-bold rounded-sm transition-all active:scale-95"
                       style={{ background: pc, color: pcText }}
                     >Shop Now</button>
@@ -6209,7 +6235,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
                   <span className="text-xs font-bold" style={{ color: pc }}>{fmtPrice(p.price)}</span>
                   <button
-                    onClick={e => { e.stopPropagation(); const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); onAddToCart(p, rect); }}
+                    onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
                     className="text-[10px] font-semibold px-2 py-0.5 rounded transition-all hover:opacity-80"
                     style={{ background: alpha(pc, 0.2), color: pc }}
                   >Add</button>
@@ -6255,8 +6281,8 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
                 <button
                   onClick={e => {
                     e.stopPropagation();
-                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                    onAddToCart(p, rect);
+                    const btn = e.currentTarget as HTMLElement;
+                    onAddToCart(p, getProductImgRect(btn));
                   }}
                   className="flex-shrink-0 px-3 py-2 text-xs font-bold rounded-full transition-all hover:opacity-90 active:scale-95"
                   style={{ background: pc, color: pcText }}
@@ -6686,7 +6712,7 @@ function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart
         {/* Add to cart — slide up on hover */}
         <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
           <button
-            onClick={e => { e.stopPropagation(); const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); onAddToCart(p, rect); }}
+            onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
             className="w-full py-2.5 text-xs font-bold uppercase tracking-widest text-white transition-opacity hover:opacity-90"
             style={{ background: pc, borderRadius: tt.btnRadius }}>
             Add to bag
@@ -6892,7 +6918,7 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
                     style={{ background: 'rgba(0,0,0,0.45)' }}>
                     <span className="text-white text-xs font-bold">{fmtPrice(p.price)}</span>
                     <button
-                      onClick={e => { e.stopPropagation(); const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); onAddToCart(p, rect); }}
+                      onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
                       className="mt-1 px-3 py-1 text-[10px] font-bold rounded-full"
                       style={{ background: pc, color: pcText }}
                     >Shop</button>
@@ -6923,7 +6949,7 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
                       {p.originalPrice && <span className="text-[10px] line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
                     </div>
                     <button
-                      onClick={e => { e.stopPropagation(); const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); onAddToCart(p, rect); }}
+                      onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
                       className="w-7 h-7 flex items-center justify-center text-white text-sm font-bold rounded-full transition-all hover:opacity-85 active:scale-95"
                       style={{ background: pc, transition: getMotionTransition(motion) }}
                     >+</button>
@@ -7187,7 +7213,7 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
                         style={{ background: pc, color: pcText }}>{p.badge}</span>
                     )}
                     <button
-                      onClick={e => { e.stopPropagation(); const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); onAddToCart(p, rect); }}
+                      onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
                       className="absolute bottom-0 inset-x-0 py-2.5 text-[10px] font-bold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-all"
                       style={{ background: pc, color: pcText }}>Add to cart</button>
                   </div>
