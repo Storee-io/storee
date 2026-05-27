@@ -7155,7 +7155,7 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
                 </div>
                 <div className="flex items-center gap-3 mt-5">
                   <button
-                    onClick={() => { const rect = undefined; onAddToCart(p, rect); }}
+                    onClick={e => { const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
                     className="px-8 py-3.5 text-sm font-bold transition-all hover:opacity-90 active:scale-95"
                     style={{ background: pc, color: pcText, borderRadius: tt.btnRadius, boxShadow: getElevationShadow('raised'), transition: getMotionTransition(motion) }}
                   >Add to Cart</button>
