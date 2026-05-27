@@ -7,10 +7,12 @@ import { templates } from '../data/templates';
 import { generateStoreData } from '../data/storeDataGenerator';
 import type { StoreData } from '../data/storeDataGenerator';
 import type { StoreDesign } from '../lib/claudeApi';
+import type { AdvancedOptions } from '../lib/claudeApiClient';
 import { supabase, fetchUserStores, upsertStore } from '../lib/supabase';
 
 export type { StoreData };
 export type { StoreDesign };
+export type { AdvancedOptions };
 
 export interface StoreCurrency {
   code: string;
@@ -133,6 +135,8 @@ export interface Store {
   audience?: string;
   // Original generation prompt — used by Regenerate flow
   prompt?: string;
+  // Advanced options used during generation (mood, audience, themeColors, etc.)
+  advancedOptions?: AdvancedOptions;
   // Variation preset ID used for this generation — excluded on next regenerate for diversity
   variationId?: number;
 }

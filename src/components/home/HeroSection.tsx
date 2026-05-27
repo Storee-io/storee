@@ -288,6 +288,7 @@ export default function HeroSection() {
       ...(selectedCurr ? { currency: selectedCurr } : {}),
       ...(selectedLang ? { language: selectedLang } : {}),
       prompt,
+      ...(advancedApplied ? { advancedOptions: advanced } : {}),
       ...((aiResult as { variationId?: number } | null)?.variationId != null
         ? { variationId: (aiResult as { variationId?: number }).variationId }
         : {}),

@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from './StorePreview';
 import PublishModal from './PublishModal';
@@ -11,9 +11,22 @@ import UnpublishModal from './UnpublishModal';
 import { generateStoreWithClaude } from '../../lib/claudeApiClient';
 import { getGuestId } from '../../lib/guestId';
 import GeneratingOverlay from '../GeneratingOverlay';
-import type { Store } from '../../context/StoreContext';
+import type { Store, AdvancedOptions } from '../../context/StoreContext';
 
 type DeviceMode = 'desktop' | 'tablet' | 'mobile';
+
+const emptyThemeColors = { primary: '', secondary: '', accent: '', background: '', surface: '', textPrimary: '', textSecondary: '', border: '', success: '', danger: '' };
+const defaultAdvanced = (): AdvancedOptions => ({
+  themeColors: { ...emptyThemeColors },
+  mood: '',
+  audience: '',
+  productCount: '',
+  features: {
+    reviews: false, wishlist: true, newsletter: false,
+    promoBar: false, faq: false, testimonials: false,
+    brandStory: false, trustBadges: false,
+  },
+});
 
 const BACK_LABELS: Record<string, string> = {
   '/': 'Home',
@@ -41,6 +54,8 @@ export default function PreviewShell({ store, from = null }: Props) {
   const [showRegenModal, setShowRegenModal] = useState(false);
   const [regenMode, setRegenMode] = useState<'new' | 'replace'>('new');
   const [regenPrompt, setRegenPrompt] = useState(store.prompt ?? '');
+  const [regenAdvanced, setRegenAdvanced] = useState<AdvancedOptions | null>(store.advancedOptions ?? null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const stepTimerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -81,7 +96,9 @@ export default function PreviewShell({ store, from = null }: Props) {
   };
 
   const openRegenModal = () => {
-    setRegenPrompt(store.prompt ?? store.name ?? '');
+    setRegenPrompt(liveStore.prompt ?? liveStore.name ?? '');
+    setRegenAdvanced(liveStore.advancedOptions ?? null);
+    setShowAdvanced(false);
     setShowRegenModal(true);
   };
 
@@ -100,10 +117,10 @@ export default function PreviewShell({ store, from = null }: Props) {
     const [aiResult] = await Promise.all([
       generateStoreWithClaude(
         regenPrompt,
-        store.currency ?? undefined,
-        store.language ?? undefined,
-        undefined,                 // advanced options
-        store.variationId,         // exclude last variation → force different look
+        liveStore.currency ?? undefined,
+        liveStore.language ?? undefined,
+        regenAdvanced ?? undefined,   // restored advanced options
+        liveStore.variationId,        // exclude last variation → force different look
       ),
       new Promise<void>(r => setTimeout(r, 21000)),
     ]);
@@ -131,6 +148,7 @@ export default function PreviewShell({ store, from = null }: Props) {
         template: aiResult?.template ?? store.template,
         category: aiResult?.design?.collections?.[0]?.name ?? store.category,
         prompt: regenPrompt,
+        ...(regenAdvanced ? { advancedOptions: regenAdvanced } : {}),
         ...((aiResult?.design) ? { design: aiResult.design } : {}),
         ...((aiResult as { variationId?: number } | null)?.variationId != null
           ? { variationId: (aiResult as { variationId?: number }).variationId }
@@ -157,9 +175,10 @@ export default function PreviewShell({ store, from = null }: Props) {
       revenue: 0,
       orders: 0,
       ...(aiResult?.design ? { design: aiResult.design } : {}),
-      ...(store.currency ? { currency: store.currency } : {}),
-      ...(store.language ? { language: store.language } : {}),
+      ...(liveStore.currency ? { currency: liveStore.currency } : {}),
+      ...(liveStore.language ? { language: liveStore.language } : {}),
       prompt: regenPrompt,
+      ...(regenAdvanced ? { advancedOptions: regenAdvanced } : {}),
       ...((aiResult as { variationId?: number } | null)?.variationId != null
         ? { variationId: (aiResult as { variationId?: number }).variationId }
         : {}),
@@ -346,15 +365,145 @@ export default function PreviewShell({ store, from = null }: Props) {
                 </button>
               </div>
 
-              {/* Prompt textarea */}
+              {/* Prompt / Brand description */}
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Brand Description</label>
               <textarea
                 value={regenPrompt}
                 onChange={e => setRegenPrompt(e.target.value)}
                 placeholder="Describe your store..."
-                rows={4}
-                className="w-full px-4 py-3 text-sm text-slate-800 bg-slate-50 border border-slate-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent placeholder:text-slate-400 mb-5"
+                rows={3}
+                className="w-full px-4 py-3 text-sm text-slate-800 bg-slate-50 border border-slate-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent placeholder:text-slate-400 mb-3"
                 autoFocus
               />
+
+              {/* Advanced options toggle */}
+              <button
+                onClick={() => setShowAdvanced(v => !v)}
+                className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors mb-3"
+              >
+                {showAdvanced ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                Advanced Options
+                {regenAdvanced && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">Saved</span>
+                )}
+              </button>
+
+              {/* Advanced options panel */}
+              <AnimatePresence>
+                {showAdvanced && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-3 space-y-4">
+
+                      {/* Color Style */}
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Color Style</label>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 flex-1">
+                            <div
+                              className="w-7 h-7 rounded-lg border-2 border-white shadow cursor-pointer flex-shrink-0"
+                              style={{ background: regenAdvanced?.themeColors?.primary || liveStore.primaryColor }}
+                              title="Primary"
+                            />
+                            <input
+                              type="text"
+                              value={regenAdvanced?.themeColors?.primary ?? liveStore.primaryColor}
+                              onChange={e => setRegenAdvanced(prev => ({
+                                ...(prev ?? defaultAdvanced()),
+                                themeColors: { ...(prev?.themeColors ?? emptyThemeColors), primary: e.target.value },
+                              }))}
+                              placeholder="Primary color"
+                              className="flex-1 px-2.5 py-1.5 text-xs font-mono bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-1">
+                            <div
+                              className="w-7 h-7 rounded-lg border-2 border-white shadow cursor-pointer flex-shrink-0"
+                              style={{ background: regenAdvanced?.themeColors?.secondary || '#64748b' }}
+                              title="Secondary"
+                            />
+                            <input
+                              type="text"
+                              value={regenAdvanced?.themeColors?.secondary ?? ''}
+                              onChange={e => setRegenAdvanced(prev => ({
+                                ...(prev ?? defaultAdvanced()),
+                                themeColors: { ...(prev?.themeColors ?? emptyThemeColors), secondary: e.target.value },
+                              }))}
+                              placeholder="Secondary"
+                              className="flex-1 px-2.5 py-1.5 text-xs font-mono bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Mood */}
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Mood</label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(['', 'luxury', 'casual', 'energetic', 'professional', 'romantic'] as const).map(m => (
+                            <button
+                              key={m || 'none'}
+                              onClick={() => setRegenAdvanced(prev => ({ ...(prev ?? defaultAdvanced()), mood: m }))}
+                              className={`px-2.5 py-1 text-xs font-medium rounded-lg border transition-all ${
+                                (regenAdvanced?.mood ?? '') === m
+                                  ? 'bg-emerald-500 text-white border-emerald-500'
+                                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                              }`}
+                            >
+                              {m === '' ? 'Auto' : m.charAt(0).toUpperCase() + m.slice(1)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Target Audience */}
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Target Audience</label>
+                        <input
+                          type="text"
+                          value={regenAdvanced?.audience ?? ''}
+                          onChange={e => setRegenAdvanced(prev => ({ ...(prev ?? defaultAdvanced()), audience: e.target.value }))}
+                          placeholder="e.g. young adults, busy parents, coffee lovers..."
+                          className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-400 placeholder:text-slate-400"
+                        />
+                      </div>
+
+                      {/* Product Count */}
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Number of Products</label>
+                        <div className="flex gap-1.5">
+                          {([['', 'Auto'], ['few', 'Few (4–6)'], ['medium', 'Medium (8–12)'], ['many', 'Many (16+)']] as const).map(([val, label]) => (
+                            <button
+                              key={val || 'auto'}
+                              onClick={() => setRegenAdvanced(prev => ({ ...(prev ?? defaultAdvanced()), productCount: val }))}
+                              className={`flex-1 py-1 text-[11px] font-medium rounded-lg border transition-all ${
+                                (regenAdvanced?.productCount ?? '') === val
+                                  ? 'bg-emerald-500 text-white border-emerald-500'
+                                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Reset */}
+                      <button
+                        onClick={() => setRegenAdvanced(null)}
+                        className="text-[11px] text-slate-400 hover:text-slate-600 underline transition-colors"
+                      >
+                        Reset to defaults
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Option description */}
               <p className="text-[11px] text-slate-400 mb-3">
