@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Store, Globe, Trash2, Plus, TrendingUp, Package,
   AlertTriangle, Rocket, ArrowLeft, Settings, ShoppingBag,
-  Eye, RotateCcw, CloudOff,
+  Eye, RotateCcw, CloudOff, MoreHorizontal,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useStore } from '@/src/context/StoreContext';
@@ -23,7 +23,21 @@ export default function MyStoresPage() {
   const [confirmDelete, setConfirmDelete]   = useState<string | null>(null);
   const [publishStore, setPublishStore]     = useState<StoreType | null>(null);
   const [unpublishStore, setUnpublishStore] = useState<StoreType | null>(null);
+  const [openMenuId, setOpenMenuId]         = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // Close overflow menu on outside click
+  useEffect(() => {
+    if (!openMenuId) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [openMenuId]);
 
   const openPublish = (store: StoreType) => {
     setActiveStore(store);
@@ -187,23 +201,38 @@ export default function MyStoresPage() {
                           )}
                         </div>
 
-                        {/* Preview + Delete icons top-right */}
-                        <div className="flex items-center gap-0.5 flex-shrink-0">
-                          <Link
-                            href={`/preview/${store.id}?from=/stores`}
-                            onClick={() => setActiveStore(store)}
-                            title="Preview store"
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Link>
-                          <button
-                            onClick={() => setConfirmDelete(store.id)}
-                            title="Delete store"
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                        {/* ··· overflow menu only */}
+                        <div className="flex items-center flex-shrink-0">
+
+                          {/* ··· overflow menu */}
+                          <div className="relative" ref={openMenuId === store.id ? menuRef : undefined}>
+                            <button
+                              onClick={() => setOpenMenuId(openMenuId === store.id ? null : store.id)}
+                              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                            >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </button>
+
+                            <AnimatePresence>
+                              {openMenuId === store.id && (
+                                <motion.div
+                                  initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                                  exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                                  transition={{ duration: 0.12 }}
+                                  className="absolute right-0 top-full mt-1 w-40 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden"
+                                >
+                                  <button
+                                    onClick={() => { setOpenMenuId(null); setConfirmDelete(store.id); }}
+                                    className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    Delete store
+                                  </button>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         </div>
                       </div>
                       {/* ── Stats ── */}
@@ -226,7 +255,7 @@ export default function MyStoresPage() {
                         </div>
                       </div>
 
-                      {/* ── Actions: 2-button footer ── */}
+                      {/* ── Actions: single row ── */}
                       <div className="mt-auto pt-3 border-t border-slate-100">
                         <div className="flex gap-2">
                           {/* Manage — primary, solid */}
@@ -239,30 +268,40 @@ export default function MyStoresPage() {
                             Manage
                           </button>
 
-                          {/* Publish / Republish / Unpublish — secondary, outline, flex-1 */}
+                          {/* Preview — outline, same style as Publish/Republish */}
+                          <Link
+                            href={`/preview/${store.id}?from=/stores`}
+                            onClick={() => setActiveStore(store)}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span className="text-xs">Preview</span>
+                          </Link>
+
+                          {/* Publish / Republish / Unpublish — secondary, outline */}
                           {isPublished ? (
                             <button
                               onClick={() => setUnpublishStore(store)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-slate-500 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-slate-600 border border-slate-200 hover:border-red-200 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
                             >
                               <CloudOff className="w-3.5 h-3.5" />
-                              Unpublish
+                              <span className="text-xs">Unpublish</span>
                             </button>
                           ) : store.publishedDomain ? (
                             <button
                               onClick={() => openPublish(store)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-slate-500 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors"
                             >
                               <RotateCcw className="w-3.5 h-3.5" />
-                              Republish
+                              <span className="text-xs">Republish</span>
                             </button>
                           ) : (
                             <button
                               onClick={() => openPublish(store)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-slate-500 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors"
                             >
                               <Rocket className="w-3.5 h-3.5" />
-                              Publish
+                              <span className="text-xs">Publish</span>
                             </button>
                           )}
                         </div>

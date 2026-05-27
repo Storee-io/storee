@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import type { Variants } from 'framer-motion';
@@ -204,7 +205,7 @@ function FlyingDot({ item, primaryColor }: { item: FlyItem; primaryColor: string
   const fadeDurS   = `${(dur * 0.35).toFixed(2)}s`;
   const fadeDelayS = `${(dur * 0.65).toFixed(2)}s`;
 
-  return (
+  const dot = (
     <div
       style={{
         position: 'fixed',
@@ -234,6 +235,11 @@ function FlyingDot({ item, primaryColor }: { item: FlyItem; primaryColor: string
       }
     </div>
   );
+
+  // Portal to document.body so position:fixed is relative to the real viewport,
+  // not the transform:translateZ(0) container in PreviewShell.
+  if (typeof document === 'undefined') return null;
+  return createPortal(dot, document.body);
 }
 
 // ── Image fallback ────────────────────────────────────────────────────────────
@@ -4208,11 +4214,11 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
       </div>
 
       {/* Text column — slim, vertical centering */}
-      <div className="flex flex-col justify-center px-12 flex-1">
+      <div className="flex flex-col justify-center px-12 flex-1" style={{ minWidth: 0 }}>
         {tagline && (
           <p className="text-[9px] uppercase tracking-[0.5em] mb-8" style={{ color: tt.textMuted }}>{tagline}</p>
         )}
-        <h1 className="mb-6" style={{ ...heroHeadingStyle(tt, 3.6, 2.6, heroProps.headlineSize, isMobile), color: tt.textPrimary }}>
+        <h1 className="mb-6" style={{ ...heroHeadingStyle(tt, 3.6, 2.6, heroProps.headlineSize, isMobile), color: tt.textPrimary, fontSize: 'clamp(2rem, 4vw, 5rem)' }}>
           {heroTitle}
         </h1>
         <div style={{ width: '32px', height: '2px', background: primaryColor, marginBottom: '20px' }} />
@@ -6442,7 +6448,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
 
     // ── Default / Editorial: full-bleed image, text at bottom ──
     return (
-      <section className="relative overflow-hidden" style={{ minHeight: isMobile ? '70vh' : '85vh', display: 'flex', alignItems: 'flex-end' }}>
+      <section className="relative overflow-x-hidden" style={{ minHeight: isMobile ? '70vh' : '85vh', display: 'flex', alignItems: 'flex-end' }}>
         {products[0]?.image && (
           <div className="absolute inset-0">
             <ProductImg src={products[0].image} alt="" className="w-full h-full object-cover" />

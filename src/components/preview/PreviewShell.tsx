@@ -39,6 +39,7 @@ export default function PreviewShell({ store, from = null }: Props) {
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [showUnpublishModal, setShowUnpublishModal] = useState(false);
   const [showRegenModal, setShowRegenModal] = useState(false);
+  const [regenMode, setRegenMode] = useState<'new' | 'replace'>('new');
   const [regenPrompt, setRegenPrompt] = useState(store.prompt ?? '');
   const [isRegenerating, setIsRegenerating] = useState(false);
   const stepTimerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -84,7 +85,7 @@ export default function PreviewShell({ store, from = null }: Props) {
     setShowRegenModal(true);
   };
 
-  const handleRegenerate = async () => {
+  const handleRegenerate = async (mode: 'new' | 'replace' = regenMode) => {
     if (!regenPrompt.trim() || isRegenerating) return;
     setShowRegenModal(false);
     setIsRegenerating(true);
@@ -121,6 +122,29 @@ export default function PreviewShell({ store, from = null }: Props) {
       primaryColor = store.primaryColor;
     }
 
+    if (mode === 'replace') {
+      // ── Replace mode: overwrite current store in-place ──
+      const patch: Partial<Store> = {
+        name: storeName,
+        domain: `${storeName.toLowerCase().replace(/\s+/g, '-')}.storee.io`,
+        primaryColor,
+        template: aiResult?.template ?? store.template,
+        category: aiResult?.design?.collections?.[0]?.name ?? store.category,
+        prompt: regenPrompt,
+        ...((aiResult?.design) ? { design: aiResult.design } : {}),
+        ...((aiResult as { variationId?: number } | null)?.variationId != null
+          ? { variationId: (aiResult as { variationId?: number }).variationId }
+          : {}),
+      };
+      updateActiveStore(patch);
+      const updatedStore = { ...liveStore, ...patch };
+      setGeneratedStore(updatedStore);
+      localStorage.setItem(`storee_store_${store.id}`, JSON.stringify(updatedStore));
+      setIsRegenerating(false);
+      return; // stay on same preview page
+    }
+
+    // ── New store mode: create a brand-new store ──
     const newStore: Store = {
       id: `${storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${Math.random().toString(36).slice(2, 7)}`,
       name: storeName,
@@ -312,7 +336,7 @@ export default function PreviewShell({ store, from = null }: Props) {
                   <div className="w-8 h-8 gradient-bg rounded-xl flex items-center justify-center">
                     <Sparkles className="w-4 h-4 text-white" />
                   </div>
-                  <h2 className="text-base font-bold text-slate-900">Regenerate Store</h2>
+                  <h2 className="text-base font-bold text-slate-900">Regenerate</h2>
                 </div>
                 <button
                   onClick={() => setShowRegenModal(false)}
@@ -322,40 +346,38 @@ export default function PreviewShell({ store, from = null }: Props) {
                 </button>
               </div>
 
-              <p className="text-sm text-slate-500 mb-4">
-                Edit your prompt to regenerate a new version of this store. Your current store won&apos;t be changed.
-              </p>
-
               {/* Prompt textarea */}
               <textarea
                 value={regenPrompt}
                 onChange={e => setRegenPrompt(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleRegenerate(); }}
                 placeholder="Describe your store..."
                 rows={4}
-                className="w-full px-4 py-3 text-sm text-slate-800 bg-slate-50 border border-slate-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent placeholder:text-slate-400"
+                className="w-full px-4 py-3 text-sm text-slate-800 bg-slate-50 border border-slate-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent placeholder:text-slate-400 mb-5"
                 autoFocus
               />
 
-              <p className="text-xs text-slate-400 mt-1.5 mb-5">
-                Tip: Press <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-500 font-mono">⌘ Enter</kbd> to regenerate
+              {/* Option description */}
+              <p className="text-[11px] text-slate-400 mb-3">
+                Choose <span className="font-semibold text-emerald-600">New Store</span> to keep this store and generate a separate one, or <span className="font-semibold text-amber-600">Replace</span> to overwrite this store's design.
               </p>
 
-              {/* Actions */}
+              {/* 2 CTAs */}
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setShowRegenModal(false)}
-                  className="flex-1 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                  onClick={() => handleRegenerate('new')}
+                  disabled={!regenPrompt.trim()}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-3 text-white gradient-bg rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40"
                 >
-                  Cancel
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span className="text-sm font-semibold">New Store</span>
                 </button>
                 <button
-                  onClick={handleRegenerate}
+                  onClick={() => handleRegenerate('replace')}
                   disabled={!regenPrompt.trim()}
-                  className="flex-1 py-2.5 text-sm font-semibold text-white gradient-bg rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 flex items-center justify-center gap-2"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-amber-500 text-white rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40"
                 >
-                  <Sparkles className="w-4 h-4" />
-                  Regenerate
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span className="text-sm font-semibold">Replace</span>
                 </button>
               </div>
             </motion.div>
