@@ -601,7 +601,7 @@ export default function PromptBox({
           value={prompt} onChange={e => setPrompt(e.target.value)}
           placeholder={placeholder}
           rows={3}
-          className={`w-full resize-none text-slate-800 text-sm outline-none placeholder:text-slate-400 leading-relaxed bg-transparent overflow-hidden ${onSubmit ? 'pb-12' : 'pb-2'}`}
+          className={`w-full resize-none text-slate-800 text-sm outline-none placeholder:text-slate-400 leading-relaxed bg-transparent min-h-[72px] ${onSubmit ? 'pb-12' : 'pb-2'}`}
           onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) onSubmit?.(); }}
         />
         {onSubmit && (
