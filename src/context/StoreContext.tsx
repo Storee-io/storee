@@ -137,8 +137,9 @@ export interface Store {
   prompt?: string;
   // Advanced options used during generation (mood, audience, themeColors, etc.)
   advancedOptions?: AdvancedOptions;
-  // Variation preset ID used for this generation — excluded on next regenerate for diversity
-  variationId?: number;
+  // All variation preset IDs used so far — excluded on future regenerates so the same
+  // design is never repeated (until all 17 have been used, then the pool resets).
+  usedVariationIds?: number[];
 }
 
 export interface GenerationState {

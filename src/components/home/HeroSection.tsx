@@ -289,8 +289,9 @@ export default function HeroSection() {
       ...(selectedLang ? { language: selectedLang } : {}),
       prompt,
       ...(advancedApplied ? { advancedOptions: advanced } : {}),
+      // Track which variation was used so future regenerates never repeat it
       ...((aiResult as { variationId?: number } | null)?.variationId != null
-        ? { variationId: (aiResult as { variationId?: number }).variationId }
+        ? { usedVariationIds: [(aiResult as { variationId?: number }).variationId as number] }
         : {}),
     };
 

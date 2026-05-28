@@ -194,12 +194,18 @@ export const DESIGN_VARIATIONS: DesignVariation[] = [
   },
 ];
 
-/** Pick a pseudorandom variation from the list, avoiding the previous one. */
-function pickVariation(exclude?: number): DesignVariation {
-  const pool = exclude != null
-    ? DESIGN_VARIATIONS.filter(v => v.id !== exclude)
+/**
+ * Pick a pseudorandom variation that hasn't been used yet.
+ * If all variations have been used, resets the pool (cycles through again fresh).
+ */
+function pickVariation(excludeIds?: number[]): DesignVariation {
+  const excluded = new Set(excludeIds ?? []);
+  const pool = excluded.size > 0
+    ? DESIGN_VARIATIONS.filter(v => !excluded.has(v.id))
     : DESIGN_VARIATIONS;
-  return pool[Math.floor(Math.random() * pool.length)];
+  // If all have been used, reset and pick from the full list
+  const finalPool = pool.length > 0 ? pool : DESIGN_VARIATIONS;
+  return finalPool[Math.floor(Math.random() * finalPool.length)];
 }
 
 /**
@@ -270,10 +276,10 @@ export async function generateStoreWithClaude(
   currency?: { code: string; symbol: string; label: string },
   language?: string,
   advanced?: AdvancedOptions,
-  excludeVariationId?: number,
+  excludeVariationIds?: number[],
 ): Promise<GeneratedStoreConfig | null> {
-  // Pick a random design variation for visual diversity
-  const variation = pickVariation(excludeVariationId);
+  // Pick a variation that hasn't been used yet for this store
+  const variation = pickVariation(excludeVariationIds);
 
   // Inject a style seed based on detected subcategory keywords.
   // This helps Claude pick on-point tokens without requiring design vocabulary from the user.

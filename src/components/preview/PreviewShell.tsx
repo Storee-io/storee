@@ -145,7 +145,7 @@ export default function PreviewShell({ store, from = null }: Props) {
         regenCurrency,
         regenLanguage || undefined,
         regenAdvanced ?? undefined,
-        liveStore.variationId,
+        liveStore.usedVariationIds,
       ),
       new Promise<void>(r => setTimeout(r, 21000)),
     ]);
@@ -174,6 +174,12 @@ export default function PreviewShell({ store, from = null }: Props) {
         }
       : {};
 
+    // Build updated usedVariationIds — append new ID, deduplicate, preserve order
+    const newVariationId = (aiResult as { variationId?: number } | null)?.variationId;
+    const updatedUsedIds = newVariationId != null
+      ? [...new Set([...(liveStore.usedVariationIds ?? []), newVariationId])]
+      : liveStore.usedVariationIds;
+
     if (mode === 'replace') {
       // ── Replace mode: overwrite current store in-place ──
       const patch: Partial<Store> = {
@@ -187,9 +193,7 @@ export default function PreviewShell({ store, from = null }: Props) {
         currency: regenCurrency,
         ...(regenAdvanced ? { advancedOptions: regenAdvanced } : {}),
         ...designWithOverride,
-        ...((aiResult as { variationId?: number } | null)?.variationId != null
-          ? { variationId: (aiResult as { variationId?: number }).variationId }
-          : {}),
+        ...(updatedUsedIds != null ? { usedVariationIds: updatedUsedIds } : {}),
       };
       const updatedStore = { ...liveStore, ...patch };
       // Persist to localStorage
@@ -218,9 +222,9 @@ export default function PreviewShell({ store, from = null }: Props) {
       ...(regenLanguage ? { language: regenLanguage } : {}),
       prompt: regenPrompt,
       ...(regenAdvanced ? { advancedOptions: regenAdvanced } : {}),
-      ...((aiResult as { variationId?: number } | null)?.variationId != null
-        ? { variationId: (aiResult as { variationId?: number }).variationId }
-        : {}),
+      // New store inherits the parent's usedVariationIds so "New Store" regenerates
+      // also avoid repeating variations from the same session.
+      ...(updatedUsedIds != null ? { usedVariationIds: updatedUsedIds } : {}),
     };
 
     localStorage.setItem(`storee_store_${newStore.id}`, JSON.stringify(newStore));
