@@ -1,3 +1,5 @@
+'use client';
+
 import DomainSettings from '@/src/components/dashboard/pages/DomainSettings';
 
 export default function DomainPage() {
