@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, Copy, MessageCircle, MapPin, Phone, Mail, ChevronDown, User, LogOut, Package, Eye, EyeOff,
   // EmojiIcon pool
@@ -161,6 +161,87 @@ interface LayoutProps {
   wishlist: Set<string>;
   onToggleWishlist: (id: string) => void;
   onWishlistClick: () => void;
+}
+
+// ── Cart toast popup ─────────────────────────────────────────────────────────
+
+interface CartToastItem {
+  id: string;
+  product: RichProduct;
+  cartCount: number;
+}
+
+function CartToast({ item, primaryColor, fmtPrice, onClose, onViewCart }: {
+  item: CartToastItem;
+  primaryColor: string;
+  fmtPrice: (n: number) => string;
+  onClose: () => void;
+  onViewCart: () => void;
+}) {
+  return createPortal(
+    <motion.div
+      key={item.id}
+      initial={{ opacity: 0, x: 80, scale: 0.95 }}
+      animate={{ opacity: 1, x: 0, scale: 1 }}
+      exit={{ opacity: 0, x: 80, scale: 0.95 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+      className="fixed top-4 right-4 z-[9999] w-72 rounded-2xl shadow-2xl overflow-hidden"
+      style={{ background: '#fff', border: '1px solid #e5e7eb' }}
+    >
+      {/* Progress bar auto-dismiss */}
+      <motion.div
+        initial={{ scaleX: 1 }}
+        animate={{ scaleX: 0 }}
+        transition={{ duration: 4, ease: 'linear' }}
+        style={{ background: primaryColor, height: 3, transformOrigin: 'left', width: '100%' }}
+      />
+
+      <div className="p-3 flex items-center gap-3">
+        {/* Product image */}
+        <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100">
+          {item.product.image ? (
+            <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-slate-300">
+              <ShoppingCart className="w-5 h-5" />
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1 mb-0.5">
+            <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: primaryColor }} />
+            <span className="text-[11px] font-semibold" style={{ color: primaryColor }}>Added to cart</span>
+          </div>
+          <p className="text-sm font-semibold text-slate-800 truncate leading-tight">{item.product.name}</p>
+          <p className="text-xs text-slate-500">{fmtPrice(item.product.price)}</p>
+        </div>
+
+        {/* Close */}
+        <button
+          onClick={onClose}
+          className="flex-shrink-0 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors self-start"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      {/* View cart button */}
+      <div className="px-3 pb-3">
+        <button
+          onClick={onViewCart}
+          className="w-full py-2 text-xs font-semibold rounded-xl text-white transition-opacity hover:opacity-90"
+          style={{ background: primaryColor }}
+        >
+          View Cart ({item.cartCount})
+        </button>
+      </div>
+    </motion.div>,
+    document.body
+  );
 }
 
 // ── Cart fly animation ────────────────────────────────────────────────────────
@@ -7397,6 +7478,8 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
   };
 
   const [flyItems, setFlyItems] = useState<FlyItem[]>([]);
+  const [cartToast, setCartToast] = useState<CartToastItem | null>(null);
+  const cartToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [wishlist, setWishlist] = useState<Set<string>>(new Set());
   const toggleWishlist = useCallback((id: string) => {
     setWishlist(prev => {
@@ -7407,11 +7490,21 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
   }, []);
 
   const addToCart = (p: RichProduct, sourceRect?: DOMRect) => {
+    let newCount = 0;
     setCart(prev => {
       const existing = prev.find(i => i.product.id === p.id);
-      if (existing) return prev.map(i => i.product.id === p.id ? { ...i, qty: i.qty + 1 } : i);
-      return [...prev, { product: p, qty: 1 }];
+      const next = existing
+        ? prev.map(i => i.product.id === p.id ? { ...i, qty: i.qty + 1 } : i)
+        : [...prev, { product: p, qty: 1 }];
+      newCount = next.reduce((s, i) => s + i.qty, 0);
+      return next;
     });
+
+    // Show cart toast
+    if (cartToastTimer.current) clearTimeout(cartToastTimer.current);
+    setCartToast({ id: `toast-${Date.now()}`, product: p, cartCount: newCount || 1 });
+    cartToastTimer.current = setTimeout(() => setCartToast(null), 4200);
+
     if (sourceRect) {
       const flyId = `fly-${Date.now()}-${Math.random()}`;
       setFlyItems(prev => [...prev, {
@@ -7495,6 +7588,19 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
       {flyItems.map(item => (
         <FlyingDot key={item.id} item={item} primaryColor={primaryColor} />
       ))}
+
+      {/* Cart toast popup */}
+      <AnimatePresence>
+        {cartToast && (
+          <CartToast
+            item={cartToast}
+            primaryColor={primaryColor}
+            fmtPrice={fmtPrice}
+            onClose={() => { setCartToast(null); if (cartToastTimer.current) clearTimeout(cartToastTimer.current); }}
+            onViewCart={() => { setCartToast(null); if (cartToastTimer.current) clearTimeout(cartToastTimer.current); setPage('cart'); }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Auth modal */}
       {showAuthModal && (
