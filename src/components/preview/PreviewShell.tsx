@@ -28,6 +28,18 @@ const defaultAdvanced = (): AdvancedOptions => ({
   },
 });
 
+const LANGUAGES = ['English', 'Bahasa Indonesia', 'Español', 'Français', 'Deutsch', '日本語', '한국어', '中文'];
+const CURRENCIES = [
+  { code: 'USD', symbol: '$',  label: 'US Dollar' },
+  { code: 'IDR', symbol: 'Rp', label: 'Indonesian Rupiah' },
+  { code: 'EUR', symbol: '€',  label: 'Euro' },
+  { code: 'GBP', symbol: '£',  label: 'British Pound' },
+  { code: 'JPY', symbol: '¥',  label: 'Japanese Yen' },
+  { code: 'SGD', symbol: 'S$', label: 'Singapore Dollar' },
+  { code: 'AUD', symbol: 'A$', label: 'Australian Dollar' },
+  { code: 'MYR', symbol: 'RM', label: 'Malaysian Ringgit' },
+];
+
 const BACK_LABELS: Record<string, string> = {
   '/': 'Home',
   '/templates': 'All Templates',
@@ -56,6 +68,9 @@ export default function PreviewShell({ store, from = null }: Props) {
   const [regenPrompt, setRegenPrompt] = useState(store.prompt ?? '');
   const [regenAdvanced, setRegenAdvanced] = useState<AdvancedOptions | null>(store.advancedOptions ?? null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [regenBrandName, setRegenBrandName] = useState(store.name ?? '');
+  const [regenLanguage, setRegenLanguage] = useState(store.language ?? 'English');
+  const [regenCurrency, setRegenCurrency] = useState(store.currency ?? CURRENCIES[0]);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const stepTimerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -96,31 +111,40 @@ export default function PreviewShell({ store, from = null }: Props) {
   };
 
   const openRegenModal = () => {
-    setRegenPrompt(liveStore.prompt ?? liveStore.name ?? '');
+    setRegenPrompt(liveStore.prompt ?? '');
+    setRegenBrandName(liveStore.name ?? '');
+    setRegenLanguage(liveStore.language ?? 'English');
+    setRegenCurrency(liveStore.currency ?? CURRENCIES[0]);
     setRegenAdvanced(liveStore.advancedOptions ?? null);
     setShowAdvanced(false);
     setShowRegenModal(true);
   };
 
   const handleRegenerate = async (mode: 'new' | 'replace' = regenMode) => {
-    if (!regenPrompt.trim() || isRegenerating) return;
+    if ((!regenPrompt.trim() && !regenBrandName.trim()) || isRegenerating) return;
     setShowRegenModal(false);
     setIsRegenerating(true);
 
     // Drive the GeneratingOverlay step by step
-    setGenerationState({ active: true, step: 0, prompt: regenPrompt });
+    setGenerationState({ active: true, step: 0, prompt: regenBrandName || regenPrompt });
     stepTimerRefs.current.forEach(clearTimeout);
     stepTimerRefs.current = STEP_TIMINGS.map((delay, i) =>
-      setTimeout(() => setGenerationState({ active: true, step: i + 1, prompt: regenPrompt }), delay)
+      setTimeout(() => setGenerationState({ active: true, step: i + 1, prompt: regenBrandName || regenPrompt }), delay)
     );
+
+    // Build enriched prompt: combine brand name + description
+    const fullPrompt = [
+      regenBrandName.trim() && `Brand name: ${regenBrandName.trim()}`,
+      regenPrompt.trim(),
+    ].filter(Boolean).join('. ');
 
     const [aiResult] = await Promise.all([
       generateStoreWithClaude(
-        regenPrompt,
-        liveStore.currency ?? undefined,
-        liveStore.language ?? undefined,
-        regenAdvanced ?? undefined,   // restored advanced options
-        liveStore.variationId,        // exclude last variation → force different look
+        fullPrompt,
+        regenCurrency,
+        regenLanguage || undefined,
+        regenAdvanced ?? undefined,
+        liveStore.variationId,
       ),
       new Promise<void>(r => setTimeout(r, 21000)),
     ]);
@@ -148,6 +172,8 @@ export default function PreviewShell({ store, from = null }: Props) {
         template: aiResult?.template ?? store.template,
         category: aiResult?.design?.collections?.[0]?.name ?? store.category,
         prompt: regenPrompt,
+        ...(regenLanguage ? { language: regenLanguage } : {}),
+        currency: regenCurrency,
         ...(regenAdvanced ? { advancedOptions: regenAdvanced } : {}),
         ...((aiResult?.design) ? { design: aiResult.design } : {}),
         ...((aiResult as { variationId?: number } | null)?.variationId != null
@@ -175,8 +201,8 @@ export default function PreviewShell({ store, from = null }: Props) {
       revenue: 0,
       orders: 0,
       ...(aiResult?.design ? { design: aiResult.design } : {}),
-      ...(liveStore.currency ? { currency: liveStore.currency } : {}),
-      ...(liveStore.language ? { language: liveStore.language } : {}),
+      currency: regenCurrency,
+      ...(regenLanguage ? { language: regenLanguage } : {}),
       prompt: regenPrompt,
       ...(regenAdvanced ? { advancedOptions: regenAdvanced } : {}),
       ...((aiResult as { variationId?: number } | null)?.variationId != null
@@ -365,16 +391,91 @@ export default function PreviewShell({ store, from = null }: Props) {
                 </button>
               </div>
 
-              {/* Prompt / Brand description */}
+              {/* Brand Name */}
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Brand Name</label>
+              <input
+                type="text"
+                value={regenBrandName}
+                onChange={e => setRegenBrandName(e.target.value)}
+                placeholder="e.g. Noir Atelier, Black Roast Co."
+                className="w-full px-4 py-2.5 text-sm text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent placeholder:text-slate-400 mb-3"
+                autoFocus
+              />
+
+              {/* Brand Description */}
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Brand Description</label>
               <textarea
                 value={regenPrompt}
                 onChange={e => setRegenPrompt(e.target.value)}
-                placeholder="Describe your store..."
+                placeholder="Describe your store, products, and vibe..."
                 rows={3}
                 className="w-full px-4 py-3 text-sm text-slate-800 bg-slate-50 border border-slate-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent placeholder:text-slate-400 mb-3"
-                autoFocus
               />
+
+              {/* Color Style */}
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Color Style</label>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="relative flex-1">
+                  <div
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md border border-slate-200 flex-shrink-0"
+                    style={{ background: regenAdvanced?.themeColors?.primary || liveStore.primaryColor }}
+                  />
+                  <input
+                    type="text"
+                    value={regenAdvanced?.themeColors?.primary ?? liveStore.primaryColor}
+                    onChange={e => setRegenAdvanced(prev => ({
+                      ...(prev ?? defaultAdvanced()),
+                      themeColors: { ...(prev?.themeColors ?? emptyThemeColors), primary: e.target.value },
+                    }))}
+                    placeholder="Primary #hex"
+                    className="w-full pl-10 pr-3 py-2 text-sm font-mono bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
+                  />
+                </div>
+                <div className="relative flex-1">
+                  <div
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md border border-slate-200 flex-shrink-0"
+                    style={{ background: regenAdvanced?.themeColors?.secondary || '#64748b' }}
+                  />
+                  <input
+                    type="text"
+                    value={regenAdvanced?.themeColors?.secondary ?? ''}
+                    onChange={e => setRegenAdvanced(prev => ({
+                      ...(prev ?? defaultAdvanced()),
+                      themeColors: { ...(prev?.themeColors ?? emptyThemeColors), secondary: e.target.value },
+                    }))}
+                    placeholder="Secondary #hex"
+                    className="w-full pl-10 pr-3 py-2 text-sm font-mono bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Language & Currency */}
+              <div className="flex gap-2 mb-3">
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Language</label>
+                  <select
+                    value={regenLanguage}
+                    onChange={e => setRegenLanguage(e.target.value)}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  >
+                    {LANGUAGES.map(l => (
+                      <option key={l} value={l}>{l}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Currency</label>
+                  <select
+                    value={regenCurrency.code}
+                    onChange={e => setRegenCurrency(CURRENCIES.find(c => c.code === e.target.value) ?? CURRENCIES[0])}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  >
+                    {CURRENCIES.map(c => (
+                      <option key={c.code} value={c.code}>{c.symbol} {c.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
               {/* Advanced options toggle */}
               <button
@@ -399,47 +500,6 @@ export default function PreviewShell({ store, from = null }: Props) {
                     className="overflow-hidden"
                   >
                     <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-3 space-y-4">
-
-                      {/* Color Style */}
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Color Style</label>
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1.5 flex-1">
-                            <div
-                              className="w-7 h-7 rounded-lg border-2 border-white shadow cursor-pointer flex-shrink-0"
-                              style={{ background: regenAdvanced?.themeColors?.primary || liveStore.primaryColor }}
-                              title="Primary"
-                            />
-                            <input
-                              type="text"
-                              value={regenAdvanced?.themeColors?.primary ?? liveStore.primaryColor}
-                              onChange={e => setRegenAdvanced(prev => ({
-                                ...(prev ?? defaultAdvanced()),
-                                themeColors: { ...(prev?.themeColors ?? emptyThemeColors), primary: e.target.value },
-                              }))}
-                              placeholder="Primary color"
-                              className="flex-1 px-2.5 py-1.5 text-xs font-mono bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-400"
-                            />
-                          </div>
-                          <div className="flex items-center gap-1.5 flex-1">
-                            <div
-                              className="w-7 h-7 rounded-lg border-2 border-white shadow cursor-pointer flex-shrink-0"
-                              style={{ background: regenAdvanced?.themeColors?.secondary || '#64748b' }}
-                              title="Secondary"
-                            />
-                            <input
-                              type="text"
-                              value={regenAdvanced?.themeColors?.secondary ?? ''}
-                              onChange={e => setRegenAdvanced(prev => ({
-                                ...(prev ?? defaultAdvanced()),
-                                themeColors: { ...(prev?.themeColors ?? emptyThemeColors), secondary: e.target.value },
-                              }))}
-                              placeholder="Secondary"
-                              className="flex-1 px-2.5 py-1.5 text-xs font-mono bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-400"
-                            />
-                          </div>
-                        </div>
-                      </div>
 
                       {/* Mood */}
                       <div>
@@ -514,7 +574,7 @@ export default function PreviewShell({ store, from = null }: Props) {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => handleRegenerate('new')}
-                  disabled={!regenPrompt.trim()}
+                  disabled={!regenPrompt.trim() && !regenBrandName.trim()}
                   className="flex-1 flex items-center justify-center gap-1.5 py-3 text-white gradient-bg rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
@@ -522,7 +582,7 @@ export default function PreviewShell({ store, from = null }: Props) {
                 </button>
                 <button
                   onClick={() => handleRegenerate('replace')}
-                  disabled={!regenPrompt.trim()}
+                  disabled={!regenPrompt.trim() && !regenBrandName.trim()}
                   className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-amber-500 text-white rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
