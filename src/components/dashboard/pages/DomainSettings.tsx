@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import {
   Globe, Check, Copy, ExternalLink, AlertCircle, CheckCircle2,
   Loader2, X, Link2,
 } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
+import PublishModal from '../../preview/PublishModal';
 
 type VerifyStatus = 'idle' | 'checking' | 'verified' | 'pending';
 
@@ -25,6 +27,7 @@ export default function DomainSettings() {
     ?? activeStore?.domain?.split('.')[0]
     ?? '';
 
+  const [showPublishModal, setShowPublishModal] = useState(false);
   const [input, setInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(false);
@@ -164,11 +167,14 @@ export default function DomainSettings() {
         {!isPublished && (
           <div className="flex items-start gap-3 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50 mb-4">
             <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-700">
+            <p className="text-xs text-amber-700 flex-1">
               Your store must be published before a custom domain can go live.{' '}
-              <a href="/dashboard" className="font-semibold underline underline-offset-2 hover:text-amber-900">
+              <button
+                onClick={() => setShowPublishModal(true)}
+                className="font-semibold underline underline-offset-2 hover:text-amber-900 transition-colors"
+              >
                 Publish now →
-              </a>
+              </button>
             </p>
           </div>
         )}
@@ -304,6 +310,24 @@ export default function DomainSettings() {
           </div>
         )}
       </div>
+    </div>
+
+      {/* Publish Modal */}
+      <AnimatePresence>
+        {showPublishModal && activeStore && (
+          <PublishModal
+            store={activeStore}
+            onPublish={(publishedUrl) => {
+              const sub = publishedUrl.split('.')[0];
+              updateActiveStore({ status: 'Published', publishedDomain: publishedUrl, domain: publishedUrl });
+              setShowPublishModal(false);
+              // Re-check verification after publish
+              setVerifyStatus('idle');
+            }}
+            onClose={() => setShowPublishModal(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
