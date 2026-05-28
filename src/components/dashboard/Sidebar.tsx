@@ -141,8 +141,12 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-2 space-y-1"
+              className="mt-2 overflow-hidden"
             >
+              <div
+                className="space-y-1 max-h-60 overflow-y-auto"
+                style={{ scrollbarWidth: 'thin', scrollbarColor: '#e2e8f0 transparent' }}
+              >
               {realStores.length === 0 && activeStore ? (
                 /* No real stores — show the demo/fallback store so header & list are consistent */
                 <div className="px-3 py-2 flex items-center gap-3">
@@ -173,6 +177,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                   </button>
                 ))
               )}
+              </div>{/* end scrollable store list */}
               <button
                 onClick={() => { setStoreMenuOpen(false); router.push('/'); }}
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-500 transition-colors"
