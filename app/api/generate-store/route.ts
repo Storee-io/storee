@@ -19,10 +19,10 @@ async function getLiveConfig(): Promise<{ prompt: string; model: string; maxToke
     return {
       prompt:    map['system_prompt'] ?? SYSTEM_PROMPT,
       model:     map['model']         ?? 'claude-sonnet-4-6',
-      maxTokens: parseInt(map['max_tokens'] ?? '4096', 10),
+      maxTokens: parseInt(map['max_tokens'] ?? '6000', 10),
     };
   } catch {
-    return { prompt: SYSTEM_PROMPT, model: 'claude-sonnet-4-6', maxTokens: 4096 };
+    return { prompt: SYSTEM_PROMPT, model: 'claude-sonnet-4-6', maxTokens: 6000 };
   }
 }
 

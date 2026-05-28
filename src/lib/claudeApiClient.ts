@@ -279,7 +279,7 @@ export async function generateStoreWithClaude(
   excludeVariationIds?: number[],
 ): Promise<GeneratedStoreConfig | null> {
   // Pick a variation that hasn't been used yet for this store
-  const variation = pickVariation(excludeVariationIds);
+  let variation = pickVariation(excludeVariationIds);
 
   // Inject a style seed based on detected subcategory keywords.
   // This helps Claude pick on-point tokens without requiring design vocabulary from the user.
@@ -288,16 +288,28 @@ export async function generateStoreWithClaude(
     ? `${prompt}\n\n[Style direction: ${styleSeed}]`
     : prompt;
 
-  try {
-    // 1. Generate store design + content from Claude
+  // Helper: one attempt at calling the API and parsing the response
+  const attempt = async (seed: DesignVariation): Promise<GeneratedStoreConfig | null> => {
     const res = await fetch('/api/generate-store', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: enrichedPrompt, currency, language, advanced, variationSeed: variation }),
+      body: JSON.stringify({ prompt: enrichedPrompt, currency, language, advanced, variationSeed: seed }),
     });
     if (!res.ok) return null;
     const text = await res.text();
-    const config = parseStoreResponse(text);
+    return parseStoreResponse(text);
+  };
+
+  try {
+    // 1. Generate store design + content from Claude (with 1 automatic retry on parse failure)
+    let config = await attempt(variation);
+    if (!config) {
+      // Retry with a fresh variation pick — avoids the same truncated response
+      const retryVariation = pickVariation([...(excludeVariationIds ?? []), variation.id]);
+      config = await attempt(retryVariation);
+      // Use retry variation ID if it succeeded
+      if (config) variation = retryVariation;
+    }
     if (!config) return null;
 
     // 2. Upgrade product images via Pexels (server-side, API key stays hidden)
