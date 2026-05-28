@@ -192,11 +192,11 @@ export default function PreviewShell({ store, from = null }: Props) {
           : {}),
       };
       const updatedStore = { ...liveStore, ...patch };
-      // Persist first so the page reload reads fresh data
+      // Persist to localStorage
       localStorage.setItem(`storee_store_${liveStore.id}`, JSON.stringify(updatedStore));
+      // Update context — preview page reads generatedStore when IDs match
       setGeneratedStore(updatedStore);
-      // Navigate to same URL — page reloads store from localStorage cleanly
-      router.replace(`/preview/${liveStore.id}${from ? `?from=${encodeURIComponent(from)}` : ''}`);
+      updateActiveStore(patch);
       setIsRegenerating(false);
       return;
     }

@@ -10,9 +10,12 @@ export default function PreviewByIdPage() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
-  const { addStore, setGeneratedStore, stores, setActiveStore } = useStore();
+  const { addStore, setGeneratedStore, generatedStore, stores, setActiveStore } = useStore();
   const [store, setStore] = useState<Store | null>(null);
   const [notFound, setNotFound] = useState(false);
+
+  // If Replace-regenerate updated generatedStore for this ID, use it as live data
+  const displayStore = (generatedStore?.id === params.id ? generatedStore : store);
 
   useEffect(() => {
     const id = params.id;
@@ -69,7 +72,7 @@ export default function PreviewByIdPage() {
     );
   }
 
-  if (!store) {
+  if (!displayStore) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
@@ -77,5 +80,5 @@ export default function PreviewByIdPage() {
     );
   }
 
-  return <PreviewShell store={store} from={from} />;
+  return <PreviewShell store={displayStore} from={from} />;
 }
