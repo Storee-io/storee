@@ -15,6 +15,7 @@ import UnpublishModal from '@/src/components/preview/UnpublishModal';
 import type { Store as StoreType } from '@/src/context/StoreContext';
 
 const DEMO_IDS = new Set(['store-1', 'store-2']);
+const BASE_DOMAIN = 'storee.io';
 
 export default function MyStoresPage() {
   const { stores, deleteStore, updateActiveStore, setActiveStore, isLoadingStores } = useStore();
@@ -47,12 +48,13 @@ export default function MyStoresPage() {
   const handlePublishComplete = (subdomain: string) => {
     if (!publishStore) return;
     setActiveStore(publishStore);
+    const slug = subdomain.replace(`.${BASE_DOMAIN}`, '').replace(`.storee.io`, '');
     updateActiveStore({
       status: 'Published',
       domain: subdomain,
-      publishedDomain: publishStore.publishedDomain ?? subdomain.replace('.storee.io', ''),
+      publishedDomain: slug,
     });
-    setPublishStore(null);
+    // Keep modal open so user can change subdomain; it closes via onClose
   };
 
   const handleUnpublishConfirm = () => {

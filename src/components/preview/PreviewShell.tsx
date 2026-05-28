@@ -59,10 +59,12 @@ export default function PreviewShell({ store, from = null }: Props) {
   const hasPublishedBefore = !!liveStore.publishedDomain;
 
   const handlePublishComplete = (subdomain: string) => {
+    // subdomain is the full URL e.g. "my-store-hub.storee.io"
+    const slug = subdomain.replace('.storee.io', '');
     updateActiveStore({
       status: 'Published',
       domain: subdomain,
-      publishedDomain: subdomain.replace('.storee.io', ''),
+      publishedDomain: slug,
     });
   };
 
