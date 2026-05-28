@@ -172,6 +172,59 @@ CREAM / LUXURY stores (jewelry, weddings, fine goods, high fashion):
   textMuted: warm grey, e.g. #9a8878, #a09080, #b09888
   divider: #e4d8c8
 
+BLUSH / KOREAN stores (K-fashion, feminine minimal, Korean beauty):
+  pageBg: soft blush, e.g. #fdf4f4, #fef0ee, #fdf6f5
+  surfaceBg: ivory white, e.g. #ffffff, #fffaf9
+  surfaceBorder: dusty rose, e.g. #f0d8d8, #edddd8, rgba(200,150,150,0.15)
+  headerBg: same as pageBg or white
+  textPrimary: warm near-black, e.g. #1a1010, #1c1212, #180d0d
+  textSecondary: muted mauve, e.g. #6b4f4f, #7a5a58, #806060
+  textMuted: soft rose-grey, e.g. #b09090, #a88a8a, #c0a0a0
+  divider: #f0d8d8
+
+EARTH / SUSTAINABLE stores (eco fashion, organic, slow fashion, artisan):
+  pageBg: warm off-white with green undertone, e.g. #f6f3ee, #f4f1ea, #f8f5ed
+  surfaceBg: natural white, e.g. #ffffff, #fdfcf8
+  surfaceBorder: earthy warm, e.g. #d8cdb8, #ddd0b8, rgba(100,80,40,0.15)
+  headerBg: same as pageBg
+  textPrimary: deep earth, e.g. #1a1408, #1c160a, #1e1508
+  textSecondary: forest brown, e.g. #5a4a30, #604e34, #6b5540
+  textMuted: warm olive, e.g. #9a8a70, #a09070, #b0a080
+  divider: #d8cdb8
+  primaryColor: suggest terracotta (#c17b5c), sage (#7a9e7e), or moss (#4a7c59)
+
+ELECTRIC / NEON stores (streetwear, hype, gaming, nightlife):
+  pageBg: very dark, e.g. #080808, #060606, #0a0808
+  surfaceBg: dark panel, e.g. #111111, #141414, #131313
+  surfaceBorder: neon glow edge, e.g. rgba(neonColor, 0.25) or rgba(255,255,255,0.08)
+  headerBg: same as pageBg or #0a0a0a
+  textPrimary: bright white, e.g. #f8f8f8, #ffffff, #f5f5f5
+  textSecondary: medium light, e.g. #aaaaaa, #b0b0b0, #c0c0c0
+  textMuted: dim grey, e.g. #555555, #606060, #4a4a4a
+  divider: rgba(255,255,255,0.06)
+  primaryColor: neon — suggest #39ff14 (electric green), #00f5ff (cyan), #ff3cac (pink), #ff6b35 (flame)
+
+SAND / DESERT stores (luxury streetwear, desert aesthetic, Middle Eastern inspired):
+  pageBg: warm sand, e.g. #f5f0e8, #f3ede0, #f0e8d8
+  surfaceBg: lighter sand or white, e.g. #ffffff, #faf7f2
+  surfaceBorder: sandy warm, e.g. #e0d4bc, #ddd0b8, rgba(140,110,60,0.15)
+  headerBg: same as pageBg
+  textPrimary: deep warm, e.g. #1a1008, #201408, #221608
+  textSecondary: camel, e.g. #7a6040, #806848, #8a7050
+  textMuted: sand grey, e.g. #b0a080, #a89870, #c0b090
+  divider: #e0d4bc
+
+FOREST / NATURE stores (outdoor fashion, hiking, nature brand, sustainable premium):
+  pageBg: deep forest or natural white, e.g. #f2f5f0, #f0f4ee, or dark #0d1a0d
+  surfaceBg: white or dark variant, e.g. #ffffff or #142014
+  surfaceBorder: natural, e.g. #c8d8c0, rgba(60,100,60,0.15)
+  headerBg: same as pageBg
+  textPrimary: dark forest or white (depending on light/dark)
+  textSecondary: muted green-grey
+  textMuted: light sage
+  divider: #c8d8c0
+  primaryColor: suggest deep green (#2d6a4f), forest (#3a7d44), or pine (#1b4332)
+
 IMPORTANT COLOR RULES:
 - textPrimary on pageBg: minimum 7:1 contrast ratio
 - textSecondary on pageBg: minimum 4.5:1 contrast ratio
@@ -182,20 +235,32 @@ IMPORTANT COLOR RULES:
 ── TYPOGRAPHY ───────────────────────────────────────────
 APPROVED HEADING FONTS (pick one that fits the brand voice):
   Editorial/Luxury:   Playfair Display, Cormorant Garamond, DM Serif Display, Fraunces, Crimson Pro
-  Modern/Clean:       Montserrat, Space Grotesk, Syne, Raleway, Josefin Sans
-  Bold/Impact:        Bebas Neue, Anton, Oswald, Unbounded
-  Elegant/Fashion:    Italiana, Libre Baskerville
-  Geometric/Minimal:  DM Serif Display, Plus Jakarta Sans
+  Modern/Clean:       Montserrat, Space Grotesk, Syne, Raleway, Josefin Sans, Cabinet Grotesk
+  Bold/Impact:        Bebas Neue, Anton, Oswald, Unbounded, Black Han Sans
+  Elegant/Fashion:    Italiana, Libre Baskerville, Bodoni Moda, Whisper
+  Geometric/Minimal:  Plus Jakarta Sans, Manrope, Urbanist
+  Warm/Artisan:       Fraunces, Playfair Display, Zilla Slab
 
 APPROVED BODY FONTS (pick one that is highly readable):
   Inter, Lato, Open Sans, DM Sans, Barlow, Roboto, Nunito Sans,
-  Source Sans 3, Jost, Karla, Plus Jakarta Sans, Outfit
+  Source Sans 3, Jost, Karla, Plus Jakarta Sans, Outfit, Manrope, Urbanist,
+  IBM Plex Sans, Figtree, Mulish
 
 Pairing rules:
 - Serif heading → sans-serif body (classic, readable)
-- Display/impact heading → clean body (Roboto, Barlow, Inter)
-- Geometric heading → matching geometric body (Space Grotesk → Inter, Syne → Nunito Sans)
+- Display/impact heading → clean body (Roboto, Barlow, Inter, DM Sans)
+- Geometric heading → matching geometric body (Space Grotesk → Inter, Syne → Nunito Sans, Urbanist → Figtree)
 - Never pair two serifs or two display fonts
+
+Curated high-quality pairings for fashion specifically:
+  "Playfair Display" + "DM Sans"        → editorial luxury, proven combination
+  "Anton" + "IBM Plex Sans"             → streetwear bold, editorial energy
+  "Cormorant Garamond" + "Jost"         → refined minimal, haute couture feel
+  "Bebas Neue" + "Barlow"               → sport editorial, clean and impactful
+  "Libre Baskerville" + "Nunito Sans"   → vintage warm, boutique feel
+  "Cabinet Grotesk" + "Fraunces"        → modern editorial, fashion-forward
+  "Bodoni Moda" + "Lato"                → classic fashion magazine
+  "Josefin Sans" + "Karla"              → Korean-minimal, clean geometric
 
 ── SHAPE / FORM ────────────────────────────────────────
 btnRadius examples and when to use:
@@ -263,11 +328,21 @@ sectionVariants — choose a visual variant for each section:
 
 sections array — replaces the old sectionOrder + sectionVariants fields.
 Each object has { "type": "...", "variant": "..." } — type sets which section,
-variant sets its visual style. Always include all 10 core sections.
+variant sets its visual style.
 For sections with no variant choice (trust, collections), set variant to null.
 
-Core section types (always include all 10):
-  hero, trust, collections, products, features, testimonials, stats, brandStory, faq, newsletter
+Core section types — VARY which ones you include based on the brand:
+  Required (always include): hero, products, newsletter
+  Almost always include: trust, collections, features
+  Include when they add value: testimonials, stats, brandStory, faq
+
+Section count guidance (choose naturally based on brand depth):
+  Boutique / luxury / minimal: 5-6 sections — curated, don't pad with every section
+  Standard brand: 7-8 sections — solid coverage without overload
+  Rich storytelling brand: 9-10 sections — full suite when brand has strong narrative
+
+Do NOT mechanically include all 10 every time. A minimal fashion brand might skip
+stats and brandStory. A new brand might skip testimonials. Use judgment.
 
 Optional bonus types (add when they enhance the brand story):
   scrollingBanner  — auto-scrolling marquee. Place after hero or between sections.
@@ -539,12 +614,18 @@ styleMix lets you express a hybrid visual identity by blending multiple style ar
 First entry = dominant style. Subsequent entries = secondary influences.
 
 Use styleMix to derive token values that combine characteristics:
-  ["luxury", "tech"]         → dark/neutral palette, geometric serif, subtle motion
-  ["editorial", "minimal"]   → large typography, lots of whitespace, muted color
-  ["hype", "streetwear"]     → bold colors, heavy weight, expressive motion
-  ["artisan", "editorial"]   → warm neutrals, serif headings, spacious layout
-  ["futuristic", "minimal"]  → cool grays, geometric sans, sharp radius 0px
-  ["korean-beauty", "soft"]  → pastel palette, rounded elements, airy spacing
+  ["luxury", "tech"]          → dark/neutral palette, geometric serif, subtle motion
+  ["editorial", "minimal"]    → large typography, lots of whitespace, muted color
+  ["hype", "streetwear"]      → bold colors, heavy weight, expressive motion, electric palette
+  ["artisan", "editorial"]    → warm neutrals, serif headings, spacious layout
+  ["futuristic", "minimal"]   → cool grays, geometric sans, sharp radius 0px
+  ["korean-beauty", "soft"]   → blush palette, thin serif, airy spacing, ghost cards
+  ["sustainable", "artisan"]  → earth palette, organic serif, warm layout, bordered cards
+  ["luxury", "streetwear"]    → sand/dark palette, contrast serif+bold, editorial asymmetric
+  ["vintage", "editorial"]    → sepia warmth, slab serif, flat cards, asymmetric grid
+  ["activewear", "tech"]      → electric palette, geometric bold sans, dense performance grid
+  ["boho", "artisan"]         → earth + warm, textured serif, masonry, expressive motion
+  ["minimal", "fashion"]      → ghost cards, spacious editorial, thin heading, no hover
 
 Rules:
   - styleMix drives HOW you pick tokens, not a separate rendering layer
@@ -613,14 +694,18 @@ Mapping recommendations:
 ════════════════════════════════════════════════════════
 CONTENT RULES
 ════════════════════════════════════════════════════════
-- Generate EXACTLY 6 products, specific and realistic (never generic names)
+- Generate between 4–16 products (specific, realistic — never generic names):
+    Boutique / luxury / curated: 4–6 products (quality over quantity)
+    Standard fashion / lifestyle: 6–8 products
+    Fast fashion / marketplace / many SKUs: 10–16 products
+    Choose a count that feels natural for the brand, not always 6.
 - Generate EXACTLY 3 collections with relevant emojis
-- Generate EXACTLY 3 features/USPs with emojis
-- Generate EXACTLY 3 testimonials (authentic, varied, specific)
-- Generate EXACTLY 5 FAQ entries covering real customer concerns
+- Generate between 2–4 features/USPs with emojis (2 for ultra-minimal, 4 for feature-rich)
+- Generate between 2–4 testimonials (authentic, varied, specific — 2 for minimal, 4 for social-proof heavy)
+- Generate between 3–5 FAQ entries covering real customer concerns
 - Generate EXACTLY 3 stats (impressive but believable)
 - Generate EXACTLY 4 trust badges
-- sectionOrder MUST contain all 10 sections exactly once
+- sections array: choose sections naturally — see SECTION COUNT guidance above
 - heroTitle: evocative and brand-specific — NOT "Welcome to [Store]"
 - primaryColor: distinctive, not plain #000 or #fff
 - If user specified a brand name, use it as storeName
