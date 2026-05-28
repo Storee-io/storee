@@ -215,6 +215,15 @@ export default function HeroSection() {
     if (!prompt.trim()) return;
     setIsGenerating(true);
 
+    // Prevent screen from turning off during generation.
+    // When screen sleeps on mobile, the browser pauses JS + kills fetch → generation fails.
+    let wakeLock: WakeLockSentinel | null = null;
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLock = await (navigator as Navigator & { wakeLock: { request: (type: string) => Promise<WakeLockSentinel> } }).wakeLock.request('screen');
+      }
+    } catch { /* wake lock not supported or denied — continue anyway */ }
+
     // Run Claude API call and minimum loading timer in parallel.
     // The timer ensures all 5 steps are shown (last step triggers at 20s),
     // then we wait an extra 600ms so the final ✓ is visible before navigating.
@@ -224,6 +233,9 @@ export default function HeroSection() {
     ]);
     // Brief pause so the final "Finalizing your store..." shows as ✓
     await new Promise<void>(r => setTimeout(r, 600));
+
+    // Release wake lock — generation done
+    wakeLock?.release().catch(() => {});
 
     let template: Template | undefined;
     let storeName: string;

@@ -108,6 +108,14 @@ export default function PreviewShell({ store, from = null }: Props) {
     setShowRegenModal(false);
     setIsRegenerating(true);
 
+    // Prevent screen from sleeping on mobile during regeneration
+    let wakeLock: WakeLockSentinel | null = null;
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLock = await (navigator as Navigator & { wakeLock: { request: (type: string) => Promise<WakeLockSentinel> } }).wakeLock.request('screen');
+      }
+    } catch { /* not supported — continue */ }
+
     const regenBrandName = val.brandName;
     const regenPrompt = val.prompt;
     const regenLanguage = val.selectedLang;
@@ -201,6 +209,7 @@ export default function PreviewShell({ store, from = null }: Props) {
       // Update context — preview page reads generatedStore when IDs match
       setGeneratedStore(updatedStore);
       updateActiveStore(patch);
+      wakeLock?.release().catch(() => {});
       setIsRegenerating(false);
       return;
     }
@@ -237,6 +246,7 @@ export default function PreviewShell({ store, from = null }: Props) {
       body: JSON.stringify({ guestId, store: newStore }),
     }).catch(() => {});
 
+    wakeLock?.release().catch(() => {});
     setIsRegenerating(false);
     router.push(`/preview/${newStore.id}?from=${encodeURIComponent(from ?? '/')}`);
   };
