@@ -489,7 +489,7 @@ export default function PromptBox({
       onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setIsFocused(false); }}
     >
       {/* ── Capsule row ──────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-4 pt-3 pb-1.5 flex-wrap">
+      <div className="flex items-center gap-2 px-4 pt-3 pb-1.5 overflow-x-auto scrollbar-none">
 
         {/* Brand Name */}
         <div className="relative">
