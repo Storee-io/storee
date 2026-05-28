@@ -124,6 +124,7 @@ export default function HeroSection() {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingStep, setGeneratingStep] = useState(0);
+  const [extendedMsgIndex, setExtendedMsgIndex] = useState(0);
   const [brandNameActive, setBrandNameActive] = useState(false);
   const [brandName, setBrandName] = useState('');
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -374,12 +375,29 @@ export default function HeroSection() {
 
   // Step progression timers
   useEffect(() => {
-    if (!isGenerating) { setGeneratingStep(0); return; }
+    if (!isGenerating) { setGeneratingStep(0); setExtendedMsgIndex(0); return; }
     const timeouts = STEP_TIMINGS.map((delay, i) =>
       setTimeout(() => setGeneratingStep(i + 1), delay)
     );
     return () => timeouts.forEach(clearTimeout);
   }, [isGenerating]);
+
+  // Extended "still working" message cycling — kicks in after all steps complete (~22s)
+  const extendedMessages = [
+    'Still crafting your store...',
+    'Polishing the details...',
+    'Almost there — just a bit longer...',
+    'Fine-tuning products & layout...',
+    'Making it perfect for you...',
+  ];
+  useEffect(() => {
+    if (!isGenerating || generatingStep < generatingSteps.length) return;
+    const interval = setInterval(() => {
+      setExtendedMsgIndex(i => (i + 1) % extendedMessages.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isGenerating, generatingStep]);
 
   const doubled = [...businessCategories, ...businessCategories];
 
@@ -1239,6 +1257,25 @@ export default function HeroSection() {
                   </motion.div>
                 );
               })}
+
+              {/* Extended "still working" — shown after all 5 steps complete */}
+              <AnimatePresence mode="wait">
+                {generatingStep >= generatingSteps.length && (
+                  <motion.div
+                    key={extendedMsgIndex}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.4 }}
+                    className="flex items-center gap-3.5 px-4 py-3.5 rounded-2xl bg-teal-50"
+                  >
+                    <Loader2 className="w-5 h-5 text-teal-400 flex-shrink-0 animate-spin" />
+                    <span className="text-sm font-semibold text-teal-600">
+                      {extendedMessages[extendedMsgIndex]}
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         )}

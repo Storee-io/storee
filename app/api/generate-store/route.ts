@@ -17,15 +17,16 @@ async function getLiveConfig(): Promise<{ prompt: string; model: string; maxToke
       map[row.key] = row.value;
     });
 
-    // max_tokens: always enforce minimum 6000 — DB may still have old value of 4096
-    const dbTokens = parseInt(map['max_tokens'] ?? '6000', 10);
+    // max_tokens: cap at 4500 — enough for a full 10-section store with 12 products,
+    // while keeping generation fast enough to beat Vercel Hobby's 60s function limit.
+    const dbTokens = parseInt(map['max_tokens'] ?? '4500', 10);
     return {
       prompt:    SYSTEM_PROMPT,  // always from code, never DB override
       model:     map['model'] ?? 'claude-sonnet-4-6',
-      maxTokens: Math.max(dbTokens, 6000),
+      maxTokens: Math.min(Math.max(dbTokens, 4000), 4500),
     };
   } catch {
-    return { prompt: SYSTEM_PROMPT, model: 'claude-sonnet-4-6', maxTokens: 6000 };
+    return { prompt: SYSTEM_PROMPT, model: 'claude-sonnet-4-6', maxTokens: 4500 };
   }
 }
 
