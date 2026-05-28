@@ -4,6 +4,7 @@ import { SYSTEM_PROMPT } from '@/src/lib/claudePrompt';
 import { createServerClient } from '@/src/lib/supabase';
 
 export const runtime = 'nodejs';
+export const maxDuration = 120; // Claude needs up to 60s; 120s gives headroom for retries
 
 // ── Live config from Supabase (falls back to hardcoded defaults) ──────────────
 async function getLiveConfig(): Promise<{ prompt: string; model: string; maxTokens: number }> {

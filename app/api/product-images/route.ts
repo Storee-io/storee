@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { fetchPexelsImages } from '@/src/lib/pexels';
 
 export const runtime = 'nodejs';
+export const maxDuration = 30;
 
 /**
  * POST /api/product-images
