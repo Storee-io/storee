@@ -112,12 +112,17 @@ export default function PreviewShell({ store, from = null }: Props) {
     const regenPrompt = val.prompt;
     const regenLanguage = val.selectedLang;
     const regenCurrency = val.selectedCurr ?? PROMPT_CURRENCIES[0];
-    const regenAdvanced = val.advancedApplied ? {
+
+    // Build advanced options — always include if user picked a color OR toggled advanced
+    const hasColor = val.colorPicked && !!val.color1;
+    const regenAdvanced = (val.advancedApplied || hasColor) ? {
       ...val.advanced,
       themeColors: {
         ...val.advanced.themeColors,
-        primary: val.colorPicked ? val.color1 : val.advanced.themeColors.primary,
-        secondary: val.colorPicked && val.colorMode === 'gradient' ? val.color2 : val.advanced.themeColors.secondary,
+        ...(hasColor ? {
+          primary: val.color1,
+          ...(val.colorMode === 'gradient' && val.color2 ? { secondary: val.color2 } : {}),
+        } : {}),
       },
     } : null;
 
@@ -161,9 +166,11 @@ export default function PreviewShell({ store, from = null }: Props) {
 
     if (mode === 'replace') {
       // ── Replace mode: overwrite current store in-place ──
+      // Prefer user-entered brand name; fall back to AI-generated name only if blank
+      const replaceName = regenBrandName.trim() || storeName;
       const patch: Partial<Store> = {
-        name: storeName,
-        domain: `${storeName.toLowerCase().replace(/\s+/g, '-')}.storee.io`,
+        name: replaceName,
+        domain: `${replaceName.toLowerCase().replace(/\s+/g, '-')}.storee.io`,
         primaryColor,
         template: aiResult?.template ?? store.template,
         category: aiResult?.design?.collections?.[0]?.name ?? store.category,
@@ -185,10 +192,11 @@ export default function PreviewShell({ store, from = null }: Props) {
     }
 
     // ── New store mode: create a brand-new store ──
+    const newName = regenBrandName.trim() || storeName;
     const newStore: Store = {
-      id: `${storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${Math.random().toString(36).slice(2, 7)}`,
-      name: storeName,
-      domain: `${storeName.toLowerCase().replace(/\s+/g, '-')}.storee.io`,
+      id: `${newName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${Math.random().toString(36).slice(2, 7)}`,
+      name: newName,
+      domain: `${newName.toLowerCase().replace(/\s+/g, '-')}.storee.io`,
       status: 'Draft',
       template: aiResult?.template ?? store.template,
       primaryColor,
