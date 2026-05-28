@@ -2,32 +2,28 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  X, Globe, Rocket, Check, ExternalLink, ArrowLeft,
-  Loader2, AlertCircle, Pencil, CheckCircle2,
-} from 'lucide-react';
+import { X, Globe, Rocket, Check, ExternalLink, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import type { Store } from '@/src/context/StoreContext';
-import { findAvailableSubdomain } from '@/src/lib/subdomainGenerator';
 
 interface PublishModalProps {
   store: Store;
   onPublish: (subdomain: string) => void;
   onClose: () => void;
-  /** When provided, republishes using this exact subdomain (no auto-generate). */
+  /** When provided the URL step is skipped and this domain is used as-is */
   fixedSubdomain?: string;
 }
 
-type Step = 'generating' | 'processing' | 'success';
+type Step = 'form' | 'processing' | 'success';
 type CheckStatus = 'idle' | 'checking' | 'available' | 'taken';
-
-const BASE_DOMAIN = 'storee.io';
-const DEBOUNCE_MS = 600;
 
 const PROCESSING_STEPS = [
   'Registering subdomain...',
   'Configuring SSL certificate...',
   'Publishing your store...',
 ];
+
+const BASE_DOMAIN = 'storee.io';
+const DEBOUNCE_MS = 600;
 
 function slugify(text: string): string {
   return text
@@ -43,87 +39,164 @@ function isValidSubdomain(value: string): boolean {
 
 function getFormatError(value: string): string {
   if (!value) return '';
-  if (/[^a-z0-9-]/.test(value)) return 'Only lowercase letters, numbers, and hyphens.';
-  if (/^-|-$/.test(value)) return 'Cannot start or end with a hyphen.';
-  if (value.length < 3) return 'Must be at least 3 characters.';
-  if (value.length > 50) return 'Cannot exceed 50 characters.';
+  if (/[^a-z0-9-]/.test(value))
+    return 'Only lowercase letters (a–z), numbers (0–9), and hyphens (-) are allowed.';
+  if (/^-|-$/.test(value))
+    return 'Cannot start or end with a hyphen.';
+  if (value.length < 3)
+    return 'Must be at least 3 characters.';
+  if (value.length > 50)
+    return 'Cannot exceed 50 characters.';
   return '';
 }
 
-async function callPublishApi(params: {
-  subdomain: string; store: Store;
-}): Promise<{ success: boolean; error?: string }> {
-  try {
-    const res = await fetch('/api/publish-store', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        subdomain: params.subdomain,
-        name: params.store.name,
-        primaryColor: params.store.primaryColor,
-        category: params.store.category,
-        templateId: params.store.template?.id,
-        design: params.store.design,
-        currency: params.store.currency,
-        language: params.store.language,
-      }),
-    });
-    if (res.ok) return { success: true };
-    const err = await res.json();
-    return { success: false, error: err.error ?? 'Failed to publish' };
-  } catch {
-    return { success: false, error: 'Network error. Please try again.' };
-  }
-}
-
 export default function PublishModal({ store, onPublish, onClose, fixedSubdomain }: PublishModalProps) {
-  const [step, setStep] = useState<Step>('generating');
+  const defaultSub = fixedSubdomain ?? slugify(store.domain.replace(`.${BASE_DOMAIN}`, '') || store.name);
+  const [subdomain, setSubdomain] = useState(defaultSub);
+  const [step, setStep] = useState<Step>(fixedSubdomain ? 'processing' : 'form');
   const [processStep, setProcessStep] = useState(0);
-  const [subdomain, setSubdomain] = useState(fixedSubdomain ?? '');
-  const [publishError, setPublishError] = useState('');
-
-  // Change-subdomain UI (shown on success screen)
-  const [showChange, setShowChange] = useState(false);
-  const [newSub, setNewSub] = useState('');
+  const [publishedUrl, setPublishedUrl] = useState(fixedSubdomain ? `${fixedSubdomain}.${BASE_DOMAIN}` : '');
+  const [formError, setFormError] = useState('');
   const [checkStatus, setCheckStatus] = useState<CheckStatus>('idle');
-  const [changeError, setChangeError] = useState('');
-  const [changeSaving, setChangeSaving] = useState(false);
-  const [changeSuccess, setChangeSuccess] = useState(false);
 
   const apiResultRef = useRef<{ success: boolean; error?: string } | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const ownSubdomain = store.publishedDomain ?? fixedSubdomain ?? '';
+  // The store's own published subdomain — upsert is fine for re-publishing
+  const ownSubdomain = store.publishedDomain ?? '';
 
-  // ── Step 1: auto-generate (or use fixedSubdomain) then start publishing ────
-  useEffect(() => {
-    let cancelled = false;
-
-    async function prepare() {
-      let sub: string;
-
-      if (fixedSubdomain) {
-        sub = fixedSubdomain;
-      } else {
-        // Auto-generate an available 3-word subdomain
-        sub = await findAvailableSubdomain(store.name);
-      }
-
-      if (cancelled) return;
-      setSubdomain(sub);
-      setStep('processing');
-      setProcessStep(0);
-      apiResultRef.current = null;
-
-      const result = await callPublishApi({ subdomain: sub, store });
-      apiResultRef.current = result;
+  // ── Availability check ────────────────────────────────────────────────────
+  const checkAvailability = useCallback(async (sub: string) => {
+    // Own subdomain is always OK (upsert will update it)
+    if (sub === ownSubdomain) {
+      setCheckStatus('available');
+      return;
     }
+    setCheckStatus('checking');
+    try {
+      const res = await fetch(`/api/publish-store?subdomain=${encodeURIComponent(sub)}`);
+      if (!res.ok) { setCheckStatus('idle'); return; }
+      const { available } = await res.json() as { available: boolean };
+      setCheckStatus(available ? 'available' : 'taken');
+    } catch {
+      setCheckStatus('idle');
+    }
+  }, [ownSubdomain]);
 
-    prepare();
-    return () => { cancelled = true; };
+  // ── Debounced check on input change ──────────────────────────────────────
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!isValidSubdomain(subdomain)) {
+      setCheckStatus('idle');
+      return;
+    }
+    setCheckStatus('checking');
+    debounceRef.current = setTimeout(() => checkAvailability(subdomain), DEBOUNCE_MS);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [subdomain, checkAvailability]);
+
+  // ── fixedSubdomain: skip form, fire API immediately ──────────────────────
+  useEffect(() => {
+    if (!fixedSubdomain) return;
+    apiResultRef.current = null;
+    fetch('/api/publish-store', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subdomain: fixedSubdomain,
+        name: store.name,
+        primaryColor: store.primaryColor,
+        category: store.category,
+        templateId: store.template?.id,
+        design: store.design,
+        currency: store.currency,
+        language: store.language,
+      }),
+    })
+      .then(async res => {
+        if (res.ok) {
+          apiResultRef.current = { success: true };
+        } else {
+          const err = await res.json();
+          apiResultRef.current = { success: false, error: err.error ?? 'Failed to publish' };
+        }
+      })
+      .catch(() => { apiResultRef.current = { success: false, error: 'Network error. Please try again.' }; });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Step 2: animate processing steps then transition to success/error ────────
+  const formatError = getFormatError(subdomain);
+
+  const handleSubdomainChange = (val: string) => {
+    // Strip disallowed chars immediately as user types
+    const cleaned = val.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    setSubdomain(cleaned);
+    setFormError('');
+  };
+
+  const startPublish = async () => {
+    if (formatError || !subdomain) return;
+
+    // If check is still in flight, wait for it
+    if (checkStatus === 'checking') {
+      await checkAvailability(subdomain);
+    }
+
+    // Re-read check status after potential await
+    // We call checkAvailability directly so we need to get the final answer
+    // by doing a fresh check if still idle/unknown
+    if (checkStatus !== 'available' && subdomain !== ownSubdomain) {
+      // Do an immediate synchronous check
+      setCheckStatus('checking');
+      try {
+        const res = await fetch(`/api/publish-store?subdomain=${encodeURIComponent(subdomain)}`);
+        const { available } = await res.json() as { available: boolean };
+        if (!available) {
+          setCheckStatus('taken');
+          setFormError('This subdomain is already taken. Please choose another.');
+          return;
+        }
+        setCheckStatus('available');
+      } catch {
+        setFormError('Could not verify subdomain. Please try again.');
+        setCheckStatus('idle');
+        return;
+      }
+    }
+
+    const url = `${subdomain}.${BASE_DOMAIN}`;
+    setPublishedUrl(url);
+    setFormError('');
+    apiResultRef.current = null;
+    setStep('processing');
+    setProcessStep(0);
+
+    fetch('/api/publish-store', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subdomain,
+        name: store.name,
+        primaryColor: store.primaryColor,
+        category: store.category,
+        templateId: store.template?.id,
+        design: store.design,
+        currency: store.currency,
+        language: store.language,
+      }),
+    })
+      .then(async res => {
+        if (res.ok) {
+          apiResultRef.current = { success: true };
+        } else {
+          const err = await res.json();
+          apiResultRef.current = { success: false, error: err.error ?? 'Failed to publish' };
+        }
+      })
+      .catch(() => {
+        apiResultRef.current = { success: false, error: 'Network error. Please try again.' };
+      });
+  };
+
   useEffect(() => {
     if (step !== 'processing') return;
     let current = 0;
@@ -140,12 +213,11 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
             return;
           }
           if (apiResultRef.current.success) {
-            onPublish(`${subdomain}.${BASE_DOMAIN}`);
+            onPublish(publishedUrl);
             setStep('success');
           } else {
-            setPublishError(apiResultRef.current.error ?? 'Failed to publish');
-            // Stay on generating/processing with error shown
-            setStep('generating');
+            setFormError(apiResultRef.current.error ?? 'Failed to publish');
+            setStep('form');
           }
         };
         setTimeout(checkAndFinish, 700);
@@ -154,62 +226,47 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
 
     const t = setTimeout(advance, 900);
     return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Availability check for change-subdomain input ───────────────────────────
-  const checkAvailability = useCallback(async (sub: string) => {
-    if (sub === ownSubdomain || sub === subdomain) {
-      setCheckStatus('available');
-      return;
+  // ── Derived: is publish button enabled? ──────────────────────────────────
+  const canPublish =
+    !!subdomain &&
+    !formatError &&
+    !formError &&
+    checkStatus !== 'taken' &&
+    checkStatus !== 'checking';
+
+  // ── Inline status indicator ───────────────────────────────────────────────
+  const renderCheckIndicator = () => {
+    if (!subdomain || formatError) return null;
+    if (checkStatus === 'checking') {
+      return (
+        <p className="text-xs text-slate-400 mt-1.5 flex items-center gap-1">
+          <Loader2 className="w-3 h-3 animate-spin" />
+          Checking availability…
+        </p>
+      );
     }
-    setCheckStatus('checking');
-    try {
-      const res = await fetch(`/api/publish-store?subdomain=${encodeURIComponent(sub)}`);
-      if (!res.ok) { setCheckStatus('idle'); return; }
-      const { available } = await res.json() as { available: boolean };
-      setCheckStatus(available ? 'available' : 'taken');
-    } catch {
-      setCheckStatus('idle');
+    if (checkStatus === 'available') {
+      return (
+        <p className="text-xs text-emerald-600 mt-1.5 flex items-center gap-1">
+          <Check className="w-3 h-3" />
+          <span className="font-mono font-medium">{subdomain}.{BASE_DOMAIN}</span>
+          <span className="text-emerald-500">is available</span>
+        </p>
+      );
     }
-  }, [ownSubdomain, subdomain]);
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!newSub || !isValidSubdomain(newSub)) { setCheckStatus('idle'); return; }
-    setCheckStatus('checking');
-    debounceRef.current = setTimeout(() => checkAvailability(newSub), DEBOUNCE_MS);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [newSub, checkAvailability]);
-
-  const handleChangeSubdomain = async () => {
-    const formatErr = getFormatError(newSub);
-    if (formatErr || !newSub) return;
-    if (checkStatus === 'taken') { setChangeError('This subdomain is already taken.'); return; }
-    setChangeSaving(true);
-    setChangeError('');
-
-    const result = await callPublishApi({ subdomain: newSub, store });
-    setChangeSaving(false);
-
-    if (result.success) {
-      setSubdomain(newSub);
-      onPublish(`${newSub}.${BASE_DOMAIN}`);
-      setShowChange(false);
-      setChangeSuccess(true);
-      setNewSub('');
-      setCheckStatus('idle');
-    } else {
-      setChangeError(result.error ?? 'Failed to update subdomain.');
+    if (checkStatus === 'taken') {
+      return (
+        <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
+          <AlertCircle className="w-3 h-3" />
+          This subdomain is already taken. Try another.
+        </p>
+      );
     }
+    return null;
   };
 
-  const formatError = getFormatError(newSub);
-  const canSave =
-    !!newSub && !formatError && !changeError &&
-    checkStatus === 'available' && !changeSaving;
-
-  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
@@ -231,38 +288,96 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
       >
         <AnimatePresence mode="wait">
 
-          {/* ── GENERATING / ERROR STATE ── */}
-          {step === 'generating' && (
+          {/* ── FORM STEP ── */}
+          {step === 'form' && (
             <motion.div
-              key="generating"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="p-8 text-center"
+              key="form"
+              initial={{ opacity: 0, x: 0 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="p-6"
             >
-              {publishError ? (
-                <>
-                  <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center mx-auto mb-4">
-                    <AlertCircle className="w-7 h-7 text-red-500" />
+              <div className="flex items-start justify-between mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center">
+                    <Globe className="w-5 h-5 text-white" />
                   </div>
-                  <h2 className="text-lg font-bold text-slate-900 mb-1">Publish Failed</h2>
-                  <p className="text-sm text-slate-500 mb-6">{publishError}</p>
-                  <button
-                    onClick={onClose}
-                    className="w-full flex items-center justify-center gap-2 py-3 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors"
-                  >
-                    Close
-                  </button>
-                </>
-              ) : (
-                <>
-                  <div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-5">
-                    <Loader2 className="w-7 h-7 text-white animate-spin" />
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900">Set Your Store URL</h2>
+                    <p className="text-xs text-slate-500 mt-0.5">Choose a unique subdomain for your store</p>
                   </div>
-                  <h2 className="text-lg font-bold text-slate-900 mb-1">Preparing your store…</h2>
-                  <p className="text-xs text-slate-400">Finding a great URL for you</p>
-                </>
-              )}
+                </div>
+                <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Store URL</label>
+                <div className={`flex items-center border rounded-xl overflow-hidden transition-colors ${
+                  formatError || formError || checkStatus === 'taken'
+                    ? 'border-red-300 ring-2 ring-red-100'
+                    : checkStatus === 'available'
+                    ? 'border-emerald-400 ring-2 ring-emerald-100'
+                    : 'border-slate-200 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100'
+                }`}>
+                  <input
+                    value={subdomain}
+                    onChange={e => handleSubdomainChange(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && canPublish) startPublish(); }}
+                    placeholder="your-store"
+                    className="flex-1 px-4 py-3 text-sm font-mono text-slate-900 outline-none bg-transparent"
+                    autoFocus
+                    spellCheck={false}
+                    maxLength={50}
+                  />
+                  {/* Right adornment: spinner / check / x */}
+                  <div className="px-3 flex-shrink-0">
+                    {checkStatus === 'checking' && isValidSubdomain(subdomain) && (
+                      <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+                    )}
+                    {checkStatus === 'available' && (
+                      <Check className="w-4 h-4 text-emerald-500" />
+                    )}
+                    {checkStatus === 'taken' && (
+                      <AlertCircle className="w-4 h-4 text-red-500" />
+                    )}
+                  </div>
+                  <span className="pr-4 py-3 bg-slate-50 text-sm text-slate-400 font-mono border-l border-slate-200 whitespace-nowrap flex-shrink-0 pl-3">
+                    .{BASE_DOMAIN}
+                  </span>
+                </div>
+
+                {/* Status message below input */}
+                {(formatError || formError)
+                  ? <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                      {formatError || formError}
+                    </p>
+                  : renderCheckIndicator()
+                }
+              </div>
+
+              <div className="bg-slate-50 rounded-xl p-4 mb-5">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Included with publish</p>
+                <div className="space-y-1.5">
+                  {['Free subdomain on storee.io', 'SSL/HTTPS certificate included', 'CDN-optimized for fast loading'].map(item => (
+                    <div key={item} className="flex items-center gap-2">
+                      <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                      <span className="text-xs text-slate-600">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                onClick={startPublish}
+                disabled={!canPublish}
+                className="w-full flex items-center justify-center gap-2 py-3 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
+              >
+                <Rocket className="w-4 h-4" />
+                Publish Store
+              </button>
             </motion.div>
           )}
 
@@ -278,9 +393,7 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
               <div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-5">
                 <Loader2 className="w-7 h-7 text-white animate-spin" />
               </div>
-              <h2 className="text-lg font-bold text-slate-900 mb-1">
-                {fixedSubdomain ? 'Republishing your store' : 'Publishing your store'}
-              </h2>
+              <h2 className="text-lg font-bold text-slate-900 mb-1">{fixedSubdomain ? 'Republishing your store' : 'Publishing your store'}</h2>
               <p className="text-xs text-slate-400 font-mono mb-8">{subdomain}.{BASE_DOMAIN}</p>
 
               <div className="space-y-3 text-left">
@@ -312,118 +425,25 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
               key="success"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="p-6"
+              className="p-6 text-center"
             >
-              {/* Header */}
-              <div className="text-center mb-5">
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.1 }}
-                  className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center mx-auto mb-4"
-                >
-                  <Check className="w-8 h-8 text-white" strokeWidth={2.5} />
-                </motion.div>
-                <h2 className="text-xl font-bold text-slate-900 mb-1">Store Published!</h2>
-                <p className="text-sm text-slate-500">Your store is now live and accessible to everyone.</p>
-              </div>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.1 }}
+                className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center mx-auto mb-4"
+              >
+                <Check className="w-8 h-8 text-white" strokeWidth={2.5} />
+              </motion.div>
 
-              {/* URL display */}
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-3">
+              <h2 className="text-xl font-bold text-slate-900 mb-1">Store Published!</h2>
+              <p className="text-sm text-slate-500 mb-5">Your store is now live and accessible to everyone.</p>
+
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-6">
                 <p className="text-xs text-emerald-600 font-medium mb-0.5">Your store URL</p>
-                <p className="text-base font-mono font-bold text-emerald-800 break-all">
-                  https://{changeSuccess ? newSub || subdomain : subdomain}.{BASE_DOMAIN}
-                </p>
+                <p className="text-base font-mono font-bold text-emerald-800">https://{publishedUrl}</p>
               </div>
 
-              {/* Change subdomain toggle */}
-              {!showChange && (
-                <button
-                  onClick={() => { setShowChange(true); setNewSub(''); setCheckStatus('idle'); setChangeError(''); }}
-                  className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-emerald-600 transition-colors mb-4"
-                >
-                  <Pencil className="w-3 h-3" />
-                  Change subdomain
-                </button>
-              )}
-
-              {/* Change subdomain form */}
-              <AnimatePresence>
-                {showChange && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="overflow-hidden mb-4"
-                  >
-                    <div className="pt-1 pb-3 border-t border-slate-100">
-                      <p className="text-xs font-medium text-slate-600 mb-2">New subdomain</p>
-                      <div className={`flex items-center border rounded-xl overflow-hidden transition-colors mb-1.5 ${
-                        formatError || changeError || checkStatus === 'taken'
-                          ? 'border-red-300 ring-2 ring-red-100'
-                          : checkStatus === 'available'
-                          ? 'border-emerald-400 ring-2 ring-emerald-100'
-                          : 'border-slate-200 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100'
-                      }`}>
-                        <input
-                          value={newSub}
-                          onChange={e => {
-                            const cleaned = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
-                            setNewSub(cleaned);
-                            setChangeError('');
-                          }}
-                          onKeyDown={e => { if (e.key === 'Enter' && canSave) handleChangeSubdomain(); }}
-                          placeholder={slugify(store.name) || 'your-store'}
-                          className="flex-1 px-3 py-2.5 text-sm font-mono text-slate-900 outline-none bg-transparent"
-                          autoFocus
-                          spellCheck={false}
-                          maxLength={50}
-                        />
-                        <div className="px-2 flex-shrink-0">
-                          {checkStatus === 'checking' && <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin" />}
-                          {checkStatus === 'available' && <Check className="w-3.5 h-3.5 text-emerald-500" />}
-                          {checkStatus === 'taken' && <AlertCircle className="w-3.5 h-3.5 text-red-500" />}
-                        </div>
-                        <span className="pr-3 py-2.5 bg-slate-50 text-xs text-slate-400 font-mono border-l border-slate-200 pl-2 whitespace-nowrap flex-shrink-0">
-                          .{BASE_DOMAIN}
-                        </span>
-                      </div>
-
-                      {(formatError || changeError) && (
-                        <p className="text-xs text-red-500 flex items-center gap-1 mb-2">
-                          <AlertCircle className="w-3 h-3 flex-shrink-0" />
-                          {formatError || changeError}
-                        </p>
-                      )}
-                      {checkStatus === 'available' && !formatError && (
-                        <p className="text-xs text-emerald-600 flex items-center gap-1 mb-2">
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span className="font-mono">{newSub}.{BASE_DOMAIN}</span> is available
-                        </p>
-                      )}
-
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          onClick={() => { setShowChange(false); setNewSub(''); setCheckStatus('idle'); setChangeError(''); }}
-                          className="flex-1 py-2 text-xs font-medium text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handleChangeSubdomain}
-                          disabled={!canSave}
-                          className="flex-1 py-2 text-xs font-semibold text-white gradient-bg rounded-lg hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 transition-all"
-                        >
-                          {changeSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Rocket className="w-3.5 h-3.5" />}
-                          {changeSaving ? 'Saving…' : 'Update'}
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Action buttons */}
               <div className="flex gap-3">
                 <button
                   onClick={onClose}
@@ -433,7 +453,7 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
                   Back
                 </button>
                 <a
-                  href={`https://${subdomain}.${BASE_DOMAIN}`}
+                  href={`https://${publishedUrl}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow-md"
