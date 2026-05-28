@@ -140,6 +140,8 @@ export interface Store {
   // All variation preset IDs used so far — excluded on future regenerates so the same
   // design is never repeated (until all 17 have been used, then the pool resets).
   usedVariationIds?: number[];
+  // Custom domain connected by the user (e.g. "mystore.com")
+  customDomain?: string;
 }
 
 export interface GenerationState {

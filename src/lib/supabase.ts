@@ -37,6 +37,7 @@ interface StoreRow {
   language: string | null;
   shipping_settings: Store['shippingSettings'] | null;
   payment_settings: Store['paymentSettings'] | null;
+  custom_domain: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -60,6 +61,7 @@ export function rowToStore(row: StoreRow): Store {
     language: row.language ?? undefined,
     shippingSettings: row.shipping_settings ?? undefined,
     paymentSettings: row.payment_settings ?? undefined,
+    customDomain: row.custom_domain ?? undefined,
   };
 }
 
@@ -80,6 +82,7 @@ export function storeToRow(store: Store, userId: string): Omit<StoreRow, 'update
     language: store.language ?? null,
     shipping_settings: store.shippingSettings ?? null,
     payment_settings: store.paymentSettings ?? null,
+    custom_domain: store.customDomain ?? null,
     created_at: store.createdAt,
   };
 }
