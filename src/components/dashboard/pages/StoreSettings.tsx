@@ -45,7 +45,11 @@ function CustomDomainPanel() {
   const { activeStore, updateActiveStore } = useStore();
 
   const existingDomain = activeStore?.customDomain ?? '';
-  const subdomain = activeStore?.domain?.split('.')[0] ?? '';
+  const isPublished = activeStore?.status === 'Published';
+  // domain field is e.g. "my-store.storee.io" → extract slug
+  const subdomain = activeStore?.publishedDomain?.split('.')[0]
+    ?? activeStore?.domain?.split('.')[0]
+    ?? '';
 
   const [input, setInput] = useState('');
   const [saving, setSaving] = useState(false);
@@ -166,22 +170,30 @@ function CustomDomainPanel() {
       </div>
 
       <div className="space-y-4">
-        {/* Storee subdomain (read-only info) */}
+        {/* Storee URL — only shown once published */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">Storee URL</label>
-          <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
-            <span className="px-4 py-2.5 text-sm text-slate-500 select-none">storee.io/store/</span>
-            <span className="py-2.5 text-sm font-medium text-slate-800">{subdomain || 'your-store'}</span>
-            <a
-              href={`/store/${subdomain}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-auto px-3 text-slate-400 hover:text-emerald-500 transition-colors"
-              title="Open store"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </a>
-          </div>
+          {isPublished && subdomain ? (
+            <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+              <span className="px-4 py-2.5 text-sm font-medium text-slate-800 truncate">
+                {subdomain}.storee.io
+              </span>
+              <a
+                href={`https://${subdomain}.storee.io`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-auto px-3 flex-shrink-0 text-slate-400 hover:text-emerald-500 transition-colors"
+                title="Open store"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 text-slate-400 text-sm">
+              <Globe className="w-4 h-4 flex-shrink-0" />
+              <span>Your Storee URL will appear here once you publish your store.</span>
+            </div>
+          )}
         </div>
 
         {/* Custom domain section */}
