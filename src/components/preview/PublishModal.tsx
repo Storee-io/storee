@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Globe, Rocket, Check, ExternalLink, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { X, Globe, Rocket, Check, ExternalLink, ArrowLeft, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import type { Store } from '@/src/context/StoreContext';
+import { findAvailableSubdomain } from '@/src/lib/subdomainGenerator';
 
 interface PublishModalProps {
   store: Store;
@@ -58,11 +59,26 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
   const [publishedUrl, setPublishedUrl] = useState(fixedSubdomain ? `${fixedSubdomain}.${BASE_DOMAIN}` : '');
   const [formError, setFormError] = useState('');
   const [checkStatus, setCheckStatus] = useState<CheckStatus>('idle');
+  const [isGeneratingDefault, setIsGeneratingDefault] = useState(!fixedSubdomain);
 
   const apiResultRef = useRef<{ success: boolean; error?: string } | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // The store's own published subdomain — upsert is fine for re-publishing
   const ownSubdomain = store.publishedDomain ?? '';
+
+  // ── Auto-generate 3-word default subdomain on first publish ─────────────
+  useEffect(() => {
+    if (fixedSubdomain) return; // republish — keep existing
+    let cancelled = false;
+    setIsGeneratingDefault(true);
+    findAvailableSubdomain(store.name).then(sub => {
+      if (cancelled) return;
+      setSubdomain(sub);
+      setIsGeneratingDefault(false);
+    });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Availability check ────────────────────────────────────────────────────
   const checkAvailability = useCallback(async (sub: string) => {
@@ -233,6 +249,7 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
     !!subdomain &&
     !formatError &&
     !formError &&
+    !isGeneratingDefault &&
     checkStatus !== 'taken' &&
     checkStatus !== 'checking';
 
@@ -313,7 +330,29 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
               </div>
 
               <div className="mb-5">
-                <label className="block text-sm font-medium text-slate-700 mb-2">Store URL</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-slate-700">Store URL</label>
+                  {/* Shuffle button — generate a new random subdomain */}
+                  {!fixedSubdomain && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsGeneratingDefault(true);
+                        setFormError('');
+                        findAvailableSubdomain(store.name).then(sub => {
+                          setSubdomain(sub);
+                          setIsGeneratingDefault(false);
+                        });
+                      }}
+                      disabled={isGeneratingDefault}
+                      className="flex items-center gap-1 text-xs text-slate-400 hover:text-emerald-600 disabled:opacity-40 transition-colors"
+                      title="Generate another random URL"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${isGeneratingDefault ? 'animate-spin' : ''}`} />
+                      Shuffle
+                    </button>
+                  )}
+                </div>
                 <div className={`flex items-center border rounded-xl overflow-hidden transition-colors ${
                   formatError || formError || checkStatus === 'taken'
                     ? 'border-red-300 ring-2 ring-red-100'
@@ -330,16 +369,17 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
                     autoFocus
                     spellCheck={false}
                     maxLength={50}
+                    disabled={isGeneratingDefault}
                   />
                   {/* Right adornment: spinner / check / x */}
                   <div className="px-3 flex-shrink-0">
-                    {checkStatus === 'checking' && isValidSubdomain(subdomain) && (
+                    {(isGeneratingDefault || (checkStatus === 'checking' && isValidSubdomain(subdomain))) && (
                       <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
                     )}
-                    {checkStatus === 'available' && (
+                    {!isGeneratingDefault && checkStatus === 'available' && (
                       <Check className="w-4 h-4 text-emerald-500" />
                     )}
-                    {checkStatus === 'taken' && (
+                    {!isGeneratingDefault && checkStatus === 'taken' && (
                       <AlertCircle className="w-4 h-4 text-red-500" />
                     )}
                   </div>
