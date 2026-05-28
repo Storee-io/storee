@@ -153,58 +153,67 @@ export default function PreviewShell({ store, from = null }: Props) {
     await new Promise<void>(r => setTimeout(r, 600));
     setGenerationState(null);
 
-    let storeName: string;
-    let primaryColor: string;
+    // ── Resolve final values (mirrors HeroSection logic) ──────────────────
+    const finalName = regenBrandName.trim() || aiResult?.storeName || liveStore.name;
 
-    if (aiResult) {
-      storeName = aiResult.storeName;
-      primaryColor = aiResult.primaryColor;
-    } else {
-      storeName = store.name;
-      primaryColor = store.primaryColor;
-    }
+    // Respect user's color pick first, then advanced themeColors, then AI color
+    const finalPrimaryColor =
+      (regenAdvanced?.themeColors?.primary)  ? regenAdvanced.themeColors.primary
+      : hasColor                              ? val.color1
+      : aiResult?.primaryColor               ?? liveStore.primaryColor;
+
+    // Gradient: apply color2 as accentColor on design (same as HeroSection)
+    const designWithOverride = aiResult?.design
+      ? {
+          design: {
+            ...aiResult.design,
+            ...(val.colorPicked && val.colorMode === 'gradient' && val.color2
+              ? { accentColor: val.color2 }
+              : {}),
+          },
+        }
+      : {};
 
     if (mode === 'replace') {
       // ── Replace mode: overwrite current store in-place ──
-      // Prefer user-entered brand name; fall back to AI-generated name only if blank
-      const replaceName = regenBrandName.trim() || storeName;
       const patch: Partial<Store> = {
-        name: replaceName,
-        domain: `${replaceName.toLowerCase().replace(/\s+/g, '-')}.storee.io`,
-        primaryColor,
-        template: aiResult?.template ?? store.template,
-        category: aiResult?.design?.collections?.[0]?.name ?? store.category,
+        name: finalName,
+        domain: `${finalName.toLowerCase().replace(/\s+/g, '-')}.storee.io`,
+        primaryColor: finalPrimaryColor,
+        template: aiResult?.template ?? liveStore.template,
+        category: aiResult?.design?.collections?.[0]?.name ?? liveStore.category,
         prompt: regenPrompt,
         ...(regenLanguage ? { language: regenLanguage } : {}),
         currency: regenCurrency,
         ...(regenAdvanced ? { advancedOptions: regenAdvanced } : {}),
-        ...((aiResult?.design) ? { design: aiResult.design } : {}),
+        ...designWithOverride,
         ...((aiResult as { variationId?: number } | null)?.variationId != null
           ? { variationId: (aiResult as { variationId?: number }).variationId }
           : {}),
       };
-      updateActiveStore(patch);
       const updatedStore = { ...liveStore, ...patch };
+      // Persist first so the page reload reads fresh data
+      localStorage.setItem(`storee_store_${liveStore.id}`, JSON.stringify(updatedStore));
       setGeneratedStore(updatedStore);
-      localStorage.setItem(`storee_store_${store.id}`, JSON.stringify(updatedStore));
+      // Navigate to same URL — page reloads store from localStorage cleanly
+      router.replace(`/preview/${liveStore.id}${from ? `?from=${encodeURIComponent(from)}` : ''}`);
       setIsRegenerating(false);
-      return; // stay on same preview page
+      return;
     }
 
     // ── New store mode: create a brand-new store ──
-    const newName = regenBrandName.trim() || storeName;
     const newStore: Store = {
-      id: `${newName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${Math.random().toString(36).slice(2, 7)}`,
-      name: newName,
-      domain: `${newName.toLowerCase().replace(/\s+/g, '-')}.storee.io`,
+      id: `${finalName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${Math.random().toString(36).slice(2, 7)}`,
+      name: finalName,
+      domain: `${finalName.toLowerCase().replace(/\s+/g, '-')}.storee.io`,
       status: 'Draft',
-      template: aiResult?.template ?? store.template,
-      primaryColor,
+      template: aiResult?.template ?? liveStore.template,
+      primaryColor: finalPrimaryColor,
       createdAt: new Date().toISOString(),
-      category: aiResult?.design?.collections?.[0]?.name ?? store.category,
+      category: aiResult?.design?.collections?.[0]?.name ?? liveStore.category,
       revenue: 0,
       orders: 0,
-      ...(aiResult?.design ? { design: aiResult.design } : {}),
+      ...designWithOverride,
       currency: regenCurrency,
       ...(regenLanguage ? { language: regenLanguage } : {}),
       prompt: regenPrompt,
