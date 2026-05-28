@@ -326,13 +326,24 @@ export default function PreviewShell({ store, from = null }: Props) {
                 <div className="w-3 h-3 rounded-full bg-green-400" />
               </div>
               <div className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 flex items-center gap-2">
-                <Globe className="w-3.5 h-3.5 text-slate-400" />
-                <span className="text-xs text-slate-500 font-mono truncate">
-                  https://{liveStore.domain || 'my-store.storee.io'}
+                <Globe className={`w-3.5 h-3.5 flex-shrink-0 ${isPublished ? 'text-slate-400' : 'text-slate-300'}`} />
+                <span className={`text-xs font-mono truncate ${isPublished ? 'text-slate-500' : 'text-slate-400'}`}>
+                  {isPublished
+                    ? `https://${liveStore.publishedDomain ?? liveStore.domain}`
+                    : `https://${liveStore.domain || 'my-store.storee.io'}`}
                 </span>
-                <div className="ml-auto w-3.5 h-3.5 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                </div>
+                {isPublished ? (
+                  /* Live — green dot */
+                  <div className="ml-auto w-3.5 h-3.5 rounded-full bg-green-500/20 flex-shrink-0 flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  </div>
+                ) : (
+                  /* Draft — amber dot + label */
+                  <div className="ml-auto flex items-center gap-1 flex-shrink-0">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                    <span className="text-[10px] font-medium text-amber-500">Draft</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
