@@ -16,10 +16,12 @@ async function getLiveConfig(): Promise<{ prompt: string; model: string; maxToke
       map[row.key] = row.value;
     });
 
+    // max_tokens: always enforce minimum 6000 — DB may still have old value of 4096
+    const dbTokens = parseInt(map['max_tokens'] ?? '6000', 10);
     return {
-      prompt:    map['system_prompt'] ?? SYSTEM_PROMPT,
-      model:     map['model']         ?? 'claude-sonnet-4-6',
-      maxTokens: parseInt(map['max_tokens'] ?? '6000', 10),
+      prompt:    SYSTEM_PROMPT,  // always from code, never DB override
+      model:     map['model'] ?? 'claude-sonnet-4-6',
+      maxTokens: Math.max(dbTokens, 6000),
     };
   } catch {
     return { prompt: SYSTEM_PROMPT, model: 'claude-sonnet-4-6', maxTokens: 6000 };

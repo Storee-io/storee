@@ -288,16 +288,27 @@ export async function generateStoreWithClaude(
     ? `${prompt}\n\n[Style direction: ${styleSeed}]`
     : prompt;
 
-  // Helper: one attempt at calling the API and parsing the response
+  // Helper: one attempt at calling the API and parsing the response.
+  // AbortController enforces a 90s hard timeout so mobile connections
+  // that hang silently don't block indefinitely.
   const attempt = async (seed: DesignVariation): Promise<GeneratedStoreConfig | null> => {
-    const res = await fetch('/api/generate-store', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: enrichedPrompt, currency, language, advanced, variationSeed: seed }),
-    });
-    if (!res.ok) return null;
-    const text = await res.text();
-    return parseStoreResponse(text);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 90_000);
+    try {
+      const res = await fetch('/api/generate-store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: enrichedPrompt, currency, language, advanced, variationSeed: seed }),
+        signal: controller.signal,
+      });
+      if (!res.ok) return null;
+      const text = await res.text();
+      return parseStoreResponse(text);
+    } catch {
+      return null; // AbortError or network failure → retry / fallback
+    } finally {
+      clearTimeout(timer);
+    }
   };
 
   try {
