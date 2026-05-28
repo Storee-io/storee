@@ -330,7 +330,7 @@ export default function PreviewShell({ store, from = null }: Props) {
                 <span className={`text-xs font-mono truncate ${isPublished ? 'text-slate-500' : 'text-slate-400'}`}>
                   {isPublished
                     ? `https://${liveStore.publishedDomain ?? liveStore.domain}`
-                    : `https://${liveStore.domain || 'my-store.storee.io'}`}
+                    : 'https://****.storee.io'}
                 </span>
                 {isPublished ? (
                   /* Live — green dot */
