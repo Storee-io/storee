@@ -363,7 +363,7 @@ export default function PreviewShell({ store, from = null }: Props) {
             to the real viewport.
           */}
           <div className="rounded-b-2xl overflow-hidden" style={{ transform: 'translateZ(0)' }}>
-            <StorePreview store={store} device={device} />
+            <StorePreview store={liveStore} device={device} />
           </div>
         </motion.div>
       </div>
