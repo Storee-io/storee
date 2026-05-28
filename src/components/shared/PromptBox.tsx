@@ -576,7 +576,7 @@ export default function PromptBox({
         </div>
 
         {/* Advanced Options */}
-        <div className="relative ml-auto">
+        <div className="relative">
           <button ref={advancedBtnRef}
             onClick={() => { setShowAdvancedPanel(!showAdvancedPanel); setShowColorPicker(false); setShowLangDropdown(false); setShowCurrDropdown(false); }}
             className={`relative flex items-center justify-center h-8 w-8 rounded-full text-sm font-medium transition-all duration-200 border ${showAdvancedPanel ? 'bg-slate-50 border-slate-300 text-slate-700' : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-600'}`}
