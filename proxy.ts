@@ -41,14 +41,12 @@ export async function proxy(request: NextRequest) {
 
   if (supabaseUrl && supabaseKey) {
     try {
-      const params = new URLSearchParams({
-        select: 'subdomain',
-        limit: '1',
-        or: `custom_domain.eq.${apex},custom_domain.eq.www.${apex}`,
-      });
+      // Supabase PostgREST requires OR filter wrapped in parentheses:
+      // ?or=(custom_domain.eq.val1,custom_domain.eq.val2)
+      const qs = `select=subdomain&limit=1&or=(custom_domain.eq.${encodeURIComponent(apex)},custom_domain.eq.${encodeURIComponent('www.' + apex)})`;
 
       const res = await fetch(
-        `${supabaseUrl}/rest/v1/published_stores?${params}`,
+        `${supabaseUrl}/rest/v1/published_stores?${qs}`,
         {
           headers: {
             apikey: supabaseKey,
