@@ -1,8 +1,8 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { createServerClient } from '@/src/lib/supabase';
-import StorefrontClient from './StorefrontClient';
-import StoreInactive from './StoreInactive';
-import type { Store } from '@/src/context/StoreContext';
+import StoreContent from './StoreContent';
+import StoreSkeleton from './StoreSkeleton';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -26,36 +26,26 @@ export default async function StorefrontPage({ params }: Props) {
   const { slug } = await params;
   const db = createServerClient();
 
-  const { data, error } = await db
+  // Fast minimal fetch — just name + primaryColor for the branded skeleton
+  const { data: minimal } = await db
     .from('published_stores')
-    .select('*')
+    .select('name, primary_color, status')
     .eq('subdomain', slug)
     .maybeSingle();
 
-  if (!data || error) notFound();
+  if (!minimal) notFound();
 
-  // Store exists but owner has set it to Draft → show inactive page
-  if (data.status === 'inactive') {
-    return <StoreInactive name={data.name} />;
-  }
-
-  const store: Store = {
-    id: data.id,
-    name: data.name,
-    domain: `${slug}.storee.io`,
-    status: 'Published',
-    primaryColor: data.primary_color,
-    createdAt: data.created_at,
-    category: data.category,
-    revenue: 0,
-    orders: 0,
-    design: data.design ?? undefined,
-    currency: data.currency ?? undefined,
-    language: data.language ?? undefined,
-    font: data.font ?? undefined,
-    mood: data.mood ?? undefined,
-    audience: data.audience ?? undefined,
-  };
-
-  return <StorefrontClient store={store} />;
+  // Full content streams in via Suspense while skeleton shows
+  return (
+    <Suspense
+      fallback={
+        <StoreSkeleton
+          primaryColor={minimal.primary_color ?? '#10b981'}
+          name={minimal.name}
+        />
+      }
+    >
+      <StoreContent slug={slug} />
+    </Suspense>
+  );
 }
