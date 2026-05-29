@@ -4,12 +4,18 @@ export const runtime = 'nodejs';
 
 const VERCEL_API = 'https://api.vercel.com';
 
+const VERCEL_A_RECORD = '76.76.21.21';
+const VERCEL_CNAME = 'cname.vercel-dns.com';
+
 /**
  * GET /api/custom-domain/verify?domain=mystore.com
  *
- * Checks whether the domain has been verified by Vercel (i.e. DNS is correctly
- * pointing at Vercel's servers).  Returns:
- *   { verified: boolean, cname: string, aRecord: string }
+ * Performs a real DNS lookup (via Google DNS-over-HTTPS) to check whether
+ * the domain's A record points to Vercel (76.76.21.21) or www CNAME points
+ * to cname.vercel-dns.com.  Does NOT rely on Vercel's `verified` flag, which
+ * can return true for domains already present in the project regardless of DNS.
+ *
+ * Returns: { verified: boolean, cname: string, aRecord: string }
  */
 export async function GET(req: NextRequest) {
   const domain = req.nextUrl.searchParams.get('domain');
@@ -17,44 +23,41 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing domain param' }, { status: 400 });
   }
 
-  const token = process.env.VERCEL_TOKEN;
-  const projectId = process.env.VERCEL_PROJECT_ID;
-
-  // If Vercel isn't wired up, we can't verify — return a helpful response
-  if (!token || !projectId) {
-    return NextResponse.json({
-      verified: false,
-      cname: 'cname.vercel-dns.com',
-      aRecord: '76.76.21.21',
-      note: 'VERCEL_TOKEN not configured — add domain manually in Vercel dashboard',
-    });
-  }
-
-  const teamId = process.env.VERCEL_TEAM_ID;
-  const url =
-    `${VERCEL_API}/v10/projects/${projectId}/domains/${domain}` +
-    (teamId ? `?teamId=${teamId}` : '');
+  // Strip www. for apex lookup
+  const apex = domain.replace(/^www\./, '');
 
   try {
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
-      },
-    });
+    // Check apex A record AND www CNAME in parallel
+    const [aRes, cnameRes] = await Promise.all([
+      fetch(`https://dns.google/resolve?name=${encodeURIComponent(apex)}&type=A`),
+      fetch(`https://dns.google/resolve?name=www.${encodeURIComponent(apex)}&type=CNAME`),
+    ]);
 
-    if (!res.ok) {
-      return NextResponse.json({ verified: false, cname: 'cname.vercel-dns.com', aRecord: '76.76.21.21' });
-    }
+    const [aData, cnameData] = await Promise.all([
+      aRes.json() as Promise<{ Answer?: { data: string }[] }>,
+      cnameRes.json() as Promise<{ Answer?: { data: string }[] }>,
+    ]);
 
-    const data = await res.json();
+    const aRecords: string[] = (aData.Answer ?? []).map((r) => r.data.trim());
+    const cnameRecords: string[] = (cnameData.Answer ?? []).map((r) =>
+      r.data.replace(/\.$/, '').trim()
+    );
+
+    const aOk = aRecords.includes(VERCEL_A_RECORD);
+    const cnameOk = cnameRecords.some((c) => c === VERCEL_CNAME);
+    const verified = aOk || cnameOk;
 
     return NextResponse.json({
-      verified: data.verified ?? false,
-      cname: data.cname ?? 'cname.vercel-dns.com',
-      aRecord: '76.76.21.21',
+      verified,
+      cname: VERCEL_CNAME,
+      aRecord: VERCEL_A_RECORD,
+      _debug: { aRecords, cnameRecords },
     });
   } catch {
-    return NextResponse.json({ verified: false, cname: 'cname.vercel-dns.com', aRecord: '76.76.21.21' });
+    return NextResponse.json({
+      verified: false,
+      cname: VERCEL_CNAME,
+      aRecord: VERCEL_A_RECORD,
+    });
   }
 }
