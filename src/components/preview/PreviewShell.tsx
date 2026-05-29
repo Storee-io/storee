@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw, PenLine } from 'lucide-react';
@@ -43,21 +43,16 @@ export default function PreviewShell({ store, from = null }: Props) {
   const [showRegenModal, setShowRegenModal] = useState(false);
   const [regenBoxValue, setRegenBoxValue] = useState<PromptBoxValue | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
-  const [fabVisible, setFabVisible] = useState(true);
+  const [fabHidden, setFabHidden] = useState(false);
   const stepTimerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastScrollY = useRef(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const handleScroll = useCallback(() => {
-    setFabVisible(false);
-    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
-    scrollTimerRef.current = setTimeout(() => setFabVisible(true), 400);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
-    };
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const currentY = e.currentTarget.scrollTop;
+    const isScrollingDown = currentY > lastScrollY.current;
+    lastScrollY.current = currentY;
+    setFabHidden(isScrollingDown);
   }, []);
 
   const { updateActiveStore, addStore, stores, setActiveStore, setGeneratedStore, setGenerationState, activeStore } = useStore();
@@ -413,13 +408,11 @@ export default function PreviewShell({ store, from = null }: Props) {
         </motion.div>
       </div>
 
-      {/* Floating Edit FAB — hides while scrolling, reappears on idle */}
+      {/* Floating Edit FAB — slides down out when scrolling down, back up when scrolling up */}
       <div
-        className="fixed bottom-8 right-8 z-30 transition-all duration-150"
+        className="fixed bottom-8 right-8 z-30 transition-transform duration-300 ease-in-out"
         style={{
-          opacity: fabVisible ? 1 : 0,
-          transform: fabVisible ? 'scale(1)' : 'scale(0.75)',
-          pointerEvents: fabVisible ? 'auto' : 'none',
+          transform: fabHidden ? 'translateY(calc(100% + 2rem))' : 'translateY(0)',
         }}
       >
         <button
