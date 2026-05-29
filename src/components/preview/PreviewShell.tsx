@@ -363,7 +363,7 @@ export default function PreviewShell({ store, from = null }: Props) {
       </div>
 
       {/* Store frame */}
-      <div ref={scrollContainerRef} onScroll={handleScroll} className="flex-1 overflow-auto p-4 sm:p-8 flex justify-center">
+      <div ref={scrollContainerRef} onScroll={handleScroll} className="flex-1 overflow-auto px-4 sm:px-8 pt-4 sm:pt-8 pb-16 flex justify-center items-start">
         <motion.div
           animate={{ width: device === 'desktop' ? '100%' : device === 'tablet' ? '768px' : '375px' }}
           transition={{ duration: 0.3 }}
