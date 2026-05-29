@@ -420,7 +420,7 @@ export default function PreviewShell({ store, from = null }: Props) {
       {/* Floating Edit FAB — fixed to escape overflow-auto clipping */}
       <div
         className="fixed bottom-8 right-6 z-30 transition-transform duration-150 ease-in-out"
-        style={{ transform: fabHidden ? 'translateY(calc(100% + 2rem))' : 'translateY(0)' }}
+        style={{ transform: fabHidden ? 'translateY(calc(100% + 6rem))' : 'translateY(0)' }}
       >
         {/* Sound-wave ripple rings */}
         <span className="absolute inset-0 rounded-full bg-emerald-400 opacity-30 animate-ping" style={{ animationDuration: '1.8s', animationDelay: '0s' }} />
@@ -430,9 +430,9 @@ export default function PreviewShell({ store, from = null }: Props) {
         <button
           onClick={() => router.push(`/canvas/${liveStore.id}?from=${encodeURIComponent(`/preview/${liveStore.id}`)}`)}
           title="Edit Store"
-          className="relative w-12 h-12 rounded-full gradient-bg flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all duration-200"
+          className="relative w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200"
         >
-          <PenLine className="w-5 h-5 text-white" />
+          <PenLine className="w-5 h-5 text-emerald-500" />
         </button>
       </div>
 
