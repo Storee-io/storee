@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Store, Globe, CreditCard, Truck, Check, DollarSign, Languages, ArrowRight,
+  Store, Globe, CreditCard, Truck, Check, DollarSign, Languages, ArrowRight, Link2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useStore } from '../../../context/StoreContext';
@@ -93,34 +93,6 @@ export default function StoreSettings() {
         </div>
       </div>
 
-      {/* Domain — redirect to dedicated page */}
-      <Link href="/dashboard/domain" className="bg-white rounded-2xl p-6 border border-slate-200 flex items-center justify-between hover:border-emerald-300 hover:shadow-sm transition-all group">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
-            <Globe className="w-5 h-5 text-emerald-600" />
-          </div>
-          <div>
-            <h3 className="font-bold text-slate-900">Domain</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Storee URL & custom domain settings</p>
-          </div>
-        </div>
-        <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 transition-colors" />
-      </Link>
-
-      {/* Payment — redirect to dedicated page */}
-      <Link href="/dashboard/payment" className="bg-white rounded-2xl p-6 border border-slate-200 flex items-center justify-between hover:border-emerald-300 hover:shadow-sm transition-all group">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
-            <CreditCard className="w-5 h-5 text-emerald-600" />
-          </div>
-          <div>
-            <h3 className="font-bold text-slate-900">Payment Methods</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Bank transfer, QRIS, COD, e-wallet</p>
-          </div>
-        </div>
-        <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 transition-colors" />
-      </Link>
-
       {/* Currency */}
       <div className="bg-white rounded-2xl p-6 border border-slate-200">
         <div className="flex items-center gap-3 mb-5">
@@ -189,6 +161,34 @@ export default function StoreSettings() {
           ))}
         </div>
       </div>
+
+      {/* Domain — redirect to dedicated page */}
+      <Link href="/dashboard/domain" className="bg-white rounded-2xl p-6 border border-slate-200 flex items-center justify-between hover:border-emerald-300 hover:shadow-sm transition-all group">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+            <Link2 className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900">Domain</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Storee URL & custom domain</p>
+          </div>
+        </div>
+        <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 transition-colors" />
+      </Link>
+
+      {/* Payment — redirect to dedicated page */}
+      <Link href="/dashboard/payment" className="bg-white rounded-2xl p-6 border border-slate-200 flex items-center justify-between hover:border-emerald-300 hover:shadow-sm transition-all group">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+            <CreditCard className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900">Payment</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Metode pembayaran & gateway</p>
+          </div>
+        </div>
+        <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 transition-colors" />
+      </Link>
 
       {/* Shipping — redirect to dedicated page */}
       <Link href="/dashboard/shipping" className="bg-white rounded-2xl p-6 border border-slate-200 flex items-center justify-between hover:border-emerald-300 hover:shadow-sm transition-all group">

@@ -178,25 +178,46 @@ export default function Appearance() {
   }, [activeStore?.id]);
 
   // ── Save ─────────────────────────────────────────────────────────────────────
-  function handleSave() {
+  async function handleSave() {
     if (!activeStore) return;
-    updateActiveStore({
-      primaryColor: color1,
-      font,
-      mood,
-      audience,
-      design: {
-        ...(activeStore.design ?? {} as NonNullable<typeof activeStore.design>),
-        layoutStyle: layout as NonNullable<typeof activeStore.design>['layoutStyle'],
-        accentColor: colorMode === 'gradient' ? color2 : color1,
-        // Reflect feature toggles onto design
-        newsletter:   features.newsletter   ? (activeStore.design?.newsletter ?? { headline: 'Stay in the loop', subtext: 'Subscribe for exclusive deals and new arrivals.' }) : undefined,
-        promoBar:     features.promoBar     ? (activeStore.design?.promoBar   ?? '🎉 Free shipping on orders over $50!') : undefined,
-        faq:          features.faq          ? (activeStore.design?.faq        ?? []) : undefined,
-        brandStory:   features.brandStory   ? (activeStore.design?.brandStory ?? '') : undefined,
-        trustBadges:  features.trustBadges  ? (activeStore.design?.trustBadges ?? []) : undefined,
-      },
-    });
+
+    const newDesign = {
+      ...(activeStore.design ?? {} as NonNullable<typeof activeStore.design>),
+      layoutStyle: layout as NonNullable<typeof activeStore.design>['layoutStyle'],
+      accentColor: colorMode === 'gradient' ? color2 : color1,
+      newsletter:   features.newsletter   ? (activeStore.design?.newsletter ?? { headline: 'Stay in the loop', subtext: 'Subscribe for exclusive deals and new arrivals.' }) : undefined,
+      promoBar:     features.promoBar     ? (activeStore.design?.promoBar   ?? '🎉 Free shipping on orders over $50!') : undefined,
+      faq:          features.faq          ? (activeStore.design?.faq        ?? []) : undefined,
+      brandStory:   features.brandStory   ? (activeStore.design?.brandStory ?? '') : undefined,
+      trustBadges:  features.trustBadges  ? (activeStore.design?.trustBadges ?? []) : undefined,
+    };
+
+    updateActiveStore({ primaryColor: color1, font, mood, audience, design: newDesign });
+
+    // If already published, sync changes to live storefront immediately
+    if (activeStore.status === 'Published') {
+      const subdomain = activeStore.publishedDomain?.split('.')[0] ?? activeStore.domain?.split('.')[0];
+      if (subdomain) {
+        fetch('/api/publish-store', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subdomain,
+            name: activeStore.name,
+            primaryColor: color1,
+            category: activeStore.category,
+            templateId: activeStore.template?.id,
+            design: newDesign,
+            currency: activeStore.currency,
+            language: activeStore.language,
+            font,
+            mood,
+            audience,
+          }),
+        }).catch(console.error);
+      }
+    }
+
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }

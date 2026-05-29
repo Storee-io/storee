@@ -35,6 +35,9 @@ interface StoreRow {
   design: Store['design'] | null;
   currency: Store['currency'] | null;
   language: string | null;
+  font: string | null;
+  mood: string | null;
+  audience: string | null;
   shipping_settings: Store['shippingSettings'] | null;
   payment_settings: Store['paymentSettings'] | null;
   custom_domain: string | null;
@@ -59,6 +62,9 @@ export function rowToStore(row: StoreRow): Store {
     design: row.design ?? undefined,
     currency: row.currency ?? undefined,
     language: row.language ?? undefined,
+    font: row.font ?? undefined,
+    mood: row.mood ?? undefined,
+    audience: row.audience ?? undefined,
     shippingSettings: row.shipping_settings ?? undefined,
     paymentSettings: row.payment_settings ?? undefined,
     customDomain: row.custom_domain ?? undefined,
@@ -80,6 +86,9 @@ export function storeToRow(store: Store, userId: string): Omit<StoreRow, 'update
     design: store.design ?? null,
     currency: store.currency ?? null,
     language: store.language ?? null,
+    font: store.font ?? null,
+    mood: store.mood ?? null,
+    audience: store.audience ?? null,
     shipping_settings: store.shippingSettings ?? null,
     payment_settings: store.paymentSettings ?? null,
     custom_domain: store.customDomain ?? null,

@@ -126,6 +126,9 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
         design: store.design,
         currency: store.currency,
         language: store.language,
+        font: store.font,
+        mood: store.mood,
+        audience: store.audience,
       }),
     })
       .then(async res => {
@@ -198,6 +201,9 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
         design: store.design,
         currency: store.currency,
         language: store.language,
+        font: store.font,
+        mood: store.mood,
+        audience: store.audience,
       }),
     })
       .then(async res => {

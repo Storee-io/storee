@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw, PenLine } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from './StorePreview';
 import PublishModal from './PublishModal';
@@ -297,6 +297,15 @@ export default function PreviewShell({ store, from = null }: Props) {
           >
             <RefreshCw className={`w-4 h-4 flex-shrink-0 ${isRegenerating ? 'animate-spin' : ''}`} />
             <span className="hidden md:inline">Regenerate</span>
+          </button>
+
+          {/* Canvas editor */}
+          <button
+            onClick={() => router.push(`/canvas?from=${encodeURIComponent('/preview')}`)}
+            className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+          >
+            <PenLine className="w-4 h-4 flex-shrink-0" />
+            <span className="hidden sm:inline">Edit</span>
           </button>
 
           {/* Dashboard */}
