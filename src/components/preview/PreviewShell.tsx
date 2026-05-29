@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw, PenLine } from 'lucide-react';
@@ -46,6 +46,7 @@ export default function PreviewShell({ store, from = null }: Props) {
   const [fabHidden, setFabHidden] = useState(false);
   const stepTimerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
   const lastScrollY = useRef(0);
+  const scrollStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -53,6 +54,14 @@ export default function PreviewShell({ store, from = null }: Props) {
     const isScrollingDown = currentY > lastScrollY.current;
     lastScrollY.current = currentY;
     setFabHidden(isScrollingDown);
+
+    // Reappear after scroll stops
+    if (scrollStopTimer.current) clearTimeout(scrollStopTimer.current);
+    scrollStopTimer.current = setTimeout(() => setFabHidden(false), 500);
+  }, []);
+
+  useEffect(() => () => {
+    if (scrollStopTimer.current) clearTimeout(scrollStopTimer.current);
   }, []);
 
   const { updateActiveStore, addStore, stores, setActiveStore, setGeneratedStore, setGenerationState, activeStore } = useStore();
