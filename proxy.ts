@@ -39,19 +39,10 @@ export async function proxy(request: NextRequest) {
   const supabaseKey =
     process.env.SUPABASE_SECRET_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // Debug header so we can see where the proxy stopped
-  const debugInfo: Record<string, string> = {
-    apex,
-    hasUrl: String(!!supabaseUrl),
-    hasKey: String(!!supabaseKey),
-  };
-
   if (supabaseUrl && supabaseKey) {
     try {
       const qs = `select=subdomain&limit=1&custom_domain=eq.${encodeURIComponent(apex)}`;
-      const queryUrl = `${supabaseUrl}/rest/v1/published_stores?${qs}`;
-
-      const res = await fetch(queryUrl, {
+      const res = await fetch(`${supabaseUrl}/rest/v1/published_stores?${qs}`, {
         headers: {
           apikey: supabaseKey,
           Authorization: `Bearer ${supabaseKey}`,
@@ -59,30 +50,22 @@ export async function proxy(request: NextRequest) {
         },
       });
 
-      debugInfo.supabaseStatus = String(res.status);
-      const body = await res.text();
-      debugInfo.supabaseBody = body.slice(0, 200);
-
       if (res.ok) {
-        const stores: Array<{ subdomain: string }> = JSON.parse(body);
+        const stores: Array<{ subdomain: string }> = await res.json();
         if (stores.length > 0 && stores[0].subdomain) {
           const slug = stores[0].subdomain;
           const url = request.nextUrl.clone();
           const originalPath = url.pathname;
           url.pathname = `/store/${slug}` + (originalPath === '/' ? '' : originalPath);
-          const rewriteRes = NextResponse.rewrite(url);
-          rewriteRes.headers.set('x-proxy-debug', JSON.stringify({ ...debugInfo, rewrite: slug }));
-          return rewriteRes;
+          return NextResponse.rewrite(url);
         }
       }
-    } catch (err) {
-      debugInfo.error = String(err);
+    } catch {
+      // Supabase unreachable — fall through to normal routing
     }
   }
 
-  const nextRes = NextResponse.next();
-  nextRes.headers.set('x-proxy-debug', JSON.stringify(debugInfo));
-  return nextRes;
+  return NextResponse.next();
 }
 
 export const config = {
