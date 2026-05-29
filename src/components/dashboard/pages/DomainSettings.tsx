@@ -62,7 +62,7 @@ export default function DomainSettings() {
 
     updateActiveStore({ customDomain: data.domain });
     setInput('');
-    setVerifyStatus('idle');
+    setVerifyStatus('pending');
   };
 
   const handleRemove = async () => {
@@ -135,8 +135,14 @@ export default function DomainSettings() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeStore?.id]);
 
+  // Auto-check only on initial load (when domain already exists in context/DB)
+  // NOT after a fresh connect — user must set DNS first, then click manually.
+  const didAutoCheck = useRef(false);
   useEffect(() => {
-    if (existingDomain && verifyStatus === 'idle') checkVerification();
+    if (existingDomain && verifyStatus === 'idle' && !didAutoCheck.current) {
+      didAutoCheck.current = true;
+      checkVerification();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingDomain]);
 
