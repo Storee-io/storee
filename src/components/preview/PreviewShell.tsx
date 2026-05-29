@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw, PenLine } from 'lucide-react';
@@ -43,7 +43,22 @@ export default function PreviewShell({ store, from = null }: Props) {
   const [showRegenModal, setShowRegenModal] = useState(false);
   const [regenBoxValue, setRegenBoxValue] = useState<PromptBoxValue | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [fabVisible, setFabVisible] = useState(true);
   const stepTimerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = useCallback(() => {
+    setFabVisible(false);
+    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    scrollTimerRef.current = setTimeout(() => setFabVisible(true), 700);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    };
+  }, []);
 
   const { updateActiveStore, addStore, stores, setActiveStore, setGeneratedStore, setGenerationState, activeStore } = useStore();
   const router = useRouter();
@@ -344,7 +359,7 @@ export default function PreviewShell({ store, from = null }: Props) {
       </div>
 
       {/* Store frame */}
-      <div className="flex-1 overflow-auto p-4 sm:p-8 flex justify-center">
+      <div ref={scrollContainerRef} onScroll={handleScroll} className="flex-1 overflow-auto p-4 sm:p-8 flex justify-center">
         <motion.div
           animate={{ width: device === 'desktop' ? '100%' : device === 'tablet' ? '768px' : '375px' }}
           transition={{ duration: 0.3 }}
@@ -398,10 +413,17 @@ export default function PreviewShell({ store, from = null }: Props) {
         </motion.div>
       </div>
 
-      {/* Floating Edit FAB — fixed so always visible regardless of scroll */}
-      <div className="fixed bottom-8 right-8 z-30">
+      {/* Floating Edit FAB — hides while scrolling, reappears on idle */}
+      <div
+        className="fixed bottom-8 right-8 z-30 transition-all duration-300"
+        style={{
+          opacity: fabVisible ? 1 : 0,
+          transform: fabVisible ? 'scale(1)' : 'scale(0.75)',
+          pointerEvents: fabVisible ? 'auto' : 'none',
+        }}
+      >
         <button
-          onClick={() => router.push(`/canvas?from=${encodeURIComponent('/preview')}`)}
+          onClick={() => router.push(`/canvas/${liveStore.id}?from=${encodeURIComponent(`/preview/${liveStore.id}`)}`)}
           className="group flex items-center gap-2 pl-3 pr-4 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl hover:border-emerald-300 hover:text-emerald-700 transition-all duration-200"
         >
           <span className="w-7 h-7 rounded-xl gradient-bg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-200">

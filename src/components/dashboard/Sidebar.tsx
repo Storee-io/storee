@@ -21,7 +21,7 @@ interface NavItem {
   children?: { label: string; path: string; badge?: number }[];
 }
 
-function buildNavSections(pendingOrders: number, newProducts: number) {
+function buildNavSections(pendingOrders: number, newProducts: number, activeStoreId?: string) {
   return [
   {
     label: 'STORE',
@@ -43,7 +43,7 @@ function buildNavSections(pendingOrders: number, newProducts: number) {
   {
     label: 'CONFIGURATION',
     items: [
-      { icon: PenLine,     label: 'Canvas',          path: '/canvas' },
+      { icon: PenLine,     label: 'Canvas',          path: activeStoreId ? `/canvas/${activeStoreId}` : '/canvas' },
       { icon: Palette,     label: 'Appearance',     path: '/dashboard/appearance' },
       { icon: Globe,       label: 'Domain',          path: '/dashboard/domain' },
       { icon: Truck,       label: 'Shipping',        path: '/dashboard/shipping' },
@@ -76,9 +76,9 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   // Badge: orders Processing/Shipped = belum selesai; products dengan badge 'New'
   const pendingOrders = storeData.orders.filter(o => o.status === 'Processing').length;
   const newProducts = storeData.products.filter(p => p.badge === 'New').length;
-  const navSections = buildNavSections(pendingOrders, newProducts);
+  const navSections = buildNavSections(pendingOrders, newProducts, activeStore?.id);
 
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => pathname === path || (path.startsWith('/canvas/') && pathname.startsWith('/canvas/'));
 
   const renderSidebarContent = (isCollapsed: boolean) => (
     <div className="flex flex-col h-full">

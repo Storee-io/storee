@@ -218,15 +218,20 @@ export default function CanvasShell({ store, from }: Props) {
 
     setIsSaving(false);
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+
+    // Redirect back to preview after a brief "Saved" flash
+    const previewUrl = `/preview/${liveContextStore.id}`;
+    setTimeout(() => {
+      router.push(previewUrl);
+    }, 900);
   }, [liveContextStore, storeName, primaryColor, tagline, heroTitle, heroSubtitle, ctaText,
-      promoBar, accentColor, brandStory, features, testimonials, faq, newsletter, updateActiveStore, isSaving]);
+      promoBar, accentColor, brandStory, features, testimonials, faq, newsletter, updateActiveStore, isSaving, router]);
 
   const isPublished = liveContextStore.status === 'Published';
   const storefrontUrl = liveContextStore.publishedDomain
     ? `https://${liveContextStore.publishedDomain}.storee.io`
     : null;
-  const backHref = from ?? '/dashboard';
+  const backHref = from ?? `/preview/${liveContextStore.id}`;
 
   return (
     <div className="flex flex-col h-screen bg-white overflow-hidden">
