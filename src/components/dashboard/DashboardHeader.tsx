@@ -80,8 +80,8 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
       >
         <Menu className="w-5 h-5" />
       </button>
-      <div className="hidden lg:flex items-center gap-2.5">
-        <h1 className="text-[15px] font-bold text-slate-900">{activeStore?.name || 'Dashboard'}</h1>
+      <div className="flex items-center gap-2.5 ml-2 lg:ml-0 min-w-0">
+        <h1 className="text-[15px] font-bold text-slate-900 truncate max-w-[120px] sm:max-w-none">{activeStore?.name || 'Dashboard'}</h1>
 
         {activeStore?.status === 'Published' ? (
           <DropdownMenu>

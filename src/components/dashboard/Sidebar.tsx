@@ -176,9 +176,6 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                     {store.status === 'Published' && (
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-600 flex-shrink-0">LIVE</span>
                     )}
-                    {activeStore?.id === store.id && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-                    )}
                   </button>
                 ))
               )}
