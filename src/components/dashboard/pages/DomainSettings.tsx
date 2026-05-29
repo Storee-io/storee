@@ -7,6 +7,7 @@ import {
   Loader2, X, Link2,
 } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
+import { supabase } from '../../../lib/supabase';
 import PublishModal from '../../preview/PublishModal';
 
 type VerifyStatus = 'idle' | 'checking' | 'verified' | 'pending';
@@ -116,6 +117,23 @@ export default function DomainSettings() {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => setCopied(null), 2000);
   };
+
+  // On mount, re-fetch the latest custom_domain from DB in case context is stale
+  useEffect(() => {
+    if (!activeStore?.id) return;
+    supabase
+      .from('stores')
+      .select('custom_domain')
+      .eq('id', activeStore.id)
+      .single()
+      .then(({ data }) => {
+        const freshDomain = data?.custom_domain ?? undefined;
+        if (freshDomain && freshDomain !== activeStore.customDomain) {
+          updateActiveStore({ customDomain: freshDomain });
+        }
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStore?.id]);
 
   useEffect(() => {
     if (existingDomain && verifyStatus === 'idle') checkVerification();
