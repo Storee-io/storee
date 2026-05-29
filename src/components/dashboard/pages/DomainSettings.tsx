@@ -262,6 +262,7 @@ export default function DomainSettings() {
                       <th className="px-4 py-2 text-left font-semibold text-slate-500 w-16">Type</th>
                       <th className="px-4 py-2 text-left font-semibold text-slate-500 w-12">Name</th>
                       <th className="px-4 py-2 text-left font-semibold text-slate-500">Value</th>
+                      <th className="px-4 py-2 text-right font-semibold text-slate-500 hidden sm:table-cell w-40"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -286,11 +287,12 @@ export default function DomainSettings() {
                               ? <Check className="w-3 h-3 text-emerald-500 flex-shrink-0" />
                               : <Copy className="w-3 h-3 text-slate-300 group-hover/val:text-emerald-400 flex-shrink-0 transition-colors" />}
                           </button>
+                        </td>
+                        <td className="px-4 py-2.5 text-right hidden sm:table-cell">
                           {rec.note && (
-                            <span className="text-[10px] text-slate-300 mt-0.5 block font-sans">· {rec.note}</span>
+                            <span className="text-[10px] text-slate-300 font-sans whitespace-nowrap">{rec.note}</span>
                           )}
                         </td>
-                        <td className="px-3 py-2.5" />
                       </tr>
                     ))}
                   </tbody>
