@@ -1,16 +1,14 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useStore } from '@/src/context/StoreContext';
 import CanvasShell from '@/src/components/canvas/CanvasShell';
 
-export default function CanvasPage() {
+function CanvasInner() {
   const { activeStore, generatedStore } = useStore();
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
-
   const store = generatedStore || activeStore;
 
   if (!store) {
@@ -22,4 +20,12 @@ export default function CanvasPage() {
   }
 
   return <CanvasShell store={store} from={from} />;
+}
+
+export default function CanvasPage() {
+  return (
+    <Suspense>
+      <CanvasInner />
+    </Suspense>
+  );
 }

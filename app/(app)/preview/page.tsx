@@ -1,18 +1,14 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useStore } from '@/src/context/StoreContext';
 import PreviewShell from '@/src/components/preview/PreviewShell';
 
-// This page is used for dashboard → preview (/preview?from=/dashboard).
-// AI-generated stores get their own unique URL: /preview/[storeId]
-export default function PreviewPage() {
+function PreviewInner() {
   const { generatedStore, activeStore } = useStore();
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
-
   const store = generatedStore || activeStore;
 
   if (!store) {
@@ -24,4 +20,12 @@ export default function PreviewPage() {
   }
 
   return <PreviewShell store={store} from={from} />;
+}
+
+export default function PreviewPage() {
+  return (
+    <Suspense>
+      <PreviewInner />
+    </Suspense>
+  );
 }

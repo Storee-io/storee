@@ -1,7 +1,6 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useStore } from '@/src/context/StoreContext';
 import CanvasShell from '@/src/components/canvas/CanvasShell';
@@ -11,13 +10,11 @@ interface Props {
   params: Promise<{ storeId: string }>;
 }
 
-export default function CanvasPage({ params }: Props) {
-  const { storeId } = use(params);
+function CanvasInner({ storeId }: { storeId: string }) {
   const { stores, activeStore, generatedStore } = useStore();
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
 
-  // Prefer exact match by ID, fall back to generatedStore or activeStore
   const store =
     stores.find(s => s.id === storeId) ||
     (generatedStore?.id === storeId ? generatedStore : null) ||
@@ -34,4 +31,13 @@ export default function CanvasPage({ params }: Props) {
   }
 
   return <CanvasShell store={store} from={from} />;
+}
+
+export default function CanvasPage({ params }: Props) {
+  const { storeId } = use(params);
+  return (
+    <Suspense>
+      <CanvasInner storeId={storeId} />
+    </Suspense>
+  );
 }
