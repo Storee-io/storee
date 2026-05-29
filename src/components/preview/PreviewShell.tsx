@@ -319,18 +319,20 @@ export default function PreviewShell({ store, from = null }: Props) {
             onClick={openRegenModal}
             disabled={isRegenerating}
             title="Regenerate"
-            className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40"
           >
-            <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 flex-shrink-0 ${isRegenerating ? 'animate-spin' : ''}`} />
+            <span className="hidden lg:inline">Regenerate</span>
           </button>
 
           {/* Dashboard */}
           <button
             onClick={handleDashboardClick}
             title="Dashboard"
-            className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
           >
-            <LayoutDashboard className="w-4 h-4" />
+            <LayoutDashboard className="w-4 h-4 flex-shrink-0" />
+            <span className="hidden lg:inline">Dashboard</span>
           </button>
 
           {/* Publish / Republish / Unpublish — keeps label as primary CTA */}
