@@ -39,12 +39,17 @@ export async function proxy(request: NextRequest) {
   const supabaseKey =
     process.env.SUPABASE_SECRET_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+  // Debug header so we can see where the proxy stopped
+  const debugInfo: Record<string, string> = {
+    apex,
+    hasUrl: String(!!supabaseUrl),
+    hasKey: String(!!supabaseKey),
+  };
+
   if (supabaseUrl && supabaseKey) {
     try {
       const qs = `select=subdomain&limit=1&custom_domain=eq.${encodeURIComponent(apex)}`;
       const queryUrl = `${supabaseUrl}/rest/v1/published_stores?${qs}`;
-
-      console.log(`[proxy] custom domain lookup: ${apex} → ${queryUrl}`);
 
       const res = await fetch(queryUrl, {
         headers: {
@@ -54,8 +59,9 @@ export async function proxy(request: NextRequest) {
         },
       });
 
+      debugInfo.supabaseStatus = String(res.status);
       const body = await res.text();
-      console.log(`[proxy] supabase response ${res.status}: ${body}`);
+      debugInfo.supabaseBody = body.slice(0, 200);
 
       if (res.ok) {
         const stores: Array<{ subdomain: string }> = JSON.parse(body);
@@ -64,16 +70,19 @@ export async function proxy(request: NextRequest) {
           const url = request.nextUrl.clone();
           const originalPath = url.pathname;
           url.pathname = `/store/${slug}` + (originalPath === '/' ? '' : originalPath);
-          console.log(`[proxy] rewriting ${apex} → /store/${slug}`);
-          return NextResponse.rewrite(url);
+          const rewriteRes = NextResponse.rewrite(url);
+          rewriteRes.headers.set('x-proxy-debug', JSON.stringify({ ...debugInfo, rewrite: slug }));
+          return rewriteRes;
         }
       }
     } catch (err) {
-      console.error(`[proxy] error:`, err);
+      debugInfo.error = String(err);
     }
   }
 
-  return NextResponse.next();
+  const nextRes = NextResponse.next();
+  nextRes.headers.set('x-proxy-debug', JSON.stringify(debugInfo));
+  return nextRes;
 }
 
 export const config = {
