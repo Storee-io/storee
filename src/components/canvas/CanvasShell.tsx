@@ -238,6 +238,7 @@ export default function CanvasShell({ store, from }: Props) {
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <button
             onClick={() => router.push(backHref)}
+            title="Back"
             className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 transition-colors flex-shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -251,16 +252,17 @@ export default function CanvasShell({ store, from }: Props) {
           }
         </div>
 
-        {/* Center — device switcher */}
+        {/* Center — device switcher (truly centered) */}
         <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1 flex-shrink-0">
           {([
-            { key: 'desktop', Icon: Monitor },
-            { key: 'tablet',  Icon: Tablet },
-            { key: 'mobile',  Icon: Smartphone },
-          ] as const).map(({ key, Icon }) => (
+            { key: 'desktop', Icon: Monitor,    label: 'Desktop' },
+            { key: 'tablet',  Icon: Tablet,     label: 'Tablet' },
+            { key: 'mobile',  Icon: Smartphone, label: 'Mobile' },
+          ] as const).map(({ key, Icon, label }) => (
             <button
               key={key}
               onClick={() => setDevice(key)}
+              title={label}
               className={`p-2 rounded-lg transition-all ${device === key ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
             >
               <Icon className="w-4 h-4" />
@@ -268,26 +270,26 @@ export default function CanvasShell({ store, from }: Props) {
           ))}
         </div>
 
-        {/* Right — action buttons */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        {/* Right — icon-only action buttons */}
+        <div className="flex items-center gap-1 flex-1 justify-end">
           {/* View live store */}
           {storefrontUrl && (
             <a
               href={storefrontUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+              title="View live store"
+              className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
             >
-              <Globe className="w-4 h-4 flex-shrink-0" />
-              <span className="hidden sm:inline">View Store</span>
+              <Globe className="w-4 h-4" />
             </a>
           )}
 
-          {/* Save */}
+          {/* Save — keeps label as primary CTA */}
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-1.5 px-2.5 sm:px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 disabled:opacity-60 transition-all shadow-md"
+            className="flex items-center gap-1.5 px-3 sm:px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 disabled:opacity-60 transition-all shadow-md"
           >
             {saved
               ? <><Check className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Saved</span></>

@@ -259,6 +259,7 @@ export default function PreviewShell({ store, from = null }: Props) {
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <button
             onClick={() => router.push(backHref)}
+            title={backLabel}
             className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 transition-colors flex-shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -272,16 +273,17 @@ export default function PreviewShell({ store, from = null }: Props) {
           }
         </div>
 
-        {/* Center — device switcher */}
+        {/* Center — device switcher (truly centered) */}
         <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1 flex-shrink-0">
           {([
-            { mode: 'desktop', Icon: Monitor },
-            { mode: 'tablet', Icon: Tablet },
-            { mode: 'mobile', Icon: Smartphone },
-          ] as const).map(({ mode, Icon }) => (
+            { mode: 'desktop', Icon: Monitor,    label: 'Desktop' },
+            { mode: 'tablet',  Icon: Tablet,     label: 'Tablet' },
+            { mode: 'mobile',  Icon: Smartphone, label: 'Mobile' },
+          ] as const).map(({ mode, Icon, label }) => (
             <button
               key={mode}
               onClick={() => setDevice(mode)}
+              title={label}
               className={`p-2 rounded-lg transition-all ${
                 device === mode ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'
               }`}
@@ -291,41 +293,41 @@ export default function PreviewShell({ store, from = null }: Props) {
           ))}
         </div>
 
-        {/* Right — action buttons, always visible */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        {/* Right — icon-only action buttons */}
+        <div className="flex items-center gap-1 flex-1 justify-end">
           {/* Regenerate */}
           <button
             onClick={openRegenModal}
             disabled={isRegenerating}
-            className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40"
+            title="Regenerate"
+            className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40"
           >
-            <RefreshCw className={`w-4 h-4 flex-shrink-0 ${isRegenerating ? 'animate-spin' : ''}`} />
-            <span className="hidden md:inline">Regenerate</span>
+            <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
           </button>
 
           {/* Canvas editor */}
           <button
             onClick={() => router.push(`/canvas?from=${encodeURIComponent('/preview')}`)}
-            className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+            title="Edit in Canvas"
+            className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
           >
-            <PenLine className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Edit</span>
+            <PenLine className="w-4 h-4" />
           </button>
 
           {/* Dashboard */}
           <button
             onClick={handleDashboardClick}
-            className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+            title="Dashboard"
+            className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
           >
-            <LayoutDashboard className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Dashboard</span>
+            <LayoutDashboard className="w-4 h-4" />
           </button>
 
-          {/* Publish / Republish / Unpublish */}
+          {/* Publish / Republish / Unpublish — keeps label as primary CTA */}
           {isPublished ? (
             <button
               onClick={() => setShowUnpublishModal(true)}
-              className="flex items-center gap-1.5 px-2.5 sm:px-5 py-2 bg-red-50 text-red-600 border border-red-200 text-sm font-semibold rounded-xl hover:bg-red-100 transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 border border-red-200 text-sm font-semibold rounded-xl hover:bg-red-100 transition-all"
             >
               <CloudOff className="w-4 h-4 flex-shrink-0" />
               <span className="hidden sm:inline">Unpublish</span>
@@ -333,7 +335,7 @@ export default function PreviewShell({ store, from = null }: Props) {
           ) : hasPublishedBefore ? (
             <button
               onClick={() => setShowPublishModal(true)}
-              className="flex items-center gap-1.5 px-2.5 sm:px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow-md"
+              className="flex items-center gap-1.5 px-3 sm:px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow-md"
             >
               <RotateCcw className="w-4 h-4 flex-shrink-0" />
               <span className="hidden sm:inline">Republish</span>
@@ -341,7 +343,7 @@ export default function PreviewShell({ store, from = null }: Props) {
           ) : (
             <button
               onClick={() => setShowPublishModal(true)}
-              className="flex items-center gap-1.5 px-2.5 sm:px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow-md"
+              className="flex items-center gap-1.5 px-3 sm:px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow-md"
             >
               <Rocket className="w-4 h-4 flex-shrink-0" />
               <span className="hidden sm:inline">Publish</span>
