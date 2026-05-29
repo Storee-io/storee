@@ -57,7 +57,7 @@ export default function PreviewShell({ store, from = null }: Props) {
 
     // Reappear after scroll stops
     if (scrollStopTimer.current) clearTimeout(scrollStopTimer.current);
-    scrollStopTimer.current = setTimeout(() => setFabHidden(false), 500);
+    scrollStopTimer.current = setTimeout(() => setFabHidden(false), 300);
   }, []);
 
   useEffect(() => () => {
@@ -419,7 +419,7 @@ export default function PreviewShell({ store, from = null }: Props) {
 
       {/* Floating Edit FAB — slides down out when scrolling down, back up when scrolling up */}
       <div
-        className="fixed bottom-8 right-8 z-30 transition-transform duration-300 ease-in-out"
+        className="fixed bottom-8 right-8 z-30 transition-transform duration-150 ease-in-out"
         style={{
           transform: fabHidden ? 'translateY(calc(100% + 2rem))' : 'translateY(0)',
         }}
