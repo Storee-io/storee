@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import {
   Monitor, Tablet, Smartphone, ChevronDown, ChevronRight,
-  Check, Save, ExternalLink, Type, Star, HelpCircle, Mail,
-  BookOpen, Megaphone, Layers, Plus, Trash2, ArrowLeft,
-  Sparkles, Globe,
+  Check, Save, Globe, ArrowLeft, Sparkles, Mail,
+  BookOpen, Megaphone, Layers, Plus, Trash2,
+  Star, HelpCircle, Type,
+  Edit2, Eye, GripVertical, MousePointer, Layout,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from '../preview/StorePreview';
@@ -16,7 +17,46 @@ import type { StoreDesign } from '../../lib/claudeApi';
 
 type Device = 'desktop' | 'tablet' | 'mobile';
 
-// ── Shared field primitives ───────────────────────────────────────────────────
+// ── Section metadata ──────────────────────────────────────────────────────────
+
+const SECTION_META: Record<string, { label: string; icon: React.ElementType; editHint: string }> = {
+  hero:         { label: 'Hero',         icon: Layout,      editHint: 'Headline, subtitle, CTA button' },
+  trust:        { label: 'Trust Badges', icon: Check,       editHint: 'Badge icons and labels' },
+  collections:  { label: 'Collections',  icon: Layers,      editHint: 'Collection tabs' },
+  products:     { label: 'Products',     icon: Sparkles,    editHint: 'Product grid' },
+  features:     { label: 'Features',     icon: Sparkles,    editHint: 'Feature titles & descriptions' },
+  testimonials: { label: 'Testimonials', icon: Star,        editHint: 'Review text, author, role' },
+  stats:        { label: 'Stats',        icon: Type,        editHint: 'Stat numbers and labels' },
+  brandStory:   { label: 'Brand Story',  icon: BookOpen,    editHint: 'Your brand story text' },
+  faq:          { label: 'FAQ',          icon: HelpCircle,  editHint: 'Questions and answers' },
+  newsletter:   { label: 'Newsletter',   icon: Mail,        editHint: 'Headline and subtext' },
+  promoBar:     { label: 'Promo Bar',    icon: Megaphone,   editHint: 'Announcement text' },
+};
+
+const DEFAULT_SECTION_ORDER = ['hero', 'trust', 'collections', 'products', 'features', 'testimonials', 'stats', 'brandStory', 'faq', 'newsletter'];
+
+const FIELD_LABELS: Record<string, string> = {
+  heroTitle:          'Headline',
+  heroSubtitle:       'Subheadline',
+  ctaText:            'CTA Button',
+  promoBar:           'Promo Bar Text',
+  brandStory:         'Brand Story',
+  'newsletter.headline': 'Newsletter Headline',
+  'newsletter.subtext':  'Newsletter Subtext',
+};
+function getFieldLabel(field: string) {
+  if (FIELD_LABELS[field]) return FIELD_LABELS[field];
+  const m = field.match(/^(features|testimonials|faq)\.(\d+)\.(.*)/);
+  if (m) {
+    const section = m[1] === 'faq' ? 'FAQ' : m[1].charAt(0).toUpperCase() + m[1].slice(1, -1);
+    const idx = parseInt(m[2]) + 1;
+    const key = m[3];
+    return `${section} ${idx} — ${key.charAt(0).toUpperCase() + key.slice(1)}`;
+  }
+  return field;
+}
+
+// ── Shared form primitives ────────────────────────────────────────────────────
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -68,8 +108,6 @@ function ColorInput({ value, onChange }: { value: string; onChange: (v: string) 
   );
 }
 
-// ── Accordion section ─────────────────────────────────────────────────────────
-
 function Section({ icon: Icon, title, open, onToggle, children }: {
   icon: React.ElementType; title: string; open: boolean; onToggle: () => void; children: React.ReactNode;
 }) {
@@ -102,6 +140,69 @@ function Section({ icon: Icon, title, open, onToggle, children }: {
   );
 }
 
+// ── Section item with drag handle ─────────────────────────────────────────────
+
+interface SectionItem {
+  type: string;
+  hasContent: boolean;
+}
+
+function sectionHasContent(type: string, design: StoreDesign | undefined): boolean {
+  if (!design) return false;
+  switch (type) {
+    case 'hero':         return true;
+    case 'trust':        return (design.trustBadges?.length ?? 0) > 0;
+    case 'collections':  return (design.collections?.length ?? 0) > 0;
+    case 'products':     return (design.products?.length ?? 0) > 0;
+    case 'features':     return (design.features?.length ?? 0) > 0;
+    case 'testimonials': return (design.testimonials?.length ?? 0) > 0;
+    case 'stats':        return (design.stats?.length ?? 0) > 0;
+    case 'brandStory':   return !!design.brandStory;
+    case 'faq':          return (design.faq?.length ?? 0) > 0;
+    case 'newsletter':   return !!design.newsletter?.headline;
+    default:             return false;
+  }
+}
+
+function deriveInitialSections(design: StoreDesign | undefined): SectionItem[] {
+  const dt = design?.designTokens;
+  const ds = design?.designSystem;
+  let order: string[];
+  if (dt?.sections?.length) {
+    order = (dt.sections as Array<{ type: string }>).map(s => s.type);
+  } else if (dt?.sectionOrder?.length) {
+    order = dt.sectionOrder as string[];
+  } else if (ds?.sectionOrder?.length) {
+    order = ds.sectionOrder as string[];
+  } else {
+    order = DEFAULT_SECTION_ORDER;
+  }
+  return order.map(type => ({ type, hasContent: sectionHasContent(type, design) }));
+}
+
+// ── Edit mode CSS injector ────────────────────────────────────────────────────
+
+function EditModeCss({ active }: { active: boolean }) {
+  if (!active) return null;
+  return (
+    <style>{`
+      [data-canvas-field] {
+        cursor: text !important;
+        border-radius: 2px;
+        transition: box-shadow 0.12s ease;
+      }
+      [data-canvas-field]:hover {
+        box-shadow: inset 0 0 0 2px #10b981 !important;
+      }
+      [data-canvas-field]:focus,
+      [data-canvas-field][data-ce] {
+        box-shadow: inset 0 0 0 2px #059669 !important;
+        background: rgba(16, 185, 129, 0.06) !important;
+      }
+    `}</style>
+  );
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -116,12 +217,14 @@ export default function CanvasShell({ store, from }: Props) {
   const [openSection, setOpenSection] = useState<string>('hero');
   const [saved, setSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState<'sections' | 'properties'>('sections');
 
-  // Use live store from context when possible
+  // Live store from context
   const liveContextStore = activeStore?.id === store.id ? activeStore : store;
-
   const d = liveContextStore.design;
 
+  // Local editable state
   const [storeName,     setStoreName]     = useState(liveContextStore.name ?? '');
   const [tagline,       setTagline]       = useState(d?.tagline ?? '');
   const [heroTitle,     setHeroTitle]     = useState(d?.heroTitle ?? '');
@@ -136,6 +239,10 @@ export default function CanvasShell({ store, from }: Props) {
   const [faq,           setFaq]           = useState(d?.faq ?? []);
   const [newsletter,    setNewsletter]    = useState(d?.newsletter ?? { headline: '', subtext: '' });
 
+  // Section order for drag reorder
+  const [sectionItems, setSectionItems] = useState<SectionItem[]>(() => deriveInitialSections(d));
+
+  // Sync from context when store id changes
   useEffect(() => {
     if (!liveContextStore) return;
     const ds = liveContextStore.design;
@@ -152,10 +259,60 @@ export default function CanvasShell({ store, from }: Props) {
     setTestimonials(ds?.testimonials ?? []);
     setFaq(ds?.faq ?? []);
     setNewsletter(ds?.newsletter ?? { headline: '', subtext: '' });
+    setSectionItems(deriveInitialSections(ds));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveContextStore.id, liveContextStore.design, liveContextStore.primaryColor]);
 
-  // Merged preview store
+  // ── onFieldChange handler (called from canvas contenteditable) ────────────
+
+  const handleFieldChange = useCallback((field: string, value: string) => {
+    if (field === 'heroTitle')           { setHeroTitle(value); return; }
+    if (field === 'heroSubtitle')        { setHeroSubtitle(value); return; }
+    if (field === 'ctaText')             { setCtaText(value); return; }
+    if (field === 'promoBar')            { setPromoBar(value); return; }
+    if (field === 'brandStory')          { setBrandStory(value); return; }
+    if (field === 'newsletter.headline') { setNewsletter(n => ({ ...n, headline: value })); return; }
+    if (field === 'newsletter.subtext')  { setNewsletter(n => ({ ...n, subtext: value })); return; }
+
+    const featM = field.match(/^features\.(\d+)\.(title|description)$/);
+    if (featM) {
+      const idx = parseInt(featM[1]);
+      const key = featM[2] as 'title' | 'description';
+      setFeatures(prev => prev.map((f, i) => i === idx ? { ...f, [key]: value } : f));
+      return;
+    }
+    const testM = field.match(/^testimonials\.(\d+)\.(text|author|role)$/);
+    if (testM) {
+      const idx = parseInt(testM[1]);
+      const key = testM[2] as 'text' | 'author' | 'role';
+      setTestimonials(prev => prev.map((t, i) => i === idx ? { ...t, [key]: value } : t));
+      return;
+    }
+    const faqM = field.match(/^faq\.(\d+)\.(q|a)$/);
+    if (faqM) {
+      const idx = parseInt(faqM[1]);
+      const key = faqM[2] as 'q' | 'a';
+      setFaq(prev => prev.map((f, i) => i === idx ? { ...f, [key]: value } : f));
+    }
+  }, []);
+
+  // ── Build preview store ───────────────────────────────────────────────────
+
+  // Build sections array from current drag order (for designTokens stores)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const buildReorderedDesignTokens = (): any => {
+    const dt = liveContextStore.design?.designTokens;
+    if (!dt) return dt;
+    // Preserve variant/props per section from the original
+    const srcSections = (dt.sections ?? []) as Array<{ type: string; variant?: string; props?: unknown }>;
+    const srcMap = new Map(srcSections.map(s => [s.type, s]));
+    return {
+      ...dt,
+      sections: sectionItems.map(item => srcMap.get(item.type) ?? { type: item.type }),
+      sectionOrder: undefined,
+    };
+  };
+
   const previewStore: Store = {
     ...liveContextStore,
     name: storeName,
@@ -173,8 +330,23 @@ export default function CanvasShell({ store, from }: Props) {
       testimonials,
       faq: faq.length ? faq : undefined,
       newsletter: newsletter.headline ? newsletter : undefined,
+      // Override section order when designTokens exist
+      ...(liveContextStore.design?.designTokens ? {
+        designTokens: buildReorderedDesignTokens(),
+      } : {}),
     } as StoreDesign,
   };
+
+  // ── Section scroll-to from sidebar ───────────────────────────────────────
+
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  const scrollToSection = useCallback((sectionType: string) => {
+    const el = previewRef.current?.querySelector(`[data-canvas-section="${sectionType}"]`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  // ── Save handler ──────────────────────────────────────────────────────────
 
   const toggle = (key: string) => setOpenSection(s => s === key ? '' : key);
 
@@ -191,6 +363,10 @@ export default function CanvasShell({ store, from }: Props) {
       features, testimonials,
       faq: faq.length ? faq : undefined,
       newsletter: newsletter.headline ? newsletter : undefined,
+      // Persist reordered sections
+      ...(liveContextStore.design?.designTokens ? {
+        designTokens: buildReorderedDesignTokens(),
+      } : {}),
     };
 
     updateActiveStore({ name: storeName, primaryColor, design: newDesign });
@@ -219,13 +395,12 @@ export default function CanvasShell({ store, from }: Props) {
     setIsSaving(false);
     setSaved(true);
 
-    // Redirect back to preview after a brief "Saved" flash
     const previewUrl = `/preview/${liveContextStore.id}`;
-    setTimeout(() => {
-      router.push(previewUrl);
-    }, 900);
+    setTimeout(() => router.push(previewUrl), 900);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveContextStore, storeName, primaryColor, tagline, heroTitle, heroSubtitle, ctaText,
-      promoBar, accentColor, brandStory, features, testimonials, faq, newsletter, updateActiveStore, isSaving, router]);
+      promoBar, accentColor, brandStory, features, testimonials, faq, newsletter,
+      sectionItems, updateActiveStore, isSaving, router]);
 
   const isPublished = liveContextStore.status === 'Published';
   const storefrontUrl = liveContextStore.publishedDomain
@@ -236,7 +411,10 @@ export default function CanvasShell({ store, from }: Props) {
   return (
     <div className="flex flex-col h-screen bg-white overflow-hidden">
 
-      {/* ── Top bar (same structure as PreviewShell) ──────────────────────────── */}
+      {/* Inject edit-mode CSS */}
+      <EditModeCss active={editMode} />
+
+      {/* ── Top bar ──────────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
 
         {/* Left — back + store name */}
@@ -257,27 +435,46 @@ export default function CanvasShell({ store, from }: Props) {
           }
         </div>
 
-        {/* Center — device switcher (truly centered) */}
-        <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1 flex-shrink-0">
-          {([
-            { key: 'desktop', Icon: Monitor,    label: 'Desktop' },
-            { key: 'tablet',  Icon: Tablet,     label: 'Tablet' },
-            { key: 'mobile',  Icon: Smartphone, label: 'Mobile' },
-          ] as const).map(({ key, Icon, label }) => (
+        {/* Center — device switcher + edit/preview toggle */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1">
+            {([
+              { key: 'desktop', Icon: Monitor,    label: 'Desktop' },
+              { key: 'tablet',  Icon: Tablet,     label: 'Tablet' },
+              { key: 'mobile',  Icon: Smartphone, label: 'Mobile' },
+            ] as const).map(({ key, Icon, label }) => (
+              <button
+                key={key}
+                onClick={() => setDevice(key)}
+                title={label}
+                className={`p-2 rounded-lg transition-all ${device === key ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                <Icon className="w-4 h-4" />
+              </button>
+            ))}
+          </div>
+
+          {/* Edit / Preview toggle */}
+          <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-0.5">
             <button
-              key={key}
-              onClick={() => setDevice(key)}
-              title={label}
-              className={`p-2 rounded-lg transition-all ${device === key ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+              onClick={() => setEditMode(false)}
+              title="Preview mode"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${!editMode ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
             >
-              <Icon className="w-4 h-4" />
+              <Eye className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Preview</span>
             </button>
-          ))}
+            <button
+              onClick={() => setEditMode(true)}
+              title="Edit mode — click text in canvas to edit"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${editMode ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              <Edit2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Edit</span>
+            </button>
+          </div>
         </div>
 
-        {/* Right — icon-only action buttons */}
+        {/* Right — live link + save */}
         <div className="flex items-center gap-1 flex-1 justify-end">
-          {/* View live store */}
           {storefrontUrl && (
             <a
               href={storefrontUrl}
@@ -289,8 +486,6 @@ export default function CanvasShell({ store, from }: Props) {
               <Globe className="w-4 h-4" />
             </a>
           )}
-
-          {/* Save — keeps label as primary CTA */}
           <button
             onClick={handleSave}
             disabled={isSaving}
@@ -309,109 +504,236 @@ export default function CanvasShell({ store, from }: Props) {
       {/* ── Body ─────────────────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* Preview */}
+        {/* ── Preview area ──────────────────────────────────────────────────── */}
         <main className="flex-1 overflow-auto bg-slate-100 flex justify-center p-6">
+          {/* Edit mode hint bar */}
+          <AnimatePresence>
+            {editMode && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="absolute top-[68px] left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-xs font-semibold rounded-full shadow-lg pointer-events-none"
+              >
+                <MousePointer className="w-3.5 h-3.5" />
+                Click any text in the preview to edit it directly
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div
-            className="bg-white shadow-xl rounded-2xl overflow-hidden self-start transition-all duration-300"
+            ref={previewRef}
+            className={`bg-white shadow-xl rounded-2xl overflow-hidden self-start transition-all duration-300 ${editMode ? 'ring-2 ring-emerald-400/40' : ''}`}
             style={{
               width: device === 'mobile' ? 390 : device === 'tablet' ? 768 : '100%',
               minWidth: device === 'desktop' ? 960 : undefined,
             }}
           >
-            <StorePreview store={previewStore} device={device} />
+            <StorePreview store={previewStore} device={device} editMode={editMode} onFieldChange={handleFieldChange} />
           </div>
         </main>
 
-        {/* Right sidebar */}
+        {/* ── Right sidebar ─────────────────────────────────────────────────── */}
         <aside className="w-72 flex-shrink-0 bg-white border-l border-slate-200 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto">
 
-            <Section icon={Layers} title="General" open={openSection === 'general'} onToggle={() => toggle('general')}>
-              <Field label="Store Name"><Input value={storeName} onChange={setStoreName} placeholder="My Store" /></Field>
-              <Field label="Tagline"><Input value={tagline} onChange={setTagline} placeholder="Short brand tagline" /></Field>
-              <Field label="Primary Color"><ColorInput value={primaryColor} onChange={setPrimaryColor} /></Field>
-              <Field label="Accent Color"><ColorInput value={accentColor} onChange={setAccentColor} /></Field>
-            </Section>
-
-            <Section icon={Megaphone} title="Promo Bar" open={openSection === 'promoBar'} onToggle={() => toggle('promoBar')}>
-              <Field label="Announcement">
-                <Input value={promoBar} onChange={setPromoBar} placeholder="🎉 Free shipping on orders over $50!" />
-              </Field>
-              <p className="text-xs text-slate-400">Leave empty to hide.</p>
-            </Section>
-
-            <Section icon={Type} title="Hero Section" open={openSection === 'hero'} onToggle={() => toggle('hero')}>
-              <Field label="Headline"><Textarea value={heroTitle} onChange={setHeroTitle} placeholder="Your bold headline" rows={2} /></Field>
-              <Field label="Subheadline"><Textarea value={heroSubtitle} onChange={setHeroSubtitle} placeholder="Supporting description" rows={3} /></Field>
-              <Field label="CTA Button"><Input value={ctaText} onChange={setCtaText} placeholder="Shop Now" /></Field>
-            </Section>
-
-            <Section icon={Sparkles} title="Features" open={openSection === 'features'} onToggle={() => toggle('features')}>
-              {features.map((f, i) => (
-                <div key={i} className="p-3 bg-slate-50 rounded-xl space-y-2.5 relative group">
-                  <button onClick={() => setFeatures(features.filter((_, idx) => idx !== i))}
-                    className="absolute top-2 right-2 p-1 rounded text-slate-300 hover:text-red-400 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                  <Field label={`Title ${i + 1}`}><Input value={f.title} onChange={v => setFeatures(features.map((x, idx) => idx === i ? { ...x, title: v } : x))} /></Field>
-                  <Field label="Description"><Textarea value={f.description} onChange={v => setFeatures(features.map((x, idx) => idx === i ? { ...x, description: v } : x))} rows={2} /></Field>
-                </div>
-              ))}
-              <button onClick={() => setFeatures([...features, { icon: '✨', title: '', description: '' }])}
-                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-emerald-600 border border-dashed border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors">
-                <Plus className="w-3.5 h-3.5" /> Add Feature
+          {/* Sidebar tab switcher */}
+          <div className="flex border-b border-slate-100 flex-shrink-0">
+            {([
+              { key: 'sections',   label: 'Sections',   Icon: Layout },
+              { key: 'properties', label: 'Properties', Icon: Sparkles },
+            ] as const).map(({ key, label, Icon }) => (
+              <button
+                key={key}
+                onClick={() => setSidebarTab(key)}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold border-b-2 transition-colors ${
+                  sidebarTab === key
+                    ? 'border-emerald-500 text-emerald-600'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {label}
               </button>
-            </Section>
-
-            <Section icon={Star} title="Testimonials" open={openSection === 'testimonials'} onToggle={() => toggle('testimonials')}>
-              {testimonials.map((t, i) => (
-                <div key={i} className="p-3 bg-slate-50 rounded-xl space-y-2.5 relative group">
-                  <button onClick={() => setTestimonials(testimonials.filter((_, idx) => idx !== i))}
-                    className="absolute top-2 right-2 p-1 rounded text-slate-300 hover:text-red-400 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                  <Field label="Review"><Textarea value={t.text} onChange={v => setTestimonials(testimonials.map((x, idx) => idx === i ? { ...x, text: v } : x))} rows={2} /></Field>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Field label="Author"><Input value={t.author} onChange={v => setTestimonials(testimonials.map((x, idx) => idx === i ? { ...x, author: v } : x))} /></Field>
-                    <Field label="Role"><Input value={t.role} onChange={v => setTestimonials(testimonials.map((x, idx) => idx === i ? { ...x, role: v } : x))} /></Field>
-                  </div>
-                </div>
-              ))}
-              <button onClick={() => setTestimonials([...testimonials, { text: '', author: '', role: '', rating: 5 }])}
-                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-emerald-600 border border-dashed border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors">
-                <Plus className="w-3.5 h-3.5" /> Add Testimonial
-              </button>
-            </Section>
-
-            <Section icon={HelpCircle} title="FAQ" open={openSection === 'faq'} onToggle={() => toggle('faq')}>
-              {faq.map((item, i) => (
-                <div key={i} className="p-3 bg-slate-50 rounded-xl space-y-2.5 relative group">
-                  <button onClick={() => setFaq(faq.filter((_, idx) => idx !== i))}
-                    className="absolute top-2 right-2 p-1 rounded text-slate-300 hover:text-red-400 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                  <Field label="Question"><Input value={item.q} onChange={v => setFaq(faq.map((x, idx) => idx === i ? { ...x, q: v } : x))} /></Field>
-                  <Field label="Answer"><Textarea value={item.a} onChange={v => setFaq(faq.map((x, idx) => idx === i ? { ...x, a: v } : x))} rows={2} /></Field>
-                </div>
-              ))}
-              <button onClick={() => setFaq([...faq, { q: '', a: '' }])}
-                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-emerald-600 border border-dashed border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors">
-                <Plus className="w-3.5 h-3.5" /> Add FAQ
-              </button>
-            </Section>
-
-            <Section icon={Mail} title="Newsletter" open={openSection === 'newsletter'} onToggle={() => toggle('newsletter')}>
-              <Field label="Headline"><Input value={newsletter.headline} onChange={v => setNewsletter(n => ({ ...n, headline: v }))} placeholder="Stay in the loop" /></Field>
-              <Field label="Subtext"><Textarea value={newsletter.subtext} onChange={v => setNewsletter(n => ({ ...n, subtext: v }))} placeholder="Subscribe for exclusive deals…" rows={2} /></Field>
-              <p className="text-xs text-slate-400">Leave headline empty to hide.</p>
-            </Section>
-
-            <Section icon={BookOpen} title="Brand Story" open={openSection === 'brandStory'} onToggle={() => toggle('brandStory')}>
-              <Field label="Story"><Textarea value={brandStory} onChange={setBrandStory} placeholder="Tell your brand's story…" rows={5} /></Field>
-              <p className="text-xs text-slate-400">Leave empty to hide.</p>
-            </Section>
-
+            ))}
           </div>
+
+          {/* Sections panel */}
+          <AnimatePresence initial={false} mode="wait">
+            {sidebarTab === 'sections' ? (
+              <motion.div
+                key="sections-panel"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.15 }}
+                className="flex-1 overflow-y-auto"
+              >
+                <div className="px-4 pt-4 pb-2">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Drag to reorder</p>
+                </div>
+                <Reorder.Group
+                  axis="y"
+                  values={sectionItems}
+                  onReorder={setSectionItems}
+                  className="px-3 pb-4 space-y-1.5"
+                  as="div"
+                >
+                  {sectionItems.map((item) => {
+                    const meta = SECTION_META[item.type];
+                    if (!meta) return null;
+                    const Icon = meta.icon;
+                    return (
+                      <Reorder.Item
+                        key={item.type}
+                        value={item}
+                        as="div"
+                        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${
+                          item.hasContent
+                            ? 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-sm'
+                            : 'bg-slate-50 border-slate-100 opacity-50'
+                        }`}
+                        whileDrag={{ scale: 1.02, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}
+                      >
+                        <GripVertical className="w-4 h-4 text-slate-300 flex-shrink-0" />
+                        <div
+                          className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ background: item.hasContent ? 'rgba(16,185,129,0.1)' : 'rgba(148,163,184,0.1)' }}
+                        >
+                          <Icon className="w-3.5 h-3.5" style={{ color: item.hasContent ? '#10b981' : '#94a3b8' }} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-slate-700 truncate">{meta.label}</p>
+                          {editMode && item.hasContent && (
+                            <p className="text-[10px] text-slate-400 truncate">{meta.editHint}</p>
+                          )}
+                        </div>
+                        {item.hasContent ? (
+                          <button
+                            onClick={() => scrollToSection(item.type)}
+                            title="Scroll to section"
+                            className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 transition-colors flex-shrink-0"
+                          >
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        ) : (
+                          <span className="text-[9px] text-slate-300 font-medium flex-shrink-0">empty</span>
+                        )}
+                      </Reorder.Item>
+                    );
+                  })}
+                </Reorder.Group>
+
+                {/* Edit mode callout */}
+                {!editMode && (
+                  <div className="mx-4 mt-2 mb-4 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Switch to <strong>Edit mode</strong> to click text in the preview and edit it inline.
+                    </p>
+                    <button
+                      onClick={() => setEditMode(true)}
+                      className="mt-2 w-full py-1.5 text-xs font-semibold text-emerald-600 border border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors"
+                    >
+                      Enable Edit Mode
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="properties-panel"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                transition={{ duration: 0.15 }}
+                className="flex-1 overflow-y-auto"
+              >
+                <Section icon={Layers} title="General" open={openSection === 'general'} onToggle={() => toggle('general')}>
+                  <Field label="Store Name"><Input value={storeName} onChange={setStoreName} placeholder="My Store" /></Field>
+                  <Field label="Tagline"><Input value={tagline} onChange={setTagline} placeholder="Short brand tagline" /></Field>
+                  <Field label="Primary Color"><ColorInput value={primaryColor} onChange={setPrimaryColor} /></Field>
+                  <Field label="Accent Color"><ColorInput value={accentColor} onChange={setAccentColor} /></Field>
+                </Section>
+
+                <Section icon={Megaphone} title="Promo Bar" open={openSection === 'promoBar'} onToggle={() => toggle('promoBar')}>
+                  <Field label="Announcement">
+                    <Input value={promoBar} onChange={setPromoBar} placeholder="🎉 Free shipping on orders over $50!" />
+                  </Field>
+                  <p className="text-xs text-slate-400">Leave empty to hide.</p>
+                </Section>
+
+                <Section icon={Type} title="Hero Section" open={openSection === 'hero'} onToggle={() => toggle('hero')}>
+                  <Field label="Headline"><Textarea value={heroTitle} onChange={setHeroTitle} placeholder="Your bold headline" rows={2} /></Field>
+                  <Field label="Subheadline"><Textarea value={heroSubtitle} onChange={setHeroSubtitle} placeholder="Supporting description" rows={3} /></Field>
+                  <Field label="CTA Button"><Input value={ctaText} onChange={setCtaText} placeholder="Shop Now" /></Field>
+                </Section>
+
+                <Section icon={Sparkles} title="Features" open={openSection === 'features'} onToggle={() => toggle('features')}>
+                  {features.map((f, i) => (
+                    <div key={i} className="p-3 bg-slate-50 rounded-xl space-y-2.5 relative group">
+                      <button onClick={() => setFeatures(features.filter((_, idx) => idx !== i))}
+                        className="absolute top-2 right-2 p-1 rounded text-slate-300 hover:text-red-400 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <Field label={`Title ${i + 1}`}><Input value={f.title} onChange={v => setFeatures(features.map((x, idx) => idx === i ? { ...x, title: v } : x))} /></Field>
+                      <Field label="Description"><Textarea value={f.description} onChange={v => setFeatures(features.map((x, idx) => idx === i ? { ...x, description: v } : x))} rows={2} /></Field>
+                    </div>
+                  ))}
+                  <button onClick={() => setFeatures([...features, { icon: '✨', title: '', description: '' }])}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-emerald-600 border border-dashed border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors">
+                    <Plus className="w-3.5 h-3.5" /> Add Feature
+                  </button>
+                </Section>
+
+                <Section icon={Star} title="Testimonials" open={openSection === 'testimonials'} onToggle={() => toggle('testimonials')}>
+                  {testimonials.map((t, i) => (
+                    <div key={i} className="p-3 bg-slate-50 rounded-xl space-y-2.5 relative group">
+                      <button onClick={() => setTestimonials(testimonials.filter((_, idx) => idx !== i))}
+                        className="absolute top-2 right-2 p-1 rounded text-slate-300 hover:text-red-400 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <Field label="Review"><Textarea value={t.text} onChange={v => setTestimonials(testimonials.map((x, idx) => idx === i ? { ...x, text: v } : x))} rows={2} /></Field>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Field label="Author"><Input value={t.author} onChange={v => setTestimonials(testimonials.map((x, idx) => idx === i ? { ...x, author: v } : x))} /></Field>
+                        <Field label="Role"><Input value={t.role} onChange={v => setTestimonials(testimonials.map((x, idx) => idx === i ? { ...x, role: v } : x))} /></Field>
+                      </div>
+                    </div>
+                  ))}
+                  <button onClick={() => setTestimonials([...testimonials, { text: '', author: '', role: '', rating: 5 }])}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-emerald-600 border border-dashed border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors">
+                    <Plus className="w-3.5 h-3.5" /> Add Testimonial
+                  </button>
+                </Section>
+
+                <Section icon={HelpCircle} title="FAQ" open={openSection === 'faq'} onToggle={() => toggle('faq')}>
+                  {faq.map((item, i) => (
+                    <div key={i} className="p-3 bg-slate-50 rounded-xl space-y-2.5 relative group">
+                      <button onClick={() => setFaq(faq.filter((_, idx) => idx !== i))}
+                        className="absolute top-2 right-2 p-1 rounded text-slate-300 hover:text-red-400 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <Field label="Question"><Input value={item.q} onChange={v => setFaq(faq.map((x, idx) => idx === i ? { ...x, q: v } : x))} /></Field>
+                      <Field label="Answer"><Textarea value={item.a} onChange={v => setFaq(faq.map((x, idx) => idx === i ? { ...x, a: v } : x))} rows={2} /></Field>
+                    </div>
+                  ))}
+                  <button onClick={() => setFaq([...faq, { q: '', a: '' }])}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-emerald-600 border border-dashed border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors">
+                    <Plus className="w-3.5 h-3.5" /> Add FAQ
+                  </button>
+                </Section>
+
+                <Section icon={Mail} title="Newsletter" open={openSection === 'newsletter'} onToggle={() => toggle('newsletter')}>
+                  <Field label="Headline"><Input value={newsletter.headline} onChange={v => setNewsletter(n => ({ ...n, headline: v }))} placeholder="Stay in the loop" /></Field>
+                  <Field label="Subtext"><Textarea value={newsletter.subtext} onChange={v => setNewsletter(n => ({ ...n, subtext: v }))} placeholder="Subscribe for exclusive deals…" rows={2} /></Field>
+                  <p className="text-xs text-slate-400">Leave headline empty to hide.</p>
+                </Section>
+
+                <Section icon={BookOpen} title="Brand Story" open={openSection === 'brandStory'} onToggle={() => toggle('brandStory')}>
+                  <Field label="Story"><Textarea value={brandStory} onChange={setBrandStory} placeholder="Tell your brand's story…" rows={5} /></Field>
+                  <p className="text-xs text-slate-400">Leave empty to hide.</p>
+                </Section>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Bottom hint */}
           {isPublished && (

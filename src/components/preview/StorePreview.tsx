@@ -139,6 +139,51 @@ function EmojiIcon({
   return <span className={className} style={{ fontSize: `${size}px`, lineHeight: 1 }}>{emoji}</span>;
 }
 
+// ── Canvas editor: inline contenteditable text helper ────────────────────────
+// Renders a <span contentEditable> in edit mode, plain text fragment otherwise.
+// Uses a callback ref so external value syncs to DOM without disrupting cursor.
+
+function EditSpan({
+  field,
+  value,
+  editMode,
+  onFieldChange,
+  className,
+  style,
+  singleLine,
+}: {
+  field: string;
+  value: string;
+  editMode?: boolean;
+  onFieldChange?: (field: string, value: string) => void;
+  className?: string;
+  style?: React.CSSProperties;
+  singleLine?: boolean;
+}) {
+  if (!editMode) return <>{value}</>;
+  return (
+    <span
+      ref={(el) => {
+        // Sync value to DOM only when not actively being edited
+        if (el && !el.hasAttribute('data-ce')) {
+          if (el.textContent !== value) el.textContent = value;
+        }
+      }}
+      contentEditable
+      suppressContentEditableWarning
+      data-canvas-field={field}
+      onFocus={e => e.currentTarget.setAttribute('data-ce', '1')}
+      onBlur={e => {
+        e.currentTarget.removeAttribute('data-ce');
+        onFieldChange?.(field, e.currentTarget.textContent ?? '');
+      }}
+      onKeyDown={singleLine ? (e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }) : undefined}
+      className={className}
+      style={{ outline: 'none', whiteSpace: 'inherit', cursor: 'text', ...style }}
+    />
+  );
+}
+
 interface CartItem { product: RichProduct; qty: number; }
 type StorePage = 'home' | 'product' | 'cart' | 'checkout' | 'success' | 'myorders' | 'wishlist';
 
@@ -161,6 +206,9 @@ interface LayoutProps {
   wishlist: Set<string>;
   onToggleWishlist: (id: string) => void;
   onWishlistClick: () => void;
+  // Canvas editor — optional; only set when CanvasShell is active
+  editMode?: boolean;
+  onFieldChange?: (field: string, value: string) => void;
 }
 
 // ── Cart toast popup ─────────────────────────────────────────────────────────
@@ -1219,14 +1267,16 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
 
 // ── Shared section components ────────────────────────────────────────────────
 
-function PromoBar({ text, primaryColor }: { text: string; primaryColor: string }) {
+function PromoBar({ text, primaryColor, editMode, onFieldChange }: { text: string; primaryColor: string; editMode?: boolean; onFieldChange?: (f: string, v: string) => void }) {
   const [dismissed, setDismissed] = useState(false);
   if (!text || dismissed) return null;
   const dark = isDark(primaryColor);
   return (
     <div className="flex items-center justify-center gap-3 px-8 py-2.5 relative" style={{ background: primaryColor }}>
-      <p className="text-xs font-semibold text-center" style={{ color: dark ? '#fff' : '#111' }}>{text}</p>
-      <button onClick={() => setDismissed(true)} className="absolute right-4 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition-opacity text-sm font-bold" style={{ color: dark ? '#fff' : '#111' }}>✕</button>
+      <p className="text-xs font-semibold text-center" style={{ color: dark ? '#fff' : '#111' }}>
+        <EditSpan field="promoBar" value={text} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+      </p>
+      {!editMode && <button onClick={() => setDismissed(true)} className="absolute right-4 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition-opacity text-sm font-bold" style={{ color: dark ? '#fff' : '#111' }}>✕</button>}
     </div>
   );
 }
@@ -3755,9 +3805,10 @@ function heroCtaStyle(ctaStyle: HeroP['ctaStyle'] = 'filled', primaryColor: stri
 
 // ── Hero: CENTERED ────────────────────────────────────────────────────────────
 
-function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
+function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onScrollToProducts: () => void; heroProps?: HeroP;
+  editMode?: boolean; onFieldChange?: (f: string, v: string) => void;
 }) {
   const { heroTitle, heroSubtitle, ctaText, products = [], collections = [], tagline } = design;
   const isMobile = device === 'mobile';
@@ -3808,20 +3859,21 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts, 
         )}
         {heroProps.accentLine && <motion.div variants={heroItem} style={{ width: '40px', height: '3px', background: primaryColor, marginBottom: '16px' }} />}
         <motion.h1 variants={heroItem} className="mb-5" style={{ ...heroHeadingStyle(tt, 4.0, 2.4, heroProps.headlineSize, isMobile), color: bgImage ? '#ffffff' : tt.textPrimary }}>
-          {heroTitle}
+          <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
         </motion.h1>
         <motion.p variants={heroItem} className="mb-8 max-w-lg" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: bgImage ? 'rgba(255,255,255,0.82)' : tt.textSecondary }}>
-          {heroSubtitle}
+          <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
         </motion.p>
         {/* Glow CTA for tech/hype archetypes */}
         <motion.button
           variants={heroItem}
-          onClick={onScrollToProducts}
+          onClick={editMode ? undefined : onScrollToProducts}
           whileHover={{ scale: 1.04, opacity: 0.92 }}
           whileTap={{ scale: 0.97 }}
           className={`px-8 py-3.5 text-sm font-bold${isTechHype && heroProps.ctaStyle !== 'outline' && heroProps.ctaStyle !== 'text' ? ' sk-glow-btn' : ''}`}
           style={{ ...ctaStyleObj, ...(isTechHype && !heroProps.ctaStyle ? getGlowCssVar(primaryColor) : {}) }}>
-          {ctaText}{heroProps.ctaStyle === 'text' && <ArrowRight className="w-3.5 h-3.5 inline ml-1" />}
+          <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          {!editMode && heroProps.ctaStyle === 'text' && <ArrowRight className="w-3.5 h-3.5 inline ml-1" />}
         </motion.button>
       </motion.div>
     </section>
@@ -3830,9 +3882,10 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts, 
 
 // ── Hero: SPLIT ───────────────────────────────────────────────────────────────
 
-function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmtPrice, heroProps = {} }: {
+function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmtPrice, heroProps = {}, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onScrollToProducts: () => void; fmtPrice: (n: number) => string; heroProps?: HeroP;
+  editMode?: boolean; onFieldChange?: (f: string, v: string) => void;
 }) {
   const { heroTitle, heroSubtitle, ctaText, products = [], collections = [], tagline } = design;
   const isMobile = device === 'mobile';
@@ -3866,19 +3919,20 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
           )}
           {heroProps.accentLine && <motion.div variants={heroItem} style={{ width: '40px', height: '3px', background: primaryColor, marginBottom: '16px' }} />}
           <motion.h1 variants={heroItem} className="mb-5" style={{ ...heroHeadingStyle(tt, 3.6, 2.4, heroProps.headlineSize, isMobile), color: tt.textPrimary }}>
-            {heroTitle}
+            <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </motion.h1>
           <motion.p variants={heroItem} className="mb-8 max-w-sm" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>
-            {heroSubtitle}
+            <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
           </motion.p>
           <motion.div variants={heroItem} className="flex items-center gap-4">
             <motion.button
-              onClick={onScrollToProducts}
+              onClick={editMode ? undefined : onScrollToProducts}
               whileHover={{ scale: 1.04, opacity: 0.92 }}
               whileTap={{ scale: 0.97 }}
               className={`px-7 py-3.5 text-sm font-bold${isTechHype && !heroProps.ctaStyle ? ' sk-glow-btn' : ''}`}
               style={{ ...ctaStyleObj, ...(isTechHype && !heroProps.ctaStyle ? getGlowCssVar(primaryColor) : {}) }}>
-              {ctaText}{heroProps.ctaStyle === 'text' && <ArrowRight className="w-3.5 h-3.5 inline ml-1" />}
+              <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              {!editMode && heroProps.ctaStyle === 'text' && <ArrowRight className="w-3.5 h-3.5 inline ml-1" />}
             </motion.button>
             {heroProps.ctaStyle !== 'text' && (
               <button onClick={onScrollToProducts} className="text-xs font-semibold flex items-center gap-1.5 hover:opacity-70 transition-opacity" style={{ color: tt.textMuted }}>
@@ -5139,12 +5193,13 @@ type SectionVariants = NonNullable<import('../../../src/lib/claudeApi').DesignTo
 
 // ── Features variants ─────────────────────────────────────────────────────────
 
-function FeaturesSection({ features, tt, primaryColor, device, motion: motionLevel, elevation, sectionPy, variant, columns }: {
+function FeaturesSection({ features, tt, primaryColor, device, motion: motionLevel, elevation, sectionPy, variant, columns, editMode, onFieldChange }: {
   features: Array<{ icon: string; title: string; description: string }>;
   tt: TokenTheme; primaryColor: string; device: DeviceMode;
   motion: MotionLevel; elevation: ElevationLevel; sectionPy: number;
   variant: SectionVariants['features'];
   columns?: 2 | 3 | 4;
+  editMode?: boolean; onFieldChange?: (f: string, v: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const pc = primaryColor;
@@ -5171,8 +5226,8 @@ function FeaturesSection({ features, tt, primaryColor, device, motion: motionLev
               {/* Text */}
               <div className={isMobile ? 'text-center' : ''}>
                 <div style={{ width: '32px', height: '3px', background: pc, marginBottom: '12px', margin: isMobile ? '0 auto 12px' : '0 0 12px' }} />
-                <h3 className="mb-3" style={{ ...headingStyle(tt, 1.0), color: tt.textPrimary }}>{f.title}</h3>
-                <p className="text-sm max-w-sm" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>{f.description}</p>
+                <h3 className="mb-3" style={{ ...headingStyle(tt, 1.0), color: tt.textPrimary }}><EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h3>
+                <p className="text-sm max-w-sm" style={{ ...bodyStyle(tt), color: tt.textSecondary }}><EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} /></p>
               </div>
             </div>
           ))}
@@ -5202,8 +5257,8 @@ function FeaturesSection({ features, tt, primaryColor, device, motion: motionLev
               <div style={{ marginBottom: '12px' }}>
                 <EmojiIcon emoji={f.icon} size={i === 0 ? 40 : 28} color={i === 0 ? (isDark(pc) ? '#fff' : '#000') : pc} strokeWidth={1.5} />
               </div>
-              <h3 className="mb-2" style={{ ...headingStyle(tt, i === 0 ? 1.0 : 0.875), color: i === 0 ? (isDark(pc) ? '#fff' : '#000') : tt.textPrimary }}>{f.title}</h3>
-              <p className="text-xs" style={{ ...bodyStyle(tt), color: i === 0 ? (isDark(pc) ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)') : tt.textSecondary }}>{f.description}</p>
+              <h3 className="mb-2" style={{ ...headingStyle(tt, i === 0 ? 1.0 : 0.875), color: i === 0 ? (isDark(pc) ? '#fff' : '#000') : tt.textPrimary }}><EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h3>
+              <p className="text-xs" style={{ ...bodyStyle(tt), color: i === 0 ? (isDark(pc) ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)') : tt.textSecondary }}><EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} /></p>
             </div>
           ))}
         </div>
@@ -5235,9 +5290,9 @@ function FeaturesSection({ features, tt, primaryColor, device, motion: motionLev
               <EmojiIcon emoji={f.icon} size={20} color={pc} strokeWidth={1.75} />
             </div>
             <div>
-              <h3 className="text-sm mb-1" style={{ ...headingStyle(tt, 0.875), color: tt.textPrimary }}>{f.title}</h3>
-              {(tt.density !== 'dense') && <p className="text-xs" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>{f.description}</p>}
-              {tt.density === 'dense' && <p className="text-[11px] line-clamp-1" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>{f.description}</p>}
+              <h3 className="text-sm mb-1" style={{ ...headingStyle(tt, 0.875), color: tt.textPrimary }}><EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h3>
+              {(tt.density !== 'dense') && <p className="text-xs" style={{ ...bodyStyle(tt), color: tt.textSecondary }}><EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} /></p>}
+              {tt.density === 'dense' && <p className="text-[11px] line-clamp-1" style={{ ...bodyStyle(tt), color: tt.textSecondary }}><EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} /></p>}
             </div>
           </motion.div>
         ))}
@@ -5248,10 +5303,11 @@ function FeaturesSection({ features, tt, primaryColor, device, motion: motionLev
 
 // ── Testimonials variants ─────────────────────────────────────────────────────
 
-function TestimonialsSection({ testimonials, tt, primaryColor, device, sectionPy, variant }: {
+function TestimonialsSection({ testimonials, tt, primaryColor, device, sectionPy, variant, editMode, onFieldChange }: {
   testimonials: Array<{ text: string; author: string; role: string; rating: number }>;
   tt: TokenTheme; primaryColor: string; device: DeviceMode; sectionPy: number;
   variant: SectionVariants['testimonials'];
+  editMode?: boolean; onFieldChange?: (f: string, v: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const pc = primaryColor;
@@ -5266,11 +5322,11 @@ function TestimonialsSection({ testimonials, tt, primaryColor, device, sectionPy
           {/* Big quote mark */}
           <div className="text-6xl font-black leading-none mb-4 select-none" style={{ color: alpha(pc, 0.2), fontFamily: 'Georgia, serif' }}>"</div>
           <p className={`${isMobile ? 'text-base' : 'text-xl'} font-medium italic mb-8`}
-            style={{ ...bodyStyle(tt), color: tt.textPrimary }}>{t.text}</p>
+            style={{ ...bodyStyle(tt), color: tt.textPrimary }}><EditSpan field={`testimonials.${active}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} /></p>
           <Stars n={t.rating} />
           <div className="mt-4">
-            <p className="text-sm font-black" style={{ color: tt.textPrimary }}>{t.author}</p>
-            <p className="text-xs mt-0.5" style={{ color: tt.textMuted }}>{t.role}</p>
+            <p className="text-sm font-black" style={{ color: tt.textPrimary }}><EditSpan field={`testimonials.${active}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine /></p>
+            <p className="text-xs mt-0.5" style={{ color: tt.textMuted }}><EditSpan field={`testimonials.${active}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine /></p>
           </div>
           {/* Dot nav */}
           <div className="flex items-center justify-center gap-2 mt-8">
@@ -5306,15 +5362,15 @@ function TestimonialsSection({ testimonials, tt, primaryColor, device, sectionPy
                 <Stars n={t.rating} />
                 <p className="text-sm mt-2 mb-3 italic"
                   style={{ ...bodyStyle(tt), color: i % 3 === 0 ? (isDark(pc) ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.85)') : tt.textSecondary }}>
-                  "{t.text}"
+                  "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
                 </p>
                 <p className="text-xs font-black"
                   style={{ color: i % 3 === 0 ? (isDark(pc) ? '#fff' : '#000') : tt.textPrimary }}>
-                  {t.author}
+                  <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
                 </p>
                 <p className="text-[10px] mt-0.5"
                   style={{ color: i % 3 === 0 ? (isDark(pc) ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)') : tt.textMuted }}>
-                  {t.role}
+                  <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
                 </p>
               </div>
             ))}
@@ -5334,12 +5390,12 @@ function TestimonialsSection({ testimonials, tt, primaryColor, device, sectionPy
           {testimonials.map((t, i) => (
             <div key={i} className="p-6" style={{ background: tt.pageBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius }}>
               <Stars n={t.rating} />
-              <p className="text-sm mt-3 mb-5 italic" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>"{t.text}"</p>
+              <p className="text-sm mt-3 mb-5 italic" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>"<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"</p>
               <div className="flex items-center gap-3 pt-3" style={{ borderTop: `1px solid ${tt.divider}` }}>
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: pc }}>{t.author[0]}</div>
                 <div>
-                  <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>{t.author}</p>
-                  <p className="text-[10px] mt-0.5" style={{ color: tt.textMuted }}>{t.role}</p>
+                  <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}><EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine /></p>
+                  <p className="text-[10px] mt-0.5" style={{ color: tt.textMuted }}><EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine /></p>
                 </div>
               </div>
             </div>
@@ -5388,10 +5444,11 @@ function StatsSection({ stats, primaryColor, device, tt, sectionPy, variant }: {
 
 // ── BrandStory variants ───────────────────────────────────────────────────────
 
-function BrandStorySection({ brandStory, products, tt, primaryColor, device, sectionPy, variant }: {
+function BrandStorySection({ brandStory, products, tt, primaryColor, device, sectionPy, variant, editMode, onFieldChange }: {
   brandStory: string; products: RichProduct[];
   tt: TokenTheme; primaryColor: string; device: DeviceMode; sectionPy: number;
   variant: SectionVariants['brandStory'];
+  editMode?: boolean; onFieldChange?: (f: string, v: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const pc = primaryColor;
@@ -5409,7 +5466,7 @@ function BrandStorySection({ brandStory, products, tt, primaryColor, device, sec
           <div>
             <p className="text-[10px] uppercase tracking-[0.35em] mb-4" style={{ color: pc }}>Our Story</p>
             <div style={{ width: '40px', height: '3px', background: pc, marginBottom: '20px' }} />
-            <p style={{ ...bodyStyle(tt), color: tt.textSecondary, fontSize: isMobile ? '0.95rem' : '1.05rem' }}>{brandStory}</p>
+            <p style={{ ...bodyStyle(tt), color: tt.textSecondary, fontSize: isMobile ? '0.95rem' : '1.05rem' }}><EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} /></p>
           </div>
         </div>
       </section>
@@ -5447,7 +5504,7 @@ function BrandStorySection({ brandStory, products, tt, primaryColor, device, sec
     <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}` }}>
       <div className="max-w-2xl mx-auto px-5 text-center" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
         <div className="text-4xl mb-5 opacity-20 select-none" style={{ color: pc, fontFamily: tt.headingFont }}>"</div>
-        <p className={`${isMobile ? 'text-base' : 'text-lg'} font-medium italic`} style={{ ...bodyStyle(tt), color: tt.textSecondary }}>{brandStory}</p>
+        <p className={`${isMobile ? 'text-base' : 'text-lg'} font-medium italic`} style={{ ...bodyStyle(tt), color: tt.textSecondary }}><EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} /></p>
       </div>
     </section>
   );
@@ -5455,10 +5512,11 @@ function BrandStorySection({ brandStory, products, tt, primaryColor, device, sec
 
 // ── FAQ variants ──────────────────────────────────────────────────────────────
 
-function FaqSection({ faq, tt, primaryColor, device, sectionPy, variant }: {
+function FaqSection({ faq, tt, primaryColor, device, sectionPy, variant, editMode, onFieldChange }: {
   faq: Array<{ q: string; a: string }>;
   tt: TokenTheme; primaryColor: string; device: DeviceMode; sectionPy: number;
   variant: SectionVariants['faq'];
+  editMode?: boolean; onFieldChange?: (f: string, v: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const pc = primaryColor;
@@ -5473,8 +5531,8 @@ function FaqSection({ faq, tt, primaryColor, device, sectionPy, variant }: {
           <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
             {faq.map((item, i) => (
               <div key={i} className="p-5" style={{ background: tt.pageBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius, borderLeft: `3px solid ${pc}` }}>
-                <p className="text-sm font-black mb-2" style={{ color: tt.textPrimary }}>{item.q}</p>
-                <p className="text-xs" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>{item.a}</p>
+                <p className="text-sm font-black mb-2" style={{ color: tt.textPrimary }}><EditSpan field={`faq.${i}.q`} value={item.q} editMode={editMode} onFieldChange={onFieldChange} singleLine /></p>
+                <p className="text-xs" style={{ ...bodyStyle(tt), color: tt.textSecondary }}><EditSpan field={`faq.${i}.a`} value={item.a} editMode={editMode} onFieldChange={onFieldChange} /></p>
               </div>
             ))}
           </div>
@@ -5493,14 +5551,14 @@ function FaqSection({ faq, tt, primaryColor, device, sectionPy, variant }: {
           {faq.map((item, i) => (
             <div key={i} className="overflow-hidden cursor-pointer"
               style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius }}>
-              <button onClick={() => setOpenIndex(openIndex === i ? null : i)}
+              <button onClick={editMode ? undefined : () => setOpenIndex(openIndex === i ? null : i)}
                 className="w-full flex items-center justify-between px-5 py-4 text-left gap-4">
-                <span className="text-sm font-semibold" style={{ color: tt.textPrimary }}>{item.q}</span>
+                <span className="text-sm font-semibold" style={{ color: tt.textPrimary }}><EditSpan field={`faq.${i}.q`} value={item.q} editMode={editMode} onFieldChange={onFieldChange} singleLine /></span>
                 <span className="text-lg flex-shrink-0 transition-transform duration-200 font-light"
                   style={{ color: pc, display: 'inline-block', transform: openIndex === i ? 'rotate(45deg)' : 'none' }}>+</span>
               </button>
-              {openIndex === i && (
-                <div className="px-5 pb-5 text-sm" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>{item.a}</div>
+              {(openIndex === i || editMode) && (
+                <div className="px-5 pb-5 text-sm" style={{ ...bodyStyle(tt), color: tt.textSecondary }}><EditSpan field={`faq.${i}.a`} value={item.a} editMode={editMode} onFieldChange={onFieldChange} /></div>
               )}
             </div>
           ))}
@@ -5512,10 +5570,11 @@ function FaqSection({ faq, tt, primaryColor, device, sectionPy, variant }: {
 
 // ── Newsletter variants ───────────────────────────────────────────────────────
 
-function NewsletterSectionV2({ newsletter, tt, primaryColor, device, sectionPy, variant }: {
+function NewsletterSectionV2({ newsletter, tt, primaryColor, device, sectionPy, variant, editMode, onFieldChange }: {
   newsletter: { headline: string; subtext: string };
   tt: TokenTheme; primaryColor: string; device: DeviceMode; sectionPy: number;
   variant: SectionVariants['newsletter'];
+  editMode?: boolean; onFieldChange?: (f: string, v: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const pc = primaryColor;
@@ -5547,8 +5606,8 @@ function NewsletterSectionV2({ newsletter, tt, primaryColor, device, sectionPy, 
         <div className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-10 flex flex-col gap-6' : 'flex items-center justify-between gap-10'}`}
           style={isMobile ? {} : { paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
           <div>
-            <h2 style={{ ...headingStyle(tt, isMobile ? 1.25 : 1.5), color: isDark(pc) ? '#fff' : '#000' }}>{newsletter.headline}</h2>
-            <p className="text-sm mt-1" style={{ color: isDark(pc) ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }}>{newsletter.subtext}</p>
+            <h2 style={{ ...headingStyle(tt, isMobile ? 1.25 : 1.5), color: isDark(pc) ? '#fff' : '#000' }}><EditSpan field="newsletter.headline" value={newsletter.headline} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h2>
+            <p className="text-sm mt-1" style={{ color: isDark(pc) ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }}><EditSpan field="newsletter.subtext" value={newsletter.subtext} editMode={editMode} onFieldChange={onFieldChange} /></p>
           </div>
           <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-2 ${isMobile ? '' : 'min-w-[380px]'}`}>
             {emailInput(isDark(pc))}
@@ -5565,8 +5624,8 @@ function NewsletterSectionV2({ newsletter, tt, primaryColor, device, sectionPy, 
       <div className="max-w-xl mx-auto px-5">
         <div className={`rounded-3xl ${isMobile ? 'p-5' : 'p-8'} text-center`}
           style={{ background: `linear-gradient(135deg, ${alpha(pc, 0.09)}, ${alpha(pc, 0.04)})`, border: `1px solid ${alpha(pc, 0.12)}` }}>
-          <p className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-3`} style={{ color: tt.textPrimary }}>{newsletter.headline}</p>
-          <p className={`text-sm ${isMobile ? 'mb-5' : 'mb-7'} leading-relaxed`} style={{ color: tt.textSecondary }}>{newsletter.subtext}</p>
+          <p className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-3`} style={{ color: tt.textPrimary }}><EditSpan field="newsletter.headline" value={newsletter.headline} editMode={editMode} onFieldChange={onFieldChange} singleLine /></p>
+          <p className={`text-sm ${isMobile ? 'mb-5' : 'mb-7'} leading-relaxed`} style={{ color: tt.textSecondary }}><EditSpan field="newsletter.subtext" value={newsletter.subtext} editMode={editMode} onFieldChange={onFieldChange} /></p>
           <div className={`flex ${isMobile ? 'flex-col' : ''} gap-2`}>
             {emailInput(false)}
             {submitted ? <div className="py-3 text-sm font-semibold" style={{ color: pc }}>✓ You're on the list!</div> : submitBtn}
@@ -5871,7 +5930,7 @@ function CategorySpotlightSection({ design, tt, primaryColor, device, variant = 
 
 // ── TOKEN LAYOUT — main component ─────────────────────────────────────────────
 
-function TokenLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
+function TokenLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
   // v2: designTokens (raw CSS values from Claude) takes priority over v1 buckets
   const dt = design.designTokens;
   const ds = design.designSystem;
@@ -5943,7 +6002,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
     switch (section) {
       case 'hero':
         switch (heroVariant) {
-          case 'centered':      return <TkHeroCentered      key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
+          case 'centered':      return <TkHeroCentered      key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} editMode={editMode} onFieldChange={onFieldChange} />;
           case 'fullscreen':    return <TkHeroFullscreen    key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
           case 'minimal':       return <TkHeroMinimal       key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
           case 'editorial':     return <TkHeroEditorial     key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
@@ -5953,7 +6012,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
           case 'cinematic':    return <TkHeroCinematic    key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
           case 'chat':         return <TkHeroChat         key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
           case 'fashion':      return <TkHeroFashion      key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
-          default:              return <TkHeroSplit          key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} fmtPrice={fmtPrice} heroProps={heroProps} />;
+          default:              return <TkHeroSplit          key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} fmtPrice={fmtPrice} heroProps={heroProps} editMode={editMode} onFieldChange={onFieldChange} />;
         }
 
       case 'trust':
@@ -6017,11 +6076,11 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
 
       case 'features':
         if (!features.length) return null;
-        return <FeaturesSection key="features" features={features} tt={tt} primaryColor={primaryColor} device={device} motion={motion} elevation={elevation} sectionPy={sectionPy} variant={variant as SectionVariants['features']} columns={featProps.columns} />;
+        return <FeaturesSection key="features" features={features} tt={tt} primaryColor={primaryColor} device={device} motion={motion} elevation={elevation} sectionPy={sectionPy} variant={variant as SectionVariants['features']} columns={featProps.columns} editMode={editMode} onFieldChange={onFieldChange} />;
 
       case 'testimonials':
         if (!testimonials.length) return null;
-        return <TestimonialsSection key="testimonials" testimonials={testimonials} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={variant as SectionVariants['testimonials']} />;
+        return <TestimonialsSection key="testimonials" testimonials={testimonials} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={variant as SectionVariants['testimonials']} editMode={editMode} onFieldChange={onFieldChange} />;
 
       case 'stats':
         if (!stats.length) return null;
@@ -6029,15 +6088,15 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
 
       case 'brandStory':
         if (!brandStory) return null;
-        return <BrandStorySection key="brandStory" brandStory={brandStory} products={products} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={variant as SectionVariants['brandStory']} />;
+        return <BrandStorySection key="brandStory" brandStory={brandStory} products={products} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={variant as SectionVariants['brandStory']} editMode={editMode} onFieldChange={onFieldChange} />;
 
       case 'faq':
         if (!faq.length) return null;
-        return <FaqSection key="faq" faq={faq} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={variant as SectionVariants['faq']} />;
+        return <FaqSection key="faq" faq={faq} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={variant as SectionVariants['faq']} editMode={editMode} onFieldChange={onFieldChange} />;
 
       case 'newsletter':
         if (!newsletter) return null;
-        return <NewsletterSectionV2 key="newsletter" newsletter={newsletter} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={variant as SectionVariants['newsletter']} />;
+        return <NewsletterSectionV2 key="newsletter" newsletter={newsletter} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={variant as SectionVariants['newsletter']} editMode={editMode} onFieldChange={onFieldChange} />;
 
       case 'scrollingBanner':
         return <ScrollingBannerSection key="scrollingBanner" design={design} primaryColor={primaryColor} tt={tt} />;
@@ -6081,7 +6140,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
             ? `linear-gradient(135deg, ${tt.headerBg}, ${tt.primary}22, ${tt.headerBg})`
             : tt.headerBg + 'f5',
         }}>
-        {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} />}
+        {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} editMode={editMode} onFieldChange={onFieldChange} />}
 
         {/* Header */}
         <header
@@ -6118,16 +6177,20 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
       </div>
 
       {/* Sections rendered in Claude-specified order with per-section variants */}
-      {resolvedSections.map((entry, idx) => {
+      {resolvedSections.map((entry) => {
         const node = renderSection(entry);
         if (!node) return null;
         // Hero, trust, scrollingBanner — skip reveal (above fold or already animated)
         const noReveal = ['hero', 'trust', 'scrollingBanner'].includes(entry.type);
-        if (noReveal || motion === 'none') return node;
-        return (
-          <RevealWrapper key={entry.type} archetype={animArch} delay={0}>
+        const content = noReveal || motion === 'none' ? node : (
+          <RevealWrapper archetype={animArch} delay={0}>
             {node}
           </RevealWrapper>
+        );
+        return (
+          <div key={entry.type} data-canvas-section={entry.type}>
+            {content}
+          </div>
         );
       })}
 
@@ -7372,9 +7435,11 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
 interface StorePreviewProps {
   store: Store;
   device: DeviceMode;
+  editMode?: boolean;
+  onFieldChange?: (field: string, value: string) => void;
 }
 
-export default function StorePreview({ store, device }: StorePreviewProps) {
+export default function StorePreview({ store, device, editMode, onFieldChange }: StorePreviewProps) {
   const [page, setPage] = useState<StorePage>('home');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<RichProduct | null>(null);
@@ -7556,7 +7621,7 @@ export default function StorePreview({ store, device }: StorePreviewProps) {
   } else if (!design) {
     content = <FallbackLayout store={store} device={device} onProductClick={shared.onProductClick} onAddToCart={shared.onAddToCart} onCartClick={shared.onCartClick} cartCount={shared.cartCount} onUserClick={shared.onUserClick} buyerEmail={shared.buyerEmail} wishlist={shared.wishlist} onToggleWishlist={shared.onToggleWishlist} onWishlistClick={shared.onWishlistClick} />;
   } else {
-    const props: LayoutProps = { storeName, primaryColor, design, device, fmtPrice, ...shared };
+    const props: LayoutProps = { storeName, primaryColor, design, device, fmtPrice, ...shared, editMode, onFieldChange };
     // Phase 1: route to new layout types based on layoutType token
     if (design.designTokens || design.designSystem) {
       const layoutType = design.designTokens?.layoutType ?? 'standard';
