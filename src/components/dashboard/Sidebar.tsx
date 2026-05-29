@@ -173,10 +173,9 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                       {store.name[0]}
                     </div>
                     <span className="text-sm font-medium truncate flex-1">{store.name}</span>
-                    {store.status === 'Published'
-                      ? <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-600 flex-shrink-0">LIVE</span>
-                      : <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-400 flex-shrink-0">DRAFT</span>
-                    }
+                    {store.status === 'Published' && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-600 flex-shrink-0">LIVE</span>
+                    )}
                     {activeStore?.id === store.id && (
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
                     )}
