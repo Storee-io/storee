@@ -422,9 +422,14 @@ export default function PreviewShell({ store, from = null }: Props) {
         className="fixed bottom-8 right-6 z-30 transition-transform duration-150 ease-in-out"
         style={{ transform: fabHidden ? 'translateY(calc(100% + 2rem))' : 'translateY(0)' }}
       >
+        {/* Sound-wave ripple rings */}
+        <span className="absolute inset-0 rounded-2xl bg-emerald-400 opacity-30 animate-ping" style={{ animationDuration: '1.8s', animationDelay: '0s' }} />
+        <span className="absolute inset-0 rounded-2xl bg-emerald-400 opacity-20 animate-ping" style={{ animationDuration: '1.8s', animationDelay: '0.5s' }} />
+        <span className="absolute inset-0 rounded-2xl bg-emerald-400 opacity-10 animate-ping" style={{ animationDuration: '1.8s', animationDelay: '1s' }} />
+
         <button
           onClick={() => router.push(`/canvas/${liveStore.id}?from=${encodeURIComponent(`/preview/${liveStore.id}`)}`)}
-          className="group flex items-center gap-2 pl-3 pr-4 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl hover:border-emerald-300 hover:text-emerald-700 transition-all duration-200"
+          className="relative group flex items-center gap-2 pl-3 pr-4 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl hover:border-emerald-300 hover:text-emerald-700 transition-all duration-200"
         >
           <span className="w-7 h-7 rounded-xl gradient-bg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
             <PenLine className="w-3.5 h-3.5 text-white" />
