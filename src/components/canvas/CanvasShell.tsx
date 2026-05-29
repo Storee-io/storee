@@ -231,22 +231,19 @@ export default function CanvasShell({ store, from }: Props) {
   return (
     <div className="flex flex-col h-screen bg-white overflow-hidden">
 
-      {/* ── Top bar ──────────────────────────────────────────────────────────── */}
-      <header className="flex-shrink-0 bg-white border-b border-slate-200 flex items-center gap-3 px-4 sm:px-6 py-3 shadow-sm z-10">
+      {/* ── Top bar (same structure as PreviewShell) ──────────────────────────── */}
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
 
-        {/* Back */}
-        <button
-          onClick={() => router.push(backHref)}
-          className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 transition-colors flex-shrink-0"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="hidden sm:inline text-sm">Back</span>
-        </button>
-
-        <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
-
-        {/* Store name + status */}
-        <div className="flex items-center gap-2 min-w-0">
+        {/* Left — back + store name */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <button
+            onClick={() => router.push(backHref)}
+            className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 transition-colors flex-shrink-0"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm hidden sm:inline">Back</span>
+          </button>
+          <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
           <span className="font-semibold text-slate-900 text-sm sm:text-base truncate">{storeName}</span>
           {isPublished
             ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 flex-shrink-0">LIVE</span>
@@ -254,50 +251,53 @@ export default function CanvasShell({ store, from }: Props) {
           }
         </div>
 
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Device toggle */}
-        <div className="flex items-center gap-0.5 bg-slate-100 rounded-xl p-1">
+        {/* Center — device switcher */}
+        <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1 flex-shrink-0">
           {([
-            { key: 'desktop', icon: Monitor },
-            { key: 'tablet',  icon: Tablet },
-            { key: 'mobile',  icon: Smartphone },
-          ] as const).map(({ key, icon: Icon }) => (
+            { key: 'desktop', Icon: Monitor },
+            { key: 'tablet',  Icon: Tablet },
+            { key: 'mobile',  Icon: Smartphone },
+          ] as const).map(({ key, Icon }) => (
             <button
               key={key}
               onClick={() => setDevice(key)}
-              className={`p-2 rounded-lg transition-all ${device === key ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`p-2 rounded-lg transition-all ${device === key ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
             >
               <Icon className="w-4 h-4" />
             </button>
           ))}
         </div>
 
-        {/* Live store link */}
-        {storefrontUrl && (
-          <a href={storefrontUrl} target="_blank" rel="noopener noreferrer"
-            className="hidden sm:flex items-center gap-1.5 px-2.5 sm:px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
-          >
-            <Globe className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden sm:inline">View Store</span>
-          </a>
-        )}
+        {/* Right — action buttons */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* View live store */}
+          {storefrontUrl && (
+            <a
+              href={storefrontUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+            >
+              <Globe className="w-4 h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">View Store</span>
+            </a>
+          )}
 
-        {/* Save */}
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="flex items-center gap-2 px-2.5 sm:px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 disabled:opacity-60 transition-all shadow-md"
-        >
-          {saved
-            ? <><Check className="w-4 h-4" /> <span className="hidden sm:inline">Saved</span></>
-            : isSaving
-            ? <><Save className="w-4 h-4 animate-pulse" /> <span className="hidden sm:inline">Saving…</span></>
-            : <><Save className="w-4 h-4" /> <span className="hidden sm:inline">Save</span></>
-          }
-        </button>
-      </header>
+          {/* Save */}
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex items-center gap-1.5 px-2.5 sm:px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 disabled:opacity-60 transition-all shadow-md"
+          >
+            {saved
+              ? <><Check className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Saved</span></>
+              : isSaving
+              ? <><Save className="w-4 h-4 flex-shrink-0 animate-pulse" /><span className="hidden sm:inline">Saving…</span></>
+              : <><Save className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Save</span></>
+            }
+          </button>
+        </div>
+      </div>
 
       {/* ── Body ─────────────────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
