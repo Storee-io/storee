@@ -266,6 +266,10 @@ export default function PreviewShell({ store, from = null }: Props) {
           </button>
           <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
           <span className="font-semibold text-slate-900 text-sm sm:text-base truncate">{store.name}</span>
+          {isPublished
+            ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 flex-shrink-0">LIVE</span>
+            : <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 flex-shrink-0">DRAFT</span>
+          }
         </div>
 
         {/* Center — device switcher */}
