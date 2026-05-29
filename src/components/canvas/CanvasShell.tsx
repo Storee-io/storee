@@ -232,22 +232,22 @@ export default function CanvasShell({ store, from }: Props) {
     <div className="flex flex-col h-screen bg-white overflow-hidden">
 
       {/* ── Top bar ──────────────────────────────────────────────────────────── */}
-      <header className="h-13 flex-shrink-0 bg-white border-b border-slate-200 flex items-center gap-3 px-4">
+      <header className="flex-shrink-0 bg-white border-b border-slate-200 flex items-center gap-3 px-4 sm:px-6 py-3 shadow-sm z-10">
 
         {/* Back */}
         <button
           onClick={() => router.push(backHref)}
-          className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors mr-1"
+          className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 transition-colors flex-shrink-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="hidden sm:inline">Back</span>
+          <span className="hidden sm:inline text-sm">Back</span>
         </button>
 
-        <div className="h-5 w-px bg-slate-200" />
+        <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
 
         {/* Store name + status */}
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-sm font-semibold text-slate-800 truncate">{storeName}</span>
+          <span className="font-semibold text-slate-900 text-sm sm:text-base truncate">{storeName}</span>
           {isPublished
             ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 flex-shrink-0">LIVE</span>
             : <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 flex-shrink-0">DRAFT</span>
@@ -267,7 +267,7 @@ export default function CanvasShell({ store, from }: Props) {
             <button
               key={key}
               onClick={() => setDevice(key)}
-              className={`p-1.5 rounded-lg transition-all ${device === key ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`p-2 rounded-lg transition-all ${device === key ? 'bg-white shadow-sm text-slate-800' : 'text-slate-400 hover:text-slate-600'}`}
             >
               <Icon className="w-4 h-4" />
             </button>
@@ -277,10 +277,10 @@ export default function CanvasShell({ store, from }: Props) {
         {/* Live store link */}
         {storefrontUrl && (
           <a href={storefrontUrl} target="_blank" rel="noopener noreferrer"
-            className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-emerald-600 border border-slate-200 hover:border-emerald-300 px-3 py-1.5 rounded-lg transition-all"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 sm:px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
           >
-            <Globe className="w-3.5 h-3.5" />
-            View Store
+            <Globe className="w-4 h-4 flex-shrink-0" />
+            <span className="hidden sm:inline">View Store</span>
           </a>
         )}
 
@@ -288,13 +288,13 @@ export default function CanvasShell({ store, from }: Props) {
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="flex items-center gap-2 px-4 py-1.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 disabled:opacity-60 transition-all"
+          className="flex items-center gap-2 px-2.5 sm:px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 disabled:opacity-60 transition-all shadow-md"
         >
           {saved
-            ? <><Check className="w-4 h-4" /> Saved</>
+            ? <><Check className="w-4 h-4" /> <span className="hidden sm:inline">Saved</span></>
             : isSaving
-            ? <><Save className="w-4 h-4 animate-pulse" /> Saving…</>
-            : <><Save className="w-4 h-4" /> Save</>
+            ? <><Save className="w-4 h-4 animate-pulse" /> <span className="hidden sm:inline">Saving…</span></>
+            : <><Save className="w-4 h-4" /> <span className="hidden sm:inline">Save</span></>
           }
         </button>
       </header>
@@ -302,8 +302,21 @@ export default function CanvasShell({ store, from }: Props) {
       {/* ── Body ─────────────────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* Left sidebar */}
-        <aside className="w-72 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden">
+        {/* Preview */}
+        <main className="flex-1 overflow-auto bg-slate-100 flex justify-center p-6">
+          <div
+            className="bg-white shadow-xl rounded-2xl overflow-hidden self-start transition-all duration-300"
+            style={{
+              width: device === 'mobile' ? 390 : device === 'tablet' ? 768 : '100%',
+              minWidth: device === 'desktop' ? 960 : undefined,
+            }}
+          >
+            <StorePreview store={previewStore} device={device} />
+          </div>
+        </main>
+
+        {/* Right sidebar */}
+        <aside className="w-72 flex-shrink-0 bg-white border-l border-slate-200 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto">
 
             <Section icon={Layers} title="General" open={openSection === 'general'} onToggle={() => toggle('general')}>
@@ -313,17 +326,17 @@ export default function CanvasShell({ store, from }: Props) {
               <Field label="Accent Color"><ColorInput value={accentColor} onChange={setAccentColor} /></Field>
             </Section>
 
-            <Section icon={Type} title="Hero Section" open={openSection === 'hero'} onToggle={() => toggle('hero')}>
-              <Field label="Headline"><Textarea value={heroTitle} onChange={setHeroTitle} placeholder="Your bold headline" rows={2} /></Field>
-              <Field label="Subheadline"><Textarea value={heroSubtitle} onChange={setHeroSubtitle} placeholder="Supporting description" rows={3} /></Field>
-              <Field label="CTA Button"><Input value={ctaText} onChange={setCtaText} placeholder="Shop Now" /></Field>
-            </Section>
-
             <Section icon={Megaphone} title="Promo Bar" open={openSection === 'promoBar'} onToggle={() => toggle('promoBar')}>
               <Field label="Announcement">
                 <Input value={promoBar} onChange={setPromoBar} placeholder="🎉 Free shipping on orders over $50!" />
               </Field>
               <p className="text-xs text-slate-400">Leave empty to hide.</p>
+            </Section>
+
+            <Section icon={Type} title="Hero Section" open={openSection === 'hero'} onToggle={() => toggle('hero')}>
+              <Field label="Headline"><Textarea value={heroTitle} onChange={setHeroTitle} placeholder="Your bold headline" rows={2} /></Field>
+              <Field label="Subheadline"><Textarea value={heroSubtitle} onChange={setHeroSubtitle} placeholder="Supporting description" rows={3} /></Field>
+              <Field label="CTA Button"><Input value={ctaText} onChange={setCtaText} placeholder="Shop Now" /></Field>
             </Section>
 
             <Section icon={Sparkles} title="Features" open={openSection === 'features'} onToggle={() => toggle('features')}>
@@ -400,19 +413,6 @@ export default function CanvasShell({ store, from }: Props) {
             </div>
           )}
         </aside>
-
-        {/* Preview */}
-        <main className="flex-1 overflow-auto bg-slate-100 flex justify-center p-6">
-          <div
-            className="bg-white shadow-xl rounded-2xl overflow-hidden self-start transition-all duration-300"
-            style={{
-              width: device === 'mobile' ? 390 : device === 'tablet' ? 768 : '100%',
-              minWidth: device === 'desktop' ? 960 : undefined,
-            }}
-          >
-            <StorePreview store={previewStore} device={device} />
-          </div>
-        </main>
 
       </div>
     </div>
