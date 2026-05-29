@@ -434,7 +434,7 @@ export default function PreviewShell({ store, from = null }: Props) {
           title="Edit Store"
           className="relative w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200"
         >
-          <PenLine className="w-5 h-5 text-emerald-500" />
+          <PenLine className="w-5 h-5 text-slate-500" />
         </button>
       </div>
 
