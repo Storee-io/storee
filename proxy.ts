@@ -41,33 +41,35 @@ export async function proxy(request: NextRequest) {
 
   if (supabaseUrl && supabaseKey) {
     try {
-      // Supabase PostgREST requires OR filter wrapped in parentheses:
-      // ?or=(custom_domain.eq.val1,custom_domain.eq.val2)
-      const qs = `select=subdomain&limit=1&or=(custom_domain.eq.${encodeURIComponent(apex)},custom_domain.eq.${encodeURIComponent('www.' + apex)})`;
+      const qs = `select=subdomain&limit=1&custom_domain=eq.${encodeURIComponent(apex)}`;
+      const queryUrl = `${supabaseUrl}/rest/v1/published_stores?${qs}`;
 
-      const res = await fetch(
-        `${supabaseUrl}/rest/v1/published_stores?${qs}`,
-        {
-          headers: {
-            apikey: supabaseKey,
-            Authorization: `Bearer ${supabaseKey}`,
-            Accept: 'application/json',
-          },
-        }
-      );
+      console.log(`[proxy] custom domain lookup: ${apex} → ${queryUrl}`);
+
+      const res = await fetch(queryUrl, {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          Accept: 'application/json',
+        },
+      });
+
+      const body = await res.text();
+      console.log(`[proxy] supabase response ${res.status}: ${body}`);
 
       if (res.ok) {
-        const stores: Array<{ subdomain: string }> = await res.json();
+        const stores: Array<{ subdomain: string }> = JSON.parse(body);
         if (stores.length > 0 && stores[0].subdomain) {
           const slug = stores[0].subdomain;
           const url = request.nextUrl.clone();
           const originalPath = url.pathname;
           url.pathname = `/store/${slug}` + (originalPath === '/' ? '' : originalPath);
+          console.log(`[proxy] rewriting ${apex} → /store/${slug}`);
           return NextResponse.rewrite(url);
         }
       }
-    } catch {
-      // Supabase unreachable — fall through to normal routing
+    } catch (err) {
+      console.error(`[proxy] error:`, err);
     }
   }
 
