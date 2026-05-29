@@ -51,7 +51,7 @@ export default function PreviewShell({ store, from = null }: Props) {
   const handleScroll = useCallback(() => {
     setFabVisible(false);
     if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
-    scrollTimerRef.current = setTimeout(() => setFabVisible(true), 700);
+    scrollTimerRef.current = setTimeout(() => setFabVisible(true), 400);
   }, []);
 
   useEffect(() => {
@@ -415,7 +415,7 @@ export default function PreviewShell({ store, from = null }: Props) {
 
       {/* Floating Edit FAB — hides while scrolling, reappears on idle */}
       <div
-        className="fixed bottom-8 right-8 z-30 transition-all duration-300"
+        className="fixed bottom-8 right-8 z-30 transition-all duration-150"
         style={{
           opacity: fabVisible ? 1 : 0,
           transform: fabVisible ? 'scale(1)' : 'scale(0.75)',
