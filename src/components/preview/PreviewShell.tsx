@@ -348,7 +348,7 @@ export default function PreviewShell({ store, from = null }: Props) {
         <motion.div
           animate={{ width: device === 'desktop' ? '100%' : device === 'tablet' ? '768px' : '375px' }}
           transition={{ duration: 0.3 }}
-          className="relative max-w-full rounded-2xl"
+          className="max-w-full rounded-2xl"
           style={{
             minWidth: device === 'mobile' ? '375px' : undefined,
             boxShadow: '0 16px 48px -4px rgba(0,0,0,0.18), 0 6px 16px -2px rgba(0,0,0,0.10)',
@@ -395,19 +395,20 @@ export default function PreviewShell({ store, from = null }: Props) {
             <StorePreview store={liveStore} device={device} />
           </div>
 
-          {/* Floating Edit FAB */}
-          <div className="absolute bottom-6 right-6 z-20">
-            <button
-              onClick={() => router.push(`/canvas?from=${encodeURIComponent('/preview')}`)}
-              className="group flex items-center gap-2 pl-3 pr-4 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl hover:border-emerald-300 hover:text-emerald-700 transition-all duration-200"
-            >
-              <span className="w-7 h-7 rounded-xl gradient-bg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
-                <PenLine className="w-3.5 h-3.5 text-white" />
-              </span>
-              Edit
-            </button>
-          </div>
         </motion.div>
+      </div>
+
+      {/* Floating Edit FAB — fixed so always visible regardless of scroll */}
+      <div className="fixed bottom-8 right-8 z-30">
+        <button
+          onClick={() => router.push(`/canvas?from=${encodeURIComponent('/preview')}`)}
+          className="group flex items-center gap-2 pl-3 pr-4 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl hover:border-emerald-300 hover:text-emerald-700 transition-all duration-200"
+        >
+          <span className="w-7 h-7 rounded-xl gradient-bg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
+            <PenLine className="w-3.5 h-3.5 text-white" />
+          </span>
+          Edit
+        </button>
       </div>
 
       {/* Regenerate Modal */}
