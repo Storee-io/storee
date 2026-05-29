@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useSearchParams } from 'next/navigation';
 import { useStore } from '@/src/context/StoreContext';
 import CanvasShell from '@/src/components/canvas/CanvasShell';
