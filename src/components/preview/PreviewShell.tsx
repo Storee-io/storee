@@ -424,12 +424,10 @@ export default function PreviewShell({ store, from = null }: Props) {
       >
         <button
           onClick={() => router.push(`/canvas/${liveStore.id}?from=${encodeURIComponent(`/preview/${liveStore.id}`)}`)}
-          className="group flex items-center gap-2 pl-3 pr-4 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl hover:border-emerald-300 hover:text-emerald-700 transition-all duration-200"
+          className="group flex items-center gap-2 px-5 py-3 gradient-bg text-white text-sm font-bold rounded-2xl shadow-[0_8px_24px_rgba(16,185,129,0.45)] hover:shadow-[0_12px_32px_rgba(16,185,129,0.55)] hover:scale-105 active:scale-95 transition-all duration-200"
         >
-          <span className="w-7 h-7 rounded-xl gradient-bg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
-            <PenLine className="w-3.5 h-3.5 text-white" />
-          </span>
-          Edit
+          <PenLine className="w-4 h-4 flex-shrink-0 group-hover:rotate-[-8deg] transition-transform duration-200" />
+          Edit Store
         </button>
       </div>
 
