@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import {
-  Monitor, Tablet, Smartphone, ChevronDown, ChevronRight,
+  Monitor, Tablet, Smartphone, ChevronDown, ChevronRight, ChevronUp,
   Check, Save, Globe, ArrowLeft, Sparkles, Mail,
   BookOpen, Megaphone, Layers, Plus, Trash2,
   Star, HelpCircle, Type,
@@ -374,6 +374,7 @@ export default function CanvasShell({ store, from }: Props) {
       stats,
       sectionHeadings,
       footerNote: footerNote || undefined,
+      sectionOrder: sectionItems.map(i => i.type),
       // Override section order when designTokens exist
       ...(liveContextStore.design?.designTokens ? {
         designTokens: buildReorderedDesignTokens(),
@@ -412,6 +413,7 @@ export default function CanvasShell({ store, from }: Props) {
       stats,
       sectionHeadings,
       footerNote: footerNote || undefined,
+      sectionOrder: sectionItems.map(i => i.type),
       // Persist reordered sections
       ...(liveContextStore.design?.designTokens ? {
         designTokens: buildReorderedDesignTokens(),
@@ -619,7 +621,7 @@ export default function CanvasShell({ store, from }: Props) {
                 className="flex-1 overflow-y-auto"
               >
                 <div className="px-4 pt-4 pb-2">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Drag to reorder</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Drag or use ↑↓ to reorder</p>
                 </div>
                 <Reorder.Group
                   axis="y"
@@ -628,28 +630,40 @@ export default function CanvasShell({ store, from }: Props) {
                   className="px-3 pb-4 space-y-1.5"
                   as="div"
                 >
-                  {sectionItems.map((item) => {
+                  {sectionItems.map((item, idx) => {
                     const meta = SECTION_META[item.type];
                     if (!meta) return null;
                     const Icon = meta.icon;
+                    const moveUp = () => setSectionItems(prev => {
+                      if (idx === 0) return prev;
+                      const next = [...prev];
+                      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                      return next;
+                    });
+                    const moveDown = () => setSectionItems(prev => {
+                      if (idx === prev.length - 1) return prev;
+                      const next = [...prev];
+                      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+                      return next;
+                    });
                     return (
                       <Reorder.Item
                         key={item.type}
                         value={item}
                         as="div"
-                        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${
+                        className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${
                           item.hasContent
                             ? 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-sm'
                             : 'bg-slate-50 border-slate-100 opacity-50'
                         }`}
                         whileDrag={{ scale: 1.02, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}
                       >
-                        <GripVertical className="w-4 h-4 text-slate-300 flex-shrink-0" />
+                        <GripVertical className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
                         <div
-                          className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                          className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
                           style={{ background: item.hasContent ? 'rgba(16,185,129,0.1)' : 'rgba(148,163,184,0.1)' }}
                         >
-                          <Icon className="w-3.5 h-3.5" style={{ color: item.hasContent ? '#10b981' : '#94a3b8' }} />
+                          <Icon className="w-3 h-3" style={{ color: item.hasContent ? '#10b981' : '#94a3b8' }} />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-semibold text-slate-700 truncate">{meta.label}</p>
@@ -657,11 +671,31 @@ export default function CanvasShell({ store, from }: Props) {
                             <p className="text-[10px] text-slate-400 truncate">{meta.editHint}</p>
                           )}
                         </div>
+                        {/* ↑↓ step buttons */}
+                        <div className="flex flex-col gap-0.5 flex-shrink-0" onPointerDown={e => e.stopPropagation()}>
+                          <button
+                            onClick={moveUp}
+                            disabled={idx === 0}
+                            title="Move up"
+                            className="w-5 h-5 flex items-center justify-center rounded text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <ChevronUp className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={moveDown}
+                            disabled={idx === sectionItems.length - 1}
+                            title="Move down"
+                            className="w-5 h-5 flex items-center justify-center rounded text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <ChevronDown className="w-3 h-3" />
+                          </button>
+                        </div>
                         {item.hasContent ? (
                           <button
                             onClick={() => scrollToSection(item.type)}
                             title="Scroll to section"
                             className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 transition-colors flex-shrink-0"
+                            onPointerDown={e => e.stopPropagation()}
                           >
                             <ChevronRight className="w-3.5 h-3.5" />
                           </button>
