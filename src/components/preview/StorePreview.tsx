@@ -7754,15 +7754,35 @@ interface StorePreviewProps {
   device: DeviceMode;
   editMode?: boolean;
   onFieldChange?: (field: string, value: string) => void;
+  onPageChange?: (path: string) => void;
 }
 
-export default function StorePreview({ store, device, editMode, onFieldChange }: StorePreviewProps) {
+export default function StorePreview({ store, device, editMode, onFieldChange, onPageChange }: StorePreviewProps) {
   const [page, setPage] = useState<StorePage>('home');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<RichProduct | null>(null);
   const [orderNum] = useState(() => `ORD-${Math.floor(100000 + Math.random() * 900000)}`);
   const [selectedShippingId, setSelectedShippingId] = useState('');
   const [selectedPaymentId, setSelectedPaymentId] = useState('');
+
+  // Notify parent of page/path changes for URL bar
+  useEffect(() => {
+    if (!onPageChange) return;
+    const paths: Record<string, string> = {
+      home: '/',
+      cart: '/cart',
+      checkout: '/checkout',
+      success: '/checkout/success',
+      wishlist: '/wishlist',
+      myorders: '/my-orders',
+    };
+    if (page === 'product' && selectedProduct) {
+      const slug = selectedProduct.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      onPageChange(`/product/${slug}`);
+    } else {
+      onPageChange(paths[page] ?? '/');
+    }
+  }, [page, selectedProduct, onPageChange]);
 
   // Buyer auth state
   const [buyerUser, setBuyerUser] = useState<BuyerUser | null>(null);

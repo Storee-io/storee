@@ -38,6 +38,7 @@ interface Props {
 
 export default function PreviewShell({ store, from = null }: Props) {
   const [device, setDevice] = useState<DeviceMode>('desktop');
+  const [currentPath, setCurrentPath] = useState('/');
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [showUnpublishModal, setShowUnpublishModal] = useState(false);
   const [showRegenModal, setShowRegenModal] = useState(false);
@@ -387,8 +388,8 @@ export default function PreviewShell({ store, from = null }: Props) {
                 <Globe className={`w-3.5 h-3.5 flex-shrink-0 ${isPublished ? 'text-slate-400' : 'text-slate-300'}`} />
                 <span className={`text-xs font-mono truncate ${isPublished ? 'text-slate-500' : 'text-slate-400'}`}>
                   {isPublished
-                    ? `https://${liveStore.publishedDomain ?? liveStore.domain}`
-                    : 'https://****.storee.io'}
+                    ? `https://${liveStore.publishedDomain ?? liveStore.domain}${currentPath === '/' ? '' : currentPath}`
+                    : `https://****.storee.io${currentPath === '/' ? '' : currentPath}`}
                 </span>
                 {isPublished ? (
                   /* Live — green dot */
@@ -413,7 +414,7 @@ export default function PreviewShell({ store, from = null }: Props) {
             to the real viewport.
           */}
           <div className="rounded-b-2xl overflow-hidden" style={{ transform: 'translateZ(0)' }}>
-            <StorePreview store={liveStore} device={device} />
+            <StorePreview store={liveStore} device={device} onPageChange={setCurrentPath} />
           </div>
 
         </motion.div>
