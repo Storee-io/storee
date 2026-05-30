@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import StorePreview from '@/src/components/preview/StorePreview';
 import type { Store } from '@/src/context/StoreContext';
 import type { DeviceMode } from '@/src/components/preview/StorePreview';
@@ -21,12 +22,29 @@ function useDeviceMode(): DeviceMode {
   return device;
 }
 
-export default function StorefrontClient({ store }: { store: Store }) {
+export default function StorefrontClient({
+  store,
+  initialPath = '/',
+}: {
+  store: Store;
+  initialPath?: string;
+}) {
   const device = useDeviceMode();
+  const router = useRouter();
+
+  // Use Next.js router.push for real page transitions (SSR per page)
+  const handlePageChange = useCallback((path: string) => {
+    router.push(path);
+  }, [router]);
 
   return (
     <div className="min-h-screen">
-      <StorePreview store={store} device={device} />
+      <StorePreview
+        store={store}
+        device={device}
+        onPageChange={handlePageChange}
+        initialPath={initialPath}
+      />
     </div>
   );
 }

@@ -1095,16 +1095,17 @@ function PhoneCountrySelect({ selectedCode, onChangeCode, t }: {
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 260 });
   const btnRef = useRef<HTMLButtonElement>(null);
 
   const selected = COUNTRY_CODES.find(c => c.code === selectedCode) ?? COUNTRY_CODES[0];
   const q = search.trim().toLowerCase();
+  const digitQ = q.replace(/\D/g, '');
   const filtered = !q
     ? COUNTRY_CODES
     : COUNTRY_CODES.filter(c =>
         c.name.toLowerCase().includes(q) ||
-        c.dial.startsWith(q.replace(/\D/g, ''))
+        (digitQ.length > 0 && c.dial.startsWith(digitQ))
       );
 
   // Outside click
@@ -1123,8 +1124,10 @@ function PhoneCountrySelect({ selectedCode, onChangeCode, t }: {
 
   const updatePos = () => {
     if (btnRef.current) {
-      const r = btnRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 4, left: r.left });
+      // Measure the WhatsApp field container (grandparent of button)
+      const container = btnRef.current.parentElement?.parentElement ?? btnRef.current;
+      const r = container.getBoundingClientRect();
+      setPos({ top: r.bottom, left: r.left, width: r.width });
     }
   };
 
@@ -1164,34 +1167,34 @@ function PhoneCountrySelect({ selectedCode, onChangeCode, t }: {
 
       {open && typeof window !== 'undefined' && createPortal(
         <div data-pcd="1" style={{
-          position: 'fixed', top: pos.top, left: pos.left, width: 260, zIndex: 99999,
-          background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: 12,
+          position: 'fixed', top: pos.top, left: pos.left, width: pos.width, zIndex: 99999,
+          background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '0 0 12px 12px',
           boxShadow: '0 8px 32px rgba(0,0,0,0.18)', overflow: 'hidden', fontFamily: t.fontFamily,
         }}>
-          <div style={{ padding: 8, borderBottom: `1px solid ${t.divider}` }}>
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder="Cari negara atau kode…"
-              style={{
-                width: '100%', padding: '6px 10px', fontSize: 12, outline: 'none', borderRadius: 8,
-                background: t.inputBg, border: `1px solid ${t.inputBorder}`, color: t.textPrimary,
-                boxSizing: 'border-box', fontFamily: t.fontFamily,
-              }}
-            />
-          </div>
+          <input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Cari negara atau kode…"
+            style={{
+              display: 'block', width: '100%', padding: '10px 12px', fontSize: 12, outline: 'none',
+              background: t.inputBg, border: 'none', borderBottom: `1px solid ${t.divider}`,
+              color: t.textPrimary, boxSizing: 'border-box', fontFamily: t.fontFamily,
+            }}
+          />
           <div style={{ overflowY: 'auto', maxHeight: 200 }}>
             {filtered.length === 0
               ? <p style={{ fontSize: 12, textAlign: 'center', padding: '16px 0', color: t.textMuted }}>Tidak ditemukan</p>
               : filtered.map(c => (
                 <button key={c.code} type="button"
                   onMouseDown={e => { e.preventDefault(); onChangeCode(c.code); setOpen(false); setSearch(''); }}
+                  onMouseEnter={e => { if (c.code !== selectedCode) (e.currentTarget as HTMLElement).style.background = alpha(t.primary, 0.05); }}
+                  onMouseLeave={e => { if (c.code !== selectedCode) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', gap: 10,
                     padding: '8px 12px', fontSize: 12, textAlign: 'left', cursor: 'pointer',
                     border: 'none', outline: 'none', fontFamily: t.fontFamily,
                     background: c.code === selectedCode ? alpha(t.primary, 0.08) : 'transparent',
-                    color: t.textPrimary,
+                    color: t.textPrimary, transition: 'background 0.1s',
                   }}
                 >
                   <span style={{ flexShrink: 0, fontWeight: 600, color: t.textMuted, minWidth: 36 }}>+{c.dial}</span>
@@ -8164,12 +8167,45 @@ interface StorePreviewProps {
   editMode?: boolean;
   onFieldChange?: (field: string, value: string) => void;
   onPageChange?: (path: string) => void;
+  initialPath?: string;
 }
 
-export default function StorePreview({ store, device, editMode, onFieldChange, onPageChange }: StorePreviewProps) {
-  const [page, setPage] = useState<StorePage>('home');
+// ── Store page routing ────────────────────────────────────────────────────────
+// Single source of truth for page ↔ URL path mapping.
+// To add a new store page:
+//   1. Add the StorePage type below (search for "type StorePage")
+//   2. Add the entry here: 'pageName': '/url-path'
+//   3. Render the page in the StorePreview return (search for "page === 'pageName'")
+//   Everything else (URL update, deep-link, SSR via catch-all) works automatically.
+const STORE_PAGE_PATHS: Partial<Record<StorePage, string>> = {
+  home:     '/',
+  cart:     '/cart',
+  checkout: '/checkout',
+  success:  '/checkout/success',
+  wishlist: '/wishlist',
+  myorders: '/my-orders',
+  // product: handled separately via /product/[slug]
+};
+
+function pathToStorePage(path: string): StorePage {
+  if (path.startsWith('/product/')) return 'product';
+  const entry = Object.entries(STORE_PAGE_PATHS).find(([, p]) => p === path);
+  return (entry?.[0] as StorePage | undefined) ?? 'home';
+}
+
+export default function StorePreview({ store, device, editMode, onFieldChange, onPageChange, initialPath }: StorePreviewProps) {
+  const [page, setPage] = useState<StorePage>(() => pathToStorePage(initialPath ?? '/'));
   const [showCartSidebar, setShowCartSidebar] = useState(false);
-  const [cart, setCart] = useState<CartItem[]>([]);
+
+  // Persist cart in localStorage so it survives Next.js page navigations
+  const cartKey = `storee_cart_${store.id}`;
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try { return JSON.parse(localStorage.getItem(cartKey) ?? '[]'); } catch { return []; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(cartKey, JSON.stringify(cart)); } catch {}
+  }, [cart, cartKey]);
   const [selectedProduct, setSelectedProduct] = useState<RichProduct | null>(null);
   const [orderNum] = useState(() => `ORD-${Math.floor(100000 + Math.random() * 900000)}`);
   const [selectedShippingId, setSelectedShippingId] = useState('');
@@ -8180,22 +8216,14 @@ export default function StorePreview({ store, device, editMode, onFieldChange, o
     if (page === 'cart' || page === 'checkout') setShowCartSidebar(false);
   }, [page]);
 
-  // Notify parent of page/path changes for URL bar
+  // Notify parent of page/path changes — uses STORE_PAGE_PATHS as single source of truth
   useEffect(() => {
     if (!onPageChange) return;
-    const paths: Record<string, string> = {
-      home: '/',
-      cart: '/cart',
-      checkout: '/checkout',
-      success: '/checkout/success',
-      wishlist: '/wishlist',
-      myorders: '/my-orders',
-    };
     if (page === 'product' && selectedProduct) {
       const slug = selectedProduct.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
       onPageChange(`/product/${slug}`);
     } else {
-      onPageChange(paths[page] ?? '/');
+      onPageChange(STORE_PAGE_PATHS[page] ?? '/');
     }
   }, [page, selectedProduct, onPageChange]);
 

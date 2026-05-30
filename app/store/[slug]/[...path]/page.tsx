@@ -1,0 +1,62 @@
+import { notFound } from 'next/navigation';
+import { createServerClient } from '@/src/lib/supabase';
+import StorefrontClient from '../StorefrontClient';
+import StoreInactive from '../StoreInactive';
+import type { Store } from '@/src/context/StoreContext';
+
+interface Props {
+  params: Promise<{ slug: string; path: string[] }>;
+}
+
+export async function generateMetadata({ params }: Props) {
+  const { slug } = await params;
+  const db = createServerClient();
+  const { data } = await db
+    .from('published_stores')
+    .select('name, status')
+    .eq('subdomain', slug)
+    .maybeSingle();
+
+  if (!data) return { title: 'Store Not Found' };
+  if (data.status === 'inactive') return { title: `${data.name} – Currently Unavailable` };
+  return { title: data.name };
+}
+
+export default async function StorefrontPathPage({ params }: Props) {
+  const { slug, path } = await params;
+  const db = createServerClient();
+
+  const { data, error } = await db
+    .from('published_stores')
+    .select('*')
+    .eq('subdomain', slug)
+    .maybeSingle();
+
+  if (!data || error) notFound();
+
+  if (data.status === 'inactive') {
+    return <StoreInactive name={data.name} />;
+  }
+
+  const store: Store = {
+    id: data.id,
+    name: data.name,
+    domain: `${slug}.storee.io`,
+    status: 'Published',
+    primaryColor: data.primary_color,
+    createdAt: data.created_at,
+    category: data.category,
+    revenue: 0,
+    orders: 0,
+    design: data.design ?? undefined,
+    currency: data.currency ?? undefined,
+    language: data.language ?? undefined,
+    font: data.font ?? undefined,
+    mood: data.mood ?? undefined,
+    audience: data.audience ?? undefined,
+  };
+
+  const initialPath = '/' + path.join('/');
+
+  return <StorefrontClient store={store} initialPath={initialPath} />;
+}
