@@ -938,6 +938,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [form, setForm] = useState({ email: '', whatsapp: '', name: '', address: '', city: '', province: '', postal: '' });
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
+  const showAddressFields = form.name.trim().length > 0 && form.whatsapp.trim().length > 0 && form.email.trim().length > 0;
 
   const enabledPayments = (paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS).filter(m => m.enabled);
   const paymentMethods: PaymentMethod[] = enabledPayments.length > 0 ? enabledPayments : [
@@ -989,13 +990,10 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Customer Details</h3>
             </div>
             <div className="p-5 grid grid-cols-2 gap-3">
+              {/* Always visible: Name, WhatsApp, Email */}
               <div className="col-span-2">
                 <label style={lblStyle}>Full Name</label>
                 <input className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.name} onChange={set('name')} placeholder="Recipient full name" />
-              </div>
-              <div>
-                <label style={lblStyle}>Email</label>
-                <input type="email" className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.email} onChange={set('email')} placeholder="name@email.com" />
               </div>
               <div>
                 <label style={lblStyle}>WhatsApp</label>
@@ -1004,40 +1002,60 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   <input type="tel" className="flex-1 px-3 py-2.5 text-sm outline-none" style={{ background: t.inputBg, color: t.textPrimary }} value={form.whatsapp} onChange={set('whatsapp')} placeholder="81234567890" />
                 </div>
               </div>
-              <div className="col-span-2">
-                <label style={lblStyle}>Full Address</label>
-                <textarea
-                  className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent resize-none"
-                  style={{ ...inpStyle, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}
-                  rows={2}
-                  value={form.address}
-                  onChange={set('address')}
-                  placeholder="Street name, number, district, subdistrict"
-                />
-              </div>
               <div>
-                <label style={lblStyle}>City</label>
-                <input className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.city} onChange={set('city')} placeholder="City" />
+                <label style={lblStyle}>Email</label>
+                <input type="email" className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.email} onChange={set('email')} placeholder="name@email.com" />
               </div>
-              <div>
-                <label style={lblStyle}>Postal Code</label>
-                <input className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.postal} onChange={set('postal')} placeholder="12345" maxLength={5} />
-              </div>
-              <div className="col-span-2">
-                <label style={lblStyle}>Province</label>
-                <div className="relative">
-                  <select
-                    value={form.province}
-                    onChange={set('province')}
-                    className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent appearance-none pr-8"
-                    style={{ ...inpStyle, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}
+
+              {/* Revealed after name + whatsapp + email are filled */}
+              <AnimatePresence>
+                {showAddressFields && (
+                  <motion.div
+                    key="address-fields"
+                    className="col-span-2 grid grid-cols-2 gap-3"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25, ease: 'easeOut' }}
+                    style={{ overflow: 'hidden' }}
                   >
-                    <option value="">Select province...</option>
-                    {INDONESIAN_PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: t.textMuted }} />
-                </div>
-              </div>
+                    <div className="col-span-2">
+                      <label style={lblStyle}>Full Address</label>
+                      <textarea
+                        className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent resize-none"
+                        style={{ ...inpStyle, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}
+                        rows={2}
+                        value={form.address}
+                        onChange={set('address')}
+                        placeholder="Street name, number, district, subdistrict"
+                      />
+                    </div>
+                    <div>
+                      <label style={lblStyle}>City</label>
+                      <input className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.city} onChange={set('city')} placeholder="City" />
+                    </div>
+                    <div>
+                      <label style={lblStyle}>Postal Code</label>
+                      <input className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.postal} onChange={set('postal')} placeholder="12345" maxLength={5} />
+                    </div>
+                    <div className="col-span-2">
+                      <label style={lblStyle}>Province</label>
+                      <div className="relative">
+                        <select
+                          value={form.province}
+                          onChange={set('province')}
+                          className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent appearance-none pr-8"
+                          style={{ ...inpStyle, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}
+                        >
+                          <option value="">Select province...</option>
+                          {INDONESIAN_PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: t.textMuted }} />
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
