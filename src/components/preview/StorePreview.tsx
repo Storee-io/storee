@@ -712,9 +712,10 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', stiffness: 380, damping: 38 }}
-        className="absolute inset-y-0 right-0 z-50 flex flex-col shadow-2xl"
+        className="absolute top-0 right-0 z-50 flex flex-col shadow-2xl"
         style={{
           width: isMobile ? '100%' : '300px',
+          height: '100vh',
           background: t.surfaceBg,
           fontFamily: t.fontFamily,
           borderLeft: `1px solid ${t.surfaceBorder}`,
