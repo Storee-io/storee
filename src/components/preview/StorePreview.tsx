@@ -968,10 +968,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
 
   return (
     <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
-      <header className="px-5 h-14 flex items-center justify-between sticky top-0 z-40 shadow-sm" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
-        <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium transition-colors" style={{ color: t.textSecondary }}><ArrowLeft className="w-4 h-4" /> Cart</button>
-        <span className="text-sm font-bold" style={{ color: t.textPrimary }}>{storeName}</span>
-        <div className="w-28" />
+      <header className="px-5 h-14 flex items-center sticky top-0 z-40 shadow-sm" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
+        <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium transition-colors z-10" style={{ color: t.textSecondary }}><ArrowLeft className="w-4 h-4" /> Cart</button>
+        <span className="absolute left-1/2 -translate-x-1/2 text-sm font-bold pointer-events-none" style={{ color: t.textPrimary }}>{storeName}</span>
       </header>
 
       {/* Progress bar */}
