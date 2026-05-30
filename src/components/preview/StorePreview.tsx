@@ -4051,7 +4051,7 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts, 
       >
         {tagline && (
           <motion.p variants={heroItem} className="text-xs font-semibold uppercase tracking-[0.3em] mb-4" style={{ color: alpha(primaryColor, 0.9) }}>
-            {collections[0]?.emoji} {tagline}
+            {collections[0]?.emoji} <EditSpan field="tagline" value={tagline} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </motion.p>
         )}
         {heroProps.accentLine && <motion.div variants={heroItem} style={{ width: '40px', height: '3px', background: primaryColor, marginBottom: '16px' }} />}
@@ -4111,7 +4111,7 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
         <motion.div variants={heroStagger} initial="hidden" animate="visible">
           {tagline && (
             <motion.p variants={heroItem} className="text-[10px] font-bold uppercase tracking-[0.3em] mb-5" style={{ color: primaryColor }}>
-              {collections[0]?.emoji} {tagline}
+              {collections[0]?.emoji} <EditSpan field="tagline" value={tagline} editMode={editMode} onFieldChange={onFieldChange} singleLine />
             </motion.p>
           )}
           {heroProps.accentLine && <motion.div variants={heroItem} style={{ width: '40px', height: '3px', background: primaryColor, marginBottom: '16px' }} />}
@@ -4175,9 +4175,10 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
 
 // ── Hero: FULLSCREEN ──────────────────────────────────────────────────────────
 
-function TkHeroFullscreen({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
+function TkHeroFullscreen({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onScrollToProducts: () => void; heroProps?: HeroP;
+  editMode?: boolean; onFieldChange?: (f: string, v: string) => void;
 }) {
   const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
   const isMobile = device === 'mobile';
@@ -4192,18 +4193,19 @@ function TkHeroFullscreen({ design, tt, primaryColor, device, onScrollToProducts
       <div className="relative z-10 flex flex-col justify-end h-full px-8 pb-16">
         {tagline && (
           <p className="text-xs font-semibold uppercase tracking-[0.35em] mb-4" style={{ color: primaryColor }}>
-            {tagline}
+            <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </p>
         )}
         <h1 className="mb-5 text-white" style={heroHeadingStyle(tt, 5.5, 3.2, heroProps.headlineSize, isMobile)}>
-          {heroTitle}
+          <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
         </h1>
         <p className="mb-8 max-w-md" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: 'rgba(255,255,255,0.75)' }}>
-          {heroSubtitle}
+          <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
         </p>
         {heroProps.accentLine && <div style={{ width: '40px', height: '3px', background: primaryColor, marginBottom: '16px' }} />}
-        <button onClick={onScrollToProducts} className="w-fit px-8 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={ctaStyleObj}>
-          {ctaText} <ArrowRight className="w-4 h-4 inline ml-1" />
+        <button onClick={editMode ? undefined : onScrollToProducts} className="w-fit px-8 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={ctaStyleObj}>
+          <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          {!editMode && <ArrowRight className="w-4 h-4 inline ml-1" />}
         </button>
       </div>
     </section>
@@ -4212,9 +4214,10 @@ function TkHeroFullscreen({ design, tt, primaryColor, device, onScrollToProducts
 
 // ── Hero: MINIMAL ─────────────────────────────────────────────────────────────
 
-function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
+function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onScrollToProducts: () => void; heroProps?: HeroP;
+  editMode?: boolean; onFieldChange?: (f: string, v: string) => void;
 }) {
   const { heroTitle, heroSubtitle, ctaText, tagline, collections = [] } = design;
   const isMobile = device === 'mobile';
@@ -4231,18 +4234,19 @@ function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts, h
       <div className="relative z-10 max-w-3xl mx-auto px-5" style={{ padding: isMobile ? '56px 20px' : '80px 40px', textAlign }}>
         {tagline && (
           <p className="text-[10px] font-bold uppercase tracking-[0.35em] mb-5" style={{ color: primaryColor }}>
-            {collections[0]?.emoji} {tagline}
+            {collections[0]?.emoji} <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </p>
         )}
         {heroProps.accentLine && <div style={{ width: '40px', height: '3px', background: primaryColor, marginBottom: '16px', margin: textAlign === 'center' ? '0 auto 16px' : '0 0 16px' }} />}
         <h1 className="mb-5" style={{ ...heroHeadingStyle(tt, 3.6, 2.2, heroProps.headlineSize, isMobile), color: tt.textPrimary }}>
-          {heroTitle}
+          <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
         </h1>
         <p className="mb-8 max-w-xl mx-auto" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>
-          {heroSubtitle}
+          <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
         </p>
-        <button onClick={onScrollToProducts} className="px-8 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={ctaStyleObj}>
-          {ctaText}{heroProps.ctaStyle === 'text' && <ArrowRight className="w-3.5 h-3.5 inline ml-1" />}
+        <button onClick={editMode ? undefined : onScrollToProducts} className="px-8 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity" style={ctaStyleObj}>
+          <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          {!editMode && heroProps.ctaStyle === 'text' && <ArrowRight className="w-3.5 h-3.5 inline ml-1" />}
         </button>
       </div>
     </section>
@@ -4252,9 +4256,10 @@ function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts, h
 // ── Hero: EDITORIAL ───────────────────────────────────────────────────────────
 // Magazine-style: giant background text, product image floats on top, off-grid
 
-function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
+function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onScrollToProducts: () => void; heroProps?: HeroP;
+  editMode?: boolean; onFieldChange?: (f: string, v: string) => void;
 }) {
   const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
   const isMobile = device === 'mobile';
@@ -4294,12 +4299,12 @@ function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts,
         /* Mobile: stacked */
         <div className="relative z-10 flex flex-col px-6 pt-16 pb-10 gap-8">
           <div>
-            {tagline && <p className="text-[10px] uppercase tracking-[0.35em] mb-4" style={{ color: primaryColor }}>{tagline}</p>}
+            {tagline && <p className="text-[10px] uppercase tracking-[0.35em] mb-4" style={{ color: primaryColor }}><EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></p>}
             <h1 style={{ ...heroHeadingStyle(tt, 2.6, 2.6, heroProps.headlineSize, isMobile), color: tt.textPrimary }}>
               {bigWord}<br /><span style={{ color: primaryColor }}>{restWords}</span>
             </h1>
-            <p className="mt-4 mb-6" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>{heroSubtitle}</p>
-            <button onClick={onScrollToProducts} className="px-7 py-3 text-sm font-bold" style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>{ctaText}</button>
+            <p className="mt-4 mb-6" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}><EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} /></p>
+            <button onClick={editMode ? undefined : onScrollToProducts} className="px-7 py-3 text-sm font-bold" style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}><EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></button>
           </div>
           {products[0] && (
             <div className="relative mx-auto w-56">
@@ -4319,17 +4324,17 @@ function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts,
         <div className="relative z-10 grid grid-cols-[1fr_1.2fr] max-w-6xl mx-auto px-10 gap-0" style={{ minHeight: '88vh', alignItems: 'center' }}>
           {/* Text col */}
           <div className="pr-8">
-            {tagline && <p className="text-[10px] uppercase tracking-[0.4em] mb-6" style={{ color: primaryColor }}>{tagline}</p>}
+            {tagline && <p className="text-[10px] uppercase tracking-[0.4em] mb-6" style={{ color: primaryColor }}><EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></p>}
             <h1 style={{ ...heroHeadingStyle(tt, 5.0, 2.6, heroProps.headlineSize, isMobile), color: tt.textPrimary }}>
               {bigWord}<br />
               <span style={{ color: primaryColor }}>{restWords}</span>
             </h1>
             <div style={{ width: '48px', height: '3px', background: primaryColor, margin: '24px 0' }} />
-            <p className="mb-8 max-w-xs" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>{heroSubtitle}</p>
+            <p className="mb-8 max-w-xs" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}><EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} /></p>
             <div className="flex items-center gap-4">
-              <button onClick={onScrollToProducts} className="px-8 py-3.5 text-sm font-bold transition-opacity hover:opacity-85"
-                style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>{ctaText}</button>
-              <button onClick={onScrollToProducts} className="text-xs font-semibold flex items-center gap-1 hover:opacity-60 transition-opacity" style={{ color: tt.textMuted }}>
+              <button onClick={editMode ? undefined : onScrollToProducts} className="px-8 py-3.5 text-sm font-bold transition-opacity hover:opacity-85"
+                style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}><EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></button>
+              <button onClick={editMode ? undefined : onScrollToProducts} className="text-xs font-semibold flex items-center gap-1 hover:opacity-60 transition-opacity" style={{ color: tt.textMuted }}>
                 View collection <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -4363,9 +4368,10 @@ function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts,
 // ── Hero: VIDEO ───────────────────────────────────────────────────────────────
 // Cinematic dark hero — simulated video with animated gradient + product image
 
-function TkHeroVideo({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
+function TkHeroVideo({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onScrollToProducts: () => void; heroProps?: HeroP;
+  editMode?: boolean; onFieldChange?: (f: string, v: string) => void;
 }) {
   const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
   const isMobile = device === 'mobile';
@@ -4411,20 +4417,20 @@ function TkHeroVideo({ design, tt, primaryColor, device, onScrollToProducts, her
         {tagline && (
           <div className="flex items-center gap-2 mb-5">
             <div style={{ width: '24px', height: '2px', background: pc }} />
-            <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/70">{tagline}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/70"><EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></p>
           </div>
         )}
         <h1 className="mb-5 text-white" style={heroHeadingStyle(tt, 6.0, 3.5, heroProps.headlineSize, isMobile)}>
-          {heroTitle}
+          <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
         </h1>
         <p className="mb-8 max-w-sm" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)' }}>
-          {heroSubtitle}
+          <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
         </p>
         <div className="flex items-center gap-5">
-          <button onClick={onScrollToProducts}
+          <button onClick={editMode ? undefined : onScrollToProducts}
             className="px-8 py-3.5 text-sm font-bold transition-all hover:opacity-90 active:scale-95"
             style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: tt.btnRadius }}>
-            {ctaText}
+            <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </button>
           {/* Play button */}
           <button className="flex items-center gap-3 text-white/70 hover:text-white transition-colors">
@@ -4443,9 +4449,10 @@ function TkHeroVideo({ design, tt, primaryColor, device, onScrollToProducts, her
 // ── Hero: STACKED ─────────────────────────────────────────────────────────────
 // Mood-board: 3 product images stacked/rotated, text alongside
 
-function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
+function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onScrollToProducts: () => void; heroProps?: HeroP;
+  editMode?: boolean; onFieldChange?: (f: string, v: string) => void;
 }) {
   const { heroTitle, heroSubtitle, ctaText, products = [], tagline, collections = [] } = design;
   const isMobile = device === 'mobile';
@@ -4466,18 +4473,18 @@ function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts, h
         <div className={isMobile ? 'order-2' : ''}>
           {tagline && (
             <p className="text-[10px] font-bold uppercase tracking-[0.35em] mb-5" style={{ color: primaryColor }}>
-              {collections[0]?.emoji} {tagline}
+              {collections[0]?.emoji} <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
             </p>
           )}
           <h1 className="mb-5" style={{ ...heroHeadingStyle(tt, 3.8, 2.4, heroProps.headlineSize, isMobile), color: tt.textPrimary }}>
-            {heroTitle}
+            <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </h1>
-          <p className="mb-8 max-w-sm" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}>{heroSubtitle}</p>
+          <p className="mb-8 max-w-sm" style={{ ...bodyStyle(tt), fontSize: '0.875rem', color: tt.textSecondary }}><EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} /></p>
           <div className="flex flex-wrap items-center gap-4">
-            <button onClick={onScrollToProducts}
+            <button onClick={editMode ? undefined : onScrollToProducts}
               className="px-7 py-3.5 text-sm font-bold transition-all hover:opacity-90 active:scale-95"
               style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>
-              {ctaText}
+              <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
             </button>
             {/* Collection pills */}
             {collections.slice(0, 2).map(c => (
@@ -4520,9 +4527,10 @@ function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts, h
 // ── Hero: ASYMMETRICAL ────────────────────────────────────────────────────────
 // ZARA/luxury: image bleeds edge-to-edge on left, slim text column on right
 
-function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
+function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onScrollToProducts: () => void; heroProps?: HeroP;
+  editMode?: boolean; onFieldChange?: (f: string, v: string) => void;
 }) {
   const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
   const isMobile = device === 'mobile';
@@ -4540,11 +4548,11 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
           </div>
         )}
         <div className="relative z-10 absolute bottom-0 left-0 right-0 px-6 pb-10">
-          {tagline && <p className="text-[9px] uppercase tracking-[0.35em] mb-3 text-white/60">{tagline}</p>}
-          <h1 className="mb-3 text-white" style={heroHeadingStyle(tt, 2.6, 2.6, heroProps.headlineSize, isMobile)}>{heroTitle}</h1>
-          <p className="text-xs mb-5 max-w-xs" style={{ ...bodyStyle(tt), color: 'rgba(255,255,255,0.65)' }}>{heroSubtitle}</p>
-          <button onClick={onScrollToProducts} className="px-6 py-3 text-xs font-bold uppercase tracking-wider"
-            style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>{ctaText}</button>
+          {tagline && <p className="text-[9px] uppercase tracking-[0.35em] mb-3 text-white/60"><EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></p>}
+          <h1 className="mb-3 text-white" style={heroHeadingStyle(tt, 2.6, 2.6, heroProps.headlineSize, isMobile)}><EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h1>
+          <p className="text-xs mb-5 max-w-xs" style={{ ...bodyStyle(tt), color: 'rgba(255,255,255,0.65)' }}><EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} /></p>
+          <button onClick={editMode ? undefined : onScrollToProducts} className="px-6 py-3 text-xs font-bold uppercase tracking-wider"
+            style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}><EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></button>
         </div>
       </section>
     );
@@ -4573,16 +4581,16 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
       {/* Text column — slim, vertical centering */}
       <div className="flex flex-col justify-center px-12 flex-1" style={{ minWidth: 0 }}>
         {tagline && (
-          <p className="text-[9px] uppercase tracking-[0.5em] mb-8" style={{ color: tt.textMuted }}>{tagline}</p>
+          <p className="text-[9px] uppercase tracking-[0.5em] mb-8" style={{ color: tt.textMuted }}><EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></p>
         )}
         <h1 className="mb-6" style={{ ...heroHeadingStyle(tt, 3.6, 2.6, heroProps.headlineSize, isMobile), color: tt.textPrimary, fontSize: 'clamp(2rem, 4vw, 5rem)' }}>
-          {heroTitle}
+          <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
         </h1>
         <div style={{ width: '32px', height: '2px', background: primaryColor, marginBottom: '20px' }} />
-        <p className="mb-10 text-xs" style={{ ...bodyStyle(tt), color: tt.textSecondary, maxWidth: '28ch' }}>{heroSubtitle}</p>
-        <button onClick={onScrollToProducts}
+        <p className="mb-10 text-xs" style={{ ...bodyStyle(tt), color: tt.textSecondary, maxWidth: '28ch' }}><EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} /></p>
+        <button onClick={editMode ? undefined : onScrollToProducts}
           className="w-fit px-8 py-3.5 text-xs font-black uppercase tracking-widest transition-all hover:opacity-85"
-          style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>{ctaText}</button>
+          style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}><EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></button>
         {/* Scroll hint */}
         <div className="mt-auto pt-12 flex items-center gap-2">
           <div style={{ width: '20px', height: '1px', background: tt.divider }} />
@@ -4595,9 +4603,10 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
 
 // ── Hero: CINEMATIC ───────────────────────────────────────────────────────────
 
-function TkHeroCinematic({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
+function TkHeroCinematic({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onScrollToProducts: () => void; heroProps?: HeroP;
+  editMode?: boolean; onFieldChange?: (f: string, v: string) => void;
 }) {
   const { heroTitle, heroSubtitle, ctaText, products = [], tagline } = design;
   const isMobile = device === 'mobile';
@@ -4616,15 +4625,15 @@ function TkHeroCinematic({ design, tt, primaryColor, device, onScrollToProducts,
       <div style={{ position: 'relative', zIndex: 1, padding: isMobile ? '0 24px 48px' : '0 72px 80px', maxWidth: isMobile ? '100%' : '55%' }}>
         <motion.div initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.25, 0.46, 0.45, 0.94] }}>
           {tagline && (
-            <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.55em', color: 'rgba(255,255,255,0.5)', marginBottom: '20px', fontWeight: 400, fontFamily: tt.headingFont }}>{tagline}</p>
+            <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.55em', color: 'rgba(255,255,255,0.5)', marginBottom: '20px', fontWeight: 400, fontFamily: tt.headingFont }}><EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></p>
           )}
-          <h1 style={{ ...heroHeadingStyle(tt, 4.0, 2.4, heroProps.headlineSize, isMobile, { lineHeight: 1.0, fontWeight: 900 }), color: '#fff', marginBottom: '20px' }}>{heroTitle}</h1>
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '36px', maxWidth: '40ch', lineHeight: 1.6 }}>{heroSubtitle}</p>
+          <h1 style={{ ...heroHeadingStyle(tt, 4.0, 2.4, heroProps.headlineSize, isMobile, { lineHeight: 1.0, fontWeight: 900 }), color: '#fff', marginBottom: '20px' }}><EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h1>
+          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '36px', maxWidth: '40ch', lineHeight: 1.6 }}><EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} /></p>
           {/* Minimal text+arrow CTA */}
-          <button onClick={onScrollToProducts}
+          <button onClick={editMode ? undefined : onScrollToProducts}
             style={{ background: 'none', border: 'none', color: '#fff', fontSize: '12px', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', padding: 0 }}>
-            {ctaText}
-            <span style={{ display: 'inline-block', transition: 'transform 0.25s' }}>→</span>
+            <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            {!editMode && <span style={{ display: 'inline-block', transition: 'transform 0.25s' }}>→</span>}
           </button>
         </motion.div>
       </div>
@@ -4699,9 +4708,10 @@ function TkHeroChat({ design, tt, primaryColor, device, onScrollToProducts, hero
 
 // ── Hero: FASHION ─────────────────────────────────────────────────────────────
 
-function TkHeroFashion({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
+function TkHeroFashion({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onScrollToProducts: () => void; heroProps?: HeroP;
+  editMode?: boolean; onFieldChange?: (f: string, v: string) => void;
 }) {
   const { heroTitle, ctaText, products = [], tagline } = design;
   const isMobile = device === 'mobile';
@@ -4715,9 +4725,9 @@ function TkHeroFashion({ design, tt, primaryColor, device, onScrollToProducts, h
         {products[0] && <ProductImg src={products[0].image} alt="" className="absolute inset-0 w-full h-full object-cover" />}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.1) 55%)' }} />
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 24px 40px', zIndex: 1 }}>
-          {tagline && <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.4em', color: 'rgba(255,255,255,0.55)', marginBottom: '10px', fontWeight: 400 }}>{tagline}</p>}
-          <h1 style={{ ...heroHeadingStyle(tt, 2.2, 2.2, heroProps.headlineSize, isMobile), color: '#fff', marginBottom: '20px' }}>{heroTitle}</h1>
-          <button onClick={onScrollToProducts} style={{ padding: '12px 28px', background: pc, color: btnText, borderRadius: tt.btnRadius, fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}>{ctaText}</button>
+          {tagline && <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.4em', color: 'rgba(255,255,255,0.55)', marginBottom: '10px', fontWeight: 400 }}><EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></p>}
+          <h1 style={{ ...heroHeadingStyle(tt, 2.2, 2.2, heroProps.headlineSize, isMobile), color: '#fff', marginBottom: '20px' }}><EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h1>
+          <button onClick={editMode ? undefined : onScrollToProducts} style={{ padding: '12px 28px', background: pc, color: btnText, borderRadius: tt.btnRadius, fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}><EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></button>
         </div>
       </section>
     );
@@ -4733,9 +4743,9 @@ function TkHeroFashion({ design, tt, primaryColor, device, onScrollToProducts, h
             {/* Bottom scrim for text */}
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.0) 50%)' }} />
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 40px 40px', zIndex: 1 }}>
-              {tagline && <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.4em', color: 'rgba(255,255,255,0.55)', marginBottom: '12px', fontWeight: 400 }}>{tagline}</p>}
-              <h1 style={{ ...heroHeadingStyle(tt, 3.2, 2.2, heroProps.headlineSize, isMobile), color: '#fff', marginBottom: '24px', maxWidth: '18ch' }}>{heroTitle}</h1>
-              <button onClick={onScrollToProducts} style={{ padding: '13px 32px', background: pc, color: btnText, borderRadius: tt.btnRadius, fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}>{ctaText}</button>
+              {tagline && <p style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.4em', color: 'rgba(255,255,255,0.55)', marginBottom: '12px', fontWeight: 400 }}><EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></p>}
+              <h1 style={{ ...heroHeadingStyle(tt, 3.2, 2.2, heroProps.headlineSize, isMobile), color: '#fff', marginBottom: '24px', maxWidth: '18ch' }}><EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h1>
+              <button onClick={editMode ? undefined : onScrollToProducts} style={{ padding: '13px 32px', background: pc, color: btnText, borderRadius: tt.btnRadius, fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}><EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></button>
             </div>
           </div>
         )}
@@ -6200,15 +6210,15 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
       case 'hero':
         switch (heroVariant) {
           case 'centered':      return <TkHeroCentered      key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} editMode={editMode} onFieldChange={onFieldChange} />;
-          case 'fullscreen':    return <TkHeroFullscreen    key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
-          case 'minimal':       return <TkHeroMinimal       key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
-          case 'editorial':     return <TkHeroEditorial     key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
-          case 'video':         return <TkHeroVideo         key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
-          case 'stacked':       return <TkHeroStacked       key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
-          case 'asymmetrical':  return <TkHeroAsymmetrical  key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
-          case 'cinematic':    return <TkHeroCinematic    key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
+          case 'fullscreen':    return <TkHeroFullscreen    key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} editMode={editMode} onFieldChange={onFieldChange} />;
+          case 'minimal':       return <TkHeroMinimal       key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} editMode={editMode} onFieldChange={onFieldChange} />;
+          case 'editorial':     return <TkHeroEditorial     key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} editMode={editMode} onFieldChange={onFieldChange} />;
+          case 'video':         return <TkHeroVideo         key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} editMode={editMode} onFieldChange={onFieldChange} />;
+          case 'stacked':       return <TkHeroStacked       key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} editMode={editMode} onFieldChange={onFieldChange} />;
+          case 'asymmetrical':  return <TkHeroAsymmetrical  key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} editMode={editMode} onFieldChange={onFieldChange} />;
+          case 'cinematic':    return <TkHeroCinematic    key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} editMode={editMode} onFieldChange={onFieldChange} />;
           case 'chat':         return <TkHeroChat         key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
-          case 'fashion':      return <TkHeroFashion      key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} />;
+          case 'fashion':      return <TkHeroFashion      key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} heroProps={heroProps} editMode={editMode} onFieldChange={onFieldChange} />;
           default:              return <TkHeroSplit          key="hero" design={design} tt={tt} primaryColor={primaryColor} device={device} onScrollToProducts={scrollToProducts} fmtPrice={fmtPrice} heroProps={heroProps} editMode={editMode} onFieldChange={onFieldChange} />;
         }
 
