@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import type { Variants } from 'framer-motion';
-import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, Copy, MessageCircle, MapPin, Phone, Mail, ChevronDown, User, LogOut, Package, Eye, EyeOff,
+import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, Copy, MessageCircle, MapPin, Phone, Mail, ChevronDown, User, LogOut, Package, Eye, EyeOff, Trash2, Plus,
   // EmojiIcon pool
   Wrench, Truck, Shield, Lock, Trophy, Award, Medal, Leaf, Sprout, Zap, Battery, Rocket,
   Flame, DollarSign, TrendingUp, BarChart2, Target, Clock, Smartphone, Laptop, Monitor,
@@ -683,25 +683,12 @@ function ProductDetailPage({ product, primaryColor, storeName, device, onBack, o
   );
 }
 
-function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, onUpdateQty, fmtPrice, shippingSettings, layoutStyle }: {
+function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, onUpdateQty, fmtPrice, layoutStyle }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
-  shippingSettings?: ShippingSettings; layoutStyle?: string;
-  onBack: () => void; onCheckout: (shippingId: string) => void; onUpdateQty: (id: string, delta: number) => void;
+  layoutStyle?: string;
+  onBack: () => void; onCheckout: () => void; onUpdateQty: (id: string, delta: number) => void;
 }) {
-  const enabledMethods = (shippingSettings?.methods ?? DEFAULT_SHIPPING_METHODS).filter(m => m.enabled);
-  const shippingMethods: ShippingMethod[] = enabledMethods.length > 0 ? enabledMethods : [
-    { id: 'flat', name: 'Standard Shipping', price: 15000, estimatedDays: '2–3 days', enabled: true, icon: '📦' }
-  ];
-  const [selectedId, setSelectedId] = useState(shippingMethods[0]?.id ?? '');
-  const [promoCode, setPromoCode] = useState('');
-  const [promoApplied, setPromoApplied] = useState(false);
-
-  const selectedMethod = shippingMethods.find(m => m.id === selectedId) ?? shippingMethods[0];
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
-  const freeThreshold = shippingSettings?.freeShippingThreshold;
-  const shippingCost = (freeThreshold && subtotal >= freeThreshold) ? 0 : (selectedMethod?.price ?? 0);
-  const discount = promoApplied ? Math.round(subtotal * 0.1) : 0;
-  const total = subtotal + shippingCost - discount;
   const isMobile = device === 'mobile';
   const t = getCommerceTheme(primaryColor, layoutStyle);
 
@@ -722,9 +709,8 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
       ) : (
         <div className={`max-w-4xl mx-auto px-4 py-6 ${isMobile ? 'flex flex-col gap-4' : 'grid grid-cols-[1fr_320px] gap-8 items-start'}`}>
 
-          {/* Left: items + shipping + promo */}
+          {/* Left: items */}
           <div className="space-y-4">
-            {/* Items */}
             <div className="overflow-hidden shadow-sm" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
               <div className="px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
                 <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Items ({cart.reduce((s, i) => s + i.qty, 0)})</h3>
@@ -741,7 +727,17 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
                       <p className="text-sm font-bold mt-0.5" style={{ color: t.primary }}>{fmtPrice(p.price)}</p>
                     </div>
                     <div className="flex flex-col items-end justify-between flex-shrink-0">
-                      <span className="text-sm font-bold" style={{ color: t.textPrimary }}>{fmtPrice(p.price * qty)}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-bold" style={{ color: t.textPrimary }}>{fmtPrice(p.price * qty)}</span>
+                        <button
+                          onClick={() => onUpdateQty(p.id, -qty)}
+                          className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-50 transition-colors"
+                          style={{ color: t.textMuted }}
+                          title="Remove item"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                       <div className="flex items-center overflow-hidden mt-2" style={{ border: `1px solid ${t.surfaceBorder}`, borderRadius: '8px' }}>
                         <button onClick={() => onUpdateQty(p.id, -1)} className="w-8 h-8 flex items-center justify-center text-base font-medium" style={{ color: t.textSecondary }}>−</button>
                         <span className="w-8 text-center text-xs font-bold" style={{ color: t.textPrimary }}>{qty}</span>
@@ -751,63 +747,16 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Shipping method selector */}
-            <div className="shadow-sm overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
-              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
-                <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Shipping Method</h3>
-              </div>
-              <div className="p-4 space-y-2">
-                {shippingMethods.map(method => {
-                  const isFreeByThreshold = freeThreshold && subtotal >= freeThreshold;
-                  const cost = isFreeByThreshold ? 0 : method.price;
-                  const isSelected = selectedId === method.id;
-                  return (
-                    <label key={method.id} className="flex items-center gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }}>
-                      <input type="radio" name="shipping" value={method.id} checked={isSelected} onChange={() => setSelectedId(method.id)} className="sr-only" />
-                      <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
-                        {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
-                      </div>
-                      <span className="text-lg flex-shrink-0">{method.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{method.name}</p>
-                        <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Est. arrival: {method.estimatedDays}</p>
-                      </div>
-                      <span className="text-sm font-bold flex-shrink-0" style={{ color: t.primary }}>
-                        {cost === 0 ? 'FREE' : fmtPrice(cost)}
-                      </span>
-                    </label>
-                  );
-                })}
-                {freeThreshold && subtotal < freeThreshold && (
-                  <div className="mt-2 px-4 py-2.5 rounded-xl border text-xs text-amber-700" style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
-                    🎁 Add {fmtPrice(freeThreshold - subtotal)} more for free shipping!
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Promo code */}
-            <div className="shadow-sm p-4" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
-              <p className="text-sm font-bold mb-3" style={{ color: t.textPrimary }}>Promo Code</p>
-              <div className="flex gap-2">
-                <input
-                  value={promoCode}
-                  onChange={e => { setPromoCode(e.target.value.toUpperCase()); setPromoApplied(false); }}
-                  placeholder="Enter promo code"
-                  className="flex-1 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent"
-                  style={{ background: t.inputBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}
-                />
+              {/* Add more items CTA */}
+              <div className="px-5 py-3" style={{ borderTop: `1px solid ${t.divider}` }}>
                 <button
-                  onClick={() => promoCode && setPromoApplied(true)}
-                  className="px-5 py-2.5 text-sm font-bold hover:opacity-85 transition-opacity"
-                  style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
+                  onClick={onBack}
+                  className="flex items-center gap-1.5 text-xs font-semibold hover:opacity-70 transition-opacity"
+                  style={{ color: t.primary }}
                 >
-                  {promoApplied ? <Check className="w-4 h-4" /> : 'Apply'}
+                  <Plus className="w-3.5 h-3.5" /> Add more items
                 </button>
               </div>
-              {promoApplied && <p className="text-xs mt-2 font-medium" style={{ color: t.successText }}>✓ Code applied! 10% discount.</p>}
             </div>
           </div>
 
@@ -815,24 +764,25 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
           <div className="shadow-sm p-5 space-y-3" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
             <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Order Summary</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span style={{ color: t.textSecondary }}>Subtotal</span><span className="font-medium" style={{ color: t.textPrimary }}>{fmtPrice(subtotal)}</span></div>
+              <div className="flex justify-between">
+                <span style={{ color: t.textSecondary }}>Subtotal</span>
+                <span className="font-medium" style={{ color: t.textPrimary }}>{fmtPrice(subtotal)}</span>
+              </div>
               <div className="flex justify-between">
                 <span style={{ color: t.textSecondary }}>Shipping</span>
-                <span className="font-medium">{shippingCost === 0 ? <span className="font-semibold" style={{ color: t.successText }}>FREE</span> : <span style={{ color: t.textPrimary }}>{fmtPrice(shippingCost)}</span>}</span>
+                <span className="text-xs italic" style={{ color: t.textMuted }}>Calculated at checkout</span>
               </div>
-              {selectedMethod && (
-                <p className="text-xs" style={{ color: t.textMuted }}>{selectedMethod.icon} {selectedMethod.name} · {selectedMethod.estimatedDays}</p>
-              )}
-              {discount > 0 && (
-                <div className="flex justify-between" style={{ color: t.successText }}><span>Promo discount</span><span className="font-medium">−{fmtPrice(discount)}</span></div>
-              )}
+              <div className="flex justify-between">
+                <span style={{ color: t.textSecondary }}>Promo</span>
+                <span className="text-xs italic" style={{ color: t.textMuted }}>Applied at checkout</span>
+              </div>
             </div>
             <div className="pt-3 flex justify-between font-bold text-sm" style={{ borderTop: `1px solid ${t.divider}` }}>
               <span style={{ color: t.textPrimary }}>Total</span>
-              <span style={{ color: t.primary }}>{fmtPrice(total)}</span>
+              <span style={{ color: t.primary }}>{fmtPrice(subtotal)}</span>
             </div>
             <button
-              onClick={() => onCheckout(selectedId)}
+              onClick={onCheckout}
               className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity mt-1"
               style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
             >
@@ -850,10 +800,10 @@ const INDONESIAN_PROVINCES = ['Aceh','Bali','Banten','Bengkulu','DI Yogyakarta',
 
 const PAYMENT_ICONS: Record<string, string> = { bank_transfer: '🏦', qris: '📱', cod: '💵', ewallet: '👛', gopay: '🟢', ovo: '🟣', dana: '🔵' };
 
-function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, selectedShippingId, layoutStyle }: {
+function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, layoutStyle }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
-  shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; selectedShippingId: string; layoutStyle?: string;
-  onBack: () => void; onPlaceOrder: (paymentId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => void;
+  shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; layoutStyle?: string;
+  onBack: () => void; onPlaceOrder: (paymentId: string, shippingId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => void;
 }) {
   const [form, setForm] = useState({ email: '', whatsapp: '', name: '', address: '', city: '', province: '', postal: '' });
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
@@ -866,12 +816,20 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [selectedPayId, setSelectedPayId] = useState(paymentMethods[0]?.id ?? '');
   useEffect(() => { if (!selectedPayId && paymentMethods.length) setSelectedPayId(paymentMethods[0].id); }, []);
 
-  const allShipping = shippingSettings?.methods ?? DEFAULT_SHIPPING_METHODS;
-  const selectedShipping = allShipping.find(m => m.id === selectedShippingId) ?? allShipping.find(m => m.enabled);
+  const enabledShippingMethods = (shippingSettings?.methods ?? DEFAULT_SHIPPING_METHODS).filter(m => m.enabled);
+  const shippingMethods: ShippingMethod[] = enabledShippingMethods.length > 0 ? enabledShippingMethods : [
+    { id: 'flat', name: 'Standard Shipping', price: 15000, estimatedDays: '2–3 days', enabled: true, icon: '📦' }
+  ];
+  const [selectedShippingId, setSelectedShippingId] = useState(shippingMethods[0]?.id ?? '');
+  const [promoCode, setPromoCode] = useState('');
+  const [promoApplied, setPromoApplied] = useState(false);
+
+  const selectedShipping = shippingMethods.find(m => m.id === selectedShippingId) ?? shippingMethods[0];
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
   const freeThreshold = shippingSettings?.freeShippingThreshold;
   const shippingCost = (freeThreshold && subtotal >= freeThreshold) ? 0 : (selectedShipping?.price ?? 15000);
-  const total = subtotal + shippingCost;
+  const discount = promoApplied ? Math.round(subtotal * 0.1) : 0;
+  const total = subtotal + shippingCost - discount;
   const isMobile = device === 'mobile';
   const selectedPayment = paymentMethods.find(m => m.id === selectedPayId);
   const t = getCommerceTheme(primaryColor, layoutStyle);
@@ -975,19 +933,44 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 </div>
               </div>
             </div>
-            {/* Selected shipping summary */}
-            {selectedShipping && (
-              <div className="mx-5 mb-4 px-4 py-3 flex items-center gap-3" style={{ borderRadius: t.inputRadius, border: `1px solid ${t.surfaceBorder}`, background: t.inputBg }}>
-                <span className="text-base">{selectedShipping.icon}</span>
-                <div className="flex-1">
-                  <p className="text-xs font-semibold" style={{ color: t.textPrimary }}>{selectedShipping.name}</p>
-                  <p className="text-[10px]" style={{ color: t.textMuted }}>Est: {selectedShipping.estimatedDays}</p>
-                </div>
-                <span className="text-xs font-bold" style={{ color: t.primary }}>
-                  {shippingCost === 0 ? 'FREE' : fmtPrice(shippingCost)}
-                </span>
+          </div>
+
+          {/* Shipping Method */}
+          <div className="shadow-sm overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
+            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(t.primary, 0.1) }}>
+                <Truck className="w-3.5 h-3.5" style={{ color: t.primary }} />
               </div>
-            )}
+              <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Shipping Method</h3>
+            </div>
+            <div className="p-4 space-y-2">
+              {shippingMethods.map(method => {
+                const isFreeByThreshold = freeThreshold && subtotal >= freeThreshold;
+                const cost = isFreeByThreshold ? 0 : method.price;
+                const isSelected = selectedShippingId === method.id;
+                return (
+                  <label key={method.id} className="flex items-center gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }}>
+                    <input type="radio" name="shipping" value={method.id} checked={isSelected} onChange={() => setSelectedShippingId(method.id)} className="sr-only" />
+                    <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
+                      {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
+                    </div>
+                    <span className="text-lg flex-shrink-0">{method.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{method.name}</p>
+                      <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Est. arrival: {method.estimatedDays}</p>
+                    </div>
+                    <span className="text-sm font-bold flex-shrink-0" style={{ color: t.primary }}>
+                      {cost === 0 ? 'FREE' : fmtPrice(cost)}
+                    </span>
+                  </label>
+                );
+              })}
+              {freeThreshold && subtotal < freeThreshold && (
+                <div className="mt-2 px-4 py-2.5 rounded-xl border text-xs text-amber-700" style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
+                  🎁 Add {fmtPrice(freeThreshold - subtotal)} more for free shipping!
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Payment method */}
@@ -1047,6 +1030,28 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               )}
             </div>
           </div>
+
+          {/* Promo Code */}
+          <div className="shadow-sm p-5" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
+            <p className="text-sm font-bold mb-3" style={{ color: t.textPrimary }}>Promo Code</p>
+            <div className="flex gap-2">
+              <input
+                value={promoCode}
+                onChange={e => { setPromoCode(e.target.value.toUpperCase()); setPromoApplied(false); }}
+                placeholder="Enter promo code"
+                className="flex-1 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent"
+                style={{ background: t.inputBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}
+              />
+              <button
+                onClick={() => promoCode && setPromoApplied(true)}
+                className="px-5 py-2.5 text-sm font-bold hover:opacity-85 transition-opacity"
+                style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
+              >
+                {promoApplied ? <Check className="w-4 h-4" /> : 'Apply'}
+              </button>
+            </div>
+            {promoApplied && <p className="text-xs mt-2 font-medium" style={{ color: t.successText }}>✓ Code applied! 10% discount.</p>}
+          </div>
         </div>
 
         {/* Right: order summary */}
@@ -1072,13 +1077,19 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               <span style={{ color: t.textSecondary }}>Shipping</span>
               <span>{shippingCost === 0 ? <span className="font-semibold" style={{ color: t.successText }}>FREE</span> : <span style={{ color: t.textPrimary }}>{fmtPrice(shippingCost)}</span>}</span>
             </div>
+            {discount > 0 && (
+              <div className="flex justify-between text-xs font-medium" style={{ color: t.successText }}>
+                <span>Promo discount</span>
+                <span>−{fmtPrice(discount)}</span>
+              </div>
+            )}
             <div className="flex justify-between font-bold pt-1.5" style={{ borderTop: `1px solid ${t.divider}` }}>
               <span style={{ color: t.textPrimary }}>Total</span>
               <span style={{ color: t.primary }}>{fmtPrice(total)}</span>
             </div>
           </div>
           <button
-            onClick={() => onPlaceOrder(selectedPayId, form)}
+            onClick={() => onPlaceOrder(selectedPayId, selectedShippingId, form)}
             className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity"
             style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
           >
@@ -7805,9 +7816,11 @@ export default function StorePreview({ store, device, editMode, onFieldChange }:
   const freeThreshold = shippingSettings?.freeShippingThreshold;
   const shippingCost = (freeThreshold && cartTotal >= freeThreshold) ? 0 : (resolvedShipping?.price ?? 15000);
 
-  const saveOrder = async (paymentId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => {
-    const selectedShipping = (shippingSettings?.methods ?? DEFAULT_SHIPPING_METHODS).find(m => m.id === selectedShippingId);
+  const saveOrder = async (paymentId: string, shippingId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => {
+    const selectedShipping = (shippingSettings?.methods ?? DEFAULT_SHIPPING_METHODS).find(m => m.id === shippingId);
     const paymentMethod = (store.paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS).find(m => m.id === paymentId);
+    const freeThresholdSave = shippingSettings?.freeShippingThreshold;
+    const savedShippingCost = (freeThresholdSave && cartTotal >= freeThresholdSave) ? 0 : (selectedShipping?.price ?? 15000);
     const subdomain = store.domain.replace('.storee.io', '');
     try {
       await fetch('/api/orders', {
@@ -7825,10 +7838,10 @@ export default function StorePreview({ store, device, editMode, onFieldChange }:
           shippingProvince: customer.province,
           shippingPostal: customer.postal,
           shippingMethod: selectedShipping?.name ?? '',
-          shippingCost,
+          shippingCost: savedShippingCost,
           paymentMethod: paymentMethod?.name ?? paymentId,
           subtotal: cartTotal,
-          total: cartTotal + shippingCost,
+          total: cartTotal + savedShippingCost,
           items: cart.map(({ product: p, qty }) => ({
             id: p.id,
             name: p.name,
@@ -7917,9 +7930,9 @@ export default function StorePreview({ store, device, editMode, onFieldChange }:
   } else if (page === 'product' && selectedProduct) {
     content = <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} onBack={() => setPage('home')} onAddToCart={addToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} layoutStyle={design?.layoutStyle} />;
   } else if (page === 'cart') {
-    content = <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} layoutStyle={design?.layoutStyle} onBack={() => setPage('home')} onCheckout={(sid) => { setSelectedShippingId(sid); setPage('checkout'); }} onUpdateQty={updateQty} />;
+    content = <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} onBack={() => setPage('home')} onCheckout={() => setPage('checkout')} onUpdateQty={updateQty} />;
   } else if (page === 'checkout') {
-    content = <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} paymentSettings={paymentSettings} selectedShippingId={selectedShippingId} layoutStyle={design?.layoutStyle} onBack={() => setPage('cart')} onPlaceOrder={async (pid, customer) => { setSelectedPaymentId(pid); await saveOrder(pid, customer); setPage('success'); }} />;
+    content = <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} paymentSettings={paymentSettings} layoutStyle={design?.layoutStyle} onBack={() => setPage('cart')} onPlaceOrder={async (pid, sid, customer) => { setSelectedPaymentId(pid); setSelectedShippingId(sid); await saveOrder(pid, sid, customer); setPage('success'); }} />;
   } else if (page === 'success') {
     content = <SuccessPage primaryColor={primaryColor} storeName={storeName} orderNum={orderNum} total={cartTotal + shippingCost} fmtPrice={fmtPrice} paymentSettings={paymentSettings} selectedPaymentId={selectedPaymentId} layoutStyle={design?.layoutStyle} onContinue={() => { setCart([]); setPage('home'); }} buyerUser={buyerUser} onShowAuth={() => setShowAuthModal(true)} onMyOrders={() => setPage('myorders')} />;
   } else if (page === 'myorders' && buyerUser) {
