@@ -656,22 +656,23 @@ export default function CanvasShell({ store, from }: Props) {
                         as="div"
                         dragMomentum={false}
                         dragElastic={0}
+                        layout
                         onDragStart={() => setDraggingType(item.type)}
                         onDragEnd={() => setDraggingType(null)}
                         style={{
                           position: 'relative',
                           zIndex: draggingType === item.type ? 50 : 'auto',
                           boxShadow: draggingType === item.type ? '0 8px 20px rgba(0,0,0,0.13)' : 'none',
-                          transform: draggingType === item.type ? 'scale(1.02)' : undefined,
-                          transition: draggingType === item.type ? 'none' : 'box-shadow 0.15s ease, transform 0.15s ease',
+                          scale: draggingType === item.type ? 1.02 : 1,
+                          transition: draggingType === item.type ? 'none' : 'box-shadow 0.15s ease, scale 0.15s ease',
                         }}
-                        className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border cursor-grab active:cursor-grabbing ${
+                        className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border cursor-default ${
                           item.hasContent
                             ? 'bg-white border-slate-200 hover:border-emerald-300'
                             : 'bg-slate-50 border-slate-100 opacity-50'
                         }`}
                       >
-                        <GripVertical className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+                        <GripVertical className="w-3.5 h-3.5 text-slate-300 flex-shrink-0 cursor-grab active:cursor-grabbing" />
                         <div
                           className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
                           style={{ background: item.hasContent ? 'rgba(16,185,129,0.1)' : 'rgba(148,163,184,0.1)' }}
