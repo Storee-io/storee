@@ -657,6 +657,7 @@ export default function CanvasShell({ store, from }: Props) {
                         dragMomentum={false}
                         dragElastic={0}
                         layout
+                        layoutTransition={{ type: 'spring', stiffness: 600, damping: 35, mass: 0.5 }}
                         onDragStart={() => setDraggingType(item.type)}
                         onDragEnd={() => setDraggingType(null)}
                         style={{
