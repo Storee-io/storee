@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import type { Variants } from 'framer-motion';
-import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, Copy, MessageCircle, MapPin, Phone, Mail, ChevronDown, User, LogOut, Package, Eye, EyeOff, Trash2, Plus,
+import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, Copy, MessageCircle, MapPin, Phone, Mail, ChevronDown, User, LogOut, Package, Eye, EyeOff, Trash2, Plus, X,
   // EmojiIcon pool
   Wrench, Truck, Shield, Lock, Trophy, Award, Medal, Leaf, Sprout, Zap, Battery, Rocket,
   Flame, DollarSign, TrendingUp, BarChart2, Target, Clock, Smartphone, Laptop, Monitor,
@@ -680,6 +680,135 @@ function ProductDetailPage({ product, primaryColor, storeName, device, onBack, o
         </div>
       </div>
     </div>
+  );
+}
+
+// ── Cart Sidebar ──────────────────────────────────────────────────────────────
+function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart, onCheckout, onUpdateQty, layoutStyle }: {
+  cart: CartItem[]; primaryColor: string; fmtPrice: (n: number) => string;
+  device: DeviceMode; layoutStyle?: string;
+  onClose: () => void; onViewCart: () => void; onCheckout: () => void;
+  onUpdateQty: (id: string, delta: number) => void;
+}) {
+  const t = getCommerceTheme(primaryColor, layoutStyle);
+  const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
+  const isMobile = device === 'mobile';
+
+  return (
+    <>
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 z-40"
+        style={{ background: 'rgba(0,0,0,0.35)' }}
+      />
+
+      {/* Sidebar panel */}
+      <motion.div
+        initial={{ x: '100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '100%' }}
+        transition={{ type: 'spring', stiffness: 380, damping: 38 }}
+        className="absolute inset-y-0 right-0 z-50 flex flex-col shadow-2xl"
+        style={{
+          width: isMobile ? '100%' : '300px',
+          background: t.surfaceBg,
+          fontFamily: t.fontFamily,
+          borderLeft: `1px solid ${t.surfaceBorder}`,
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3.5 flex-shrink-0" style={{ borderBottom: `1px solid ${t.divider}` }}>
+          <div className="flex items-center gap-2">
+            <ShoppingCart className="w-4 h-4" style={{ color: t.primary }} />
+            <span className="text-sm font-bold" style={{ color: t.textPrimary }}>
+              Cart ({cart.reduce((s, i) => s + i.qty, 0)})
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors"
+            style={{ color: t.textMuted }}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Items */}
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1">
+          {cart.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-48 gap-3">
+              <ShoppingCart className="w-10 h-10" style={{ color: t.textMuted }} />
+              <p className="text-sm" style={{ color: t.textSecondary }}>Your cart is empty</p>
+            </div>
+          ) : cart.map(({ product: p, qty }) => (
+            <div key={p.id} className="flex gap-3 py-3" style={{ borderBottom: `1px solid ${t.divider}` }}>
+              <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0" style={{ background: t.inputBg }}>
+                <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold truncate leading-tight" style={{ color: t.textPrimary }}>{p.name}</p>
+                <p className="text-xs font-bold mt-0.5" style={{ color: t.primary }}>{fmtPrice(p.price)}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.surfaceBorder}`, borderRadius: '6px' }}>
+                    <button onClick={() => onUpdateQty(p.id, -1)} className="w-6 h-6 flex items-center justify-center text-sm font-medium" style={{ color: t.textSecondary }}>−</button>
+                    <span className="w-6 text-center text-xs font-bold" style={{ color: t.textPrimary }}>{qty}</span>
+                    <button onClick={() => onUpdateQty(p.id, 1)} className="w-6 h-6 flex items-center justify-center text-sm font-medium" style={{ color: t.textSecondary }}>+</button>
+                  </div>
+                  <button
+                    onClick={() => onUpdateQty(p.id, -qty)}
+                    className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-50 transition-colors"
+                    style={{ color: t.textMuted }}
+                    title="Remove"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+              <span className="text-xs font-bold flex-shrink-0 pt-0.5" style={{ color: t.textPrimary }}>{fmtPrice(p.price * qty)}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 py-4 flex-shrink-0 space-y-3" style={{ borderTop: `1px solid ${t.divider}` }}>
+          {cart.length > 0 ? (
+            <>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-semibold" style={{ color: t.textSecondary }}>Subtotal</span>
+                <span className="text-sm font-bold" style={{ color: t.primary }}>{fmtPrice(subtotal)}</span>
+              </div>
+              <p className="text-[10px] text-center" style={{ color: t.textMuted }}>Shipping &amp; discounts calculated at checkout</p>
+              <button
+                onClick={onCheckout}
+                className="w-full py-3 text-sm font-bold hover:opacity-90 transition-opacity"
+                style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
+              >
+                Checkout →
+              </button>
+              <button
+                onClick={onViewCart}
+                className="w-full py-2.5 text-xs font-semibold hover:opacity-75 transition-opacity"
+                style={{ color: t.primary, border: `1.5px solid ${alpha(t.primary, 0.35)}`, borderRadius: t.btnRadius }}
+              >
+                View Full Cart
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={onClose}
+              className="w-full py-3 text-sm font-semibold hover:opacity-90 transition-opacity"
+              style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
+            >
+              Start Shopping
+            </button>
+          )}
+        </div>
+      </motion.div>
+    </>
   );
 }
 
@@ -7759,11 +7888,17 @@ interface StorePreviewProps {
 
 export default function StorePreview({ store, device, editMode, onFieldChange, onPageChange }: StorePreviewProps) {
   const [page, setPage] = useState<StorePage>('home');
+  const [showCartSidebar, setShowCartSidebar] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<RichProduct | null>(null);
   const [orderNum] = useState(() => `ORD-${Math.floor(100000 + Math.random() * 900000)}`);
   const [selectedShippingId, setSelectedShippingId] = useState('');
   const [selectedPaymentId, setSelectedPaymentId] = useState('');
+
+  // Auto-close cart sidebar when navigating to cart/checkout page
+  useEffect(() => {
+    if (page === 'cart' || page === 'checkout') setShowCartSidebar(false);
+  }, [page]);
 
   // Notify parent of page/path changes for URL bar
   useEffect(() => {
@@ -7931,7 +8066,7 @@ export default function StorePreview({ store, device, editMode, onFieldChange, o
   const shared = {
     onProductClick: (p: RichProduct) => { setSelectedProduct(p); setPage('product'); },
     onAddToCart: (p: RichProduct, sourceRect?: DOMRect) => addToCart(p, sourceRect),
-    onCartClick: () => setPage('cart'),
+    onCartClick: () => setShowCartSidebar(true),
     onWishlistClick: () => setPage('wishlist'),
     cartCount,
     onUserClick: handleUserClick,
@@ -7997,6 +8132,24 @@ export default function StorePreview({ store, device, editMode, onFieldChange, o
     >
       {content}
 
+      {/* Cart Sidebar */}
+      <AnimatePresence>
+        {showCartSidebar && (
+          <CartSidebar
+            key="cart-sidebar"
+            cart={cart}
+            primaryColor={primaryColor}
+            fmtPrice={fmtPrice}
+            device={device}
+            layoutStyle={design?.layoutStyle}
+            onClose={() => setShowCartSidebar(false)}
+            onViewCart={() => { setShowCartSidebar(false); setPage('cart'); }}
+            onCheckout={() => { setShowCartSidebar(false); setPage('checkout'); }}
+            onUpdateQty={updateQty}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Cart fly animation dots */}
       {flyItems.map(item => (
         <FlyingDot key={item.id} item={item} primaryColor={primaryColor} />
@@ -8010,7 +8163,7 @@ export default function StorePreview({ store, device, editMode, onFieldChange, o
             primaryColor={primaryColor}
             fmtPrice={fmtPrice}
             onClose={() => { setCartToast(null); if (cartToastTimer.current) clearTimeout(cartToastTimer.current); }}
-            onViewCart={() => { setCartToast(null); if (cartToastTimer.current) clearTimeout(cartToastTimer.current); setPage('cart'); }}
+            onViewCart={() => { setCartToast(null); if (cartToastTimer.current) clearTimeout(cartToastTimer.current); setShowCartSidebar(true); }}
           />
         )}
       </AnimatePresence>
