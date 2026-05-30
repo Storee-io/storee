@@ -219,6 +219,7 @@ export default function CanvasShell({ store, from }: Props) {
   const [isSaving, setIsSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<'sections' | 'properties'>('sections');
+  const [draggingType, setDraggingType] = useState<string | null>(null);
 
   // Live store from context
   const liveContextStore = activeStore?.id === store.id ? activeStore : store;
@@ -655,15 +656,20 @@ export default function CanvasShell({ store, from }: Props) {
                         as="div"
                         dragMomentum={false}
                         dragElastic={0}
-                        style={{ position: 'relative', zIndex: 'auto' }}
-                        className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-colors cursor-grab active:cursor-grabbing ${
+                        onDragStart={() => setDraggingType(item.type)}
+                        onDragEnd={() => setDraggingType(null)}
+                        style={{
+                          position: 'relative',
+                          zIndex: draggingType === item.type ? 50 : 'auto',
+                          boxShadow: draggingType === item.type ? '0 8px 20px rgba(0,0,0,0.13)' : 'none',
+                          transform: draggingType === item.type ? 'scale(1.02)' : undefined,
+                          transition: draggingType === item.type ? 'none' : 'box-shadow 0.15s ease, transform 0.15s ease',
+                        }}
+                        className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border cursor-grab active:cursor-grabbing ${
                           item.hasContent
-                            ? 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-sm'
+                            ? 'bg-white border-slate-200 hover:border-emerald-300'
                             : 'bg-slate-50 border-slate-100 opacity-50'
                         }`}
-                        whileDrag={{ scale: 1.02, boxShadow: '0 8px 20px rgba(0,0,0,0.13)', zIndex: 50 }}
-                        animate={{ boxShadow: '0 0px 0px rgba(0,0,0,0)' }}
-                        transition={{ duration: 0.15 }}
                       >
                         <GripVertical className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
                         <div
