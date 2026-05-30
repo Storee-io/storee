@@ -619,6 +619,7 @@ export default function CanvasShell({ store, from }: Props) {
                 exit={{ opacity: 0, x: -10 }}
                 transition={{ duration: 0.15 }}
                 className="flex-1 overflow-y-auto"
+                layoutScroll
               >
                 <div className="px-4 pt-4 pb-2">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Drag or use ↑↓ to reorder</p>
@@ -629,6 +630,7 @@ export default function CanvasShell({ store, from }: Props) {
                   onReorder={setSectionItems}
                   className="px-3 pb-4 space-y-1.5"
                   as="div"
+                  style={{ position: 'relative' }}
                 >
                   {sectionItems.map((item, idx) => {
                     const meta = SECTION_META[item.type];
@@ -651,12 +653,15 @@ export default function CanvasShell({ store, from }: Props) {
                         key={item.type}
                         value={item}
                         as="div"
-                        className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${
+                        dragMomentum={false}
+                        dragElastic={0}
+                        layout
+                        className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-colors cursor-grab active:cursor-grabbing ${
                           item.hasContent
                             ? 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-sm'
                             : 'bg-slate-50 border-slate-100 opacity-50'
                         }`}
-                        whileDrag={{ scale: 1.02, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}
+                        whileDrag={{ scale: 1.02, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 50, position: 'relative' }}
                       >
                         <GripVertical className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
                         <div
