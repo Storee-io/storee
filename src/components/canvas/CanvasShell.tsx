@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Monitor, Tablet, Smartphone, ChevronDown, ChevronRight, ChevronUp,
   Check, Save, Globe, ArrowLeft, Sparkles, Mail,
@@ -220,6 +220,40 @@ export default function CanvasShell({ store, from }: Props) {
   const [editMode, setEditMode] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<'sections' | 'properties'>('sections');
   const [draggingType, setDraggingType] = useState<string | null>(null);
+  const dragRef = useRef<{ type: string; lastStepY: number } | null>(null);
+
+  const DRAG_STEP_PX = 44; // ~one card height, triggers one discrete step
+
+  const handleGripPointerDown = (e: React.PointerEvent, type: string) => {
+    e.preventDefault();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    dragRef.current = { type, lastStepY: e.clientY };
+    setDraggingType(type);
+  };
+
+  const handleGripPointerMove = (e: React.PointerEvent) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const dy = e.clientY - drag.lastStepY;
+    if (Math.abs(dy) >= DRAG_STEP_PX) {
+      const dir = dy > 0 ? 1 : -1;
+      dragRef.current = { ...drag, lastStepY: e.clientY };
+      setSectionItems(prev => {
+        const idx = prev.findIndex(i => i.type === drag.type);
+        if (idx < 0) return prev;
+        const newIdx = idx + dir;
+        if (newIdx < 0 || newIdx >= prev.length) return prev;
+        const next = [...prev];
+        [next[idx], next[newIdx]] = [next[newIdx], next[idx]];
+        return next;
+      });
+    }
+  };
+
+  const handleGripPointerUp = () => {
+    dragRef.current = null;
+    setDraggingType(null);
+  };
 
   // Live store from context
   const liveContextStore = activeStore?.id === store.id ? activeStore : store;
@@ -625,18 +659,12 @@ export default function CanvasShell({ store, from }: Props) {
                 <div className="px-4 pt-4 pb-2">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Drag or use ↑↓ to reorder</p>
                 </div>
-                <Reorder.Group
-                  axis="y"
-                  values={sectionItems}
-                  onReorder={setSectionItems}
-                  className="px-3 pb-4 space-y-1.5"
-                  as="div"
-                  style={{ position: 'relative' }}
-                >
+                <div className="px-3 pb-4 space-y-1.5">
                   {sectionItems.map((item, idx) => {
                     const meta = SECTION_META[item.type];
                     if (!meta) return null;
                     const Icon = meta.icon;
+                    const isDragging = draggingType === item.type;
                     const moveUp = () => setSectionItems(prev => {
                       if (idx === 0) return prev;
                       const next = [...prev];
@@ -650,29 +678,31 @@ export default function CanvasShell({ store, from }: Props) {
                       return next;
                     });
                     return (
-                      <Reorder.Item
+                      <motion.div
                         key={item.type}
-                        value={item}
-                        as="div"
-                        dragMomentum={false}
-                        dragElastic={0}
                         layout
-                        onDragStart={() => setDraggingType(item.type)}
-                        onDragEnd={() => setDraggingType(null)}
+                        layoutId={item.type}
+                        transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 0.6 }}
                         style={{
                           position: 'relative',
-                          zIndex: draggingType === item.type ? 50 : 'auto',
-                          boxShadow: draggingType === item.type ? '0 8px 20px rgba(0,0,0,0.13)' : 'none',
-                          scale: draggingType === item.type ? 1.02 : 1,
-                          transition: draggingType === item.type ? 'none' : 'box-shadow 0.15s ease, scale 0.15s ease',
+                          zIndex: isDragging ? 50 : 'auto',
+                          boxShadow: isDragging ? '0 8px 20px rgba(0,0,0,0.13)' : 'none',
+                          scale: isDragging ? 1.02 : 1,
+                          transition: isDragging ? 'none' : 'box-shadow 0.15s ease, scale 0.15s ease',
                         }}
-                        className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border cursor-default ${
+                        className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border cursor-default select-none ${
                           item.hasContent
                             ? 'bg-white border-slate-200 hover:border-emerald-300'
                             : 'bg-slate-50 border-slate-100 opacity-50'
                         }`}
                       >
-                        <GripVertical className="w-3.5 h-3.5 text-slate-300 flex-shrink-0 cursor-grab active:cursor-grabbing" />
+                        <GripVertical
+                          className="w-3.5 h-3.5 text-slate-300 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none"
+                          onPointerDown={e => handleGripPointerDown(e, item.type)}
+                          onPointerMove={handleGripPointerMove}
+                          onPointerUp={handleGripPointerUp}
+                          onPointerCancel={handleGripPointerUp}
+                        />
                         <div
                           className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
                           style={{ background: item.hasContent ? 'rgba(16,185,129,0.1)' : 'rgba(148,163,184,0.1)' }}
@@ -686,7 +716,7 @@ export default function CanvasShell({ store, from }: Props) {
                           )}
                         </div>
                         {/* ↑↓ step buttons */}
-                        <div className="flex flex-col gap-0.5 flex-shrink-0" onPointerDown={e => e.stopPropagation()}>
+                        <div className="flex flex-col gap-0.5 flex-shrink-0">
                           <button
                             onClick={moveUp}
                             disabled={idx === 0}
@@ -709,17 +739,16 @@ export default function CanvasShell({ store, from }: Props) {
                             onClick={() => scrollToSection(item.type)}
                             title="Scroll to section"
                             className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 transition-colors flex-shrink-0"
-                            onPointerDown={e => e.stopPropagation()}
                           >
                             <ChevronRight className="w-3.5 h-3.5" />
                           </button>
                         ) : (
                           <span className="text-[9px] text-slate-300 font-medium flex-shrink-0">empty</span>
                         )}
-                      </Reorder.Item>
+                      </motion.div>
                     );
                   })}
-                </Reorder.Group>
+                </div>
 
                 {/* Edit mode callout */}
                 {!editMode && (
