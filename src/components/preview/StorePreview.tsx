@@ -1287,7 +1287,7 @@ function StatsRow({ stats, primaryColor, dark = false, device, editMode, onField
   const tt = getDefaultTokenTheme(primaryColor);
   if (!stats?.length) return null;
   return (
-    <div className="border-y" style={{ borderColor: dark ? 'rgba(255,255,255,0.1)' : tt.divider }}>
+    <div data-canvas-section="stats" className="border-y" style={{ borderColor: dark ? 'rgba(255,255,255,0.1)' : tt.divider }}>
       <div className="max-w-6xl mx-auto px-5">
         <div className="grid grid-cols-3 divide-x" style={{ borderColor: dark ? 'rgba(255,255,255,0.1)' : tt.divider }}>
           {stats.map((s, i) => (
@@ -1311,7 +1311,7 @@ function TrustBadgesRow({ badges, primaryColor, dark = false, device, editMode, 
   const tt = getDefaultTokenTheme(primaryColor);
   if (!badges?.length) return null;
   return (
-    <div className="border-y" style={{ borderColor: dark ? 'rgba(255,255,255,0.1)' : tt.divider }}>
+    <div data-canvas-section="trust" className="border-y" style={{ borderColor: dark ? 'rgba(255,255,255,0.1)' : tt.divider }}>
       <div style={dark ? {} : { background: tt.surfaceBg, opacity: 0.97 }}>
         <div className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-2.5 gap-4' : 'py-3.5 gap-6'} flex items-center justify-center flex-wrap`}>
           {badges.map((b, i) => (
@@ -1342,7 +1342,7 @@ function FAQSection({ faq, primaryColor, device, dark = false, elegant = false, 
   const tt = getDefaultTokenTheme(primaryColor);
   if (!faq?.length) return null;
   return (
-    <section className={isMobileInFaq ? 'py-8' : 'py-14'} style={dark ? { background: 'rgba(255,255,255,0.03)' } : elegant ? { background: '#fdfcf8' } : { background: tt.pageBg }}>
+    <section data-canvas-section="faq" className={isMobileInFaq ? 'py-8' : 'py-14'} style={dark ? { background: 'rgba(255,255,255,0.03)' } : elegant ? { background: '#fdfcf8' } : { background: tt.pageBg }}>
       <div className="max-w-3xl mx-auto px-5">
         <div className="text-center mb-9">
           {elegant ? (
@@ -1400,7 +1400,7 @@ function NewsletterSection({ newsletter, primaryColor, dark = false, elegant = f
   if (!newsletter) return null;
   const inverted = dark || elegant;
   return (
-    <section className={isMobile ? 'py-8' : 'py-14'}>
+    <section data-canvas-section="newsletter" className={isMobile ? 'py-8' : 'py-14'}>
       <div className="max-w-xl mx-auto px-5">
         <div className={`rounded-3xl ${isMobile ? 'p-5' : 'p-8'} text-center`} style={
           dark ? { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' } :
@@ -2089,75 +2089,80 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
       </section>
 
-      {/* Brand story banner */}
-      {brandStory && (
-        <section data-canvas-section="brandStory" className={isMobile ? 'py-8' : 'py-14'} style={{ background: '#f5f4f0' }}>
-          <div className="max-w-2xl mx-auto px-5 text-center">
-            <div className="text-4xl mb-5 opacity-20" style={{ color: primaryColor }}>"</div>
-            <p className={`${isMobile ? 'text-base' : 'text-lg'} font-medium leading-relaxed italic`} style={{ color: tt.textSecondary }}>
-              <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
-            </p>
-          </div>
-        </section>
-      )}
-
-      {/* Features */}
-      <section data-canvas-section="features" className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
-        <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-6'}`}>
-          {features.map((f, i) => (
-            <div key={i} className="flex items-start gap-4 p-6 rounded-2xl border hover:shadow-md transition-all" style={{ borderColor: tt.divider }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: alpha(primaryColor, 0.1) }}>
-                <EmojiIcon emoji={f.icon} size={20} color={primaryColor} strokeWidth={1.75} />
-              </div>
-              <div>
-                <h3 className="text-sm font-black uppercase tracking-wide mb-1" style={{ color: tt.textPrimary }}>
-                  <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                </h3>
-                <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>
-                  <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+      {/* Reorderable sections */}
+      {(() => {
+        const sectionOrder = design.sectionOrder ?? ['brandStory', 'features', 'testimonials', 'stats', 'faq', 'newsletter'];
+        const sectionMap: Record<string, React.ReactNode> = {
+          brandStory: brandStory ? (
+            <section key="brandStory" data-canvas-section="brandStory" className={isMobile ? 'py-8' : 'py-14'} style={{ background: '#f5f4f0' }}>
+              <div className="max-w-2xl mx-auto px-5 text-center">
+                <div className="text-4xl mb-5 opacity-20" style={{ color: primaryColor }}>&ldquo;</div>
+                <p className={`${isMobile ? 'text-base' : 'text-lg'} font-medium leading-relaxed italic`} style={{ color: tt.textSecondary }}>
+                  <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
                 </p>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section data-canvas-section="testimonials" style={{ background: '#f5f4f0' }} className={isMobile ? 'py-8' : 'py-14'}>
-        <div className="max-w-6xl mx-auto px-5">
-          <p className="text-[10px] uppercase tracking-[0.25em] mb-2 text-center" style={{ color: tt.textMuted }}>Reviews</p>
-          <h2 className="text-xl font-black text-center mb-9" style={{ color: tt.textPrimary }}>
-            <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'What Customers Say'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-          </h2>
-          <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
-            {testimonials.map((t, i) => (
-              <div key={i} className="rounded-3xl p-6 shadow-sm" style={{ background: tt.surfaceBg }}>
-                <Stars n={t.rating} />
-                <p className="text-sm leading-relaxed mt-3 mb-5 italic" style={{ color: tt.textSecondary }}>
-                  "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
-                </p>
-                <div className="flex items-center gap-3 pt-3 border-t" style={{ borderColor: tt.divider }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: primaryColor }}>
-                    {t.author[0]}
+            </section>
+          ) : null,
+          features: features.length > 0 ? (
+            <section key="features" data-canvas-section="features" className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
+              <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-6'}`}>
+                {features.map((f, i) => (
+                  <div key={i} className="flex items-start gap-4 p-6 rounded-2xl border hover:shadow-md transition-all" style={{ borderColor: tt.divider }}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: alpha(primaryColor, 0.1) }}>
+                      <EmojiIcon emoji={f.icon} size={20} color={primaryColor} strokeWidth={1.75} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black uppercase tracking-wide mb-1" style={{ color: tt.textPrimary }}>
+                        <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                      </h3>
+                      <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>
+                        <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>
-                      <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                    </p>
-                    <p className="text-[10px] mt-0.5" style={{ color: tt.textMuted }}>
-                      <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                    </p>
-                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null,
+          testimonials: testimonials.length > 0 ? (
+            <section key="testimonials" data-canvas-section="testimonials" style={{ background: '#f5f4f0' }} className={isMobile ? 'py-8' : 'py-14'}>
+              <div className="max-w-6xl mx-auto px-5">
+                <p className="text-[10px] uppercase tracking-[0.25em] mb-2 text-center" style={{ color: tt.textMuted }}>Reviews</p>
+                <h2 className="text-xl font-black text-center mb-9" style={{ color: tt.textPrimary }}>
+                  <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'What Customers Say'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                </h2>
+                <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
+                  {testimonials.map((t, i) => (
+                    <div key={i} className="rounded-3xl p-6 shadow-sm" style={{ background: tt.surfaceBg }}>
+                      <Stars n={t.rating} />
+                      <p className="text-sm leading-relaxed mt-3 mb-5 italic" style={{ color: tt.textSecondary }}>
+                        &ldquo;<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />&rdquo;
+                      </p>
+                      <div className="flex items-center gap-3 pt-3 border-t" style={{ borderColor: tt.divider }}>
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: primaryColor }}>
+                          {t.author[0]}
+                        </div>
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>
+                            <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                          </p>
+                          <p className="text-[10px] mt-0.5" style={{ color: tt.textMuted }}>
+                            <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {stats && <StatsRow stats={stats} primaryColor={primaryColor} device={device} />}
-      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
+            </section>
+          ) : null,
+          stats: stats?.length ? <StatsRow key="stats" stats={stats} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+          faq: faq?.length ? <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+          newsletter: newsletter ? <NewsletterSection key="newsletter" newsletter={newsletter} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+        };
+        return sectionOrder.map(type => sectionMap[type] ?? null);
+      })()}
 
       {/* Footer */}
       <footer className="border-t py-10" style={{ background: tt.pageBg, borderColor: tt.divider }}>
@@ -2317,69 +2322,75 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
         </div>
       </section>
 
-      {/* Features — numbered with accent top bar */}
-      <section data-canvas-section="features" className={`border-t border-white/8 ${isMobile ? 'py-8' : 'py-14'}`}>
-        <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-8' : 'grid-cols-3 gap-8'}`}>
-          {features.map((f, i) => (
-            <div key={i} className="flex items-start gap-5">
-              <div>
-                <div className="h-0.5 w-8 mb-4" style={{ background: primaryColor }} />
-                <span className="text-4xl font-black leading-none text-white/15 block mb-3">{String(i + 1).padStart(2, '0')}</span>
-                <div className="mb-2.5"><EmojiIcon emoji={f.icon} size={28} color="rgba(255,255,255,0.7)" strokeWidth={1.5} /></div>
-                <h3 className="text-sm font-black uppercase tracking-widest text-white mb-2">
-                  <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                </h3>
-                <p className="text-xs text-white/40 leading-relaxed">
-                  <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
-                </p>
+      {(() => {
+        const sectionOrder = design.sectionOrder ?? ['features', 'testimonials', 'brandStory', 'stats', 'faq', 'newsletter'];
+        const sectionMap: Record<string, React.ReactNode> = {
+          features: features.length > 0 ? (
+            <section key="features" data-canvas-section="features" className={`border-t border-white/8 ${isMobile ? 'py-8' : 'py-14'}`}>
+              <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-8' : 'grid-cols-3 gap-8'}`}>
+                {features.map((f, i) => (
+                  <div key={i} className="flex items-start gap-5">
+                    <div>
+                      <div className="h-0.5 w-8 mb-4" style={{ background: primaryColor }} />
+                      <span className="text-4xl font-black leading-none text-white/15 block mb-3">{String(i + 1).padStart(2, '0')}</span>
+                      <div className="mb-2.5"><EmojiIcon emoji={f.icon} size={28} color="rgba(255,255,255,0.7)" strokeWidth={1.5} /></div>
+                      <h3 className="text-sm font-black uppercase tracking-widest text-white mb-2">
+                        <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                      </h3>
+                      <p className="text-xs text-white/40 leading-relaxed">
+                        <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section data-canvas-section="testimonials" className={isMobile ? 'py-8' : 'py-14'} style={{ background: alpha(primaryColor, 0.06) }}>
-        <div className="max-w-6xl mx-auto px-5">
-          <h2 className="text-2xl font-black uppercase tracking-widest text-white mb-8 text-center">
-            <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'The Word'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-          </h2>
-          <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
-            {testimonials.map((t, i) => (
-              <div key={i} className="rounded-3xl p-6 backdrop-blur" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div className="text-3xl font-black mb-4 leading-none" style={{ color: alpha(primaryColor, 0.4) }}>"</div>
-                <Stars n={t.rating} />
-                <p className="text-sm text-white/65 leading-relaxed mt-3 mb-5">"<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"</p>
-                <div className="flex items-center gap-3 border-t border-white/8 pt-4">
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black text-black" style={{ background: primaryColor }}>
-                    {t.author[0]}
-                  </div>
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-widest text-white">
-                      <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                    </p>
-                    <p className="text-[10px] mt-0.5" style={{ color: alpha(primaryColor, 0.7) }}>
-                      <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                    </p>
-                  </div>
+            </section>
+          ) : null,
+          testimonials: testimonials.length > 0 ? (
+            <section key="testimonials" data-canvas-section="testimonials" className={isMobile ? 'py-8' : 'py-14'} style={{ background: alpha(primaryColor, 0.06) }}>
+              <div className="max-w-6xl mx-auto px-5">
+                <h2 className="text-2xl font-black uppercase tracking-widest text-white mb-8 text-center">
+                  <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'The Word'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                </h2>
+                <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
+                  {testimonials.map((t, i) => (
+                    <div key={i} className="rounded-3xl p-6 backdrop-blur" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <div className="text-3xl font-black mb-4 leading-none" style={{ color: alpha(primaryColor, 0.4) }}>"</div>
+                      <Stars n={t.rating} />
+                      <p className="text-sm text-white/65 leading-relaxed mt-3 mb-5">"<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"</p>
+                      <div className="flex items-center gap-3 border-t border-white/8 pt-4">
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black text-black" style={{ background: primaryColor }}>
+                          {t.author[0]}
+                        </div>
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-widest text-white">
+                            <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                          </p>
+                          <p className="text-[10px] mt-0.5" style={{ color: alpha(primaryColor, 0.7) }}>
+                            <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {brandStory && (
-        <section data-canvas-section="brandStory" className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
-          <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Our Story</p>
-          <p className="text-sm text-white/60 leading-relaxed max-w-2xl">
-            <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
-          </p>
-        </section>
-      )}
-      {stats && <StatsRow stats={stats} primaryColor={primaryColor} dark={true} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
-      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} dark={true} editMode={editMode} onFieldChange={onFieldChange} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} dark={true} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
+            </section>
+          ) : null,
+          brandStory: brandStory ? (
+            <section key="brandStory" data-canvas-section="brandStory" className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
+              <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Our Story</p>
+              <p className="text-sm text-white/60 leading-relaxed max-w-2xl">
+                <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
+              </p>
+            </section>
+          ) : null,
+          stats: stats?.length ? <StatsRow key="stats" stats={stats} primaryColor={primaryColor} dark={true} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+          faq: faq?.length ? <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} dark={true} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+          newsletter: newsletter ? <NewsletterSection key="newsletter" newsletter={newsletter} primaryColor={primaryColor} dark={true} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+        };
+        return sectionOrder.map(type => sectionMap[type] ?? null);
+      })()}
 
       {/* Footer */}
       <footer className="border-t border-white/8 py-10">
@@ -2539,68 +2550,74 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
       </section>
 
-      {/* Brand Philosophy */}
-      <section data-canvas-section="brandStory" className={isMobile ? 'py-8' : 'py-16'} style={{ background: '#f5f0e8' }}>
-        <div className="max-w-2xl mx-auto px-6 text-center">
-          <p className="text-[10px] tracking-[0.38em] mb-6" style={{ color: primaryColor, fontFamily: 'system-ui' }}>OUR PHILOSOPHY</p>
-          <p className="text-lg font-medium leading-loose italic" style={{ color: '#4a3d32', lineHeight: '1.9' }}>
-            "<EditSpan field="brandStory" value={brandStory || heroSubtitle || ''} editMode={editMode} onFieldChange={onFieldChange} />"
-          </p>
-          <div className="w-8 h-px mx-auto mt-6" style={{ background: primaryColor }} />
-        </div>
-      </section>
-
-      {/* Features */}
-      <section data-canvas-section="features" className={`max-w-6xl mx-auto px-6 ${isMobile ? 'py-8' : 'py-14'}`}>
-        <div className={`grid ${isMobile ? 'grid-cols-1 divide-y' : 'grid-cols-3 divide-x'}`} style={{ borderColor: '#e8e3db' }}>
-          {features.map((f, i) => (
-            <div key={i} className={`text-center ${isMobile ? 'px-4 py-5' : 'px-8 py-8'}`}>
-              <div className="mb-4"><EmojiIcon emoji={f.icon} size={28} color={primaryColor} strokeWidth={1.5} /></div>
-              <h3 className="text-xs font-bold tracking-[0.2em] mb-2" style={{ color: '#2a2420', fontFamily: 'system-ui' }}>
-                <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-              </h3>
-              <p className="text-xs leading-relaxed" style={{ color: '#8a7a6a', fontFamily: 'system-ui' }}>
-                <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section data-canvas-section="testimonials" className={isMobile ? 'py-8' : 'py-14'} style={{ background: '#f5f0e8' }}>
-        <div className="max-w-6xl mx-auto px-6">
-          <div className={`text-center ${isMobile ? 'mb-7' : 'mb-10'}`}>
-            <p className="text-[10px] tracking-[0.38em] mb-3" style={{ color: primaryColor, fontFamily: 'system-ui' }}>CLIENT VOICES</p>
-            <h2 className="text-xl font-bold tracking-wide" style={{ color: '#2a2420' }}>
-              <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'Testimonials'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-            </h2>
-          </div>
-          <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-6`}>
-            {testimonials.map((t, i) => (
-              <div key={i} className="p-7 relative overflow-hidden" style={{ background: tt.surfaceBg, borderLeft: `3px solid ${primaryColor}` }}>
-                <div className="text-5xl font-black leading-none absolute top-3 right-5 opacity-6" style={{ color: primaryColor }}>❝</div>
-                <Stars n={t.rating} />
-                <p className="text-sm leading-loose italic mt-4 mb-6" style={{ color: '#4a3d32' }}>
-                  "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
+      {(() => {
+        const sectionOrder = design.sectionOrder ?? ['features', 'testimonials', 'brandStory', 'stats', 'faq', 'newsletter'];
+        const sectionMap: Record<string, React.ReactNode> = {
+          brandStory: (
+            <section key="brandStory" data-canvas-section="brandStory" className={isMobile ? 'py-8' : 'py-16'} style={{ background: '#f5f0e8' }}>
+              <div className="max-w-2xl mx-auto px-6 text-center">
+                <p className="text-[10px] tracking-[0.38em] mb-6" style={{ color: primaryColor, fontFamily: 'system-ui' }}>OUR PHILOSOPHY</p>
+                <p className="text-lg font-medium leading-loose italic" style={{ color: '#4a3d32', lineHeight: '1.9' }}>
+                  "<EditSpan field="brandStory" value={brandStory || heroSubtitle || ''} editMode={editMode} onFieldChange={onFieldChange} />"
                 </p>
-                <div>
-                  <p className="text-xs font-bold tracking-widest" style={{ color: '#2a2420', fontFamily: 'system-ui' }}>
-                    <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                  </p>
-                  <p className="text-[10px] tracking-wider mt-0.5" style={{ color: primaryColor, fontFamily: 'system-ui' }}>
-                    <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                  </p>
+                <div className="w-8 h-px mx-auto mt-6" style={{ background: primaryColor }} />
+              </div>
+            </section>
+          ),
+          features: features.length > 0 ? (
+            <section key="features" data-canvas-section="features" className={`max-w-6xl mx-auto px-6 ${isMobile ? 'py-8' : 'py-14'}`}>
+              <div className={`grid ${isMobile ? 'grid-cols-1 divide-y' : 'grid-cols-3 divide-x'}`} style={{ borderColor: '#e8e3db' }}>
+                {features.map((f, i) => (
+                  <div key={i} className={`text-center ${isMobile ? 'px-4 py-5' : 'px-8 py-8'}`}>
+                    <div className="mb-4"><EmojiIcon emoji={f.icon} size={28} color={primaryColor} strokeWidth={1.5} /></div>
+                    <h3 className="text-xs font-bold tracking-[0.2em] mb-2" style={{ color: '#2a2420', fontFamily: 'system-ui' }}>
+                      <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                    </h3>
+                    <p className="text-xs leading-relaxed" style={{ color: '#8a7a6a', fontFamily: 'system-ui' }}>
+                      <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null,
+          testimonials: testimonials.length > 0 ? (
+            <section key="testimonials" data-canvas-section="testimonials" className={isMobile ? 'py-8' : 'py-14'} style={{ background: '#f5f0e8' }}>
+              <div className="max-w-6xl mx-auto px-6">
+                <div className={`text-center ${isMobile ? 'mb-7' : 'mb-10'}`}>
+                  <p className="text-[10px] tracking-[0.38em] mb-3" style={{ color: primaryColor, fontFamily: 'system-ui' }}>CLIENT VOICES</p>
+                  <h2 className="text-xl font-bold tracking-wide" style={{ color: '#2a2420' }}>
+                    <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'Testimonials'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                  </h2>
+                </div>
+                <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-6`}>
+                  {testimonials.map((t, i) => (
+                    <div key={i} className="p-7 relative overflow-hidden" style={{ background: tt.surfaceBg, borderLeft: `3px solid ${primaryColor}` }}>
+                      <div className="text-5xl font-black leading-none absolute top-3 right-5 opacity-6" style={{ color: primaryColor }}>❝</div>
+                      <Stars n={t.rating} />
+                      <p className="text-sm leading-loose italic mt-4 mb-6" style={{ color: '#4a3d32' }}>
+                        "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
+                      </p>
+                      <div>
+                        <p className="text-xs font-bold tracking-widest" style={{ color: '#2a2420', fontFamily: 'system-ui' }}>
+                          <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                        </p>
+                        <p className="text-[10px] tracking-wider mt-0.5" style={{ color: primaryColor, fontFamily: 'system-ui' }}>
+                          <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {stats && <StatsRow stats={stats} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
-      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} elegant={true} editMode={editMode} onFieldChange={onFieldChange} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} elegant={true} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
+            </section>
+          ) : null,
+          stats: stats?.length ? <StatsRow key="stats" stats={stats} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+          faq: faq?.length ? <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} elegant={true} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+          newsletter: newsletter ? <NewsletterSection key="newsletter" newsletter={newsletter} primaryColor={primaryColor} elegant={true} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+        };
+        return sectionOrder.map(type => sectionMap[type] ?? null);
+      })()}
 
       {/* Footer */}
       <footer style={{ background: '#2a2420', borderTop: `3px solid ${primaryColor}` }} className="py-12">
@@ -2625,7 +2642,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
 // Inspired by: Apple Store, Allbirds, Casper — clean, airy, contemporary
 
 function ModernLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [], sectionHeadings, footerNote } = design;
+  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory, sectionHeadings, footerNote } = design;
   const defaultFooterNote = `© 2026 ${storeName} · All rights reserved`;
   const btnText = isDark(primaryColor) ? '#fff' : '#fff';
   const isMobile = device === 'mobile';
@@ -2813,58 +2830,72 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
         </div>
       </section>
 
-      {/* Features */}
-      <section data-canvas-section="features" className={isMobile ? 'py-8' : 'py-14'} style={{ background: `linear-gradient(135deg, ${alpha(primaryColor, 0.04)}, ${alpha(accentColor, 0.06)})` }}>
-        <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-5'}`}>
-          {features.map((f, i) => (
-            <div key={i} className="bg-white/75 backdrop-blur rounded-3xl p-7 shadow-sm hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style={{ background: `linear-gradient(135deg, ${alpha(primaryColor, 0.15)}, ${alpha(accentColor, 0.15)})` }}>
-                <EmojiIcon emoji={f.icon} size={24} color={primaryColor} strokeWidth={1.75} />
+      {(() => {
+        const sectionOrder = design.sectionOrder ?? ['features', 'testimonials', 'brandStory', 'stats', 'faq', 'newsletter'];
+        const sectionMap: Record<string, React.ReactNode> = {
+          features: features.length > 0 ? (
+            <section key="features" data-canvas-section="features" className={isMobile ? 'py-8' : 'py-14'} style={{ background: `linear-gradient(135deg, ${alpha(primaryColor, 0.04)}, ${alpha(accentColor, 0.06)})` }}>
+              <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-5'}`}>
+                {features.map((f, i) => (
+                  <div key={i} className="bg-white/75 backdrop-blur rounded-3xl p-7 shadow-sm hover:shadow-lg transition-shadow">
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style={{ background: `linear-gradient(135deg, ${alpha(primaryColor, 0.15)}, ${alpha(accentColor, 0.15)})` }}>
+                      <EmojiIcon emoji={f.icon} size={24} color={primaryColor} strokeWidth={1.75} />
+                    </div>
+                    <h3 className="text-sm font-bold mb-2" style={{ color: tt.textPrimary }}>
+                      <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                    </h3>
+                    <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>
+                      <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+                    </p>
+                  </div>
+                ))}
               </div>
-              <h3 className="text-sm font-bold mb-2" style={{ color: tt.textPrimary }}>
-                <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-              </h3>
-              <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>
-                <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section data-canvas-section="testimonials" className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
-        <h2 className="text-2xl font-bold text-center mb-9" style={{ color: tt.textPrimary }}>
-          <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'Loved by Customers'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-        </h2>
-        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
-          {testimonials.map((t, i) => (
-            <div key={i} className="rounded-3xl p-6 border-l-4" style={{ background: alpha(i === 0 ? primaryColor : accentColor, 0.05), borderLeftColor: i === 0 ? primaryColor : accentColor }}>
-              <Stars n={t.rating} />
-              <p className="text-sm leading-relaxed mt-3 mb-5" style={{ color: tt.textSecondary }}>
-                "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style={{ background: i === 0 ? primaryColor : accentColor }}>
-                  {t.author[0]}
-                </div>
-                <div>
-                  <p className="text-xs font-bold" style={{ color: tt.textPrimary }}>
-                    <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                  </p>
-                  <p className="text-[10px]" style={{ color: tt.textMuted }}>
-                    <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                  </p>
-                </div>
+            </section>
+          ) : null,
+          testimonials: testimonials.length > 0 ? (
+            <section key="testimonials" data-canvas-section="testimonials" className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
+              <h2 className="text-2xl font-bold text-center mb-9" style={{ color: tt.textPrimary }}>
+                <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'Loved by Customers'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              </h2>
+              <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
+                {testimonials.map((t, i) => (
+                  <div key={i} className="rounded-3xl p-6 border-l-4" style={{ background: alpha(i === 0 ? primaryColor : accentColor, 0.05), borderLeftColor: i === 0 ? primaryColor : accentColor }}>
+                    <Stars n={t.rating} />
+                    <p className="text-sm leading-relaxed mt-3 mb-5" style={{ color: tt.textSecondary }}>
+                      "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style={{ background: i === 0 ? primaryColor : accentColor }}>
+                        {t.author[0]}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold" style={{ color: tt.textPrimary }}>
+                          <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                        </p>
+                        <p className="text-[10px]" style={{ color: tt.textMuted }}>
+                          <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {stats && <StatsRow stats={stats} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
-      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
+            </section>
+          ) : null,
+          brandStory: brandStory ? (
+            <section key="brandStory" data-canvas-section="brandStory" className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
+              <p className="text-sm font-semibold mb-3" style={{ color: tt.textMuted }}>Our Story</p>
+              <p className="text-base leading-relaxed max-w-2xl" style={{ color: tt.textSecondary }}>
+                <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
+              </p>
+            </section>
+          ) : null,
+          stats: stats?.length ? <StatsRow key="stats" stats={stats} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+          faq: faq?.length ? <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+          newsletter: newsletter ? <NewsletterSection key="newsletter" newsletter={newsletter} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+        };
+        return sectionOrder.map(type => sectionMap[type] ?? null);
+      })()}
 
       {/* Footer */}
       <footer className="border-t py-10" style={{ background: tt.surfaceBg, borderColor: tt.divider }}>
@@ -2893,7 +2924,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
 // Inspired by: Glossier, Oatly, Warby Parker — fun, colorful, round, youthful
 
 function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen: _onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [], sectionHeadings, footerNote } = design;
+  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory, sectionHeadings, footerNote } = design;
   const defaultFooterNote = `© 2026 ${storeName} · All rights reserved`;
   const heroTextColor = isDark(primaryColor) ? '#fff' : '#111';
   const isMobile = device === 'mobile';
@@ -3062,57 +3093,71 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
       </section>
 
-      {/* Features */}
-      <section className={isMobile ? 'py-8' : 'py-12'} style={{ background: alpha(primaryColor, 0.04) }}>
-        <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-5'}`}>
-          {features.map((f, i) => (
-            <div key={i} className="rounded-3xl p-7 text-center hover:scale-102 transition-transform"
-              style={{ background: [alpha(primaryColor, 0.12), alpha(accentColor, 0.12), alpha(primaryColor, 0.07)][i], transition: 'transform 0.2s ease' }}>
-              <div className="mb-4"><EmojiIcon emoji={f.icon} size={36} color={primaryColor} strokeWidth={1.5} /></div>
-              <h3 className="text-sm font-black mb-2" style={{ color: tt.textPrimary }}>
-                <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-              </h3>
-              <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>
-                <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section data-canvas-section="testimonials" className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-12'}`}>
-        <h2 className="text-2xl font-black text-center mb-8" style={{ color: tt.textPrimary }}>
-          <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'Happy Customers 🤩'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-        </h2>
-        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
-          {testimonials.map((t, i) => (
-            <div key={i} className="rounded-3xl p-6 border-2" style={{ borderColor: alpha(i === 0 ? primaryColor : accentColor, 0.25) }}>
-              <Stars n={t.rating} />
-              <p className="text-sm leading-relaxed mt-3 mb-5" style={{ color: tt.textSecondary }}>
-                "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-base font-black text-white flex-shrink-0" style={{ background: i === 0 ? primaryColor : accentColor }}>
-                  {t.author[0]}
-                </div>
-                <div>
-                  <p className="text-xs font-black" style={{ color: tt.textPrimary }}>
-                    <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                  </p>
-                  <p className="text-[10px]" style={{ color: tt.textMuted }}>
-                    <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                  </p>
-                </div>
+      {(() => {
+        const sectionOrder = design.sectionOrder ?? ['features', 'testimonials', 'brandStory', 'stats', 'faq', 'newsletter'];
+        const sectionMap: Record<string, React.ReactNode> = {
+          features: features.length > 0 ? (
+            <section key="features" data-canvas-section="features" className={isMobile ? 'py-8' : 'py-12'} style={{ background: alpha(primaryColor, 0.04) }}>
+              <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-5'}`}>
+                {features.map((f, i) => (
+                  <div key={i} className="rounded-3xl p-7 text-center hover:scale-102 transition-transform"
+                    style={{ background: [alpha(primaryColor, 0.12), alpha(accentColor, 0.12), alpha(primaryColor, 0.07)][i], transition: 'transform 0.2s ease' }}>
+                    <div className="mb-4"><EmojiIcon emoji={f.icon} size={36} color={primaryColor} strokeWidth={1.5} /></div>
+                    <h3 className="text-sm font-black mb-2" style={{ color: tt.textPrimary }}>
+                      <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                    </h3>
+                    <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>
+                      <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+                    </p>
+                  </div>
+                ))}
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {stats && <StatsRow stats={stats} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
-      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
+            </section>
+          ) : null,
+          testimonials: testimonials.length > 0 ? (
+            <section key="testimonials" data-canvas-section="testimonials" className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-12'}`}>
+              <h2 className="text-2xl font-black text-center mb-8" style={{ color: tt.textPrimary }}>
+                <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'Happy Customers 🤩'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              </h2>
+              <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
+                {testimonials.map((t, i) => (
+                  <div key={i} className="rounded-3xl p-6 border-2" style={{ borderColor: alpha(i === 0 ? primaryColor : accentColor, 0.25) }}>
+                    <Stars n={t.rating} />
+                    <p className="text-sm leading-relaxed mt-3 mb-5" style={{ color: tt.textSecondary }}>
+                      "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-base font-black text-white flex-shrink-0" style={{ background: i === 0 ? primaryColor : accentColor }}>
+                        {t.author[0]}
+                      </div>
+                      <div>
+                        <p className="text-xs font-black" style={{ color: tt.textPrimary }}>
+                          <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                        </p>
+                        <p className="text-[10px]" style={{ color: tt.textMuted }}>
+                          <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null,
+          brandStory: brandStory ? (
+            <section key="brandStory" data-canvas-section="brandStory" className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-12'}`}>
+              <p className="text-sm font-black mb-3" style={{ color: tt.textMuted }}>Our Story</p>
+              <p className="text-sm leading-relaxed max-w-2xl" style={{ color: tt.textSecondary }}>
+                <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
+              </p>
+            </section>
+          ) : null,
+          stats: stats?.length ? <StatsRow key="stats" stats={stats} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+          faq: faq?.length ? <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+          newsletter: newsletter ? <NewsletterSection key="newsletter" newsletter={newsletter} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+        };
+        return sectionOrder.map(type => sectionMap[type] ?? null);
+      })()}
 
       {/* Footer with wave top */}
       <footer style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})` }}>
@@ -5754,7 +5799,7 @@ function NewsletterSectionV2({ newsletter, tt, primaryColor, device, sectionPy, 
 
   if (variant === 'banner') {
     return (
-      <section style={{ background: pc }}>
+      <section data-canvas-section="newsletter" style={{ background: pc }}>
         <div className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-10 flex flex-col gap-6' : 'flex items-center justify-between gap-10'}`}
           style={isMobile ? {} : { paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
           <div>
@@ -5772,7 +5817,7 @@ function NewsletterSectionV2({ newsletter, tt, primaryColor, device, sectionPy, 
 
   // Default: centered card
   return (
-    <section style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+    <section data-canvas-section="newsletter" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
       <div className="max-w-xl mx-auto px-5">
         <div className={`rounded-3xl ${isMobile ? 'p-5' : 'p-8'} text-center`}
           style={{ background: `linear-gradient(135deg, ${alpha(pc, 0.09)}, ${alpha(pc, 0.04)})`, border: `1px solid ${alpha(pc, 0.12)}` }}>
@@ -7296,69 +7341,86 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
       </section>
 
-      {/* Features */}
-      {features.length > 0 && (
-        <section data-canvas-section="features" style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
-          <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
-            <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-4 gap-6'}`}>
-              {features.slice(0, 4).map((f, i) => (
-                <div key={i} className="flex flex-col items-center text-center gap-2 p-5 rounded-2xl"
-                  style={{ background: tt.pageBg, border: `1px solid ${tt.surfaceBorder}`, boxShadow: getElevationShadow(elevation) }}>
-                  <EmojiIcon emoji={f.icon} size={28} color={pc} strokeWidth={1.5} />
-                  <h3 className="text-xs font-black uppercase tracking-wider" style={{ color: tt.textPrimary }}>
-                    <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                  </h3>
-                  <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>
-                    <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
-                  </p>
+      {/* Reorderable sections — order driven by designTokens.sections */}
+      {(() => {
+        const sectionOrder = (design.designTokens?.sections as Array<{ type: string }> | undefined)
+          ?.map(s => s.type)
+          ?? ['features', 'testimonials', 'brandStory', 'stats', 'faq', 'newsletter'];
+
+        const sectionMap: Record<string, React.ReactNode> = {
+          features: features.length > 0 ? (
+            <section key="features" data-canvas-section="features" style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
+              <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+                <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-4 gap-6'}`}>
+                  {features.slice(0, 4).map((f, i) => (
+                    <div key={i} className="flex flex-col items-center text-center gap-2 p-5 rounded-2xl"
+                      style={{ background: tt.pageBg, border: `1px solid ${tt.surfaceBorder}`, boxShadow: getElevationShadow(elevation) }}>
+                      <EmojiIcon emoji={f.icon} size={28} color={pc} strokeWidth={1.5} />
+                      <h3 className="text-xs font-black uppercase tracking-wider" style={{ color: tt.textPrimary }}>
+                        <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                      </h3>
+                      <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>
+                        <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+              </div>
+            </section>
+          ) : null,
 
-      {/* Testimonials — masonry style */}
-      {testimonials.length > 0 && (
-        <section data-canvas-section="testimonials">
-          <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
-            <h2 className="text-lg font-black mb-8 text-center" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
-              <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'What they say'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-            </h2>
-            <div style={{ columnCount: isMobile ? 1 : 3, columnGap: '16px' }}>
-              {testimonials.map((t, i) => (
-                <div key={i} style={{ breakInside: 'avoid', marginBottom: '16px', padding: '16px', background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius, boxShadow: getElevationShadow(elevation) }}>
-                  <Stars n={t.rating} />
-                  <p className="text-xs italic leading-relaxed mt-2 mb-3" style={{ color: tt.textSecondary }}>
-                    "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
-                  </p>
-                  <p className="text-[10px] font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>
-                    <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                  </p>
-                  <p className="text-[10px]" style={{ color: tt.textMuted }}>
-                    <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                  </p>
+          testimonials: testimonials.length > 0 ? (
+            <section key="testimonials" data-canvas-section="testimonials">
+              <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+                <h2 className="text-lg font-black mb-8 text-center" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
+                  <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'What they say'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                </h2>
+                <div style={{ columnCount: isMobile ? 1 : 3, columnGap: '16px' }}>
+                  {testimonials.map((t, i) => (
+                    <div key={i} style={{ breakInside: 'avoid', marginBottom: '16px', padding: '16px', background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius, boxShadow: getElevationShadow(elevation) }}>
+                      <Stars n={t.rating} />
+                      <p className="text-xs italic leading-relaxed mt-2 mb-3" style={{ color: tt.textSecondary }}>
+                        &ldquo;<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />&rdquo;
+                      </p>
+                      <p className="text-[10px] font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>
+                        <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                      </p>
+                      <p className="text-[10px]" style={{ color: tt.textMuted }}>
+                        <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+              </div>
+            </section>
+          ) : null,
 
-      {brandStory && (
-        <section data-canvas-section="brandStory" style={{ background: alpha(pc, 0.05), borderTop: `1px solid ${tt.divider}` }}>
-          <div className="max-w-2xl mx-auto px-5 text-center" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
-            <p className="text-4xl mb-4 opacity-25" style={{ color: pc }}>"</p>
-            <p className="text-sm leading-relaxed italic" style={{ color: tt.textSecondary }}>
-              <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
-            </p>
-          </div>
-        </section>
-      )}
+          brandStory: brandStory ? (
+            <section key="brandStory" data-canvas-section="brandStory" style={{ background: alpha(pc, 0.05), borderTop: `1px solid ${tt.divider}` }}>
+              <div className="max-w-2xl mx-auto px-5 text-center" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+                <p className="text-4xl mb-4 opacity-25" style={{ color: pc }}>&ldquo;</p>
+                <p className="text-sm leading-relaxed italic" style={{ color: tt.textSecondary }}>
+                  <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
+                </p>
+              </div>
+            </section>
+          ) : null,
 
-      {stats && stats.length > 0 && <StatsRow stats={stats} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
-      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
+          stats: stats && stats.length > 0 ? (
+            <StatsRow key="stats" stats={stats} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />
+          ) : null,
+
+          faq: faq && faq.length > 0 ? (
+            <FAQSection key="faq" faq={faq} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />
+          ) : null,
+
+          newsletter: newsletter ? (
+            <NewsletterSection key="newsletter" newsletter={newsletter} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />
+          ) : null,
+        };
+
+        return sectionOrder.map(type => sectionMap[type] ?? null);
+      })()}
 
       <footer style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '1.5rem', paddingBottom: '1.5rem' }}>
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
