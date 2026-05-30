@@ -6357,11 +6357,15 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
             height: '56px',
           }}>
         <div className="max-w-6xl mx-auto px-5 h-full flex items-center justify-between">
-          <span className="text-sm font-black tracking-[0.18em] uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
+          <span className="text-sm font-black tracking-[0.18em] uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
+            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </span>
           {!isMobile ? (
             <nav className="flex gap-7">
-              {navLinks.map(l => (
-                <a key={l} onClick={scrollToProducts} className="text-xs uppercase tracking-wider font-medium cursor-pointer transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>{l}</a>
+              {navLinks.map((l, li) => (
+                <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-xs uppercase tracking-wider font-medium cursor-pointer transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>
+                  <EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                </a>
               ))}
             </nav>
           ) : (
