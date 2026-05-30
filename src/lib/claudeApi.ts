@@ -286,6 +286,8 @@ export interface StoreDesign {
   brandStory?: string;
   sectionHeadings?: { testimonials?: string; features?: string; products?: string; faq?: string; newsletter?: string };
   footerNote?: string;
+  /** Canvas drag-reorder — persisted section order for non-token layouts */
+  sectionOrder?: string[];
   /** Scrolling marquee banner — array of short phrases / product names */
   scrollingItems?: string[];
   /** Instagram-feed section caption overrides (optional, uses products if absent) */

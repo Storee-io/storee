@@ -1095,79 +1095,107 @@ function PhoneCountrySelect({ selectedCode, onChangeCode, t }: {
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [dropdownStyle, setDropdownStyle] = useState<CSSProperties>({});
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   const selected = COUNTRY_CODES.find(c => c.code === selectedCode) ?? COUNTRY_CODES[0];
-  const filtered = !search.trim()
+  const q = search.trim().toLowerCase();
+  const filtered = !q
     ? COUNTRY_CODES
     : COUNTRY_CODES.filter(c =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.dial.startsWith(search.replace(/\D/g, ''))
+        c.name.toLowerCase().includes(q) ||
+        c.dial.startsWith(q.replace(/\D/g, ''))
       );
 
-  const handleOpen = () => {
-    if (buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setDropdownStyle({ top: rect.bottom + 4, left: rect.left, width: 260 });
+  // Outside click
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      const el = e.target as HTMLElement;
+      if (el.closest?.('[data-pcd="1"]')) return;
+      if (btnRef.current?.contains(el)) return;
+      setOpen(false);
+      setSearch('');
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [open]);
+
+  const updatePos = () => {
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 4, left: r.left });
     }
-    setOpen(o => !o);
-    setTimeout(() => searchRef.current?.focus(), 60);
   };
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false); setSearch('');
-      }
+    window.addEventListener('scroll', updatePos, true);
+    window.addEventListener('resize', updatePos);
+    return () => {
+      window.removeEventListener('scroll', updatePos, true);
+      window.removeEventListener('resize', updatePos);
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  const handleToggle = () => {
+    updatePos();
+    setOpen(v => !v);
+    if (open) setSearch('');
+  };
+
+  // Stable ref callback — useCallback prevents re-runs on re-render (only fires on mount/unmount)
+  const searchInputRef = useCallback((el: HTMLInputElement | null) => {
+    if (!el) return;
+    el.value = '';
+    el.focus();
+    el.oninput = () => setSearch(el.value);
+  }, []);
+
   return (
-    <div ref={containerRef} className="relative flex-shrink-0">
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={handleOpen}
-        className="flex items-center gap-1 px-2.5 h-full text-xs font-medium"
-        style={{ background: t.inputBg, color: t.textSecondary, borderRight: `1px solid ${t.inputBorder}` }}
+    <div className="relative flex-shrink-0">
+      <button ref={btnRef} type="button" onClick={handleToggle}
+        className="flex items-center gap-1 text-xs font-medium flex-shrink-0"
+        style={{ padding: '10px 10px', background: 'transparent', color: t.textSecondary, borderRight: `1px solid ${t.inputBorder}`, whiteSpace: 'nowrap' }}
       >
-        <span className="text-base leading-none">{selected.flag}</span>
         <span>+{selected.dial}</span>
         <ChevronDown className="w-3 h-3 opacity-50" />
       </button>
 
-      {open && typeof document !== 'undefined' && createPortal(
-        <div style={{ ...dropdownStyle, position: 'fixed', zIndex: 99999, background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.14)', overflow: 'hidden', fontFamily: t.fontFamily }}>
-          <div className="p-2" style={{ borderBottom: `1px solid ${t.divider}` }}>
+      {open && typeof window !== 'undefined' && createPortal(
+        <div data-pcd="1" style={{
+          position: 'fixed', top: pos.top, left: pos.left, width: 260, zIndex: 99999,
+          background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: 12,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.18)', overflow: 'hidden', fontFamily: t.fontFamily,
+        }}>
+          <div style={{ padding: 8, borderBottom: `1px solid ${t.divider}` }}>
             <input
-              ref={searchRef}
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Country name or dial code…"
-              className="w-full px-3 py-1.5 text-xs outline-none rounded-lg"
-              style={{ background: t.inputBg, border: `1px solid ${t.inputBorder}`, color: t.textPrimary }}
+              ref={searchInputRef}
+              type="text"
+              placeholder="Cari negara atau kode…"
+              style={{
+                width: '100%', padding: '6px 10px', fontSize: 12, outline: 'none', borderRadius: 8,
+                background: t.inputBg, border: `1px solid ${t.inputBorder}`, color: t.textPrimary,
+                boxSizing: 'border-box', fontFamily: t.fontFamily,
+              }}
             />
           </div>
-          <div style={{ overflowY: 'auto', maxHeight: '200px' }}>
+          <div style={{ overflowY: 'auto', maxHeight: 200 }}>
             {filtered.length === 0
-              ? <p className="text-xs text-center py-4" style={{ color: t.textMuted }}>No results</p>
+              ? <p style={{ fontSize: 12, textAlign: 'center', padding: '16px 0', color: t.textMuted }}>Tidak ditemukan</p>
               : filtered.map(c => (
-                <button
-                  key={c.code}
-                  type="button"
-                  onMouseDown={() => { onChangeCode(c.code); setOpen(false); setSearch(''); }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left transition-colors"
-                  style={{ background: c.code === selectedCode ? alpha(t.primary, 0.07) : 'transparent', color: t.textPrimary }}
+                <button key={c.code} type="button"
+                  onMouseDown={e => { e.preventDefault(); onChangeCode(c.code); setOpen(false); setSearch(''); }}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '8px 12px', fontSize: 12, textAlign: 'left', cursor: 'pointer',
+                    border: 'none', outline: 'none', fontFamily: t.fontFamily,
+                    background: c.code === selectedCode ? alpha(t.primary, 0.08) : 'transparent',
+                    color: t.textPrimary,
+                  }}
                 >
-                  <span className="text-sm flex-shrink-0">{c.flag}</span>
-                  <span className="flex-1 truncate">{c.name}</span>
-                  <span className="flex-shrink-0 font-medium" style={{ color: t.textMuted }}>+{c.dial}</span>
+                  <span style={{ flexShrink: 0, fontWeight: 600, color: t.textMuted, minWidth: 36 }}>+{c.dial}</span>
+                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
                 </button>
               ))}
           </div>
@@ -1246,9 +1274,17 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               </div>
               <div>
                 <label style={lblStyle}>WhatsApp</label>
-                <div className="flex items-center overflow-hidden focus-within:ring-2 focus-within:border-transparent" style={{ border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}>
+                <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, background: t.inputBg, transition: 'border-color 0.15s, box-shadow 0.15s' }}
+                  ref={el => {
+                    if (!el) return;
+                    const inp = el.querySelector('input[type=tel]') as HTMLInputElement | null;
+                    if (!inp) return;
+                    inp.onfocus = () => { el.style.borderColor = t.primary; el.style.boxShadow = `0 0 0 2px ${alpha(t.primary, 0.2)}`; };
+                    inp.onblur  = () => { el.style.borderColor = t.inputBorder; el.style.boxShadow = 'none'; };
+                  }}
+                >
                   <PhoneCountrySelect selectedCode={phoneCountryCode} onChangeCode={setPhoneCountryCode} t={t} />
-                  <input type="tel" className="flex-1 px-3 py-2.5 text-sm outline-none" style={{ background: t.inputBg, color: t.textPrimary }} value={form.whatsapp} onChange={set('whatsapp')} placeholder="81234567890" />
+                  <input type="tel" className="flex-1 min-w-0 text-sm outline-none" style={{ background: 'transparent', color: t.textPrimary, padding: '10px 12px' }} value={form.whatsapp} onChange={set('whatsapp')} placeholder="81234567890" />
                 </div>
               </div>
               <div>
