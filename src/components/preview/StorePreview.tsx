@@ -969,22 +969,11 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   return (
     <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
       <header className="px-5 h-14 flex items-center sticky top-0 z-40 shadow-sm" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
-        <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium transition-colors z-10" style={{ color: t.textSecondary }}><ArrowLeft className="w-4 h-4" /> Cart</button>
-        <span className="absolute left-1/2 -translate-x-1/2 text-sm font-bold pointer-events-none" style={{ color: t.textPrimary }}>{storeName}</span>
+        <span className="text-sm font-bold flex-1 text-center" style={{ color: t.textPrimary }}>{storeName}</span>
+        <button onClick={onBack} className="relative p-2 hover:opacity-70 transition-opacity" style={{ color: t.textSecondary }}>
+          <ShoppingCart className="w-5 h-5" />
+        </button>
       </header>
-
-      {/* Progress bar */}
-      <div className="px-5 py-3 flex items-center justify-center gap-2" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
-        <div className="flex items-center gap-2">
-          {['Cart', 'Checkout', 'Confirmation'].map((step, i) => (
-            <div key={step} className="flex items-center gap-2 flex-shrink-0">
-              <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: i <= 1 ? t.primary : t.divider, color: i <= 1 ? t.primaryContrast : t.textMuted }}>{i + 1}</div>
-              <span className="text-xs font-medium" style={{ color: i <= 1 ? t.textPrimary : t.textMuted }}>{step}</span>
-              {i < 2 && <div className="w-8 h-px mx-1" style={{ background: t.divider }} />}
-            </div>
-          ))}
-        </div>
-      </div>
 
       <div className={`max-w-4xl mx-auto px-4 py-6 ${isMobile ? 'flex flex-col gap-4' : 'grid grid-cols-[1fr_300px] gap-8 items-start'}`}>
 
