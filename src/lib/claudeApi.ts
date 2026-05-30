@@ -284,6 +284,8 @@ export interface StoreDesign {
   newsletter?: { headline: string; subtext: string };
   trustBadges?: Array<{ icon: string; text: string }>;
   brandStory?: string;
+  sectionHeadings?: { testimonials?: string; features?: string; products?: string; faq?: string; newsletter?: string };
+  footerNote?: string;
   /** Scrolling marquee banner — array of short phrases / product names */
   scrollingItems?: string[];
   /** Instagram-feed section caption overrides (optional, uses products if absent) */

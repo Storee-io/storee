@@ -178,6 +178,7 @@ function EditSpan({
         onFieldChange?.(field, e.currentTarget.textContent ?? '');
       }}
       onKeyDown={singleLine ? (e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }) : undefined}
+      onClick={e => e.stopPropagation()}
       className={className}
       style={{ outline: 'none', whiteSpace: 'inherit', cursor: 'text', ...style }}
     />
@@ -1281,7 +1282,7 @@ function PromoBar({ text, primaryColor, editMode, onFieldChange }: { text: strin
   );
 }
 
-function StatsRow({ stats, primaryColor, dark = false, device }: { stats: Array<{ value: string; label: string }>; primaryColor: string; dark?: boolean; device?: DeviceMode }) {
+function StatsRow({ stats, primaryColor, dark = false, device, editMode, onFieldChange }: { stats: Array<{ value: string; label: string }>; primaryColor: string; dark?: boolean; device?: DeviceMode; editMode?: boolean; onFieldChange?: (f: string, v: string) => void }) {
   const isMobile = device === 'mobile';
   const tt = getDefaultTokenTheme(primaryColor);
   if (!stats?.length) return null;
@@ -1291,8 +1292,12 @@ function StatsRow({ stats, primaryColor, dark = false, device }: { stats: Array<
         <div className="grid grid-cols-3 divide-x" style={{ borderColor: dark ? 'rgba(255,255,255,0.1)' : tt.divider }}>
           {stats.map((s, i) => (
             <div key={i} className={`text-center px-4 ${isMobile ? 'py-5' : 'py-8'}`}>
-              <p className={`font-black ${isMobile ? 'text-2xl' : 'text-3xl'}`} style={{ color: primaryColor }}>{s.value}</p>
-              <p className="text-xs mt-1 font-medium tracking-wide" style={{ color: dark ? 'rgba(255,255,255,0.5)' : tt.textMuted }}>{s.label}</p>
+              <p className={`font-black ${isMobile ? 'text-2xl' : 'text-3xl'}`} style={{ color: primaryColor }}>
+                <EditSpan field={`stats.${i}.value`} value={s.value} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              </p>
+              <p className="text-xs mt-1 font-medium tracking-wide" style={{ color: dark ? 'rgba(255,255,255,0.5)' : tt.textMuted }}>
+                <EditSpan field={`stats.${i}.label`} value={s.label} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              </p>
             </div>
           ))}
         </div>
@@ -1301,7 +1306,7 @@ function StatsRow({ stats, primaryColor, dark = false, device }: { stats: Array<
   );
 }
 
-function TrustBadgesRow({ badges, primaryColor, dark = false, device }: { badges: Array<{ icon: string; text: string }>; primaryColor: string; dark?: boolean; device?: DeviceMode }) {
+function TrustBadgesRow({ badges, primaryColor, dark = false, device, editMode, onFieldChange }: { badges: Array<{ icon: string; text: string }>; primaryColor: string; dark?: boolean; device?: DeviceMode; editMode?: boolean; onFieldChange?: (f: string, v: string) => void }) {
   const isMobile = device === 'mobile';
   const tt = getDefaultTokenTheme(primaryColor);
   if (!badges?.length) return null;
@@ -1312,7 +1317,9 @@ function TrustBadgesRow({ badges, primaryColor, dark = false, device }: { badges
           {badges.map((b, i) => (
             <div key={i} className="flex items-center gap-1.5">
               <EmojiIcon emoji={b.icon} size={isMobile ? 14 : 16} color={dark ? 'rgba(255,255,255,0.6)' : tt.textSecondary} strokeWidth={1.75} />
-              <span className={`${isMobile ? 'text-[11px]' : 'text-xs'} font-semibold`} style={{ color: dark ? 'rgba(255,255,255,0.6)' : tt.textSecondary }}>{b.text}</span>
+              <span className={`${isMobile ? 'text-[11px]' : 'text-xs'} font-semibold`} style={{ color: dark ? 'rgba(255,255,255,0.6)' : tt.textSecondary }}>
+                <EditSpan field={`trustBadges.${i}.text`} value={b.text} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              </span>
             </div>
           ))}
         </div>
@@ -1321,12 +1328,14 @@ function TrustBadgesRow({ badges, primaryColor, dark = false, device }: { badges
   );
 }
 
-function FAQSection({ faq, primaryColor, device, dark = false, elegant = false }: {
+function FAQSection({ faq, primaryColor, device, dark = false, elegant = false, editMode, onFieldChange }: {
   faq: Array<{ q: string; a: string }>;
   primaryColor: string;
   device: DeviceMode;
   dark?: boolean;
   elegant?: boolean;
+  editMode?: boolean;
+  onFieldChange?: (f: string, v: string) => void;
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const isMobileInFaq = device === 'mobile';
@@ -1354,15 +1363,17 @@ function FAQSection({ faq, primaryColor, device, dark = false, elegant = false }
                 : elegant
                   ? { borderColor: tt.surfaceBorder, background: tt.surfaceBg }
                   : { borderColor: tt.divider, background: tt.surfaceBg }}>
-              <button onClick={() => setOpenIndex(openIndex === i ? null : i)} className="w-full flex items-center justify-between px-5 py-4 text-left">
+              <button onClick={() => !editMode && setOpenIndex(openIndex === i ? null : i)} className="w-full flex items-center justify-between px-5 py-4 text-left">
                 <span className="text-sm font-semibold pr-4"
-                  style={{ color: dark ? '#fff' : elegant ? '#2a2420' : tt.textPrimary }}>{item.q}</span>
-                <span className="text-xl flex-shrink-0 transition-transform duration-200 font-light" style={{ color: primaryColor, display: 'inline-block', transform: openIndex === i ? 'rotate(45deg)' : 'none' }}>+</span>
+                  style={{ color: dark ? '#fff' : elegant ? '#2a2420' : tt.textPrimary }}>
+                  <EditSpan field={`faq.${i}.q`} value={item.q} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                </span>
+                {!editMode && <span className="text-xl flex-shrink-0 transition-transform duration-200 font-light" style={{ color: primaryColor, display: 'inline-block', transform: openIndex === i ? 'rotate(45deg)' : 'none' }}>+</span>}
               </button>
-              {openIndex === i && (
+              {(editMode || openIndex === i) && (
                 <div className="px-5 pb-5 text-sm leading-relaxed"
                   style={{ color: dark ? 'rgba(255,255,255,0.6)' : elegant ? '#6b5e52' : tt.textSecondary, ...(elegant ? { fontFamily: 'system-ui' } : {}) }}>
-                  {item.a}
+                  <EditSpan field={`faq.${i}.a`} value={item.a} editMode={editMode} onFieldChange={onFieldChange} />
                 </div>
               )}
             </div>
@@ -1373,12 +1384,14 @@ function FAQSection({ faq, primaryColor, device, dark = false, elegant = false }
   );
 }
 
-function NewsletterSection({ newsletter, primaryColor, dark = false, elegant = false, device }: {
+function NewsletterSection({ newsletter, primaryColor, dark = false, elegant = false, device, editMode, onFieldChange }: {
   newsletter: { headline: string; subtext: string };
   primaryColor: string;
   dark?: boolean;
   elegant?: boolean;
   device?: DeviceMode;
+  editMode?: boolean;
+  onFieldChange?: (f: string, v: string) => void;
 }) {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -1394,8 +1407,12 @@ function NewsletterSection({ newsletter, primaryColor, dark = false, elegant = f
           elegant ? { background: '#2a2420' } :
           { background: `linear-gradient(135deg, ${alpha(primaryColor, 0.09)}, ${alpha(primaryColor, 0.04)})`, border: `1px solid ${alpha(primaryColor, 0.12)}` }
         }>
-          <p className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-3`} style={{ color: inverted ? '#fff' : '#111' }}>{newsletter.headline}</p>
-          <p className={`text-sm ${isMobile ? 'mb-5' : 'mb-7'} leading-relaxed`} style={{ color: inverted ? 'rgba(255,255,255,0.6)' : tt.textSecondary }}>{newsletter.subtext}</p>
+          <p className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-3`} style={{ color: inverted ? '#fff' : '#111' }}>
+            <EditSpan field="newsletter.headline" value={newsletter.headline} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
+          <p className={`text-sm ${isMobile ? 'mb-5' : 'mb-7'} leading-relaxed`} style={{ color: inverted ? 'rgba(255,255,255,0.6)' : tt.textSecondary }}>
+            <EditSpan field="newsletter.subtext" value={newsletter.subtext} editMode={editMode} onFieldChange={onFieldChange} />
+          </p>
           {submitted ? (
             <div className="flex items-center justify-center gap-2 text-sm font-semibold" style={{ color: inverted ? '#fff' : primaryColor }}>
               <span>✓</span> You're on the list!
@@ -1888,8 +1905,8 @@ function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onPro
 // ── MINIMAL layout ────────────────────────────────────────────────────────────
 // Inspired by: COS, Aesop, Muji — editorial, clean, whitespace-forward
 
-function MinimalLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory } = design;
+function MinimalLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
+  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory, sectionHeadings, footerNote } = design;
   const btnText = isDark(primaryColor) ? '#fff' : '#111';
   const isMobile = device === 'mobile';
   const tt = getDefaultTokenTheme(primaryColor);
@@ -1898,6 +1915,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
   const productsRef = useRef<HTMLDivElement>(null);
   const scrollToProducts = () => productsRef.current?.scrollIntoView({ behavior: 'smooth' });
   const displayed = selectedCol === 0 ? products : products.filter((_, i) => i % 2 === selectedCol - 1);
+  const defaultFooterNote = `© 2026 ${storeName} · All rights reserved`;
 
   return (
     <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', background: tt.pageBg }}>
@@ -1907,10 +1925,12 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
       {/* Header */}
       <header className="backdrop-blur-sm border-b sticky top-0 z-40" style={{ background: `${tt.headerBg}f5`, borderColor: tt.headerBorder }}>
         <div className="max-w-6xl mx-auto px-5 h-15 flex items-center justify-between" style={{ height: '56px' }}>
-          <span className="text-sm font-black tracking-[0.18em] uppercase" style={{ color: tt.textPrimary }}>{storeName}</span>
+          <span className="text-sm font-black tracking-[0.18em] uppercase" style={{ color: tt.textPrimary }}>
+            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </span>
           {!isMobile ? (
             <nav className="flex gap-8">
-              {navLinks.map(l => <a key={l} onClick={scrollToProducts} className="text-xs uppercase tracking-wider transition-colors font-medium cursor-pointer" style={{ color: tt.textMuted }}>{l}</a>)}
+              {navLinks.map((l, li) => <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-xs uppercase tracking-wider transition-colors font-medium cursor-pointer" style={{ color: tt.textMuted }}><EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine /></a>)}
             </nav>
           ) : (
             <button onClick={() => setMenuOpen(true)} className="p-2 rounded-lg" style={{ color: tt.textSecondary }}><Menu className="w-5 h-5" /></button>
@@ -1930,11 +1950,11 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
       </header>
 
-      {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} />}
+      {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} editMode={editMode} onFieldChange={onFieldChange} />}
 
       {/* Hero */}
       {isMobile ? (
-        <section style={{ background: '#f5f4f0' }}>
+        <section data-canvas-section="hero" style={{ background: '#f5f4f0' }}>
           {/* Mobile: image first, text below */}
           <div className="relative">
             <div className="aspect-[4/3] overflow-hidden">
@@ -1950,25 +1970,33 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
             <p className="text-[10px] font-bold uppercase tracking-[0.25em] mb-4 flex items-center gap-1.5" style={{ color: primaryColor }}>
               {collections[0]?.emoji} {tagline}
             </p>
-            <h1 className="text-4xl font-black leading-[1.05] tracking-tight mb-4" style={{ color: tt.textPrimary }}>{heroTitle}</h1>
-            <p className="text-sm leading-relaxed mb-7" style={{ color: tt.textSecondary }}>{heroSubtitle}</p>
-            <button onClick={scrollToProducts} className="w-full py-3.5 text-sm font-bold uppercase tracking-wider rounded-full" style={{ background: primaryColor, color: btnText }}>
-              {ctaText}
+            <h1 className="text-4xl font-black leading-[1.05] tracking-tight mb-4" style={{ color: tt.textPrimary }}>
+              <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            </h1>
+            <p className="text-sm leading-relaxed mb-7" style={{ color: tt.textSecondary }}>
+              <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
+            </p>
+            <button onClick={editMode ? undefined : scrollToProducts} className="w-full py-3.5 text-sm font-bold uppercase tracking-wider rounded-full" style={{ background: primaryColor, color: btnText }}>
+              <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
             </button>
           </div>
         </section>
       ) : (
-        <section style={{ background: '#f5f4f0' }}>
+        <section data-canvas-section="hero" style={{ background: '#f5f4f0' }}>
           <div className="max-w-6xl mx-auto px-5 py-16 grid grid-cols-2 gap-16 items-center">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.28em] mb-5 flex items-center gap-1.5" style={{ color: primaryColor }}>
                 {collections[0]?.emoji} {tagline}
               </p>
-              <h1 className="text-5xl font-black leading-[1.02] tracking-tight mb-5" style={{ color: tt.textPrimary }}>{heroTitle}</h1>
-              <p className="text-sm leading-relaxed mb-8 max-w-sm" style={{ color: tt.textSecondary }}>{heroSubtitle}</p>
+              <h1 className="text-5xl font-black leading-[1.02] tracking-tight mb-5" style={{ color: tt.textPrimary }}>
+                <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              </h1>
+              <p className="text-sm leading-relaxed mb-8 max-w-sm" style={{ color: tt.textSecondary }}>
+                <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
+              </p>
               <div className="flex items-center gap-4">
-                <button onClick={scrollToProducts} className="px-7 py-3 text-xs font-bold uppercase tracking-wider rounded-full hover:opacity-85 transition-opacity" style={{ background: primaryColor, color: btnText }}>
-                  {ctaText}
+                <button onClick={editMode ? undefined : scrollToProducts} className="px-7 py-3 text-xs font-bold uppercase tracking-wider rounded-full hover:opacity-85 transition-opacity" style={{ background: primaryColor, color: btnText }}>
+                  <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
                 </button>
                 <button onClick={scrollToProducts} className="text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-1.5" style={{ color: tt.textMuted }}>
                   Explore <ArrowRight className="w-3.5 h-3.5" />
@@ -2063,16 +2091,18 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
 
       {/* Brand story banner */}
       {brandStory && (
-        <section className={isMobile ? 'py-8' : 'py-14'} style={{ background: '#f5f4f0' }}>
+        <section data-canvas-section="brandStory" className={isMobile ? 'py-8' : 'py-14'} style={{ background: '#f5f4f0' }}>
           <div className="max-w-2xl mx-auto px-5 text-center">
             <div className="text-4xl mb-5 opacity-20" style={{ color: primaryColor }}>"</div>
-            <p className={`${isMobile ? 'text-base' : 'text-lg'} font-medium leading-relaxed italic`} style={{ color: tt.textSecondary }}>{brandStory}</p>
+            <p className={`${isMobile ? 'text-base' : 'text-lg'} font-medium leading-relaxed italic`} style={{ color: tt.textSecondary }}>
+              <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
+            </p>
           </div>
         </section>
       )}
 
       {/* Features */}
-      <section className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
+      <section data-canvas-section="features" className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
         <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-6'}`}>
           {features.map((f, i) => (
             <div key={i} className="flex items-start gap-4 p-6 rounded-2xl border hover:shadow-md transition-all" style={{ borderColor: tt.divider }}>
@@ -2080,8 +2110,12 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
                 <EmojiIcon emoji={f.icon} size={20} color={primaryColor} strokeWidth={1.75} />
               </div>
               <div>
-                <h3 className="text-sm font-black uppercase tracking-wide mb-1" style={{ color: tt.textPrimary }}>{f.title}</h3>
-                <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
+                <h3 className="text-sm font-black uppercase tracking-wide mb-1" style={{ color: tt.textPrimary }}>
+                  <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                </h3>
+                <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>
+                  <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+                </p>
               </div>
             </div>
           ))}
@@ -2089,22 +2123,30 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
       </section>
 
       {/* Testimonials */}
-      <section style={{ background: '#f5f4f0' }} className={isMobile ? 'py-8' : 'py-14'}>
+      <section data-canvas-section="testimonials" style={{ background: '#f5f4f0' }} className={isMobile ? 'py-8' : 'py-14'}>
         <div className="max-w-6xl mx-auto px-5">
           <p className="text-[10px] uppercase tracking-[0.25em] mb-2 text-center" style={{ color: tt.textMuted }}>Reviews</p>
-          <h2 className="text-xl font-black text-center mb-9" style={{ color: tt.textPrimary }}>What Customers Say</h2>
+          <h2 className="text-xl font-black text-center mb-9" style={{ color: tt.textPrimary }}>
+            <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'What Customers Say'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </h2>
           <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
             {testimonials.map((t, i) => (
               <div key={i} className="rounded-3xl p-6 shadow-sm" style={{ background: tt.surfaceBg }}>
                 <Stars n={t.rating} />
-                <p className="text-sm leading-relaxed mt-3 mb-5 italic" style={{ color: tt.textSecondary }}>"{t.text}"</p>
+                <p className="text-sm leading-relaxed mt-3 mb-5 italic" style={{ color: tt.textSecondary }}>
+                  "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
+                </p>
                 <div className="flex items-center gap-3 pt-3 border-t" style={{ borderColor: tt.divider }}>
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: primaryColor }}>
                     {t.author[0]}
                   </div>
                   <div>
-                    <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>{t.author}</p>
-                    <p className="text-[10px] mt-0.5" style={{ color: tt.textMuted }}>{t.role}</p>
+                    <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>
+                      <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                    </p>
+                    <p className="text-[10px] mt-0.5" style={{ color: tt.textMuted }}>
+                      <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                    </p>
                   </div>
                 </div>
               </div>
@@ -2114,15 +2156,21 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
       </section>
 
       {stats && <StatsRow stats={stats} primaryColor={primaryColor} device={device} />}
-      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} device={device} />}
+      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
 
       {/* Footer */}
       <footer className="border-t py-10" style={{ background: tt.pageBg, borderColor: tt.divider }}>
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: tt.textPrimary }}>{storeName}</span>
-          <p className="text-xs italic" style={{ color: tt.textMuted }}>{tagline}</p>
-          <p className="text-xs" style={{ color: tt.textMuted }}>© 2026 {storeName} · Powered by Storee</p>
+          <span className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: tt.textPrimary }}>
+            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </span>
+          <p className="text-xs italic" style={{ color: tt.textMuted }}>
+            <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
+          <p className="text-xs" style={{ color: tt.textMuted }}>
+            <EditSpan field="footerNote" value={footerNote ?? defaultFooterNote} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
         </div>
       </footer>
     </div>
@@ -2132,8 +2180,9 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
 // ── BOLD layout ───────────────────────────────────────────────────────────────
 // Inspired by: Nike, OFF-WHITE, Supreme — dark, high-energy, high contrast
 
-function BoldLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen: _onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [] } = design;
+function BoldLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen: _onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
+  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory, sectionHeadings, footerNote } = design;
+  const defaultFooterNote = `© 2026 ${storeName} · All rights reserved`;
   const isMobile = device === 'mobile';
   const [selectedCol, setSelectedCol] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -2149,10 +2198,12 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
       {/* Header */}
       <header className="bg-[#0a0a0a]/96 backdrop-blur-sm border-b border-white/8 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-5 flex items-center justify-between" style={{ height: '56px' }}>
-          <span className="text-sm font-black uppercase tracking-[0.18em] text-white">{storeName}</span>
+          <span className="text-sm font-black uppercase tracking-[0.18em] text-white">
+            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </span>
           {!isMobile ? (
             <nav className="flex gap-7">
-              {navLinks.map(l => <a key={l} onClick={scrollToProducts} className="text-xs uppercase tracking-widest text-white/40 hover:text-white transition-colors cursor-pointer">{l}</a>)}
+              {navLinks.map((l, li) => <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-xs uppercase tracking-widest text-white/40 hover:text-white transition-colors cursor-pointer"><EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine /></a>)}
             </nav>
           ) : (
             <button onClick={() => setMenuOpen(true)} className="p-2 text-white/60"><Menu className="w-5 h-5" /></button>
@@ -2171,10 +2222,10 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
         </div>
       </header>
 
-      {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} />}
+      {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} editMode={editMode} onFieldChange={onFieldChange} />}
 
       {/* Hero */}
-      <section className="relative overflow-hidden" style={{ minHeight: isMobile ? '75vh' : '82vh', display: 'flex', alignItems: 'center' }}>
+      <section data-canvas-section="hero" className="relative overflow-hidden" style={{ minHeight: isMobile ? '75vh' : '82vh', display: 'flex', alignItems: 'center' }}>
         {/* Background image */}
         <div className="absolute inset-0">
           <ProductImg src={products[0]?.image} alt="" className="w-full h-full object-cover opacity-15" />
@@ -2190,12 +2241,14 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
           </div>
           <h1 className={`font-black text-white leading-[0.93] tracking-tight mb-7 ${isMobile ? 'text-[2.5rem]' : 'text-[5.5rem]'}`}
             style={{ textShadow: `0 0 80px ${alpha(primaryColor, 0.35)}` }}>
-            {heroTitle}
+            <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </h1>
-          <p className={`text-white/45 text-sm max-w-md ${isMobile ? 'mb-7' : 'mb-10'} leading-relaxed`}>{heroSubtitle}</p>
+          <p className={`text-white/45 text-sm max-w-md ${isMobile ? 'mb-7' : 'mb-10'} leading-relaxed`}>
+            <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
+          </p>
           <div className="flex items-center gap-3 flex-wrap">
-            <button onClick={scrollToProducts} className={`${isMobile ? 'px-5 py-3 text-[11px]' : 'px-8 py-4 text-xs'} font-black uppercase tracking-widest rounded-full text-black hover:opacity-90 transition-opacity shadow-xl`} style={{ background: primaryColor }}>
-              {ctaText} →
+            <button onClick={editMode ? undefined : scrollToProducts} className={`${isMobile ? 'px-5 py-3 text-[11px]' : 'px-8 py-4 text-xs'} font-black uppercase tracking-widest rounded-full text-black hover:opacity-90 transition-opacity shadow-xl`} style={{ background: primaryColor }}>
+              <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /> →
             </button>
             <button onClick={scrollToProducts} className={`${isMobile ? 'px-5 py-3 text-[11px]' : 'px-8 py-4 text-xs'} font-black uppercase tracking-widest rounded-full text-white/70 border border-white/15 hover:bg-white/8 transition-colors`}>
               See All
@@ -2265,7 +2318,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
       </section>
 
       {/* Features — numbered with accent top bar */}
-      <section className={`border-t border-white/8 ${isMobile ? 'py-8' : 'py-14'}`}>
+      <section data-canvas-section="features" className={`border-t border-white/8 ${isMobile ? 'py-8' : 'py-14'}`}>
         <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-8' : 'grid-cols-3 gap-8'}`}>
           {features.map((f, i) => (
             <div key={i} className="flex items-start gap-5">
@@ -2273,8 +2326,12 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
                 <div className="h-0.5 w-8 mb-4" style={{ background: primaryColor }} />
                 <span className="text-4xl font-black leading-none text-white/15 block mb-3">{String(i + 1).padStart(2, '0')}</span>
                 <div className="mb-2.5"><EmojiIcon emoji={f.icon} size={28} color="rgba(255,255,255,0.7)" strokeWidth={1.5} /></div>
-                <h3 className="text-sm font-black uppercase tracking-widest text-white mb-2">{f.title}</h3>
-                <p className="text-xs text-white/40 leading-relaxed">{f.description}</p>
+                <h3 className="text-sm font-black uppercase tracking-widest text-white mb-2">
+                  <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                </h3>
+                <p className="text-xs text-white/40 leading-relaxed">
+                  <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+                </p>
               </div>
             </div>
           ))}
@@ -2282,22 +2339,28 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
       </section>
 
       {/* Testimonials */}
-      <section className={isMobile ? 'py-8' : 'py-14'} style={{ background: alpha(primaryColor, 0.06) }}>
+      <section data-canvas-section="testimonials" className={isMobile ? 'py-8' : 'py-14'} style={{ background: alpha(primaryColor, 0.06) }}>
         <div className="max-w-6xl mx-auto px-5">
-          <h2 className="text-2xl font-black uppercase tracking-widest text-white mb-8 text-center">The Word</h2>
+          <h2 className="text-2xl font-black uppercase tracking-widest text-white mb-8 text-center">
+            <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'The Word'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </h2>
           <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
             {testimonials.map((t, i) => (
               <div key={i} className="rounded-3xl p-6 backdrop-blur" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div className="text-3xl font-black mb-4 leading-none" style={{ color: alpha(primaryColor, 0.4) }}>"</div>
                 <Stars n={t.rating} />
-                <p className="text-sm text-white/65 leading-relaxed mt-3 mb-5">"{t.text}"</p>
+                <p className="text-sm text-white/65 leading-relaxed mt-3 mb-5">"<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"</p>
                 <div className="flex items-center gap-3 border-t border-white/8 pt-4">
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black text-black" style={{ background: primaryColor }}>
                     {t.author[0]}
                   </div>
                   <div>
-                    <p className="text-xs font-black uppercase tracking-widest text-white">{t.author}</p>
-                    <p className="text-[10px] mt-0.5" style={{ color: alpha(primaryColor, 0.7) }}>{t.role}</p>
+                    <p className="text-xs font-black uppercase tracking-widest text-white">
+                      <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                    </p>
+                    <p className="text-[10px] mt-0.5" style={{ color: alpha(primaryColor, 0.7) }}>
+                      <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                    </p>
                   </div>
                 </div>
               </div>
@@ -2306,16 +2369,30 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
         </div>
       </section>
 
-      {stats && <StatsRow stats={stats} primaryColor={primaryColor} dark={true} device={device} />}
-      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} dark={true} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} dark={true} device={device} />}
+      {brandStory && (
+        <section data-canvas-section="brandStory" className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
+          <p className="text-xs font-black uppercase tracking-widest text-white/30 mb-4">Our Story</p>
+          <p className="text-sm text-white/60 leading-relaxed max-w-2xl">
+            <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
+          </p>
+        </section>
+      )}
+      {stats && <StatsRow stats={stats} primaryColor={primaryColor} dark={true} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
+      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} dark={true} editMode={editMode} onFieldChange={onFieldChange} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} dark={true} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
 
       {/* Footer */}
       <footer className="border-t border-white/8 py-10">
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm font-black uppercase tracking-[0.18em] text-white">{storeName}</span>
-          <p className="text-xs text-white/30 uppercase tracking-widest">{tagline}</p>
-          <p className="text-xs text-white/30">© 2026 {storeName} · Powered by Storee</p>
+          <span className="text-sm font-black uppercase tracking-[0.18em] text-white">
+            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </span>
+          <p className="text-xs text-white/30 uppercase tracking-widest">
+            <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
+          <p className="text-xs text-white/30">
+            <EditSpan field="footerNote" value={footerNote ?? defaultFooterNote} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
         </div>
       </footer>
     </div>
@@ -2325,8 +2402,9 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
 // ── ELEGANT layout ────────────────────────────────────────────────────────────
 // Inspired by: Net-a-Porter, Jo Malone, Tiffany — luxury, refined, warm
 
-function ElegantLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory } = design;
+function ElegantLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
+  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory, sectionHeadings, footerNote } = design;
+  const defaultFooterNote = `© 2026 ${storeName} · All rights reserved`;
   const btnText = isDark(primaryColor) ? '#fff' : '#2a2420';
   const isMobile = device === 'mobile';
   const tt = getDefaultTokenTheme(primaryColor);
@@ -2348,12 +2426,14 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
             <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shadow-sm" style={{ background: primaryColor }}>
               {storeName[0]}
             </div>
-            <span className="text-sm font-bold" style={{ color: '#2a2420', letterSpacing: '0.16em' }}>{storeName.toUpperCase()}</span>
+            <span className="text-sm font-bold" style={{ color: '#2a2420', letterSpacing: '0.16em' }}>
+              <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            </span>
           </div>
           {!isMobile ? (
             <nav className="flex gap-5">
-              {navLinks.map(l => (
-                <a key={l} onClick={scrollToProducts} className="text-[11px] hover:opacity-50 transition-opacity cursor-pointer" style={{ color: '#6b5e52', letterSpacing: '0.1em' }}>{l.toUpperCase()}</a>
+              {navLinks.map((l, li) => (
+                <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-[11px] hover:opacity-50 transition-opacity cursor-pointer" style={{ color: '#6b5e52', letterSpacing: '0.1em' }}><EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine /></a>
               ))}
             </nav>
           ) : (
@@ -2376,10 +2456,10 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
         <div className="h-px" style={{ background: `linear-gradient(to right, transparent, ${primaryColor}, transparent)` }} />
       </header>
 
-      {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} />}
+      {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} editMode={editMode} onFieldChange={onFieldChange} />}
 
       {/* Hero — full-bleed image */}
-      <section className="relative overflow-hidden" style={{ height: isMobile ? '56vh' : '82vh' }}>
+      <section data-canvas-section="hero" className="relative overflow-hidden" style={{ height: isMobile ? '56vh' : '82vh' }}>
         <ProductImg src={products[0]?.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0" style={{ background: isMobile ? 'linear-gradient(to bottom, rgba(10,7,4,0.4), rgba(10,7,4,0.7))' : 'linear-gradient(to right, rgba(10,7,4,0.78) 42%, rgba(10,7,4,0.15))' }} />
         <div className={`absolute inset-0 flex items-${isMobile ? 'end pb-8' : 'center'}`}>
@@ -2387,12 +2467,14 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
             <p className="text-xs tracking-[0.35em] mb-5 text-white/55" style={{ fontFamily: 'system-ui' }}>{tagline.toUpperCase()}</p>
             <h1 className={`font-bold text-white leading-tight mb-6 ${isMobile ? 'text-3xl' : 'text-5xl'}`}
               style={{ textShadow: '0 2px 30px rgba(0,0,0,0.5)', maxWidth: '14ch' }}>
-              {heroTitle}
+              <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
             </h1>
-            {!isMobile && <p className="text-white/65 text-sm max-w-xs mb-9 leading-relaxed" style={{ fontFamily: 'system-ui' }}>{heroSubtitle}</p>}
-            <button onClick={scrollToProducts} className={`${isMobile ? 'w-full text-center py-3 px-6' : 'px-9 py-3.5'} text-xs border text-white hover:bg-white/12 transition-colors`}
+            {!isMobile && <p className="text-white/65 text-sm max-w-xs mb-9 leading-relaxed" style={{ fontFamily: 'system-ui' }}>
+              <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
+            </p>}
+            <button onClick={editMode ? undefined : scrollToProducts} className={`${isMobile ? 'w-full text-center py-3 px-6' : 'px-9 py-3.5'} text-xs border text-white hover:bg-white/12 transition-colors`}
               style={{ borderColor: 'rgba(255,255,255,0.35)', letterSpacing: '0.22em', fontFamily: 'system-ui' }}>
-              {ctaText.toUpperCase()}
+              <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
             </button>
           </div>
         </div>
@@ -2458,45 +2540,57 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
       </section>
 
       {/* Brand Philosophy */}
-      <section className={isMobile ? 'py-8' : 'py-16'} style={{ background: '#f5f0e8' }}>
+      <section data-canvas-section="brandStory" className={isMobile ? 'py-8' : 'py-16'} style={{ background: '#f5f0e8' }}>
         <div className="max-w-2xl mx-auto px-6 text-center">
           <p className="text-[10px] tracking-[0.38em] mb-6" style={{ color: primaryColor, fontFamily: 'system-ui' }}>OUR PHILOSOPHY</p>
           <p className="text-lg font-medium leading-loose italic" style={{ color: '#4a3d32', lineHeight: '1.9' }}>
-            "{brandStory || heroSubtitle}"
+            "<EditSpan field="brandStory" value={brandStory || heroSubtitle || ''} editMode={editMode} onFieldChange={onFieldChange} />"
           </p>
           <div className="w-8 h-px mx-auto mt-6" style={{ background: primaryColor }} />
         </div>
       </section>
 
       {/* Features */}
-      <section className={`max-w-6xl mx-auto px-6 ${isMobile ? 'py-8' : 'py-14'}`}>
+      <section data-canvas-section="features" className={`max-w-6xl mx-auto px-6 ${isMobile ? 'py-8' : 'py-14'}`}>
         <div className={`grid ${isMobile ? 'grid-cols-1 divide-y' : 'grid-cols-3 divide-x'}`} style={{ borderColor: '#e8e3db' }}>
           {features.map((f, i) => (
             <div key={i} className={`text-center ${isMobile ? 'px-4 py-5' : 'px-8 py-8'}`}>
               <div className="mb-4"><EmojiIcon emoji={f.icon} size={28} color={primaryColor} strokeWidth={1.5} /></div>
-              <h3 className="text-xs font-bold tracking-[0.2em] mb-2" style={{ color: '#2a2420', fontFamily: 'system-ui' }}>{f.title.toUpperCase()}</h3>
-              <p className="text-xs leading-relaxed" style={{ color: '#8a7a6a', fontFamily: 'system-ui' }}>{f.description}</p>
+              <h3 className="text-xs font-bold tracking-[0.2em] mb-2" style={{ color: '#2a2420', fontFamily: 'system-ui' }}>
+                <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              </h3>
+              <p className="text-xs leading-relaxed" style={{ color: '#8a7a6a', fontFamily: 'system-ui' }}>
+                <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+              </p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Testimonials */}
-      <section className={isMobile ? 'py-8' : 'py-14'} style={{ background: '#f5f0e8' }}>
+      <section data-canvas-section="testimonials" className={isMobile ? 'py-8' : 'py-14'} style={{ background: '#f5f0e8' }}>
         <div className="max-w-6xl mx-auto px-6">
           <div className={`text-center ${isMobile ? 'mb-7' : 'mb-10'}`}>
             <p className="text-[10px] tracking-[0.38em] mb-3" style={{ color: primaryColor, fontFamily: 'system-ui' }}>CLIENT VOICES</p>
-            <h2 className="text-xl font-bold tracking-wide" style={{ color: '#2a2420' }}>Testimonials</h2>
+            <h2 className="text-xl font-bold tracking-wide" style={{ color: '#2a2420' }}>
+              <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'Testimonials'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            </h2>
           </div>
           <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-6`}>
             {testimonials.map((t, i) => (
               <div key={i} className="p-7 relative overflow-hidden" style={{ background: tt.surfaceBg, borderLeft: `3px solid ${primaryColor}` }}>
                 <div className="text-5xl font-black leading-none absolute top-3 right-5 opacity-6" style={{ color: primaryColor }}>❝</div>
                 <Stars n={t.rating} />
-                <p className="text-sm leading-loose italic mt-4 mb-6" style={{ color: '#4a3d32' }}>"{t.text}"</p>
+                <p className="text-sm leading-loose italic mt-4 mb-6" style={{ color: '#4a3d32' }}>
+                  "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
+                </p>
                 <div>
-                  <p className="text-xs font-bold tracking-widest" style={{ color: '#2a2420', fontFamily: 'system-ui' }}>{t.author.toUpperCase()}</p>
-                  <p className="text-[10px] tracking-wider mt-0.5" style={{ color: primaryColor, fontFamily: 'system-ui' }}>{t.role}</p>
+                  <p className="text-xs font-bold tracking-widest" style={{ color: '#2a2420', fontFamily: 'system-ui' }}>
+                    <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                  </p>
+                  <p className="text-[10px] tracking-wider mt-0.5" style={{ color: primaryColor, fontFamily: 'system-ui' }}>
+                    <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                  </p>
                 </div>
               </div>
             ))}
@@ -2504,17 +2598,23 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
       </section>
 
-      {stats && <StatsRow stats={stats} primaryColor={primaryColor} device={device} />}
-      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} elegant={true} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} elegant={true} device={device} />}
+      {stats && <StatsRow stats={stats} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
+      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} elegant={true} editMode={editMode} onFieldChange={onFieldChange} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} elegant={true} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
 
       {/* Footer */}
       <footer style={{ background: '#2a2420', borderTop: `3px solid ${primaryColor}` }} className="py-12">
         <div className="max-w-6xl mx-auto px-6 text-center">
-          <p className="text-xs font-bold tracking-[0.45em] text-white mb-3">{storeName.toUpperCase()}</p>
-          <p className="text-[10px] tracking-[0.22em] mb-6" style={{ color: 'rgba(255,255,255,0.38)' }}>{tagline.toUpperCase()}</p>
+          <p className="text-xs font-bold tracking-[0.45em] text-white mb-3">
+            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
+          <p className="text-[10px] tracking-[0.22em] mb-6" style={{ color: 'rgba(255,255,255,0.38)' }}>
+            <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
           <div className="w-10 h-px mx-auto mb-6" style={{ background: primaryColor }} />
-          <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.28)' }}>© 2026 {storeName} · Powered by Storee</p>
+          <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.28)' }}>
+            <EditSpan field="footerNote" value={footerNote ?? defaultFooterNote} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
         </div>
       </footer>
     </div>
@@ -2524,8 +2624,9 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
 // ── MODERN layout ─────────────────────────────────────────────────────────────
 // Inspired by: Apple Store, Allbirds, Casper — clean, airy, contemporary
 
-function ModernLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [] } = design;
+function ModernLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
+  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [], sectionHeadings, footerNote } = design;
+  const defaultFooterNote = `© 2026 ${storeName} · All rights reserved`;
   const btnText = isDark(primaryColor) ? '#fff' : '#fff';
   const isMobile = device === 'mobile';
   const tt = getDefaultTokenTheme(primaryColor);
@@ -2547,11 +2648,13 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
             <div className="w-8 h-8 rounded-2xl flex items-center justify-center text-xs font-bold text-white shadow-md" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})` }}>
               {storeName[0]}
             </div>
-            <span className="text-sm font-bold" style={{ color: tt.textPrimary }}>{storeName}</span>
+            <span className="text-sm font-bold" style={{ color: tt.textPrimary }}>
+              <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            </span>
           </div>
           {!isMobile ? (
             <nav className="flex gap-6">
-              {navLinks.map(l => <a key={l} onClick={scrollToProducts} className="text-sm transition-colors font-medium cursor-pointer" style={{ color: tt.textSecondary }}>{l}</a>)}
+              {navLinks.map((l, li) => <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-sm transition-colors font-medium cursor-pointer" style={{ color: tt.textSecondary }}><EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine /></a>)}
             </nav>
           ) : (
             <button onClick={() => setMenuOpen(true)} className="p-2 rounded-xl" style={{ color: tt.textSecondary }}><Menu className="w-5 h-5" /></button>
@@ -2571,18 +2674,22 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
         </div>
       </header>
 
-      {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} />}
+      {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} editMode={editMode} onFieldChange={onFieldChange} />}
 
       {/* Hero */}
       {isMobile ? (
-        <section className="px-5 py-10" style={{ background: `linear-gradient(160deg, ${alpha(primaryColor, 0.05)} 0%, ${alpha(accentColor, 0.08)} 100%)` }}>
+        <section data-canvas-section="hero" className="px-5 py-10" style={{ background: `linear-gradient(160deg, ${alpha(primaryColor, 0.05)} 0%, ${alpha(accentColor, 0.08)} 100%)` }}>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-5" style={{ background: alpha(primaryColor, 0.1), color: primaryColor }}>
             ✦ {tagline}
           </div>
-          <h1 className="text-4xl font-bold leading-tight tracking-tight mb-4" style={{ color: tt.textPrimary }}>{heroTitle}</h1>
-          <p className="text-sm mb-7 leading-relaxed" style={{ color: tt.textSecondary }}>{heroSubtitle}</p>
-          <button onClick={scrollToProducts} className="w-full py-3.5 text-sm font-semibold rounded-2xl shadow-lg" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})`, color: btnText }}>
-            {ctaText}
+          <h1 className="text-4xl font-bold leading-tight tracking-tight mb-4" style={{ color: tt.textPrimary }}>
+            <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </h1>
+          <p className="text-sm mb-7 leading-relaxed" style={{ color: tt.textSecondary }}>
+            <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
+          </p>
+          <button onClick={editMode ? undefined : scrollToProducts} className="w-full py-3.5 text-sm font-semibold rounded-2xl shadow-lg" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})`, color: btnText }}>
+            <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </button>
           {/* Mini product scroll on mobile */}
           <div className="mt-7 flex gap-3 overflow-x-auto pb-1">
@@ -2600,17 +2707,21 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
           </div>
         </section>
       ) : (
-        <section className="overflow-hidden">
+        <section data-canvas-section="hero" className="overflow-hidden">
           <div className="max-w-6xl mx-auto px-5 py-14 grid grid-cols-2 gap-0 items-center">
             <div className="py-6 pr-10">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6" style={{ background: alpha(primaryColor, 0.1), color: primaryColor }}>
                 ✦ {tagline}
               </div>
-              <h1 className="text-5xl font-bold leading-[1.05] tracking-tight mb-5" style={{ color: tt.textPrimary }}>{heroTitle}</h1>
-              <p className="text-base mb-8 max-w-sm leading-relaxed" style={{ color: tt.textSecondary }}>{heroSubtitle}</p>
+              <h1 className="text-5xl font-bold leading-[1.05] tracking-tight mb-5" style={{ color: tt.textPrimary }}>
+                <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              </h1>
+              <p className="text-base mb-8 max-w-sm leading-relaxed" style={{ color: tt.textSecondary }}>
+                <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
+              </p>
               <div className="flex flex-wrap gap-3 mb-8">
-                <button onClick={scrollToProducts} className="px-7 py-3.5 text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl hover:opacity-90 transition-all" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})`, color: btnText }}>
-                  {ctaText}
+                <button onClick={editMode ? undefined : scrollToProducts} className="px-7 py-3.5 text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl hover:opacity-90 transition-all" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})`, color: btnText }}>
+                  <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
                 </button>
                 <button onClick={scrollToProducts} className="px-7 py-3.5 text-sm font-semibold rounded-2xl border transition-all" style={{ borderColor: tt.surfaceBorder, color: tt.textSecondary, background: 'transparent' }}>
                   Learn More
@@ -2703,35 +2814,47 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
       </section>
 
       {/* Features */}
-      <section className={isMobile ? 'py-8' : 'py-14'} style={{ background: `linear-gradient(135deg, ${alpha(primaryColor, 0.04)}, ${alpha(accentColor, 0.06)})` }}>
+      <section data-canvas-section="features" className={isMobile ? 'py-8' : 'py-14'} style={{ background: `linear-gradient(135deg, ${alpha(primaryColor, 0.04)}, ${alpha(accentColor, 0.06)})` }}>
         <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-5'}`}>
           {features.map((f, i) => (
             <div key={i} className="bg-white/75 backdrop-blur rounded-3xl p-7 shadow-sm hover:shadow-lg transition-shadow">
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style={{ background: `linear-gradient(135deg, ${alpha(primaryColor, 0.15)}, ${alpha(accentColor, 0.15)})` }}>
                 <EmojiIcon emoji={f.icon} size={24} color={primaryColor} strokeWidth={1.75} />
               </div>
-              <h3 className="text-sm font-bold mb-2" style={{ color: tt.textPrimary }}>{f.title}</h3>
-              <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
+              <h3 className="text-sm font-bold mb-2" style={{ color: tt.textPrimary }}>
+                <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              </h3>
+              <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>
+                <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+              </p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Testimonials */}
-      <section className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
-        <h2 className="text-2xl font-bold text-center mb-9" style={{ color: tt.textPrimary }}>Loved by Customers</h2>
+      <section data-canvas-section="testimonials" className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
+        <h2 className="text-2xl font-bold text-center mb-9" style={{ color: tt.textPrimary }}>
+          <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'Loved by Customers'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+        </h2>
         <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
           {testimonials.map((t, i) => (
             <div key={i} className="rounded-3xl p-6 border-l-4" style={{ background: alpha(i === 0 ? primaryColor : accentColor, 0.05), borderLeftColor: i === 0 ? primaryColor : accentColor }}>
               <Stars n={t.rating} />
-              <p className="text-sm leading-relaxed mt-3 mb-5" style={{ color: tt.textSecondary }}>"{t.text}"</p>
+              <p className="text-sm leading-relaxed mt-3 mb-5" style={{ color: tt.textSecondary }}>
+                "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
+              </p>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style={{ background: i === 0 ? primaryColor : accentColor }}>
                   {t.author[0]}
                 </div>
                 <div>
-                  <p className="text-xs font-bold" style={{ color: tt.textPrimary }}>{t.author}</p>
-                  <p className="text-[10px]" style={{ color: tt.textMuted }}>{t.role}</p>
+                  <p className="text-xs font-bold" style={{ color: tt.textPrimary }}>
+                    <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                  </p>
+                  <p className="text-[10px]" style={{ color: tt.textMuted }}>
+                    <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                  </p>
                 </div>
               </div>
             </div>
@@ -2739,9 +2862,9 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
         </div>
       </section>
 
-      {stats && <StatsRow stats={stats} primaryColor={primaryColor} device={device} />}
-      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} device={device} />}
+      {stats && <StatsRow stats={stats} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
+      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
 
       {/* Footer */}
       <footer className="border-t py-10" style={{ background: tt.surfaceBg, borderColor: tt.divider }}>
@@ -2750,10 +2873,16 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
             <div className="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold text-white" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})` }}>
               {storeName[0]}
             </div>
-            <span className="text-sm font-bold" style={{ color: tt.textPrimary }}>{storeName}</span>
+            <span className="text-sm font-bold" style={{ color: tt.textPrimary }}>
+              <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            </span>
           </div>
-          <p className="text-xs" style={{ color: tt.textMuted }}>{tagline}</p>
-          <p className="text-xs" style={{ color: tt.textMuted }}>© 2026 {storeName} · Powered by Storee</p>
+          <p className="text-xs" style={{ color: tt.textMuted }}>
+            <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
+          <p className="text-xs" style={{ color: tt.textMuted }}>
+            <EditSpan field="footerNote" value={footerNote ?? defaultFooterNote} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
         </div>
       </footer>
     </div>
@@ -2763,8 +2892,9 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
 // ── PLAYFUL layout ────────────────────────────────────────────────────────────
 // Inspired by: Glossier, Oatly, Warby Parker — fun, colorful, round, youthful
 
-function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen: _onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
-  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [] } = design;
+function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen: _onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
+  const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [], sectionHeadings, footerNote } = design;
+  const defaultFooterNote = `© 2026 ${storeName} · All rights reserved`;
   const heroTextColor = isDark(primaryColor) ? '#fff' : '#111';
   const isMobile = device === 'mobile';
   const tt = getDefaultTokenTheme(primaryColor);
@@ -2784,14 +2914,16 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
         <div className="max-w-6xl mx-auto px-5 flex items-center justify-between" style={{ height: '56px' }}>
           <div className="flex items-center gap-2">
             <span className="text-xl">{collections[0]?.emoji}</span>
-            <span className="text-sm font-black" style={{ color: tt.textPrimary }}>{storeName}</span>
+            <span className="text-sm font-black" style={{ color: tt.textPrimary }}>
+              <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            </span>
           </div>
           {!isMobile ? (
             <nav className="flex gap-2">
-              {navLinks.map((l, i) => (
-                <a key={l} onClick={scrollToProducts} className="px-4 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer"
-                  style={i === 0 ? { background: primaryColor, color: heroTextColor } : { color: '#555', background: '#f5f5f5' }}>
-                  {l}
+              {navLinks.map((l, li) => (
+                <a key={li} onClick={editMode ? undefined : scrollToProducts} className="px-4 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer"
+                  style={li === 0 ? { background: primaryColor, color: heroTextColor } : { color: '#555', background: '#f5f5f5' }}>
+                  <EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine />
                 </a>
               ))}
             </nav>
@@ -2812,10 +2944,10 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
       </header>
 
-      {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} />}
+      {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} editMode={editMode} onFieldChange={onFieldChange} />}
 
       {/* Hero — gradient with wave bottom */}
-      <section className="relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${accentColor} 100%)` }}>
+      <section data-canvas-section="hero" className="relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${accentColor} 100%)` }}>
         {/* Dot pattern */}
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, white 1.5px, transparent 1.5px)', backgroundSize: '28px 28px' }} />
         <div className={`max-w-6xl mx-auto px-5 pt-12 pb-16 relative ${isMobile ? 'flex flex-col items-center text-center gap-6' : 'grid grid-cols-2 gap-12 items-center'}`}>
@@ -2824,12 +2956,14 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
               {collections[0]?.emoji} {tagline}
             </div>
             <h1 className={`font-black leading-tight mb-4 ${isMobile ? 'text-4xl' : 'text-5xl'}`} style={{ color: heroTextColor }}>
-              {heroTitle}
+              <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
             </h1>
-            <p className={`text-sm mb-8 max-w-sm leading-relaxed ${isMobile ? 'text-center' : ''}`} style={{ color: `${heroTextColor}cc` }}>{heroSubtitle}</p>
+            <p className={`text-sm mb-8 max-w-sm leading-relaxed ${isMobile ? 'text-center' : ''}`} style={{ color: `${heroTextColor}cc` }}>
+              <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
+            </p>
             <div className={`flex items-center gap-3 flex-wrap ${isMobile ? 'justify-center' : ''}`}>
-              <button onClick={scrollToProducts} className="px-7 py-3.5 text-sm font-black rounded-2xl shadow-xl hover:scale-105 transition-transform" style={{ background: tt.surfaceBg, color: primaryColor }}>
-                {ctaText} 🛍️
+              <button onClick={editMode ? undefined : scrollToProducts} className="px-7 py-3.5 text-sm font-black rounded-2xl shadow-xl hover:scale-105 transition-transform" style={{ background: tt.surfaceBg, color: primaryColor }}>
+                <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /> 🛍️
               </button>
               <button onClick={scrollToProducts} className="px-7 py-3.5 text-sm font-bold rounded-2xl border-2 hover:bg-white/12 transition-colors" style={{ borderColor: `${heroTextColor}40`, color: heroTextColor }}>
                 Browse All
@@ -2935,28 +3069,40 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
             <div key={i} className="rounded-3xl p-7 text-center hover:scale-102 transition-transform"
               style={{ background: [alpha(primaryColor, 0.12), alpha(accentColor, 0.12), alpha(primaryColor, 0.07)][i], transition: 'transform 0.2s ease' }}>
               <div className="mb-4"><EmojiIcon emoji={f.icon} size={36} color={primaryColor} strokeWidth={1.5} /></div>
-              <h3 className="text-sm font-black mb-2" style={{ color: tt.textPrimary }}>{f.title}</h3>
-              <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
+              <h3 className="text-sm font-black mb-2" style={{ color: tt.textPrimary }}>
+                <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              </h3>
+              <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>
+                <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+              </p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Testimonials */}
-      <section className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-12'}`}>
-        <h2 className="text-2xl font-black text-center mb-8" style={{ color: tt.textPrimary }}>Happy Customers 🤩</h2>
+      <section data-canvas-section="testimonials" className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-12'}`}>
+        <h2 className="text-2xl font-black text-center mb-8" style={{ color: tt.textPrimary }}>
+          <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'Happy Customers 🤩'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+        </h2>
         <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
           {testimonials.map((t, i) => (
             <div key={i} className="rounded-3xl p-6 border-2" style={{ borderColor: alpha(i === 0 ? primaryColor : accentColor, 0.25) }}>
               <Stars n={t.rating} />
-              <p className="text-sm leading-relaxed mt-3 mb-5" style={{ color: tt.textSecondary }}>"{t.text}"</p>
+              <p className="text-sm leading-relaxed mt-3 mb-5" style={{ color: tt.textSecondary }}>
+                "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
+              </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-base font-black text-white flex-shrink-0" style={{ background: i === 0 ? primaryColor : accentColor }}>
                   {t.author[0]}
                 </div>
                 <div>
-                  <p className="text-xs font-black" style={{ color: tt.textPrimary }}>{t.author}</p>
-                  <p className="text-[10px]" style={{ color: tt.textMuted }}>{t.role}</p>
+                  <p className="text-xs font-black" style={{ color: tt.textPrimary }}>
+                    <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                  </p>
+                  <p className="text-[10px]" style={{ color: tt.textMuted }}>
+                    <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                  </p>
                 </div>
               </div>
             </div>
@@ -2964,9 +3110,9 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
       </section>
 
-      {stats && <StatsRow stats={stats} primaryColor={primaryColor} device={device} />}
-      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} device={device} />}
+      {stats && <StatsRow stats={stats} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
+      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
 
       {/* Footer with wave top */}
       <footer style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})` }}>
@@ -2977,9 +3123,15 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
         <div className="max-w-6xl mx-auto px-5 py-8 text-center">
           <p className="text-2xl mb-2">{collections[0]?.emoji}</p>
-          <p className="text-sm font-black mb-1" style={{ color: heroTextColor }}>{storeName}</p>
-          <p className="text-xs mb-4" style={{ color: `${heroTextColor}aa` }}>{tagline}</p>
-          <p className="text-[10px]" style={{ color: `${heroTextColor}66` }}>© 2026 {storeName} · Powered by Storee</p>
+          <p className="text-sm font-black mb-1" style={{ color: heroTextColor }}>
+            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
+          <p className="text-xs mb-4" style={{ color: `${heroTextColor}aa` }}>
+            <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
+          <p className="text-[10px]" style={{ color: `${heroTextColor}66` }}>
+            <EditSpan field="footerNote" value={footerNote ?? defaultFooterNote} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
         </div>
       </footer>
     </div>
@@ -6197,9 +6349,15 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
       {/* Footer */}
       <footer style={{ borderTop: `1px solid ${tt.divider}`, background: tt.headerBg, paddingTop: '2.5rem', paddingBottom: '2.5rem' }}>
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm font-black uppercase tracking-[0.18em]" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
-          <p className="text-xs italic" style={{ color: tt.textMuted }}>{tagline}</p>
-          <p className="text-xs" style={{ color: tt.textMuted }}>© 2026 {storeName} · Powered by Storee</p>
+          <span className="text-sm font-black uppercase tracking-[0.18em]" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
+            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </span>
+          <p className="text-xs italic" style={{ color: tt.textMuted }}>
+            <EditSpan field="tagline" value={design.tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
+          <p className="text-xs" style={{ color: tt.textMuted }}>
+            <EditSpan field="footerNote" value={design.footerNote ?? `© 2026 ${storeName} · All rights reserved`} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
         </div>
       </footer>
     </div>
@@ -6210,7 +6368,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
 // Mobile-app skeleton: story circles, product list rows, fixed bottom nav
 // Personality: WhatsApp-like, Discord-like, Spotify-like
 
-function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
+function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
   const dt = design.designTokens;
   const tt: TokenTheme = dt ? getTokenThemeV2(dt, primaryColor) : getDefaultTokenTheme(primaryColor);
 
@@ -6238,7 +6396,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
     <div style={{ background: tt.pageBg, fontFamily: tt.fontFamily, minHeight: '100vh', paddingBottom: '64px', position: 'relative' }}>
       <TkFontInjector url={tt.googleFontsUrl} />
 
-      {promoBar && <PromoBar text={promoBar} primaryColor={pc} />}
+      {promoBar && <PromoBar text={promoBar} primaryColor={pc} editMode={editMode} onFieldChange={onFieldChange} />}
 
       {/* ── Header ── */}
       <header style={{ background: pc, position: 'sticky', top: 0, zIndex: 40, height: '56px' }}>
@@ -6439,14 +6597,18 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
 
         {/* Features strip */}
         {features.length > 0 && (
-          <div className="px-4 pt-6 pb-4 space-y-3" style={{ borderTop: `4px solid ${tt.divider}` }}>
+          <div data-canvas-section="features" className="px-4 pt-6 pb-4 space-y-3" style={{ borderTop: `4px solid ${tt.divider}` }}>
             <p className="text-xs font-bold uppercase tracking-widest" style={{ color: tt.textMuted }}>Why choose us</p>
             {features.slice(0, 4).map((f, i) => (
               <div key={i} className="flex items-center gap-3 py-2">
                 <EmojiIcon emoji={f.icon} size={22} color={tt.textSecondary} strokeWidth={1.75} />
                 <div>
-                  <p className="text-sm font-semibold" style={{ color: tt.textPrimary }}>{f.title}</p>
-                  <p className="text-xs" style={{ color: tt.textSecondary }}>{f.description}</p>
+                  <p className="text-sm font-semibold" style={{ color: tt.textPrimary }}>
+                    <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                  </p>
+                  <p className="text-xs" style={{ color: tt.textSecondary }}>
+                    <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+                  </p>
                 </div>
               </div>
             ))}
@@ -6455,13 +6617,17 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
 
         {/* Testimonials */}
         {testimonials.length > 0 && (
-          <div className="px-4 pt-4 pb-4 space-y-3" style={{ borderTop: `4px solid ${tt.divider}` }}>
+          <div data-canvas-section="testimonials" className="px-4 pt-4 pb-4 space-y-3" style={{ borderTop: `4px solid ${tt.divider}` }}>
             <p className="text-xs font-bold uppercase tracking-widest" style={{ color: tt.textMuted }}>Reviews</p>
             {testimonials.slice(0, 3).map((t, i) => (
               <div key={i} className="p-3 rounded-xl" style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}` }}>
                 <Stars n={t.rating} />
-                <p className="text-xs mt-1.5 italic" style={{ color: tt.textSecondary }}>"{t.text}"</p>
-                <p className="text-[10px] mt-1.5 font-semibold" style={{ color: tt.textMuted }}>— {t.author}, {t.role}</p>
+                <p className="text-xs mt-1.5 italic" style={{ color: tt.textSecondary }}>
+                  "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
+                </p>
+                <p className="text-[10px] mt-1.5 font-semibold" style={{ color: tt.textMuted }}>
+                  — <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />, <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                </p>
               </div>
             ))}
           </div>
@@ -6469,14 +6635,18 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
 
         {/* Brand story */}
         {brandStory && (
-          <div className="px-4 py-5" style={{ borderTop: `4px solid ${tt.divider}`, background: tt.surfaceBg }}>
+          <div data-canvas-section="brandStory" className="px-4 py-5" style={{ borderTop: `4px solid ${tt.divider}`, background: tt.surfaceBg }}>
             <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: tt.textMuted }}>Our Story</p>
-            <p className="text-sm leading-relaxed" style={{ color: tt.textSecondary }}>{brandStory}</p>
+            <p className="text-sm leading-relaxed" style={{ color: tt.textSecondary }}>
+              <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
+            </p>
           </div>
         )}
 
         <div className="py-4 text-center">
-          <p className="text-[10px]" style={{ color: tt.textMuted }}>© 2026 {storeName} · {tagline}</p>
+          <p className="text-[10px]" style={{ color: tt.textMuted }}>
+            <EditSpan field="footerNote" value={design.footerNote ?? `© 2026 ${storeName} · All rights reserved`} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
         </div>
       </div>
 
@@ -6515,7 +6685,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
 // Magazine skeleton: asymmetric grid, big typography, minimal UI chrome
 // Personality: Apple-like, Notion-like, editorial fashion
 
-function EditorialLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
+function EditorialLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
   const dt = design.designTokens;
   const tt: TokenTheme = dt ? getTokenThemeV2(dt, primaryColor) : getDefaultTokenTheme(primaryColor);
 
@@ -6561,13 +6731,17 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
             {/* Text — minWidth:0 prevents text from overflowing grid column */}
             <div style={{ minWidth: 0 }}>
               <p className="text-xs uppercase tracking-[0.3em] mb-5" style={{ color: pc }}>{tagline}</p>
-              <h1 style={{ ...headingStyle(tt, isMobile ? 2.2 : 3.6), color: tt.textPrimary, lineHeight: 0.93, marginBottom: '1.25rem', maxWidth: '16ch' }}>{heroTitle}</h1>
-              {!isMobile && <p className="text-sm leading-relaxed mb-8" style={{ color: tt.textSecondary, maxWidth: '36ch' }}>{heroSubtitle}</p>}
+              <h1 style={{ ...headingStyle(tt, isMobile ? 2.2 : 3.6), color: tt.textPrimary, lineHeight: 0.93, marginBottom: '1.25rem', maxWidth: '16ch' }}>
+                <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              </h1>
+              {!isMobile && <p className="text-sm leading-relaxed mb-8" style={{ color: tt.textSecondary, maxWidth: '36ch' }}>
+                <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
+              </p>}
               <div className="flex items-center gap-3 flex-wrap">
-                <button onClick={scrollToProducts}
+                <button onClick={editMode ? undefined : scrollToProducts}
                   className="text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
                   style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: tt.btnRadius, padding: '0.75rem 1.5rem' }}>
-                  {ctaText}
+                  <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
                 </button>
                 <button onClick={scrollToProducts}
                   className="text-sm font-medium transition-colors hover:opacity-70"
@@ -6600,15 +6774,17 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
           <div className="max-w-7xl mx-auto px-6 w-full text-center" style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
             <p className="text-xs uppercase tracking-[0.35em] mb-6" style={{ color: pc }}>{tagline}</p>
             <h1 style={{ ...headingStyle(tt, isMobile ? 2.8 : 5.2), color: tt.textPrimary, lineHeight: 0.9, marginBottom: '1.5rem', maxWidth: '16ch', marginLeft: 'auto', marginRight: 'auto' }}>
-              {heroTitle}
+              <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
             </h1>
             {!isMobile && (
-              <p className="text-sm leading-relaxed mb-10 mx-auto" style={{ color: tt.textSecondary, maxWidth: '45ch' }}>{heroSubtitle}</p>
+              <p className="text-sm leading-relaxed mb-10 mx-auto" style={{ color: tt.textSecondary, maxWidth: '45ch' }}>
+                <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
+              </p>
             )}
-            <button onClick={scrollToProducts}
+            <button onClick={editMode ? undefined : scrollToProducts}
               className="text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
               style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: tt.btnRadius, padding: '0.875rem 2rem' }}>
-              {ctaText}
+              <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
             </button>
           </div>
         </section>
@@ -6630,16 +6806,18 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
           <p className="text-xs uppercase tracking-[0.3em] mb-5 text-white/60">{tagline}</p>
           <h1 className="font-black text-white leading-[0.95] mb-6"
             style={{ fontFamily: tt.headingFont, fontSize: isMobile ? 'clamp(2.5rem, 12vw, 4rem)' : 'clamp(4rem, 8vw, 7rem)', letterSpacing: '-0.02em', maxWidth: '12ch' }}>
-            {heroTitle}
+            <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </h1>
           {!isMobile && (
-            <p className="text-white/65 text-sm max-w-sm mb-10 leading-relaxed">{heroSubtitle}</p>
+            <p className="text-white/65 text-sm max-w-sm mb-10 leading-relaxed">
+              <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
+            </p>
           )}
           <div className="flex items-center gap-3 flex-wrap">
-            <button onClick={scrollToProducts}
+            <button onClick={editMode ? undefined : scrollToProducts}
               className="px-7 py-3.5 text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
               style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: tt.btnRadius }}>
-              {ctaText}
+              <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
             </button>
             <button onClick={scrollToProducts}
               className="px-7 py-3.5 text-sm font-semibold text-white border border-white/30 hover:bg-white/10 transition-colors"
@@ -6812,9 +6990,15 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
       {/* ── Footer ── */}
       <footer style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '2rem', paddingBottom: '2rem' }}>
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm font-black uppercase tracking-widest" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
-          <p className="text-xs italic" style={{ color: tt.textMuted }}>{tagline}</p>
-          <p className="text-xs" style={{ color: tt.textMuted }}>© 2026 {storeName} · Powered by Storee</p>
+          <span className="text-sm font-black uppercase tracking-widest" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
+            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </span>
+          <p className="text-xs italic" style={{ color: tt.textMuted }}>
+            <EditSpan field="tagline" value={design.tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
+          <p className="text-xs" style={{ color: tt.textMuted }}>
+            <EditSpan field="footerNote" value={design.footerNote ?? `© 2026 ${storeName} · All rights reserved`} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
         </div>
       </footer>
     </div>
@@ -6878,7 +7062,7 @@ function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart
 // Pinterest-style columns, varied card heights, image-first
 // Personality: pinterest-like, airbnb-like, art/craft/handmade stores
 
-function MasonryLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
+function MasonryLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
   const dt = design.designTokens;
   const tt: TokenTheme = dt ? getTokenThemeV2(dt, primaryColor) : getDefaultTokenTheme(primaryColor);
 
@@ -6888,7 +7072,7 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
 
   const { products = [], collections = [], features = [], testimonials = [],
           tagline, promoBar, trustBadges = [], brandStory, heroTitle, heroSubtitle,
-          ctaText, navLinks = [], faq = [], stats = [], newsletter } = design;
+          ctaText, navLinks = [], faq = [], stats = [], newsletter, sectionHeadings } = design;
 
   const isMobile = device === 'mobile';
   const [selectedCol, setSelectedCol] = useState(0);
@@ -6918,17 +7102,21 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
 
       {/* Sticky wrapper — PromoBar + header stack together, no overlap */}
       <div className="sticky top-0 z-40" style={{ background: tt.headerBg + 'f0' }}>
-        {promoBar && <PromoBar text={promoBar} primaryColor={pc} />}
+        {promoBar && <PromoBar text={promoBar} primaryColor={pc} editMode={editMode} onFieldChange={onFieldChange} />}
         {/* ── Header ── */}
         <header className="backdrop-blur-sm"
           style={{ borderBottom: `1px solid ${tt.divider}`, height: '56px' }}>
           <div className="max-w-6xl mx-auto px-5 h-full flex items-center justify-between">
-            <span className="font-black text-sm tracking-wider" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
+            <span className="font-black text-sm tracking-wider" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
+              <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            </span>
             {!isMobile ? (
               <nav className="flex gap-6">
-                {navLinks.map(l => (
-                  <a key={l} onClick={scrollToProducts} className="text-xs font-medium cursor-pointer uppercase tracking-wide transition-opacity hover:opacity-50"
-                    style={{ color: tt.textSecondary }}>{l}</a>
+                {navLinks.map((l, li) => (
+                  <a key={li} onClick={scrollToProducts} className="text-xs font-medium cursor-pointer uppercase tracking-wide transition-opacity hover:opacity-50"
+                    style={{ color: tt.textSecondary }}>
+                    <EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                  </a>
                 ))}
               </nav>
             ) : (
@@ -6951,17 +7139,21 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
       </div>
 
       {/* ── Hero — clean, text-centered ── */}
-      <section style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${Math.round(sectionPy * 0.7)}px`, textAlign: 'center' }}>
-        <p className="text-xs uppercase tracking-[0.3em] mb-4" style={{ color: pc }}>{tagline}</p>
+      <section data-canvas-section="hero" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${Math.round(sectionPy * 0.7)}px`, textAlign: 'center' }}>
+        <p className="text-xs uppercase tracking-[0.3em] mb-4" style={{ color: pc }}>
+          <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+        </p>
         <h1 className="font-black leading-tight mx-auto px-6 mb-5"
           style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '2rem' : '3.5rem', maxWidth: '16ch' }}>
-          {heroTitle}
+          <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
         </h1>
-        <p className="text-sm leading-relaxed mx-auto px-6 mb-8" style={{ color: tt.textSecondary, maxWidth: '45ch' }}>{heroSubtitle}</p>
-        <button onClick={scrollToProducts}
+        <p className="text-sm leading-relaxed mx-auto px-6 mb-8" style={{ color: tt.textSecondary, maxWidth: '45ch' }}>
+          <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
+        </p>
+        <button onClick={editMode ? undefined : scrollToProducts}
           className="inline-flex items-center gap-2 px-7 py-3 text-sm font-bold transition-all hover:opacity-85"
           style={{ background: pc, color: pcText, borderRadius: tt.btnRadius, transition: getMotionTransition(motion) }}>
-          {ctaText} <ArrowRight className="w-4 h-4" />
+          <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /> <ArrowRight className="w-4 h-4" />
         </button>
       </section>
 
@@ -7008,7 +7200,7 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
       )}
 
-      {trustBadges.length > 0 && <TrustBadgesRow badges={trustBadges} primaryColor={pc} device={device} />}
+      {trustBadges.length > 0 && <TrustBadgesRow badges={trustBadges} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
 
       {/* ── Product grid ── */}
       <section ref={productsRef} className="max-w-6xl mx-auto px-4"
@@ -7106,15 +7298,19 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
 
       {/* Features */}
       {features.length > 0 && (
-        <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
+        <section data-canvas-section="features" style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
           <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
             <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-4 gap-6'}`}>
               {features.slice(0, 4).map((f, i) => (
                 <div key={i} className="flex flex-col items-center text-center gap-2 p-5 rounded-2xl"
                   style={{ background: tt.pageBg, border: `1px solid ${tt.surfaceBorder}`, boxShadow: getElevationShadow(elevation) }}>
                   <EmojiIcon emoji={f.icon} size={28} color={pc} strokeWidth={1.5} />
-                  <h3 className="text-xs font-black uppercase tracking-wider" style={{ color: tt.textPrimary }}>{f.title}</h3>
-                  <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
+                  <h3 className="text-xs font-black uppercase tracking-wider" style={{ color: tt.textPrimary }}>
+                    <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                  </h3>
+                  <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>
+                    <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+                  </p>
                 </div>
               ))}
             </div>
@@ -7124,16 +7320,24 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
 
       {/* Testimonials — masonry style */}
       {testimonials.length > 0 && (
-        <section>
+        <section data-canvas-section="testimonials">
           <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
-            <h2 className="text-lg font-black mb-8 text-center" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>What they say</h2>
+            <h2 className="text-lg font-black mb-8 text-center" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
+              <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'What they say'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            </h2>
             <div style={{ columnCount: isMobile ? 1 : 3, columnGap: '16px' }}>
               {testimonials.map((t, i) => (
                 <div key={i} style={{ breakInside: 'avoid', marginBottom: '16px', padding: '16px', background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius, boxShadow: getElevationShadow(elevation) }}>
                   <Stars n={t.rating} />
-                  <p className="text-xs italic leading-relaxed mt-2 mb-3" style={{ color: tt.textSecondary }}>"{t.text}"</p>
-                  <p className="text-[10px] font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>{t.author}</p>
-                  <p className="text-[10px]" style={{ color: tt.textMuted }}>{t.role}</p>
+                  <p className="text-xs italic leading-relaxed mt-2 mb-3" style={{ color: tt.textSecondary }}>
+                    "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
+                  </p>
+                  <p className="text-[10px] font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>
+                    <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                  </p>
+                  <p className="text-[10px]" style={{ color: tt.textMuted }}>
+                    <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                  </p>
                 </div>
               ))}
             </div>
@@ -7142,23 +7346,31 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
       )}
 
       {brandStory && (
-        <section style={{ background: alpha(pc, 0.05), borderTop: `1px solid ${tt.divider}` }}>
+        <section data-canvas-section="brandStory" style={{ background: alpha(pc, 0.05), borderTop: `1px solid ${tt.divider}` }}>
           <div className="max-w-2xl mx-auto px-5 text-center" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
             <p className="text-4xl mb-4 opacity-25" style={{ color: pc }}>"</p>
-            <p className="text-sm leading-relaxed italic" style={{ color: tt.textSecondary }}>{brandStory}</p>
+            <p className="text-sm leading-relaxed italic" style={{ color: tt.textSecondary }}>
+              <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
+            </p>
           </div>
         </section>
       )}
 
-      {stats && stats.length > 0 && <StatsRow stats={stats} primaryColor={pc} device={device} />}
-      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={pc} device={device} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={pc} device={device} />}
+      {stats && stats.length > 0 && <StatsRow stats={stats} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
+      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
 
       <footer style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '1.5rem', paddingBottom: '1.5rem' }}>
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm font-black tracking-wider" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
-          <p className="text-xs italic" style={{ color: tt.textMuted }}>{tagline}</p>
-          <p className="text-xs" style={{ color: tt.textMuted }}>© 2026 {storeName} · Powered by Storee</p>
+          <span className="text-sm font-black tracking-wider" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
+            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </span>
+          <p className="text-xs italic" style={{ color: tt.textMuted }}>
+            <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
+          <p className="text-xs" style={{ color: tt.textMuted }}>
+            <EditSpan field="footerNote" value={design.footerNote ?? `© 2026 ${storeName} · All rights reserved`} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
         </div>
       </footer>
     </div>
@@ -7169,7 +7381,7 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
 // Immersive viewport sections, cinematic, one story at a time
 // Personality: zara-like, luxury fashion, high-end brands
 
-function FullscreenLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick }: LayoutProps) {
+function FullscreenLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
   const dt = design.designTokens;
   const tt: TokenTheme = dt ? getTokenThemeV2(dt, primaryColor) : getDefaultTokenTheme(primaryColor);
 
@@ -7373,14 +7585,18 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
 
       {/* Features */}
       {features.length > 0 && (
-        <section style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '4rem', paddingBottom: '4rem' }}>
+        <section data-canvas-section="features" style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '4rem', paddingBottom: '4rem' }}>
           <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-6' : 'grid-cols-3 gap-10'}`}>
             {features.map((f, i) => (
               <div key={i} className="flex flex-col gap-3">
                 <div className="h-px w-8" style={{ background: pc }} />
                 <span className="text-3xl">{f.icon}</span>
-                <h3 className="text-sm font-black uppercase tracking-widest" style={{ color: tt.textPrimary }}>{f.title}</h3>
-                <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
+                <h3 className="text-sm font-black uppercase tracking-widest" style={{ color: tt.textPrimary }}>
+                  <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                </h3>
+                <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>
+                  <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+                </p>
               </div>
             ))}
           </div>
@@ -7388,17 +7604,23 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
       )}
 
       {testimonials.length > 0 && (
-        <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, paddingTop: '4rem', paddingBottom: '4rem' }}>
+        <section data-canvas-section="testimonials" style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, paddingTop: '4rem', paddingBottom: '4rem' }}>
           <div className="max-w-6xl mx-auto px-5">
             <h2 className="font-black text-xl mb-10 uppercase tracking-widest text-center" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>Voices</h2>
             <div className={`grid ${isMobile ? 'grid-cols-1 gap-5' : 'grid-cols-3 gap-8'}`}>
               {testimonials.map((t, i) => (
                 <div key={i} className="flex flex-col gap-3">
                   <Stars n={t.rating} />
-                  <p className="text-sm italic leading-relaxed" style={{ color: tt.textSecondary }}>"{t.text}"</p>
+                  <p className="text-sm italic leading-relaxed" style={{ color: tt.textSecondary }}>
+                    "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
+                  </p>
                   <div className="h-px" style={{ background: tt.divider }} />
-                  <p className="text-xs font-black uppercase tracking-widest" style={{ color: tt.textPrimary }}>{t.author}</p>
-                  <p className="text-[10px]" style={{ color: tt.textMuted }}>{t.role}</p>
+                  <p className="text-xs font-black uppercase tracking-widest" style={{ color: tt.textPrimary }}>
+                    <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                  </p>
+                  <p className="text-[10px]" style={{ color: tt.textMuted }}>
+                    <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                  </p>
                 </div>
               ))}
             </div>
@@ -7407,23 +7629,31 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
       )}
 
       {brandStory && (
-        <section style={{ paddingTop: '4rem', paddingBottom: '4rem', borderTop: `1px solid ${tt.divider}` }}>
+        <section data-canvas-section="brandStory" style={{ paddingTop: '4rem', paddingBottom: '4rem', borderTop: `1px solid ${tt.divider}` }}>
           <div className="max-w-2xl mx-auto px-5 text-center">
             <p className="text-5xl font-black mb-6 opacity-15" style={{ color: tt.textPrimary, fontFamily: tt.headingFont }}>"</p>
-            <p className="text-base leading-relaxed italic" style={{ color: tt.textSecondary }}>{brandStory}</p>
+            <p className="text-base leading-relaxed italic" style={{ color: tt.textSecondary }}>
+              <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
+            </p>
           </div>
         </section>
       )}
 
       {stats && stats.length > 0 && <StatsRow stats={stats} primaryColor={pc} device={device} dark={isDark(tt.pageBg)} />}
-      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={pc} device={device} dark={isDark(tt.pageBg)} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={pc} device={device} dark={isDark(tt.pageBg)} />}
+      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={pc} device={device} dark={isDark(tt.pageBg)} editMode={editMode} onFieldChange={onFieldChange} />}
+      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={pc} device={device} dark={isDark(tt.pageBg)} editMode={editMode} onFieldChange={onFieldChange} />}
 
       <footer style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '2rem', paddingBottom: '2rem' }}>
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm font-black uppercase tracking-widest" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
-          <p className="text-xs italic" style={{ color: tt.textMuted }}>{tagline}</p>
-          <p className="text-xs" style={{ color: tt.textMuted }}>© 2026 {storeName} · Powered by Storee</p>
+          <span className="text-sm font-black uppercase tracking-widest" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
+            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </span>
+          <p className="text-xs italic" style={{ color: tt.textMuted }}>
+            <EditSpan field="tagline" value={design.tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
+          <p className="text-xs" style={{ color: tt.textMuted }}>
+            <EditSpan field="footerNote" value={design.footerNote ?? `© 2026 ${storeName} · All rights reserved`} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+          </p>
         </div>
       </footer>
     </div>
@@ -7645,7 +7875,17 @@ export default function StorePreview({ store, device, editMode, onFieldChange }:
   const waNumber = paymentSettings?.confirmationWhatsapp;
 
   return (
-    <div className="relative overflow-hidden">
+    <div
+      className="relative overflow-hidden"
+      onClickCapture={editMode ? (e) => {
+        const target = e.target as HTMLElement;
+        // Allow clicks on contenteditable fields so they can be focused/edited
+        if (target.closest('[contenteditable]')) return;
+        // Block all other interactive clicks (links, buttons, etc.)
+        const interactive = target.closest('a, button, [role="button"], [role="link"]');
+        if (interactive) e.stopPropagation();
+      } : undefined}
+    >
       {content}
 
       {/* Cart fly animation dots */}

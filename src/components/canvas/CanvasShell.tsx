@@ -238,6 +238,11 @@ export default function CanvasShell({ store, from }: Props) {
   const [testimonials,  setTestimonials]  = useState(d?.testimonials ?? []);
   const [faq,           setFaq]           = useState(d?.faq ?? []);
   const [newsletter,    setNewsletter]    = useState(d?.newsletter ?? { headline: '', subtext: '' });
+  const [navLinks,      setNavLinks]      = useState<string[]>(d?.navLinks ?? []);
+  const [trustBadges,   setTrustBadges]   = useState<Array<{ icon: string; text: string }>>(d?.trustBadges ?? []);
+  const [stats,         setStats]         = useState<Array<{ value: string; label: string }>>(d?.stats ?? []);
+  const [sectionHeadings, setSectionHeadings] = useState<{ testimonials?: string; features?: string; products?: string; faq?: string; newsletter?: string }>(d?.sectionHeadings ?? {});
+  const [footerNote,      setFooterNote]      = useState(d?.footerNote ?? '');
 
   // Section order for drag reorder
   const [sectionItems, setSectionItems] = useState<SectionItem[]>(() => deriveInitialSections(d));
@@ -259,6 +264,11 @@ export default function CanvasShell({ store, from }: Props) {
     setTestimonials(ds?.testimonials ?? []);
     setFaq(ds?.faq ?? []);
     setNewsletter(ds?.newsletter ?? { headline: '', subtext: '' });
+    setNavLinks(ds?.navLinks ?? []);
+    setTrustBadges(ds?.trustBadges ?? []);
+    setStats(ds?.stats ?? []);
+    setSectionHeadings(ds?.sectionHeadings ?? {});
+    setFooterNote(ds?.footerNote ?? '');
     setSectionItems(deriveInitialSections(ds));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveContextStore.id, liveContextStore.design, liveContextStore.primaryColor]);
@@ -293,7 +303,36 @@ export default function CanvasShell({ store, from }: Props) {
       const idx = parseInt(faqM[1]);
       const key = faqM[2] as 'q' | 'a';
       setFaq(prev => prev.map((f, i) => i === idx ? { ...f, [key]: value } : f));
+      return;
     }
+    if (field === 'storeName')  { setStoreName(value); return; }
+    if (field === 'tagline')    { setTagline(value); return; }
+    const navM = field.match(/^navLinks\.(\d+)$/);
+    if (navM) {
+      const idx = parseInt(navM[1]);
+      setNavLinks(prev => prev.map((l, i) => i === idx ? value : l));
+      return;
+    }
+    const badgeM = field.match(/^trustBadges\.(\d+)\.text$/);
+    if (badgeM) {
+      const idx = parseInt(badgeM[1]);
+      setTrustBadges(prev => prev.map((b, i) => i === idx ? { ...b, text: value } : b));
+      return;
+    }
+    const statM = field.match(/^stats\.(\d+)\.(value|label)$/);
+    if (statM) {
+      const idx = parseInt(statM[1]);
+      const key = statM[2] as 'value' | 'label';
+      setStats(prev => prev.map((s, i) => i === idx ? { ...s, [key]: value } : s));
+      return;
+    }
+    const shM = field.match(/^sectionHeadings\.(testimonials|features|products|faq|newsletter)$/);
+    if (shM) {
+      const key = shM[1] as keyof typeof sectionHeadings;
+      setSectionHeadings(prev => ({ ...prev, [key]: value }));
+      return;
+    }
+    if (field === 'footerNote') { setFooterNote(value); return; }
   }, []);
 
   // ── Build preview store ───────────────────────────────────────────────────
@@ -330,6 +369,11 @@ export default function CanvasShell({ store, from }: Props) {
       testimonials,
       faq: faq.length ? faq : undefined,
       newsletter: newsletter.headline ? newsletter : undefined,
+      navLinks,
+      trustBadges,
+      stats,
+      sectionHeadings,
+      footerNote: footerNote || undefined,
       // Override section order when designTokens exist
       ...(liveContextStore.design?.designTokens ? {
         designTokens: buildReorderedDesignTokens(),
@@ -363,6 +407,11 @@ export default function CanvasShell({ store, from }: Props) {
       features, testimonials,
       faq: faq.length ? faq : undefined,
       newsletter: newsletter.headline ? newsletter : undefined,
+      navLinks,
+      trustBadges,
+      stats,
+      sectionHeadings,
+      footerNote: footerNote || undefined,
       // Persist reordered sections
       ...(liveContextStore.design?.designTokens ? {
         designTokens: buildReorderedDesignTokens(),
@@ -400,6 +449,7 @@ export default function CanvasShell({ store, from }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveContextStore, storeName, primaryColor, tagline, heroTitle, heroSubtitle, ctaText,
       promoBar, accentColor, brandStory, features, testimonials, faq, newsletter,
+      navLinks, trustBadges, stats, sectionHeadings, footerNote,
       sectionItems, updateActiveStore, isSaving, router]);
 
   const isPublished = liveContextStore.status === 'Published';
