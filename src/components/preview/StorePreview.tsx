@@ -930,6 +930,254 @@ const INDONESIAN_PROVINCES = ['Aceh','Bali','Banten','Bengkulu','DI Yogyakarta',
 
 const PAYMENT_ICONS: Record<string, string> = { bank_transfer: '🏦', qris: '📱', cod: '💵', ewallet: '👛', gopay: '🟢', ovo: '🟣', dana: '🔵' };
 
+// ── Country codes ─────────────────────────────────────────────────────────────
+const COUNTRY_CODES: { code: string; name: string; dial: string; flag: string }[] = [
+  { code: 'ID', name: 'Indonesia',         dial: '62',  flag: '🇮🇩' },
+  { code: 'MY', name: 'Malaysia',          dial: '60',  flag: '🇲🇾' },
+  { code: 'SG', name: 'Singapore',         dial: '65',  flag: '🇸🇬' },
+  { code: 'PH', name: 'Philippines',       dial: '63',  flag: '🇵🇭' },
+  { code: 'TH', name: 'Thailand',          dial: '66',  flag: '🇹🇭' },
+  { code: 'VN', name: 'Vietnam',           dial: '84',  flag: '🇻🇳' },
+  { code: 'MM', name: 'Myanmar',           dial: '95',  flag: '🇲🇲' },
+  { code: 'KH', name: 'Cambodia',          dial: '855', flag: '🇰🇭' },
+  { code: 'BN', name: 'Brunei',            dial: '673', flag: '🇧🇳' },
+  { code: 'LA', name: 'Laos',              dial: '856', flag: '🇱🇦' },
+  { code: 'TL', name: 'Timor-Leste',       dial: '670', flag: '🇹🇱' },
+  { code: 'JP', name: 'Japan',             dial: '81',  flag: '🇯🇵' },
+  { code: 'KR', name: 'South Korea',       dial: '82',  flag: '🇰🇷' },
+  { code: 'CN', name: 'China',             dial: '86',  flag: '🇨🇳' },
+  { code: 'HK', name: 'Hong Kong',         dial: '852', flag: '🇭🇰' },
+  { code: 'TW', name: 'Taiwan',            dial: '886', flag: '🇹🇼' },
+  { code: 'IN', name: 'India',             dial: '91',  flag: '🇮🇳' },
+  { code: 'PK', name: 'Pakistan',          dial: '92',  flag: '🇵🇰' },
+  { code: 'BD', name: 'Bangladesh',        dial: '880', flag: '🇧🇩' },
+  { code: 'LK', name: 'Sri Lanka',         dial: '94',  flag: '🇱🇰' },
+  { code: 'NP', name: 'Nepal',             dial: '977', flag: '🇳🇵' },
+  { code: 'AU', name: 'Australia',         dial: '61',  flag: '🇦🇺' },
+  { code: 'NZ', name: 'New Zealand',       dial: '64',  flag: '🇳🇿' },
+  { code: 'US', name: 'United States',     dial: '1',   flag: '🇺🇸' },
+  { code: 'CA', name: 'Canada',            dial: '1',   flag: '🇨🇦' },
+  { code: 'GB', name: 'United Kingdom',    dial: '44',  flag: '🇬🇧' },
+  { code: 'IE', name: 'Ireland',           dial: '353', flag: '🇮🇪' },
+  { code: 'DE', name: 'Germany',           dial: '49',  flag: '🇩🇪' },
+  { code: 'FR', name: 'France',            dial: '33',  flag: '🇫🇷' },
+  { code: 'IT', name: 'Italy',             dial: '39',  flag: '🇮🇹' },
+  { code: 'ES', name: 'Spain',             dial: '34',  flag: '🇪🇸' },
+  { code: 'PT', name: 'Portugal',          dial: '351', flag: '🇵🇹' },
+  { code: 'NL', name: 'Netherlands',       dial: '31',  flag: '🇳🇱' },
+  { code: 'BE', name: 'Belgium',           dial: '32',  flag: '🇧🇪' },
+  { code: 'CH', name: 'Switzerland',       dial: '41',  flag: '🇨🇭' },
+  { code: 'AT', name: 'Austria',           dial: '43',  flag: '🇦🇹' },
+  { code: 'SE', name: 'Sweden',            dial: '46',  flag: '🇸🇪' },
+  { code: 'NO', name: 'Norway',            dial: '47',  flag: '🇳🇴' },
+  { code: 'DK', name: 'Denmark',           dial: '45',  flag: '🇩🇰' },
+  { code: 'FI', name: 'Finland',           dial: '358', flag: '🇫🇮' },
+  { code: 'PL', name: 'Poland',            dial: '48',  flag: '🇵🇱' },
+  { code: 'CZ', name: 'Czech Republic',    dial: '420', flag: '🇨🇿' },
+  { code: 'HU', name: 'Hungary',           dial: '36',  flag: '🇭🇺' },
+  { code: 'RO', name: 'Romania',           dial: '40',  flag: '🇷🇴' },
+  { code: 'GR', name: 'Greece',            dial: '30',  flag: '🇬🇷' },
+  { code: 'RU', name: 'Russia',            dial: '7',   flag: '🇷🇺' },
+  { code: 'UA', name: 'Ukraine',           dial: '380', flag: '🇺🇦' },
+  { code: 'TR', name: 'Turkey',            dial: '90',  flag: '🇹🇷' },
+  { code: 'SA', name: 'Saudi Arabia',      dial: '966', flag: '🇸🇦' },
+  { code: 'AE', name: 'UAE',               dial: '971', flag: '🇦🇪' },
+  { code: 'QA', name: 'Qatar',             dial: '974', flag: '🇶🇦' },
+  { code: 'KW', name: 'Kuwait',            dial: '965', flag: '🇰🇼' },
+  { code: 'BH', name: 'Bahrain',           dial: '973', flag: '🇧🇭' },
+  { code: 'OM', name: 'Oman',              dial: '968', flag: '🇴🇲' },
+  { code: 'JO', name: 'Jordan',            dial: '962', flag: '🇯🇴' },
+  { code: 'LB', name: 'Lebanon',           dial: '961', flag: '🇱🇧' },
+  { code: 'IL', name: 'Israel',            dial: '972', flag: '🇮🇱' },
+  { code: 'IR', name: 'Iran',              dial: '98',  flag: '🇮🇷' },
+  { code: 'IQ', name: 'Iraq',              dial: '964', flag: '🇮🇶' },
+  { code: 'EG', name: 'Egypt',             dial: '20',  flag: '🇪🇬' },
+  { code: 'ZA', name: 'South Africa',      dial: '27',  flag: '🇿🇦' },
+  { code: 'NG', name: 'Nigeria',           dial: '234', flag: '🇳🇬' },
+  { code: 'KE', name: 'Kenya',             dial: '254', flag: '🇰🇪' },
+  { code: 'GH', name: 'Ghana',             dial: '233', flag: '🇬🇭' },
+  { code: 'TZ', name: 'Tanzania',          dial: '255', flag: '🇹🇿' },
+  { code: 'ET', name: 'Ethiopia',          dial: '251', flag: '🇪🇹' },
+  { code: 'UG', name: 'Uganda',            dial: '256', flag: '🇺🇬' },
+  { code: 'RW', name: 'Rwanda',            dial: '250', flag: '🇷🇼' },
+  { code: 'MX', name: 'Mexico',            dial: '52',  flag: '🇲🇽' },
+  { code: 'BR', name: 'Brazil',            dial: '55',  flag: '🇧🇷' },
+  { code: 'AR', name: 'Argentina',         dial: '54',  flag: '🇦🇷' },
+  { code: 'CL', name: 'Chile',             dial: '56',  flag: '🇨🇱' },
+  { code: 'CO', name: 'Colombia',          dial: '57',  flag: '🇨🇴' },
+  { code: 'PE', name: 'Peru',              dial: '51',  flag: '🇵🇪' },
+];
+
+function detectDefaultCountry(): string {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const map: Record<string, string> = {
+      'Asia/Jakarta': 'ID', 'Asia/Makassar': 'ID', 'Asia/Jayapura': 'ID', 'Asia/Pontianak': 'ID',
+      'Asia/Kuala_Lumpur': 'MY', 'Asia/Kuching': 'MY',
+      'Asia/Singapore': 'SG',
+      'Asia/Bangkok': 'TH', 'Asia/Phnom_Penh': 'KH', 'Asia/Vientiane': 'LA',
+      'Asia/Manila': 'PH',
+      'Asia/Ho_Chi_Minh': 'VN', 'Asia/Hanoi': 'VN',
+      'Asia/Rangoon': 'MM', 'Asia/Yangon': 'MM',
+      'Asia/Dili': 'TL',
+      'Asia/Tokyo': 'JP',
+      'Asia/Seoul': 'KR',
+      'Asia/Shanghai': 'CN', 'Asia/Chongqing': 'CN', 'Asia/Harbin': 'CN', 'Asia/Urumqi': 'CN',
+      'Asia/Hong_Kong': 'HK',
+      'Asia/Taipei': 'TW',
+      'Asia/Kolkata': 'IN', 'Asia/Calcutta': 'IN',
+      'Asia/Karachi': 'PK',
+      'Asia/Dhaka': 'BD',
+      'Asia/Colombo': 'LK',
+      'Asia/Kathmandu': 'NP',
+      'Australia/Sydney': 'AU', 'Australia/Melbourne': 'AU', 'Australia/Perth': 'AU', 'Australia/Brisbane': 'AU', 'Australia/Adelaide': 'AU',
+      'Pacific/Auckland': 'NZ',
+      'America/New_York': 'US', 'America/Chicago': 'US', 'America/Denver': 'US', 'America/Los_Angeles': 'US', 'America/Phoenix': 'US', 'America/Anchorage': 'US',
+      'America/Toronto': 'CA', 'America/Vancouver': 'CA', 'America/Winnipeg': 'CA',
+      'Europe/London': 'GB',
+      'Europe/Dublin': 'IE',
+      'Europe/Berlin': 'DE', 'Europe/Munich': 'DE',
+      'Europe/Paris': 'FR',
+      'Europe/Rome': 'IT',
+      'Europe/Madrid': 'ES',
+      'Europe/Lisbon': 'PT',
+      'Europe/Amsterdam': 'NL',
+      'Europe/Brussels': 'BE',
+      'Europe/Zurich': 'CH',
+      'Europe/Vienna': 'AT',
+      'Europe/Stockholm': 'SE',
+      'Europe/Oslo': 'NO',
+      'Europe/Copenhagen': 'DK',
+      'Europe/Helsinki': 'FI',
+      'Europe/Warsaw': 'PL',
+      'Europe/Prague': 'CZ',
+      'Europe/Budapest': 'HU',
+      'Europe/Bucharest': 'RO',
+      'Europe/Athens': 'GR',
+      'Europe/Moscow': 'RU', 'Europe/Samara': 'RU',
+      'Europe/Kiev': 'UA', 'Europe/Kyiv': 'UA',
+      'Europe/Istanbul': 'TR',
+      'Asia/Riyadh': 'SA',
+      'Asia/Dubai': 'AE',
+      'Asia/Qatar': 'QA',
+      'Asia/Kuwait': 'KW',
+      'Asia/Bahrain': 'BH',
+      'Asia/Muscat': 'OM',
+      'Asia/Amman': 'JO',
+      'Asia/Beirut': 'LB',
+      'Asia/Jerusalem': 'IL',
+      'Asia/Tehran': 'IR',
+      'Asia/Baghdad': 'IQ',
+      'Africa/Cairo': 'EG',
+      'Africa/Johannesburg': 'ZA',
+      'Africa/Lagos': 'NG',
+      'Africa/Nairobi': 'KE',
+      'Africa/Accra': 'GH',
+      'Africa/Dar_es_Salaam': 'TZ',
+      'Africa/Addis_Ababa': 'ET',
+      'Africa/Kampala': 'UG',
+      'Africa/Kigali': 'RW',
+      'America/Mexico_City': 'MX',
+      'America/Sao_Paulo': 'BR', 'America/Manaus': 'BR',
+      'America/Argentina/Buenos_Aires': 'AR',
+      'America/Santiago': 'CL',
+      'America/Bogota': 'CO',
+      'America/Lima': 'PE',
+    };
+    return map[tz] ?? 'ID';
+  } catch { return 'ID'; }
+}
+
+function PhoneCountrySelect({ selectedCode, onChangeCode, t }: {
+  selectedCode: string;
+  onChangeCode: (code: string) => void;
+  t: ReturnType<typeof getCommerceTheme>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [dropdownStyle, setDropdownStyle] = useState<CSSProperties>({});
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selected = COUNTRY_CODES.find(c => c.code === selectedCode) ?? COUNTRY_CODES[0];
+  const filtered = !search.trim()
+    ? COUNTRY_CODES
+    : COUNTRY_CODES.filter(c =>
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.dial.startsWith(search.replace(/\D/g, ''))
+      );
+
+  const handleOpen = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownStyle({ top: rect.bottom + 4, left: rect.left, width: 260 });
+    }
+    setOpen(o => !o);
+    setTimeout(() => searchRef.current?.focus(), 60);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false); setSearch('');
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="relative flex-shrink-0">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={handleOpen}
+        className="flex items-center gap-1 px-2.5 h-full text-xs font-medium"
+        style={{ background: t.inputBg, color: t.textSecondary, borderRight: `1px solid ${t.inputBorder}` }}
+      >
+        <span className="text-base leading-none">{selected.flag}</span>
+        <span>+{selected.dial}</span>
+        <ChevronDown className="w-3 h-3 opacity-50" />
+      </button>
+
+      {open && typeof document !== 'undefined' && createPortal(
+        <div style={{ ...dropdownStyle, position: 'fixed', zIndex: 99999, background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.14)', overflow: 'hidden', fontFamily: t.fontFamily }}>
+          <div className="p-2" style={{ borderBottom: `1px solid ${t.divider}` }}>
+            <input
+              ref={searchRef}
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Country name or dial code…"
+              className="w-full px-3 py-1.5 text-xs outline-none rounded-lg"
+              style={{ background: t.inputBg, border: `1px solid ${t.inputBorder}`, color: t.textPrimary }}
+            />
+          </div>
+          <div style={{ overflowY: 'auto', maxHeight: '200px' }}>
+            {filtered.length === 0
+              ? <p className="text-xs text-center py-4" style={{ color: t.textMuted }}>No results</p>
+              : filtered.map(c => (
+                <button
+                  key={c.code}
+                  type="button"
+                  onMouseDown={() => { onChangeCode(c.code); setOpen(false); setSearch(''); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left transition-colors"
+                  style={{ background: c.code === selectedCode ? alpha(t.primary, 0.07) : 'transparent', color: t.textPrimary }}
+                >
+                  <span className="text-sm flex-shrink-0">{c.flag}</span>
+                  <span className="flex-1 truncate">{c.name}</span>
+                  <span className="flex-shrink-0 font-medium" style={{ color: t.textMuted }}>+{c.dial}</span>
+                </button>
+              ))}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
 function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, layoutStyle }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
   shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; layoutStyle?: string;
@@ -938,6 +1186,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [form, setForm] = useState({ email: '', whatsapp: '', name: '', address: '', city: '', province: '', postal: '' });
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
+  const [phoneCountryCode, setPhoneCountryCode] = useState(() => detectDefaultCountry());
   const showAddressFields = form.name.trim().length > 0 && form.whatsapp.trim().length > 0 && form.email.trim().length > 0;
 
   const enabledPayments = (paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS).filter(m => m.enabled);
@@ -998,7 +1247,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               <div>
                 <label style={lblStyle}>WhatsApp</label>
                 <div className="flex items-center overflow-hidden focus-within:ring-2 focus-within:border-transparent" style={{ border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}>
-                  <span className="px-3 py-2.5 text-xs font-medium" style={{ background: t.inputBg, color: t.textMuted, borderRight: `1px solid ${t.inputBorder}` }}>+62</span>
+                  <PhoneCountrySelect selectedCode={phoneCountryCode} onChangeCode={setPhoneCountryCode} t={t} />
                   <input type="tel" className="flex-1 px-3 py-2.5 text-sm outline-none" style={{ background: t.inputBg, color: t.textPrimary }} value={form.whatsapp} onChange={set('whatsapp')} placeholder="81234567890" />
                 </div>
               </div>
@@ -1213,7 +1462,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             </div>
           </div>
           <button
-            onClick={() => onPlaceOrder(selectedPayId, selectedShippingId, form)}
+            onClick={() => { const dial = COUNTRY_CODES.find(c => c.code === phoneCountryCode)?.dial ?? '62'; onPlaceOrder(selectedPayId, selectedShippingId, { ...form, whatsapp: form.whatsapp ? `+${dial}${form.whatsapp}` : '' }); }}
             className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity"
             style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
           >
