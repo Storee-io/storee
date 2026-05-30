@@ -655,13 +655,15 @@ export default function CanvasShell({ store, from }: Props) {
                         as="div"
                         dragMomentum={false}
                         dragElastic={0}
-                        layout
+                        style={{ position: 'relative', zIndex: 'auto' }}
                         className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-colors cursor-grab active:cursor-grabbing ${
                           item.hasContent
                             ? 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-sm'
                             : 'bg-slate-50 border-slate-100 opacity-50'
                         }`}
-                        whileDrag={{ scale: 1.02, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 50, position: 'relative' }}
+                        whileDrag={{ scale: 1.02, boxShadow: '0 8px 20px rgba(0,0,0,0.13)', zIndex: 50 }}
+                        animate={{ boxShadow: '0 0px 0px rgba(0,0,0,0)' }}
+                        transition={{ duration: 0.15 }}
                       >
                         <GripVertical className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
                         <div
