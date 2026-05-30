@@ -980,41 +980,29 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         {/* Left: form sections */}
         <div className="space-y-4">
 
-          {/* Contact */}
-          <div className="shadow-sm overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
-            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(t.primary, 0.1) }}>
-                <Mail className="w-3.5 h-3.5" style={{ color: t.primary }} />
-              </div>
-              <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Contact Information</h3>
-            </div>
-            <div className="p-5 grid grid-cols-2 gap-3">
-              <div className="col-span-2">
-                <label style={lblStyle}>Email</label>
-                <input type="email" className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.email} onChange={set('email')} placeholder="name@email.com" />
-              </div>
-              <div className="col-span-2">
-                <label style={lblStyle}>WhatsApp</label>
-                <div className="flex items-center overflow-hidden focus-within:ring-2 focus-within:border-transparent" style={{ border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}>
-                  <span className="px-3 py-2.5 text-xs font-medium" style={{ background: t.inputBg, color: t.textMuted, borderRight: `1px solid ${t.inputBorder}` }}>+62</span>
-                  <input type="tel" className="flex-1 px-3 py-2.5 text-sm outline-none" style={{ background: t.inputBg, color: t.textPrimary }} value={form.whatsapp} onChange={set('whatsapp')} placeholder="81234567890" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Delivery address */}
+          {/* Contact & Shipping — merged */}
           <div className="shadow-sm overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
             <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(t.primary, 0.1) }}>
                 <MapPin className="w-3.5 h-3.5" style={{ color: t.primary }} />
               </div>
-              <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Shipping Information</h3>
+              <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Shipping Details</h3>
             </div>
             <div className="p-5 grid grid-cols-2 gap-3">
               <div className="col-span-2">
                 <label style={lblStyle}>Full Name</label>
                 <input className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.name} onChange={set('name')} placeholder="Recipient full name" />
+              </div>
+              <div>
+                <label style={lblStyle}>Email</label>
+                <input type="email" className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.email} onChange={set('email')} placeholder="name@email.com" />
+              </div>
+              <div>
+                <label style={lblStyle}>WhatsApp</label>
+                <div className="flex items-center overflow-hidden focus-within:ring-2 focus-within:border-transparent" style={{ border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}>
+                  <span className="px-3 py-2.5 text-xs font-medium" style={{ background: t.inputBg, color: t.textMuted, borderRight: `1px solid ${t.inputBorder}` }}>+62</span>
+                  <input type="tel" className="flex-1 px-3 py-2.5 text-sm outline-none" style={{ background: t.inputBg, color: t.textPrimary }} value={form.whatsapp} onChange={set('whatsapp')} placeholder="81234567890" />
+                </div>
               </div>
               <div className="col-span-2">
                 <label style={lblStyle}>Full Address</label>
