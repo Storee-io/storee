@@ -986,7 +986,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(t.primary, 0.1) }}>
                 <MapPin className="w-3.5 h-3.5" style={{ color: t.primary }} />
               </div>
-              <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Shipping Details</h3>
+              <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Customer Details</h3>
             </div>
             <div className="p-5 grid grid-cols-2 gap-3">
               <div className="col-span-2">
