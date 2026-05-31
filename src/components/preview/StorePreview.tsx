@@ -227,9 +227,9 @@ function CartToast({ item, primaryColor, fmtPrice, onClose, onViewCart }: {
   onClose: () => void;
   onViewCart: () => void;
 }) {
-  if (typeof document === 'undefined') return null;
-  return createPortal(
-    <AnimatePresence>
+  // Render inline with position:fixed — in PreviewShell the transform:translateZ(0)
+  // wrapper contains it within the mock browser frame; in live store it covers the full viewport.
+  return (
     <motion.div
       key={item.id}
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -291,8 +291,6 @@ function CartToast({ item, primaryColor, fmtPrice, onClose, onViewCart }: {
         </button>
       </div>
     </motion.div>
-    </AnimatePresence>,
-    document.body
   );
 }
 
@@ -1158,7 +1156,13 @@ function PhoneCountrySelect({ selectedCode, onChangeCode, t }: {
       // Measure the WhatsApp field container (grandparent of button)
       const container = btnRef.current.parentElement?.parentElement ?? btnRef.current;
       const r = container.getBoundingClientRect();
-      setPos({ top: r.bottom, left: r.left, width: r.width });
+      // Find the preview root so we can subtract its offset and use position:absolute
+      // (keeps the dropdown inside the frame even in PreviewShell / canvas)
+      const root = btnRef.current.closest('[data-preview-root]');
+      const ro = root?.getBoundingClientRect();
+      const ox = ro?.left ?? 0;
+      const oy = ro?.top  ?? 0;
+      setPos({ top: r.bottom - oy, left: r.left - ox, width: r.width });
     }
   };
 
@@ -1198,7 +1202,7 @@ function PhoneCountrySelect({ selectedCode, onChangeCode, t }: {
 
       {open && typeof window !== 'undefined' && createPortal(
         <div data-pcd="1" style={{
-          position: 'fixed', top: pos.top, left: pos.left, width: pos.width, zIndex: 99999,
+          position: 'absolute', top: pos.top, left: pos.left, width: pos.width, zIndex: 99999,
           background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '0 0 12px 12px',
           boxShadow: '0 8px 32px rgba(0,0,0,0.18)', overflow: 'hidden', fontFamily: t.fontFamily,
         }}>
@@ -1234,7 +1238,7 @@ function PhoneCountrySelect({ selectedCode, onChangeCode, t }: {
               ))}
           </div>
         </div>,
-        document.body
+        (btnRef.current?.closest('[data-preview-root]') ?? document.body) as Element
       )}
     </div>
   );
@@ -8461,6 +8465,7 @@ export default function StorePreview({ store, device, editMode, onFieldChange, o
   return (
     <div
       ref={previewContainerRef}
+      data-preview-root="1"
       className="relative overflow-hidden"
       onClickCapture={editMode ? (e) => {
         const target = e.target as HTMLElement;
