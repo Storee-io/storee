@@ -308,7 +308,11 @@ const FLY_SPEED = 900; // px/s
 const FLY_MIN   = 0.3; // s
 const FLY_MAX   = 1.1; // s
 
-function FlyingDot({ item, primaryColor }: { item: FlyItem; primaryColor: string }) {
+function FlyingDot({ item, primaryColor, containerEl }: {
+  item: FlyItem;
+  primaryColor: string;
+  containerEl: HTMLElement | null;
+}) {
   const [active, setActive] = useState(false);
   useEffect(() => {
     const raf1 = requestAnimationFrame(() => {
@@ -318,15 +322,24 @@ function FlyingDot({ item, primaryColor }: { item: FlyItem; primaryColor: string
     return () => cancelAnimationFrame(raf1);
   }, []);
 
+  // Convert viewport coords → container-relative coords so the dot stays
+  // inside the preview frame and is clipped by its overflow:hidden.
+  const containerRect = containerEl?.getBoundingClientRect();
+  const ox = containerRect?.left ?? 0;
+  const oy = containerRect?.top  ?? 0;
+
   // Find the actual cart button in the DOM for an accurate target
   const cartBtn = typeof document !== 'undefined' ? document.querySelector('[data-cart-btn]') : null;
   const cartRect = cartBtn?.getBoundingClientRect();
-  const targetX = cartRect ? cartRect.left + cartRect.width / 2 : (typeof window !== 'undefined' ? window.innerWidth - 56 : 1144);
-  const targetY = cartRect ? cartRect.top + cartRect.height / 2 : 28;
+  const targetX = (cartRect ? cartRect.left + cartRect.width  / 2 : (typeof window !== 'undefined' ? window.innerWidth - 56 : 1144)) - ox;
+  const targetY = (cartRect ? cartRect.top  + cartRect.height / 2 : 28) - oy;
+
+  const srcX = item.startX - ox;
+  const srcY = item.startY - oy;
 
   // Duration proportional to distance → constant apparent speed
-  const dx = targetX - item.startX;
-  const dy = targetY - item.startY;
+  const dx = targetX - srcX;
+  const dy = targetY - srcY;
   const dist = Math.sqrt(dx * dx + dy * dy);
   const dur = Math.min(FLY_MAX, Math.max(FLY_MIN, dist / FLY_SPEED));
 
@@ -347,9 +360,9 @@ function FlyingDot({ item, primaryColor }: { item: FlyItem; primaryColor: string
   const dot = (
     <div
       style={{
-        position: 'fixed',
-        left: active ? targetX : item.startX,
-        top: active ? targetY : item.startY,
+        position: 'absolute',
+        left: active ? targetX : srcX,
+        top: active ? targetY : srcY,
         width: active ? `${endW}px` : `${item.startW}px`,
         height: active ? `${endH}px` : `${item.startH}px`,
         opacity: active ? 0 : 1,
@@ -376,10 +389,9 @@ function FlyingDot({ item, primaryColor }: { item: FlyItem; primaryColor: string
     </div>
   );
 
-  // Portal to document.body so position:fixed is relative to the real viewport,
-  // not the transform:translateZ(0) container in PreviewShell.
-  if (typeof document === 'undefined') return null;
-  return createPortal(dot, document.body);
+  // Portal into the preview container so the dot is clipped by its overflow:hidden.
+  if (typeof document === 'undefined' || !containerEl) return null;
+  return createPortal(dot, containerEl);
 }
 
 // ── Cart fly source rect helper ───────────────────────────────────────────────
@@ -8323,6 +8335,7 @@ export default function StorePreview({ store, device, editMode, onFieldChange, o
     }
   };
 
+  const previewContainerRef = useRef<HTMLDivElement>(null);
   const [flyItems, setFlyItems] = useState<FlyItem[]>([]);
   const [cartToast, setCartToast] = useState<CartToastItem | null>(null);
   const cartToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -8428,6 +8441,7 @@ export default function StorePreview({ store, device, editMode, onFieldChange, o
 
   return (
     <div
+      ref={previewContainerRef}
       className="relative overflow-hidden"
       onClickCapture={editMode ? (e) => {
         const target = e.target as HTMLElement;
@@ -8458,9 +8472,10 @@ export default function StorePreview({ store, device, editMode, onFieldChange, o
         )}
       </AnimatePresence>
 
-      {/* Cart fly animation dots */}
+      {/* Cart fly animation dots — portaled inside this container so they are
+          clipped by overflow:hidden and never escape the preview frame */}
       {flyItems.map(item => (
-        <FlyingDot key={item.id} item={item} primaryColor={primaryColor} />
+        <FlyingDot key={item.id} item={item} primaryColor={primaryColor} containerEl={previewContainerRef.current} />
       ))}
 
       {/* Cart toast popup */}
