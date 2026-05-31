@@ -575,7 +575,7 @@ export default function CanvasShell({ store, from }: Props) {
           </AnimatePresence>
 
           <div
-            className={`bg-white shadow-xl rounded-2xl self-start transition-all duration-300 flex flex-col ${editMode ? 'ring-2 ring-emerald-400/40' : ''}`}
+            className={`bg-white shadow-xl rounded-lg self-start transition-all duration-300 flex flex-col ${editMode ? 'ring-2 ring-emerald-400/40' : ''}`}
             style={{
               width: device === 'mobile' ? 390 : device === 'tablet' ? 768 : '100%',
               minWidth: device === 'desktop' ? 960 : undefined,
@@ -584,7 +584,7 @@ export default function CanvasShell({ store, from }: Props) {
             {/* Content viewport — fixed height, scrolls inside the frame */}
             <div
               ref={previewRef}
-              className="rounded-2xl"
+              className="rounded-lg"
               style={{
                 overflowY: 'auto',
                 overflowX: 'hidden',
