@@ -830,10 +830,16 @@ export default function CanvasShell({ store, from }: Props) {
             )}
           </AnimatePresence>
 
+          {/*
+            transform:translateZ(0) is on the FRAME WRAPPER (not the scroll div).
+            This makes position:fixed descendants contained by the frame wrapper
+            rather than the viewport — so overlays are sticky to the frame.
+            The scroll div is kept separate so that scrolling the content does NOT
+            move the fixed overlays (fixed inside a scrollable transform = scrolls).
+          */}
           <div
             className={`bg-white shadow-xl overflow-hidden transition-all duration-300 flex flex-col ${editMode ? 'ring-2 ring-emerald-400/40' : ''}`}
             style={{
-              // Fill full canvas height; width auto-derived from aspect ratio
               height: '100%',
               aspectRatio:
                 device === 'mobile' ? '390 / 844' :
@@ -841,16 +847,16 @@ export default function CanvasShell({ store, from }: Props) {
                 undefined,
               width: device === 'desktop' ? '100%' : undefined,
               minWidth: device === 'desktop' ? 960 : undefined,
+              transform: 'translateZ(0)',   // ← contains fixed overlays to this frame
+              position: 'relative',
             }}
           >
-            {/* Content viewport — scrolls inside the fixed-size frame */}
+            {/* Scroll container — no transform so fixed children don't scroll with it */}
             <div
               ref={previewRef}
               style={{
                 overflowY: 'auto',
                 overflowX: 'hidden',
-                // transform contains position:fixed descendants inside the frame
-                transform: 'translateZ(0)',
                 height: '100%',
               }}
             >

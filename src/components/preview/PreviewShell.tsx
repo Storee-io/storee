@@ -414,17 +414,22 @@ export default function PreviewShell({ store, from = null }: Props) {
           </div>
 
           {/*
-            transform: translateZ(0) creates a new containing block for
-            position:fixed descendants — keeps overlays inside the frame.
-            overflow-y:auto lets store content scroll inside the fixed frame.
+            transform:translateZ(0) is on the outer wrapper (not the scroll div).
+            This contains position:fixed overlays to the frame without making them
+            scroll with the content (fixed inside a scrollable transform = scrolls).
           */}
           <div
-            ref={scrollContainerRef}
-            onScroll={handleScroll}
             className="rounded-b-2xl overflow-hidden flex-1"
-            style={{ transform: 'translateZ(0)', overflowY: 'auto' }}
+            style={{ transform: 'translateZ(0)', position: 'relative' }}
           >
-            <StorePreview store={liveStore} device={device} previewShell onPageChange={setCurrentPath} />
+            {/* Scroll div — no transform; scrolls store content independently */}
+            <div
+              ref={scrollContainerRef}
+              onScroll={handleScroll}
+              style={{ overflowY: 'auto', height: '100%' }}
+            >
+              <StorePreview store={liveStore} device={device} previewShell onPageChange={setCurrentPath} />
+            </div>
           </div>
 
         </motion.div>
