@@ -714,12 +714,12 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
   const isMobile = device === 'mobile';
 
-  // editMode (canvas)   → absolute inside StorePreview (clipped by overflow:hidden)
-  // previewShell        → fixed, no portal — contained by transform:translateZ(0),
-  //                       sticky within the scrollable frame viewport
-  // live store          → fixed, portaled to body — sticky to real viewport
-  const pos = editMode ? 'absolute' : 'fixed';
-  const h   = editMode ? '100%'     : '100%';
+  // editMode (canvas)   → absolute, clipped inside StorePreview
+  // previewShell        → absolute, clipped inside the mock browser frame
+  // live store          → fixed portaled to body, sticky to real viewport
+  const isContained = editMode || previewShell;
+  const pos = isContained ? 'absolute' : 'fixed';
+  const h   = isContained ? '100%'     : '100dvh';
 
   const content = (
     <>
@@ -842,10 +842,9 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
     </>
   );
 
-  // Live store: portal to body → position:fixed relative to real viewport (sticky).
-  // previewShell: inline, position:fixed → sticky within transform:translateZ(0) frame.
-  // editMode (canvas): inline, position:absolute → clipped inside StorePreview.
-  if (!editMode && !previewShell) {
+  // Live store: portal to body so position:fixed is relative to the real viewport (sticky).
+  // In editMode/previewShell: render inline — position:absolute clipped inside the frame.
+  if (!isContained) {
     if (typeof document === 'undefined') return null;
     return createPortal(content, document.body);
   }

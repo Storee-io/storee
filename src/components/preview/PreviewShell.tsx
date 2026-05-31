@@ -365,36 +365,18 @@ export default function PreviewShell({ store, from = null }: Props) {
         </div>
       </div>
 
-      {/* Store frame
-          Desktop  → fills available width, realistic browser-viewport height
-          Tablet   → 768 × 1024 px  (iPad portrait)
-          Mobile   → 390 × 844 px   (iPhone 14)
-          Content scrolls inside the frame so the chrome always stays visible.
-      */}
-      <div
-        ref={scrollContainerRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-auto flex justify-center"
-        style={{
-          padding: device === 'desktop' ? '24px 24px 24px' : '24px',
-          alignItems: device === 'desktop' ? 'flex-start' : 'flex-start',
-        }}
-      >
+      {/* Store frame */}
+      <div ref={scrollContainerRef} onScroll={handleScroll} className="flex-1 overflow-auto px-4 sm:px-8 pt-4 sm:pt-8 pb-16 flex justify-center items-start">
         <motion.div
-          animate={{
-            width:
-              device === 'desktop' ? '100%' :
-              device === 'tablet'  ? '768px' :
-                                     '390px',
-          }}
+          animate={{ width: device === 'desktop' ? '100%' : device === 'tablet' ? '768px' : '375px' }}
           transition={{ duration: 0.3 }}
-          className="rounded-2xl flex-shrink-0 max-w-full"
+          className="max-w-full rounded-2xl"
           style={{
-            minWidth: device === 'mobile' ? '390px' : undefined,
+            minWidth: device === 'mobile' ? '375px' : undefined,
             boxShadow: '0 16px 48px -4px rgba(0,0,0,0.18), 0 6px 16px -2px rgba(0,0,0,0.10)',
           }}
         >
-          {/* Mock browser / device chrome */}
+          {/* Mock browser bar */}
           <div className="bg-[#f0f0f0] rounded-t-2xl px-4 py-3">
             <div className="flex items-center gap-3">
               <div className="flex gap-1.5">
@@ -410,10 +392,12 @@ export default function PreviewShell({ store, from = null }: Props) {
                     : `https://****.storee.io${currentPath === '/' ? '' : currentPath}`}
                 </span>
                 {isPublished ? (
+                  /* Live — green dot */
                   <div className="ml-auto w-3.5 h-3.5 rounded-full bg-green-500/20 flex-shrink-0 flex items-center justify-center">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
                   </div>
                 ) : (
+                  /* Draft — amber dot + label */
                   <div className="ml-auto flex items-center gap-1 flex-shrink-0">
                     <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                     <span className="text-[10px] font-medium text-amber-500">Draft</span>
@@ -424,27 +408,12 @@ export default function PreviewShell({ store, from = null }: Props) {
           </div>
 
           {/*
-            Content viewport — fixed height so the frame looks like a real screen.
-            overflow-y: auto lets the store page scroll inside the frame.
-            transform: translateZ(0) keeps position:fixed descendants inside the frame.
-
-            Heights:
-              desktop → fills the available vertical space (real browser feel)
-              tablet  → 1024 px  (iPad portrait)
-              mobile  → 844 px   (iPhone 14)
+            transform: translateZ(0) creates a new containing block for
+            position:fixed descendants — keeps FullscreenLayout's fixed
+            header/nav inside the mock browser frame instead of escaping
+            to the real viewport.
           */}
-          <div
-            className="rounded-b-2xl"
-            style={{
-              transform: 'translateZ(0)',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              height:
-                device === 'desktop' ? 'calc(100vh - 57px - 48px - 44px)' :
-                device === 'tablet'  ? '1024px' :
-                                       '844px',
-            }}
-          >
+          <div className="rounded-b-2xl overflow-hidden" style={{ transform: 'translateZ(0)' }}>
             <StorePreview store={liveStore} device={device} previewShell onPageChange={setCurrentPath} />
           </div>
 
