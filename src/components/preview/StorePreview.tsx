@@ -700,9 +700,9 @@ function ProductDetailPage({ product, primaryColor, storeName, device, onBack, o
 }
 
 // ── Cart Sidebar ──────────────────────────────────────────────────────────────
-function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart, onCheckout, onUpdateQty, layoutStyle }: {
+function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart, onCheckout, onUpdateQty, layoutStyle, editMode }: {
   cart: CartItem[]; primaryColor: string; fmtPrice: (n: number) => string;
-  device: DeviceMode; layoutStyle?: string;
+  device: DeviceMode; layoutStyle?: string; editMode?: boolean;
   onClose: () => void; onViewCart: () => void; onCheckout: () => void;
   onUpdateQty: (id: string, delta: number) => void;
 }) {
@@ -710,8 +710,12 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
   const isMobile = device === 'mobile';
 
-  if (typeof document === 'undefined') return null;
-  return createPortal(
+  // In preview/edit mode: stay inside the frame (absolute).
+  // In live store: cover full viewport (fixed, portaled to body).
+  const pos = editMode ? 'absolute' : 'fixed';
+  const h   = editMode ? '100%'     : '100dvh';
+
+  const content = (
     <>
       {/* Backdrop */}
       <motion.div
@@ -719,7 +723,7 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        style={{ position: 'fixed', inset: 0, zIndex: 99998, background: 'rgba(0,0,0,0.35)' }}
+        style={{ position: pos, inset: 0, zIndex: 99998, background: 'rgba(0,0,0,0.35)' }}
       />
 
       {/* Sidebar panel */}
@@ -730,12 +734,12 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
         transition={{ type: 'spring', stiffness: 380, damping: 38 }}
         className="flex flex-col shadow-2xl"
         style={{
-          position: 'fixed',
+          position: pos,
           top: 0,
           right: 0,
           zIndex: 99999,
           width: isMobile ? '100%' : '300px',
-          height: '100dvh',
+          height: h,
           background: t.surfaceBg,
           fontFamily: t.fontFamily,
           borderLeft: `1px solid ${t.surfaceBorder}`,
@@ -829,9 +833,11 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
           )}
         </div>
       </motion.div>
-    </>,
-    document.body
+    </>
   );
+
+  if (typeof document === 'undefined') return null;
+  return editMode ? content : createPortal(content, document.body);
 }
 
 function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, onUpdateQty, fmtPrice, layoutStyle }: {
@@ -8468,6 +8474,7 @@ export default function StorePreview({ store, device, editMode, onFieldChange, o
         {showCartSidebar && (
           <CartSidebar
             key="cart-sidebar"
+            editMode={editMode}
             cart={cart}
             primaryColor={primaryColor}
             fmtPrice={fmtPrice}
