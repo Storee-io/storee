@@ -710,8 +710,11 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
   const isMobile = device === 'mobile';
 
-  // In preview/edit mode: stay inside the frame (absolute).
-  // In live store: cover full viewport (fixed, portaled to body).
+  // editMode (canvas editor) → absolute, clipped by StorePreview overflow:hidden
+  // otherwise → fixed without portal:
+  //   • PreviewShell wraps StorePreview in transform:translateZ(0) which acts as
+  //     the containing block, so fixed stays inside the mock browser frame.
+  //   • Live store (StorefrontClient) has no transform → fixed covers full viewport.
   const pos = editMode ? 'absolute' : 'fixed';
   const h   = editMode ? '100%'     : '100dvh';
 
@@ -836,8 +839,9 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
     </>
   );
 
-  if (typeof document === 'undefined') return null;
-  return editMode ? content : createPortal(content, document.body);
+  // Never portal — position:fixed is contained by transform:translateZ(0) in
+  // PreviewShell, and is viewport-relative in the live store (no transform).
+  return content;
 }
 
 function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, onUpdateQty, fmtPrice, layoutStyle }: {
