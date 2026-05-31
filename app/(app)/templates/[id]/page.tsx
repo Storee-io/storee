@@ -2,6 +2,13 @@ import type { Metadata } from 'next';
 import { templates } from '@/src/data/templates';
 import TemplatePreviewClient from './TemplatePreviewClient';
 
+// Fully static — all template IDs are known at build time
+export const revalidate = false;
+
+export function generateStaticParams() {
+  return templates.map(t => ({ id: t.id }));
+}
+
 interface Props {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ from?: string }>;

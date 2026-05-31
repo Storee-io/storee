@@ -7,6 +7,9 @@ import Testimonials from '@/src/components/home/Testimonials';
 import FAQ from '@/src/components/home/FAQ';
 import FinalCTA from '@/src/components/home/FinalCTA';
 
+// ISR: rebuild every hour; content is static marketing copy
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: 'Build Your Online Store with AI',
   description: 'Storee is an AI-powered e-commerce store builder. Describe your business and get a complete, ready-to-publish online store in seconds. No code needed.',

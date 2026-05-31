@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import TemplatesListClient from './TemplatesListClient';
 
+// ISR: rebuild every hour; templates data is static
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: 'Store Templates',
   description: 'Browse professionally designed e-commerce store templates. Pick one and customize it with AI in seconds.',

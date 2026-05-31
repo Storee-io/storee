@@ -4,6 +4,9 @@ import StorefrontClient from '../StorefrontClient';
 import StoreInactive from '../StoreInactive';
 import type { Store } from '@/src/context/StoreContext';
 
+// ISR: revalidate every 60s so store updates appear quickly after re-publish
+export const revalidate = 60;
+
 interface Props {
   params: Promise<{ slug: string; path: string[] }>;
 }
