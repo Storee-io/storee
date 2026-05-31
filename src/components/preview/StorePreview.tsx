@@ -714,12 +714,14 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
   const isMobile = device === 'mobile';
 
-  // editMode (canvas)   → absolute, clipped inside StorePreview
-  // previewShell        → absolute, clipped inside the mock browser frame
-  // live store          → fixed portaled to body, sticky to real viewport
+  // Always position:fixed.
+  // previewShell/editMode → NOT portaled; transform:translateZ(0) on the frame
+  //   container contains the fixed element inside the frame (not real viewport).
+  //   height:'100%' on a fixed element in a transformed ancestor = frame height → sticky CTA ✓
+  // live store → portaled to body; fixed to real viewport.
   const isContained = editMode || previewShell;
-  const pos = isContained ? 'absolute' : 'fixed';
-  const h   = isContained ? '100%'     : '100dvh';
+  const pos = 'fixed';
+  const h   = '100%';
 
   const content = (
     <>
