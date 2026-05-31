@@ -83,7 +83,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const renderSidebarContent = (isCollapsed: boolean) => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="flex items-center justify-between px-4 h-16 border-b border-slate-200 flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-1.5 border-b border-slate-200 flex-shrink-0">
         {!isCollapsed && (
           <Link href="/" className="flex items-center">
             <Image
