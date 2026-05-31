@@ -468,7 +468,7 @@ export default function CanvasShell({ store, from }: Props) {
       <EditModeCss active={editMode} />
 
       {/* ── Top bar ──────────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-1.5 flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
 
         {/* Left — back + store name */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
