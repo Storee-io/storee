@@ -236,9 +236,8 @@ function CartToast({ item, primaryColor, fmtPrice, onClose, onViewCart }: {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 20, scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-      style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 99999, width: 256 }}
+      style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 99999, width: 256, background: '#fff', border: '1px solid #e5e7eb' }}
       className="rounded-2xl shadow-2xl overflow-hidden"
-      style={{ background: '#fff', border: '1px solid #e5e7eb' }}
     >
       {/* Progress bar auto-dismiss */}
       <motion.div
