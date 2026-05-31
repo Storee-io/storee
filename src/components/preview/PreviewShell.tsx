@@ -274,7 +274,7 @@ export default function PreviewShell({ store, from = null }: Props) {
   return (
     <div className="h-screen bg-slate-100 flex flex-col overflow-hidden">
       {/* Toolbar */}
-      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-1.5 flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 h-12 flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
         {/* Left — back + store name */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <button
@@ -294,7 +294,7 @@ export default function PreviewShell({ store, from = null }: Props) {
         </div>
 
         {/* Center — device switcher (truly centered) */}
-        <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1 flex-shrink-0">
+        <div className="flex items-center bg-slate-100 rounded-xl h-8 px-[3px] gap-0.5 flex-shrink-0">
           {([
             { mode: 'desktop', Icon: Monitor,    label: 'Desktop' },
             { mode: 'tablet',  Icon: Tablet,     label: 'Tablet' },
@@ -304,11 +304,11 @@ export default function PreviewShell({ store, from = null }: Props) {
               key={mode}
               onClick={() => setDevice(mode)}
               title={label}
-              className={`p-2 rounded-lg transition-all ${
+              className={`p-1.5 rounded-lg transition-all ${
                 device === mode ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-3.5 h-3.5" />
             </button>
           ))}
         </div>
@@ -320,7 +320,7 @@ export default function PreviewShell({ store, from = null }: Props) {
             onClick={openRegenModal}
             disabled={isRegenerating}
             title="Regenerate"
-            className="flex items-center gap-1.5 px-2 sm:px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40"
           >
             <RefreshCw className={`w-4 h-4 flex-shrink-0 ${isRegenerating ? 'animate-spin' : ''}`} />
             <span className="hidden lg:inline">Regenerate</span>
@@ -330,7 +330,7 @@ export default function PreviewShell({ store, from = null }: Props) {
           <button
             onClick={handleDashboardClick}
             title="Dashboard"
-            className="flex items-center gap-1.5 px-2 sm:px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
           >
             <LayoutDashboard className="w-4 h-4 flex-shrink-0" />
             <span className="hidden lg:inline">Dashboard</span>
@@ -340,7 +340,7 @@ export default function PreviewShell({ store, from = null }: Props) {
           {isPublished ? (
             <button
               onClick={() => setShowUnpublishModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 border border-red-200 text-sm font-semibold rounded-xl hover:bg-red-100 transition-all"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-red-50 text-red-600 border border-red-200 text-sm font-medium rounded-xl hover:bg-red-100 transition-all"
             >
               <CloudOff className="w-4 h-4 flex-shrink-0" />
               <span className="hidden sm:inline">Unpublish</span>
@@ -348,7 +348,7 @@ export default function PreviewShell({ store, from = null }: Props) {
           ) : hasPublishedBefore ? (
             <button
               onClick={() => setShowPublishModal(true)}
-              className="flex items-center gap-1.5 px-3 sm:px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow-md"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 gradient-bg text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all shadow-md"
             >
               <RotateCcw className="w-4 h-4 flex-shrink-0" />
               <span className="hidden sm:inline">Republish</span>
@@ -356,7 +356,7 @@ export default function PreviewShell({ store, from = null }: Props) {
           ) : (
             <button
               onClick={() => setShowPublishModal(true)}
-              className="flex items-center gap-1.5 px-3 sm:px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow-md"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 gradient-bg text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all shadow-md"
             >
               <Rocket className="w-4 h-4 flex-shrink-0" />
               <span className="hidden sm:inline">Publish</span>

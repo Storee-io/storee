@@ -723,6 +723,14 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
   const pos = 'fixed';
   const h   = '100%';
 
+  // Lock body scroll on live store only (preview/canvas already locked by backdrop)
+  useEffect(() => {
+    if (isContained) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [isContained]);
+
   const content = (
     <>
       {/* Backdrop */}

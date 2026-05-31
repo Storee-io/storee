@@ -468,7 +468,7 @@ export default function CanvasShell({ store, from }: Props) {
       <EditModeCss active={editMode} />
 
       {/* ── Top bar ──────────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-1.5 flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 h-12 flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
 
         {/* Left — back + store name */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -490,7 +490,7 @@ export default function CanvasShell({ store, from }: Props) {
 
         {/* Center — device switcher + edit/preview toggle */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1">
+          <div className="flex items-center bg-slate-100 rounded-xl h-8 px-[3px] gap-0.5">
             {([
               { key: 'desktop', Icon: Monitor,    label: 'Desktop' },
               { key: 'tablet',  Icon: Tablet,     label: 'Tablet' },
@@ -500,26 +500,26 @@ export default function CanvasShell({ store, from }: Props) {
                 key={key}
                 onClick={() => setDevice(key)}
                 title={label}
-                className={`p-2 rounded-lg transition-all ${device === key ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`px-1.5 py-[6px] rounded-lg transition-all ${device === key ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-3.5 h-3.5" />
               </button>
             ))}
           </div>
 
           {/* Edit / Preview toggle */}
-          <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-0.5">
+          <div className="flex items-center bg-slate-100 rounded-xl h-8 px-[3px] gap-0.5">
             <button
               onClick={() => setEditMode(false)}
               title="Preview mode"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${!editMode ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`flex items-center gap-1.5 px-1.5 py-[3px] rounded-lg text-sm font-medium transition-all ${!editMode ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
             >
               <Eye className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Preview</span>
             </button>
             <button
               onClick={() => setEditMode(true)}
               title="Edit mode — click text in canvas to edit"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${editMode ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`flex items-center gap-1.5 px-1.5 py-[3px] rounded-lg text-sm font-medium transition-all ${editMode ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
             >
               <Edit2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Edit</span>
             </button>
@@ -542,7 +542,7 @@ export default function CanvasShell({ store, from }: Props) {
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-1.5 px-3 sm:px-5 py-2 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 disabled:opacity-60 transition-all shadow-md"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 gradient-bg text-white text-sm font-medium rounded-xl hover:opacity-90 disabled:opacity-60 transition-all shadow-md"
           >
             {saved
               ? <><Check className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Saved</span></>
