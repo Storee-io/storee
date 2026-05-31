@@ -840,7 +840,6 @@ export default function CanvasShell({ store, from }: Props) {
             {/* Content viewport — fixed height, scrolls inside the frame */}
             <div
               ref={previewRef}
-              className="rounded-lg"
               style={{
                 overflowY: 'auto',
                 overflowX: 'hidden',
