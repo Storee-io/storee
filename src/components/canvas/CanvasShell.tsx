@@ -831,7 +831,7 @@ export default function CanvasShell({ store, from }: Props) {
           </AnimatePresence>
 
           <div
-            className={`bg-white shadow-xl rounded-b-lg transition-all duration-300 flex flex-col ${editMode ? 'ring-2 ring-emerald-400/40' : ''}`}
+            className={`bg-white shadow-xl rounded-b-lg overflow-hidden transition-all duration-300 flex flex-col ${editMode ? 'ring-2 ring-emerald-400/40' : ''}`}
             style={{
               width: device === 'mobile' ? 390 : device === 'tablet' ? 768 : '100%',
               minWidth: device === 'desktop' ? 960 : undefined,
