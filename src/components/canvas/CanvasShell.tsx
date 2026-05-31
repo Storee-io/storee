@@ -575,14 +575,29 @@ export default function CanvasShell({ store, from }: Props) {
           </AnimatePresence>
 
           <div
-            ref={previewRef}
-            className={`bg-white shadow-xl rounded-2xl overflow-hidden self-start transition-all duration-300 ${editMode ? 'ring-2 ring-emerald-400/40' : ''}`}
+            className={`bg-white shadow-xl rounded-2xl self-start transition-all duration-300 flex flex-col ${editMode ? 'ring-2 ring-emerald-400/40' : ''}`}
             style={{
               width: device === 'mobile' ? 390 : device === 'tablet' ? 768 : '100%',
               minWidth: device === 'desktop' ? 960 : undefined,
             }}
           >
-            <StorePreview store={previewStore} device={device} editMode={editMode} onFieldChange={handleFieldChange} />
+            {/* Content viewport — fixed height, scrolls inside the frame */}
+            <div
+              ref={previewRef}
+              className="rounded-2xl"
+              style={{
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                // transform contains position:fixed descendants inside the frame
+                transform: 'translateZ(0)',
+                height:
+                  device === 'desktop' ? 'calc(100vh - 57px - 48px)' :
+                  device === 'tablet'  ? '1024px' :
+                                         '844px',
+              }}
+            >
+              <StorePreview store={previewStore} device={device} editMode={editMode} onFieldChange={handleFieldChange} />
+            </div>
           </div>
         </main>
 
