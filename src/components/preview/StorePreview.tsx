@@ -220,16 +220,15 @@ interface CartToastItem {
   cartCount: number;
 }
 
-function CartToast({ item, primaryColor, fmtPrice, onClose, onViewCart }: {
+function CartToast({ item, primaryColor, fmtPrice, onClose, onViewCart, previewShell }: {
   item: CartToastItem;
   primaryColor: string;
   fmtPrice: (n: number) => string;
   onClose: () => void;
   onViewCart: () => void;
+  previewShell?: boolean;
 }) {
-  // Render inline with position:fixed — in PreviewShell the transform:translateZ(0)
-  // wrapper contains it within the mock browser frame; in live store it covers the full viewport.
-  return (
+  const toast = (
     <motion.div
       key={item.id}
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -292,6 +291,13 @@ function CartToast({ item, primaryColor, fmtPrice, onClose, onViewCart }: {
       </div>
     </motion.div>
   );
+
+  // Live store: portal to body (position:fixed relative to real viewport).
+  // Preview/canvas: render inline (position:fixed contained by transform:translateZ(0)).
+  if (!previewShell && typeof document !== 'undefined') {
+    return createPortal(toast, document.body);
+  }
+  return toast;
 }
 
 // ── Cart fly animation ────────────────────────────────────────────────────────
@@ -698,9 +704,9 @@ function ProductDetailPage({ product, primaryColor, storeName, device, onBack, o
 }
 
 // ── Cart Sidebar ──────────────────────────────────────────────────────────────
-function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart, onCheckout, onUpdateQty, layoutStyle, editMode }: {
+function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart, onCheckout, onUpdateQty, layoutStyle, editMode, previewShell }: {
   cart: CartItem[]; primaryColor: string; fmtPrice: (n: number) => string;
-  device: DeviceMode; layoutStyle?: string; editMode?: boolean;
+  device: DeviceMode; layoutStyle?: string; editMode?: boolean; previewShell?: boolean;
   onClose: () => void; onViewCart: () => void; onCheckout: () => void;
   onUpdateQty: (id: string, delta: number) => void;
 }) {
@@ -708,13 +714,12 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
   const isMobile = device === 'mobile';
 
-  // editMode (canvas editor) → absolute, clipped by StorePreview overflow:hidden
-  // otherwise → fixed without portal:
-  //   • PreviewShell wraps StorePreview in transform:translateZ(0) which acts as
-  //     the containing block, so fixed stays inside the mock browser frame.
-  //   • Live store (StorefrontClient) has no transform → fixed covers full viewport.
-  const pos = editMode ? 'absolute' : 'fixed';
-  const h   = editMode ? '100%'     : '100dvh';
+  // editMode (canvas)   → absolute, clipped inside StorePreview
+  // previewShell        → absolute, clipped inside the mock browser frame
+  // live store          → fixed portaled to body, sticky to real viewport
+  const isContained = editMode || previewShell;
+  const pos = isContained ? 'absolute' : 'fixed';
+  const h   = isContained ? '100%'     : '100dvh';
 
   const content = (
     <>
@@ -837,8 +842,12 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
     </>
   );
 
-  // Never portal — position:fixed is contained by transform:translateZ(0) in
-  // PreviewShell, and is viewport-relative in the live store (no transform).
+  // Live store: portal to body so position:fixed is relative to the real viewport (sticky).
+  // In editMode/previewShell: render inline — position:absolute clipped inside the frame.
+  if (!isContained) {
+    if (typeof document === 'undefined') return null;
+    return createPortal(content, document.body);
+  }
   return content;
 }
 
@@ -8200,6 +8209,9 @@ interface StorePreviewProps {
   store: Store;
   device: DeviceMode;
   editMode?: boolean;
+  /** Pass true from PreviewShell so overlays (sidebar, toast) are clipped inside
+   *  the mock browser frame via absolute positioning instead of portaling to body. */
+  previewShell?: boolean;
   onFieldChange?: (field: string, value: string) => void;
   onPageChange?: (path: string) => void;
   initialPath?: string;
@@ -8228,7 +8240,7 @@ function pathToStorePage(path: string): StorePage {
   return (entry?.[0] as StorePage | undefined) ?? 'home';
 }
 
-export default function StorePreview({ store, device, editMode, onFieldChange, onPageChange, initialPath }: StorePreviewProps) {
+export default function StorePreview({ store, device, editMode, previewShell, onFieldChange, onPageChange, initialPath }: StorePreviewProps) {
   const [page, setPage] = useState<StorePage>(() => pathToStorePage(initialPath ?? '/'));
   const [showCartSidebar, setShowCartSidebar] = useState(false);
 
@@ -8484,6 +8496,7 @@ export default function StorePreview({ store, device, editMode, onFieldChange, o
           <CartSidebar
             key="cart-sidebar"
             editMode={editMode}
+            previewShell={previewShell}
             cart={cart}
             primaryColor={primaryColor}
             fmtPrice={fmtPrice}
@@ -8510,6 +8523,7 @@ export default function StorePreview({ store, device, editMode, onFieldChange, o
           item={cartToast}
           primaryColor={primaryColor}
           fmtPrice={fmtPrice}
+          previewShell={previewShell}
           onClose={() => { setCartToast(null); if (cartToastTimer.current) clearTimeout(cartToastTimer.current); }}
           onViewCart={() => { setCartToast(null); if (cartToastTimer.current) clearTimeout(cartToastTimer.current); setShowCartSidebar(true); }}
         />
