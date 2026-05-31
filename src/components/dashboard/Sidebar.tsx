@@ -92,7 +92,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
               width={112}
               height={32}
               unoptimized
-              className="h-8 w-auto"
+              className="h-5 w-auto"
               priority
             />
           </Link>
