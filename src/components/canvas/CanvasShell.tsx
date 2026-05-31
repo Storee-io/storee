@@ -557,52 +557,8 @@ export default function CanvasShell({ store, from }: Props) {
       {/* ── Body ─────────────────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* ── Preview area ──────────────────────────────────────────────────── */}
-        <main className="flex-1 overflow-hidden bg-slate-100 flex justify-center p-6">
-          {/* Edit mode hint bar */}
-          <AnimatePresence>
-            {editMode && (
-              <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                className="absolute top-[68px] left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-xs font-semibold rounded-full shadow-lg pointer-events-none"
-              >
-                <MousePointer className="w-3.5 h-3.5" />
-                Click any text in the preview to edit it directly
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div
-            className={`bg-white shadow-xl rounded-lg self-start transition-all duration-300 flex flex-col ${editMode ? 'ring-2 ring-emerald-400/40' : ''}`}
-            style={{
-              width: device === 'mobile' ? 390 : device === 'tablet' ? 768 : '100%',
-              minWidth: device === 'desktop' ? 960 : undefined,
-            }}
-          >
-            {/* Content viewport — fixed height, scrolls inside the frame */}
-            <div
-              ref={previewRef}
-              className="rounded-lg"
-              style={{
-                overflowY: 'auto',
-                overflowX: 'hidden',
-                // transform contains position:fixed descendants inside the frame
-                transform: 'translateZ(0)',
-                height:
-                  device === 'desktop' ? 'calc(100vh - 57px - 48px)' :
-                  device === 'tablet'  ? '1024px' :
-                                         '844px',
-              }}
-            >
-              <StorePreview store={previewStore} device={device} editMode={editMode} onFieldChange={handleFieldChange} />
-            </div>
-          </div>
-        </main>
-
-        {/* ── Right sidebar ─────────────────────────────────────────────────── */}
-        <aside className="w-72 flex-shrink-0 bg-white border-l border-slate-200 flex flex-col overflow-hidden">
+        {/* ── Left sidebar ──────────────────────────────────────────────────── */}
+        <aside className="w-72 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden">
 
           {/* Sidebar tab switcher */}
           <div className="flex border-b border-slate-100 flex-shrink-0">
@@ -856,6 +812,50 @@ export default function CanvasShell({ store, from }: Props) {
             </div>
           )}
         </aside>
+
+        {/* ── Preview area ──────────────────────────────────────────────────── */}
+        <main className="flex-1 overflow-hidden bg-slate-100 flex justify-center p-6">
+          {/* Edit mode hint bar */}
+          <AnimatePresence>
+            {editMode && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="absolute top-[68px] left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-xs font-semibold rounded-full shadow-lg pointer-events-none"
+              >
+                <MousePointer className="w-3.5 h-3.5" />
+                Click any text in the preview to edit it directly
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div
+            className={`bg-white shadow-xl rounded-lg self-start transition-all duration-300 flex flex-col ${editMode ? 'ring-2 ring-emerald-400/40' : ''}`}
+            style={{
+              width: device === 'mobile' ? 390 : device === 'tablet' ? 768 : '100%',
+              minWidth: device === 'desktop' ? 960 : undefined,
+            }}
+          >
+            {/* Content viewport — fixed height, scrolls inside the frame */}
+            <div
+              ref={previewRef}
+              className="rounded-lg"
+              style={{
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                // transform contains position:fixed descendants inside the frame
+                transform: 'translateZ(0)',
+                height:
+                  device === 'desktop' ? 'calc(100vh - 57px - 48px)' :
+                  device === 'tablet'  ? '1024px' :
+                                         '844px',
+              }}
+            >
+              <StorePreview store={previewStore} device={device} editMode={editMode} onFieldChange={handleFieldChange} />
+            </div>
+          </div>
+        </main>
 
       </div>
     </div>
