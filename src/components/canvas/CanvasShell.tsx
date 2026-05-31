@@ -558,7 +558,7 @@ export default function CanvasShell({ store, from }: Props) {
       <div className="flex flex-1 overflow-hidden">
 
         {/* ── Preview area ──────────────────────────────────────────────────── */}
-        <main className="flex-1 overflow-auto bg-slate-100 flex justify-center p-6">
+        <main className="flex-1 overflow-hidden bg-slate-100 flex justify-center p-6">
           {/* Edit mode hint bar */}
           <AnimatePresence>
             {editMode && (
