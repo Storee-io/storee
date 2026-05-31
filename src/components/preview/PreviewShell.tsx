@@ -365,19 +365,25 @@ export default function PreviewShell({ store, from = null }: Props) {
         </div>
       </div>
 
-      {/* Store frame */}
-      <div ref={scrollContainerRef} onScroll={handleScroll} className="flex-1 overflow-auto px-4 sm:px-8 pt-4 sm:pt-8 pb-16 flex justify-center items-start">
+      {/* Store frame — fills remaining height, frame fixed to device aspect ratio */}
+      <div className="flex-1 overflow-hidden flex justify-center items-stretch p-4 sm:p-6">
         <motion.div
-          animate={{ width: device === 'desktop' ? '100%' : device === 'tablet' ? '768px' : '375px' }}
+          animate={{
+            aspectRatio:
+              device === 'mobile'  ? '390 / 844' :
+              device === 'tablet'  ? '768 / 1024' :
+              'unset',
+            width: device === 'desktop' ? '100%' : 'auto',
+          }}
           transition={{ duration: 0.3 }}
-          className="max-w-full rounded-2xl"
+          className="flex flex-col rounded-2xl max-h-full"
           style={{
-            minWidth: device === 'mobile' ? '375px' : undefined,
             boxShadow: '0 16px 48px -4px rgba(0,0,0,0.18), 0 6px 16px -2px rgba(0,0,0,0.10)',
+            minWidth: device === 'mobile' ? 320 : device === 'tablet' ? 600 : 960,
           }}
         >
           {/* Mock browser bar */}
-          <div className="bg-[#f0f0f0] rounded-t-2xl px-4 py-3">
+          <div className="bg-[#f0f0f0] rounded-t-2xl px-4 py-3 flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="flex gap-1.5">
                 <div className="w-3 h-3 rounded-full bg-red-400" />
@@ -409,11 +415,15 @@ export default function PreviewShell({ store, from = null }: Props) {
 
           {/*
             transform: translateZ(0) creates a new containing block for
-            position:fixed descendants — keeps FullscreenLayout's fixed
-            header/nav inside the mock browser frame instead of escaping
-            to the real viewport.
+            position:fixed descendants — keeps overlays inside the frame.
+            overflow-y:auto lets store content scroll inside the fixed frame.
           */}
-          <div className="rounded-b-2xl overflow-hidden" style={{ transform: 'translateZ(0)' }}>
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="rounded-b-2xl overflow-hidden flex-1"
+            style={{ transform: 'translateZ(0)', overflowY: 'auto' }}
+          >
             <StorePreview store={liveStore} device={device} previewShell onPageChange={setCurrentPath} />
           </div>
 
