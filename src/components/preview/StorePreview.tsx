@@ -227,14 +227,17 @@ function CartToast({ item, primaryColor, fmtPrice, onClose, onViewCart }: {
   onClose: () => void;
   onViewCart: () => void;
 }) {
-  return (
+  if (typeof document === 'undefined') return null;
+  return createPortal(
+    <AnimatePresence>
     <motion.div
       key={item.id}
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 20, scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-      className="absolute bottom-4 right-4 z-[9999] w-64 rounded-2xl shadow-2xl overflow-hidden"
+      style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 99999, width: 256 }}
+      className="rounded-2xl shadow-2xl overflow-hidden"
       style={{ background: '#fff', border: '1px solid #e5e7eb' }}
     >
       {/* Progress bar auto-dismiss */}
@@ -289,6 +292,8 @@ function CartToast({ item, primaryColor, fmtPrice, onClose, onViewCart }: {
         </button>
       </div>
     </motion.div>
+    </AnimatePresence>,
+    document.body
   );
 }
 
@@ -8478,18 +8483,17 @@ export default function StorePreview({ store, device, editMode, onFieldChange, o
         <FlyingDot key={item.id} item={item} primaryColor={primaryColor} containerEl={previewContainerRef.current} />
       ))}
 
-      {/* Cart toast popup */}
-      <AnimatePresence>
-        {cartToast && (
-          <CartToast
-            item={cartToast}
-            primaryColor={primaryColor}
-            fmtPrice={fmtPrice}
-            onClose={() => { setCartToast(null); if (cartToastTimer.current) clearTimeout(cartToastTimer.current); }}
-            onViewCart={() => { setCartToast(null); if (cartToastTimer.current) clearTimeout(cartToastTimer.current); setShowCartSidebar(true); }}
-          />
-        )}
-      </AnimatePresence>
+      {/* Cart toast popup — portaled to document.body with position:fixed so it
+          sticks to the bottom-right of the real viewport regardless of transforms */}
+      {cartToast && (
+        <CartToast
+          item={cartToast}
+          primaryColor={primaryColor}
+          fmtPrice={fmtPrice}
+          onClose={() => { setCartToast(null); if (cartToastTimer.current) clearTimeout(cartToastTimer.current); }}
+          onViewCart={() => { setCartToast(null); if (cartToastTimer.current) clearTimeout(cartToastTimer.current); setShowCartSidebar(true); }}
+        />
+      )}
 
       {/* Auth modal */}
       {showAuthModal && (
