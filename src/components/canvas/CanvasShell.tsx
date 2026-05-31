@@ -852,7 +852,7 @@ export default function CanvasShell({ store, from }: Props) {
                 height: 'calc(100vh - 57px)',
               }}
             >
-              <StorePreview store={previewStore} device={device} editMode={editMode} onFieldChange={handleFieldChange} />
+              <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} />
             </div>
           </div>
         </main>
