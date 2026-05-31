@@ -72,7 +72,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const { notifications, markAsRead, markAllRead, unreadCount } = useNotifications();
 
   return (
-    <header className="h-11 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
+    <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-1.5 flex items-center justify-between flex-shrink-0">
       {/* Left */}
       <div className="flex items-center gap-2 min-w-0">
         <button

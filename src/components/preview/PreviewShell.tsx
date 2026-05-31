@@ -274,7 +274,7 @@ export default function PreviewShell({ store, from = null }: Props) {
   return (
     <div className="h-screen bg-slate-100 flex flex-col overflow-hidden">
       {/* Toolbar */}
-      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 h-11 flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-1.5 flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
         {/* Left — back + store name */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <button
