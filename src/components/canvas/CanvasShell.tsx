@@ -814,7 +814,7 @@ export default function CanvasShell({ store, from }: Props) {
         </aside>
 
         {/* ── Preview area ──────────────────────────────────────────────────── */}
-        <main className="flex-1 overflow-hidden bg-slate-100 flex justify-center p-6">
+        <main className="flex-1 overflow-hidden bg-slate-100 flex justify-center px-6 pb-6 pt-0">
           {/* Edit mode hint bar */}
           <AnimatePresence>
             {editMode && (
@@ -831,7 +831,7 @@ export default function CanvasShell({ store, from }: Props) {
           </AnimatePresence>
 
           <div
-            className={`bg-white shadow-xl rounded-lg self-start transition-all duration-300 flex flex-col ${editMode ? 'ring-2 ring-emerald-400/40' : ''}`}
+            className={`bg-white shadow-xl rounded-b-lg transition-all duration-300 flex flex-col ${editMode ? 'ring-2 ring-emerald-400/40' : ''}`}
             style={{
               width: device === 'mobile' ? 390 : device === 'tablet' ? 768 : '100%',
               minWidth: device === 'desktop' ? 960 : undefined,
@@ -847,7 +847,7 @@ export default function CanvasShell({ store, from }: Props) {
                 // transform contains position:fixed descendants inside the frame
                 transform: 'translateZ(0)',
                 height:
-                  device === 'desktop' ? 'calc(100vh - 57px - 48px)' :
+                  device === 'desktop' ? 'calc(100vh - 57px - 24px)' :
                   device === 'tablet'  ? '1024px' :
                                          '844px',
               }}
