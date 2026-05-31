@@ -8476,21 +8476,37 @@ export default function StorePreview({ store, device, editMode, previewShell, on
 
   const waNumber = paymentSettings?.confirmationWhatsapp;
 
+  // All overlays (CartSidebar, CartToast, modals, WhatsApp) are rendered as
+  // SIBLINGS to data-preview-root — not children. This is critical:
+  // data-preview-root has overflow:hidden which would clip position:fixed
+  // descendants even when those are contained by a transformed ancestor.
+  // By placing overlays outside data-preview-root they are only clipped by
+  // the scroll-container (canvas previewRef / preview scrollContainerRef),
+  // which has transform:translateZ(0) — making fixed elements sticky to the
+  // frame rather than the real viewport.
   return (
-    <div
-      ref={previewContainerRef}
-      data-preview-root="1"
-      className="relative overflow-hidden"
-      onClickCapture={editMode ? (e) => {
-        const target = e.target as HTMLElement;
-        // Allow clicks on contenteditable fields so they can be focused/edited
-        if (target.closest('[contenteditable]')) return;
-        // Block all other interactive clicks (links, buttons, etc.)
-        const interactive = target.closest('a, button, [role="button"], [role="link"]');
-        if (interactive) e.stopPropagation();
-      } : undefined}
-    >
-      {content}
+    <>
+      {/* ── Store content — overflow:hidden clips layout overflow & fly dots ── */}
+      <div
+        ref={previewContainerRef}
+        data-preview-root="1"
+        className="relative overflow-hidden"
+        onClickCapture={editMode ? (e) => {
+          const target = e.target as HTMLElement;
+          if (target.closest('[contenteditable]')) return;
+          const interactive = target.closest('a, button, [role="button"], [role="link"]');
+          if (interactive) e.stopPropagation();
+        } : undefined}
+      >
+        {content}
+
+        {/* Cart fly dots — must stay inside overflow:hidden so they are clipped */}
+        {flyItems.map(item => (
+          <FlyingDot key={item.id} item={item} primaryColor={primaryColor} containerEl={previewContainerRef.current} />
+        ))}
+      </div>
+
+      {/* ── Overlays — siblings to data-preview-root, not clipped by its overflow ── */}
 
       {/* Cart Sidebar */}
       <AnimatePresence>
@@ -8512,14 +8528,7 @@ export default function StorePreview({ store, device, editMode, previewShell, on
         )}
       </AnimatePresence>
 
-      {/* Cart fly animation dots — portaled inside this container so they are
-          clipped by overflow:hidden and never escape the preview frame */}
-      {flyItems.map(item => (
-        <FlyingDot key={item.id} item={item} primaryColor={primaryColor} containerEl={previewContainerRef.current} />
-      ))}
-
-      {/* Cart toast popup — portaled to document.body with position:fixed so it
-          sticks to the bottom-right of the real viewport regardless of transforms */}
+      {/* Cart toast — sticky bottom-right of frame (canvas/preview) or viewport (live) */}
       {cartToast && (
         <CartToast
           item={cartToast}
@@ -8565,6 +8574,6 @@ export default function StorePreview({ store, device, editMode, previewShell, on
           <MessageCircle className="w-6 h-6 text-white" />
         </a>
       )}
-    </div>
+    </>
   );
 }
