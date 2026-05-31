@@ -710,7 +710,8 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
   const isMobile = device === 'mobile';
 
-  return (
+  if (typeof document === 'undefined') return null;
+  return createPortal(
     <>
       {/* Backdrop */}
       <motion.div
@@ -718,8 +719,7 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 z-40"
-        style={{ background: 'rgba(0,0,0,0.35)' }}
+        style={{ position: 'fixed', inset: 0, zIndex: 99998, background: 'rgba(0,0,0,0.35)' }}
       />
 
       {/* Sidebar panel */}
@@ -728,10 +728,14 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', stiffness: 380, damping: 38 }}
-        className="absolute top-0 right-0 z-50 flex flex-col shadow-2xl"
+        className="flex flex-col shadow-2xl"
         style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          zIndex: 99999,
           width: isMobile ? '100%' : '300px',
-          height: '100vh',
+          height: '100dvh',
           background: t.surfaceBg,
           fontFamily: t.fontFamily,
           borderLeft: `1px solid ${t.surfaceBorder}`,
@@ -825,7 +829,8 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
           )}
         </div>
       </motion.div>
-    </>
+    </>,
+    document.body
   );
 }
 
