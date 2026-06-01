@@ -50,6 +50,32 @@ export default function PreviewShell({ store, from = null }: Props) {
   const scrollStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // ── Frame sizing via ResizeObserver ──────────────────────────────────────────
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [frameSize, setFrameSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const compute = () => {
+      const availW = el.clientWidth;
+      const availH = el.clientHeight;
+      const ratio =
+        device === 'mobile' ? 9 / 16 :
+        device === 'tablet' ? 3 / 4 :
+        16 / 10; // desktop
+      // Height follows canvas area; clamp width if it exceeds available width
+      let h = availH;
+      let w = h * ratio;
+      if (w > availW) { w = availW; h = w / ratio; }
+      setFrameSize({ width: Math.round(w), height: Math.round(h) });
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [device]);
+
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const currentY = e.currentTarget.scrollTop;
     const isScrollingDown = currentY > lastScrollY.current;
@@ -365,21 +391,17 @@ export default function PreviewShell({ store, from = null }: Props) {
         </div>
       </div>
 
-      {/* Store frame — fills remaining height, frame fixed to device aspect ratio */}
-      <div className="flex-1 overflow-hidden flex justify-center items-stretch p-4 sm:p-6">
+      {/* Store frame — height fills canvas area, width derived from device aspect ratio */}
+      <div className="flex-1 overflow-hidden p-4 sm:p-6">
+        {/* Inner measurement div — clientWidth/clientHeight = available space after padding */}
+        <div ref={canvasRef} className="w-full h-full flex justify-center items-center">
         <motion.div
-          animate={{
-            aspectRatio:
-              device === 'mobile'  ? '390 / 844' :
-              device === 'tablet'  ? '768 / 1024' :
-              'unset',
-            width: device === 'desktop' ? '100%' : 'auto',
-          }}
           transition={{ duration: 0.3 }}
-          className="flex flex-col rounded-2xl max-h-full"
+          className="flex flex-col rounded-2xl flex-shrink-0"
           style={{
+            width: frameSize.width || undefined,
+            height: frameSize.height || undefined,
             boxShadow: '0 16px 48px -4px rgba(0,0,0,0.18), 0 6px 16px -2px rgba(0,0,0,0.10)',
-            minWidth: device === 'mobile' ? 320 : device === 'tablet' ? 600 : 960,
           }}
         >
           {/* Mock browser bar */}
@@ -390,9 +412,9 @@ export default function PreviewShell({ store, from = null }: Props) {
                 <div className="w-3 h-3 rounded-full bg-amber-400" />
                 <div className="w-3 h-3 rounded-full bg-green-400" />
               </div>
-              <div className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 flex items-center gap-2">
+              <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg px-3 py-1.5 flex items-center gap-2 overflow-hidden">
                 <Globe className={`w-3.5 h-3.5 flex-shrink-0 ${isPublished ? 'text-slate-400' : 'text-slate-300'}`} />
-                <span className={`text-xs font-mono truncate ${isPublished ? 'text-slate-500' : 'text-slate-400'}`}>
+                <span className={`text-xs font-mono truncate min-w-0 ${isPublished ? 'text-slate-500' : 'text-slate-400'}`}>
                   {isPublished
                     ? `https://${liveStore.publishedDomain ?? liveStore.domain}${currentPath === '/' ? '' : currentPath}`
                     : `https://****.storee.io${currentPath === '/' ? '' : currentPath}`}
@@ -433,6 +455,7 @@ export default function PreviewShell({ store, from = null }: Props) {
           </div>
 
         </motion.div>
+        </div>{/* /canvasRef inner div */}
       </div>
 
       {/* Floating Edit FAB — fixed to escape overflow-auto clipping */}

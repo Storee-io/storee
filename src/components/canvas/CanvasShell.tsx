@@ -653,7 +653,7 @@ export default function CanvasShell({ store, from }: Props) {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-semibold text-slate-700 truncate">{meta.label}</p>
-                          {editMode && item.hasContent && (
+                          {item.hasContent && (
                             <p className="text-[10px] text-slate-400 truncate">{meta.editHint}</p>
                           )}
                         </div>
@@ -842,8 +842,8 @@ export default function CanvasShell({ store, from }: Props) {
             style={{
               height: '100%',
               aspectRatio:
-                device === 'mobile' ? '390 / 844' :
-                device === 'tablet' ? '768 / 1024' :
+                device === 'mobile' ? '9 / 16' :
+                device === 'tablet' ? '3 / 4' :
                 undefined,
               width: device === 'desktop' ? '100%' : undefined,
               minWidth: device === 'desktop' ? 960 : undefined,
