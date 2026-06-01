@@ -43,7 +43,7 @@ function buildNavSections(pendingOrders: number, newProducts: number, activeStor
   {
     label: 'CONFIGURATION',
     items: [
-      { icon: PenLine,     label: 'Canvas',          path: activeStoreId ? `/canvas/${activeStoreId}` : '/canvas' },
+      { icon: PenLine,     label: 'Editor',          path: activeStoreId ? `/editor/${activeStoreId}` : '/editor' },
       { icon: Palette,     label: 'Appearance',     path: '/dashboard/appearance' },
       { icon: Globe,       label: 'Domain',          path: '/dashboard/domain' },
       { icon: Truck,       label: 'Shipping',        path: '/dashboard/shipping' },
@@ -78,7 +78,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const newProducts = storeData.products.filter(p => p.badge === 'New').length;
   const navSections = buildNavSections(pendingOrders, newProducts, activeStore?.id);
 
-  const isActive = (path: string) => pathname === path || (path.startsWith('/canvas/') && pathname.startsWith('/canvas/'));
+  const isActive = (path: string) => pathname === path || (path.startsWith('/editor/') && pathname.startsWith('/editor/'));
 
   const renderSidebarContent = (isCollapsed: boolean) => (
     <div className="flex flex-col h-full">

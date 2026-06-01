@@ -496,7 +496,6 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Back
                 </button>
                 <a
                   href={`https://${publishedUrl}`}

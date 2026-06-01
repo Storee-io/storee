@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, Bell, Eye, Copy, Settings, HelpCircle, LogOut, ExternalLink, Check, EyeOff, Loader2 } from 'lucide-react';
+import { Menu, Bell, Eye, Copy, Settings, HelpCircle, LogOut, ExternalLink, Check, EyeOff, Loader2, PenLine } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -145,6 +145,15 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
             </button>
           </div>
         )}
+
+        {/* Editor button */}
+        <Link
+          href={activeStore ? `/editor/${activeStore.id}?from=/dashboard` : '/editor'}
+          className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold text-white gradient-bg rounded-xl hover:opacity-90 transition-all shadow-sm"
+        >
+          <PenLine className="w-4 h-4" />
+          Editor
+        </Link>
 
         {/* Preview button */}
         <Link

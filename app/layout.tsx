@@ -4,6 +4,7 @@ import { AuthProvider } from '@/src/context/AuthContext';
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import ScrollReset from '@/src/components/ui/ScrollReset';
+import { Toaster } from 'sonner';
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <ScrollReset />
           {children}
+          <Toaster richColors position="bottom-right" />
         </AuthProvider>
       </body>
     </html>

@@ -145,7 +145,6 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
           className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          All Products
         </button>
         <span className="text-slate-300">/</span>
         <span className="text-sm font-semibold text-slate-900 truncate max-w-[200px]">{product.name || 'New Product'}</span>

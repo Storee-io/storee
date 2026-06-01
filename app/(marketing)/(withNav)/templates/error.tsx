@@ -38,7 +38,6 @@ export default function TemplatesError({
             className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-colors text-sm"
           >
             <ArrowLeft className="w-4 h-4" />
-            Go Back
           </Link>
         </div>
       </div>

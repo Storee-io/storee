@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Store, Globe, Trash2, Plus, TrendingUp, Package,
   AlertTriangle, Rocket, ArrowLeft, Settings, ShoppingBag,
-  Eye, RotateCcw, CloudOff, MoreHorizontal,
+  Eye, RotateCcw, CloudOff, MoreHorizontal, PenLine,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useStore } from '@/src/context/StoreContext';
@@ -98,7 +98,6 @@ export default function MyStoresPage() {
               className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors group"
             >
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-              Home
             </Link>
             <div className="w-px h-5 bg-slate-200" />
             <div>
@@ -255,20 +254,19 @@ export default function MyStoresPage() {
                         </div>
                       </div>
 
-                      {/* ── Actions: single row ── */}
-                      <div className="mt-auto pt-3 border-t border-slate-100">
+                      {/* ── Actions ── */}
+                      <div className="mt-auto pt-3 border-t border-slate-100 space-y-2">
+                        {/* Row 1: Editor (primary) + Preview */}
                         <div className="flex gap-2">
-                          {/* Manage — primary, solid */}
-                          <button
-                            onClick={() => handleManage(store.id)}
+                          <Link
+                            href={`/editor/${store.id}?from=/stores`}
+                            onClick={() => setActiveStore(store)}
                             className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-white rounded-xl hover:opacity-90 transition-opacity shadow-sm"
                             style={{ background: color }}
                           >
-                            <Settings className="w-3.5 h-3.5" />
-                            Manage
-                          </button>
-
-                          {/* Preview — outline, same style as Publish/Republish */}
+                            <PenLine className="w-3.5 h-3.5" />
+                            Editor
+                          </Link>
                           <Link
                             href={`/preview/${store.id}?from=/stores`}
                             onClick={() => setActiveStore(store)}
@@ -277,31 +275,41 @@ export default function MyStoresPage() {
                             <Eye className="w-3.5 h-3.5" />
                             <span className="text-xs">Preview</span>
                           </Link>
+                        </div>
 
-                          {/* Publish / Republish / Unpublish — secondary, outline */}
+                        {/* Row 2: Manage (dashboard) + Publish/Republish/Unpublish */}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleManage(store.id)}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-slate-500 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors"
+                          >
+                            <Settings className="w-3.5 h-3.5" />
+                            Dashboard
+                          </button>
+
                           {isPublished ? (
                             <button
                               onClick={() => setUnpublishStore(store)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-slate-600 border border-slate-200 hover:border-red-200 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-slate-500 border border-slate-200 hover:border-red-200 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
                             >
                               <CloudOff className="w-3.5 h-3.5" />
-                              <span className="text-xs">Unpublish</span>
+                              Unpublish
                             </button>
                           ) : store.publishedDomain ? (
                             <button
                               onClick={() => openPublish(store)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-slate-500 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors"
                             >
                               <RotateCcw className="w-3.5 h-3.5" />
-                              <span className="text-xs">Republish</span>
+                              Republish
                             </button>
                           ) : (
                             <button
                               onClick={() => openPublish(store)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-slate-500 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors"
                             >
                               <Rocket className="w-3.5 h-3.5" />
-                              <span className="text-xs">Publish</span>
+                              Publish
                             </button>
                           )}
                         </div>

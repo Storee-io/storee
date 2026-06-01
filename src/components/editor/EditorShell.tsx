@@ -213,7 +213,7 @@ interface Props {
   from?: string | null;
 }
 
-export default function CanvasShell({ store, from }: Props) {
+export default function EditorShell({ store, from }: Props) {
   const { updateActiveStore, activeStore } = useStore();
   const router = useRouter();
   const [device, setDevice] = useState<Device>('desktop');

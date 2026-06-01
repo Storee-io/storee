@@ -78,7 +78,6 @@ export default function TemplatePreviewClient({ id, from }: Props) {
             className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm hidden sm:inline">{backLabel}</span>
           </button>
           <div className="h-5 w-px bg-slate-200" />
           <span className="font-semibold text-slate-900 text-sm sm:text-base">{template.name}</span>

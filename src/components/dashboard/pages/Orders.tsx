@@ -122,7 +122,6 @@ function OrderDetail({ order, fmtPrice, onBack, onUpdateStatus }: OrderDetailPro
           className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          All Orders
         </button>
         <span className="text-slate-300">/</span>
         <span className="text-sm font-semibold text-slate-900">{order.id}</span>

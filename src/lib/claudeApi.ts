@@ -248,6 +248,11 @@ export interface DesignTokens {
     faq?:          'accordion' | 'grid';
     newsletter?:   'centered' | 'banner';
   };
+
+  /** Optional user override for success state color */
+  successColor?: string;
+  /** Optional user override for danger/error state color */
+  dangerColor?: string;
 }
 
 /** @deprecated use DesignTokens instead — kept for stores generated before v2 */

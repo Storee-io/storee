@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw, PenLine } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw, PenLine, Check, ChevronDown } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from './StorePreview';
 import PublishModal from './PublishModal';
@@ -14,6 +14,8 @@ import GeneratingOverlay from '../GeneratingOverlay';
 import type { Store } from '../../context/StoreContext';
 import PromptBox, { PROMPT_CURRENCIES } from '../shared/PromptBox';
 import type { PromptBoxValue } from '../shared/PromptBox';
+import { toast } from 'sonner';
+import { Tip } from '@/components/ui/tip';
 
 type DeviceMode = 'desktop' | 'tablet' | 'mobile';
 
@@ -49,6 +51,32 @@ export default function PreviewShell({ store, from = null }: Props) {
   const lastScrollY = useRef(0);
   const scrollStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // ── Address bar dropdown ──────────────────────────────────────────────────────
+  const navigateRef = useRef<((path: string) => void) | null>(null);
+  const [showAddrDropdown, setShowAddrDropdown] = useState(false);
+  const addrBarRef = useRef<HTMLButtonElement>(null);
+  const addrDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!showAddrDropdown) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        addrBarRef.current?.contains(e.target as Node) ||
+        addrDropdownRef.current?.contains(e.target as Node)
+      ) return;
+      setShowAddrDropdown(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showAddrDropdown]);
+
+  const handleNavigate = useCallback((path: string) => {
+    setCurrentPath(path);
+    navigateRef.current?.(path);
+    setShowAddrDropdown(false);
+  }, []);
 
   // ── Frame sizing via ResizeObserver ──────────────────────────────────────────
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -110,11 +138,13 @@ export default function PreviewShell({ store, from = null }: Props) {
       domain: subdomain,
       publishedDomain: subdomain.replace('.storee.io', ''),
     });
+    toast.success('Store is now live! 🎉', { description: `https://${subdomain}` });
   };
 
   const handleUnpublish = () => {
     updateActiveStore({ status: 'Draft' });
     setShowUnpublishModal(false);
+    toast.success('Store unpublished', { description: 'Your store is no longer publicly accessible.' });
   };
 
   const handleDashboardClick = async () => {
@@ -124,6 +154,7 @@ export default function PreviewShell({ store, from = null }: Props) {
     } else {
       setActiveStore(store);
     }
+    toast('Opening dashboard…', { duration: 1200 });
     router.push('/dashboard');
   };
 
@@ -257,6 +288,7 @@ export default function PreviewShell({ store, from = null }: Props) {
       updateActiveStore(patch);
       wakeLock?.release().catch(() => {});
       setIsRegenerating(false);
+      toast.success('Store updated!', { description: `${finalName} has been regenerated.` });
       return;
     }
 
@@ -294,6 +326,7 @@ export default function PreviewShell({ store, from = null }: Props) {
 
     wakeLock?.release().catch(() => {});
     setIsRegenerating(false);
+    toast.success('New store created!', { description: `${finalName} is ready to preview.` });
     router.push(`/preview/${newStore.id}?from=${encodeURIComponent(from ?? '/')}`);
   };
 
@@ -303,14 +336,14 @@ export default function PreviewShell({ store, from = null }: Props) {
       <div className="bg-white border-b border-slate-200 px-4 sm:px-6 h-12 flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
         {/* Left — back + store name */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <button
-            onClick={() => router.push(backHref)}
-            title={backLabel}
-            className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 transition-colors flex-shrink-0"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm hidden sm:inline">{backLabel}</span>
-          </button>
+          <Tip label={backLabel}>
+            <button
+              onClick={() => router.push(backHref)}
+              className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 transition-colors flex-shrink-0"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          </Tip>
           <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
           <span className="font-semibold text-slate-900 text-sm sm:text-base truncate">{store.name}</span>
           {isPublished
@@ -326,73 +359,81 @@ export default function PreviewShell({ store, from = null }: Props) {
             { mode: 'tablet',  Icon: Tablet,     label: 'Tablet' },
             { mode: 'mobile',  Icon: Smartphone, label: 'Mobile' },
           ] as const).map(({ mode, Icon, label }) => (
-            <button
-              key={mode}
-              onClick={() => setDevice(mode)}
-              title={label}
-              className={`p-1.5 rounded-lg transition-all ${
-                device === mode ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-            </button>
+            <Tip key={mode} label={label}>
+              <button
+                onClick={() => setDevice(mode)}
+                className={`p-1.5 rounded-lg transition-all ${
+                  device === mode ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+              </button>
+            </Tip>
           ))}
         </div>
 
         {/* Right — icon-only action buttons */}
         <div className="flex items-center gap-1 flex-1 justify-end">
           {/* Regenerate */}
-          <button
-            onClick={openRegenModal}
-            disabled={isRegenerating}
-            title="Regenerate"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40"
-          >
-            <RefreshCw className={`w-4 h-4 flex-shrink-0 ${isRegenerating ? 'animate-spin' : ''}`} />
-            <span className="hidden lg:inline">Regenerate</span>
-          </button>
+          <Tip label="Regenerate store">
+            <button
+              onClick={openRegenModal}
+              disabled={isRegenerating}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40"
+            >
+              <RefreshCw className={`w-4 h-4 flex-shrink-0 ${isRegenerating ? 'animate-spin' : ''}`} />
+              <span className="hidden lg:inline">Regenerate</span>
+            </button>
+          </Tip>
 
           {/* Dashboard */}
-          <button
-            onClick={handleDashboardClick}
-            title="Dashboard"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
-          >
-            <LayoutDashboard className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden lg:inline">Dashboard</span>
-          </button>
+          <Tip label="Go to Dashboard">
+            <button
+              onClick={handleDashboardClick}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+            >
+              <LayoutDashboard className="w-4 h-4 flex-shrink-0" />
+              <span className="hidden lg:inline">Dashboard</span>
+            </button>
+          </Tip>
 
           {/* Publish / Republish / Unpublish — keeps label as primary CTA */}
           {isPublished ? (
-            <button
-              onClick={() => setShowUnpublishModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-red-50 text-red-600 border border-red-200 text-sm font-medium rounded-xl hover:bg-red-100 transition-all"
-            >
-              <CloudOff className="w-4 h-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Unpublish</span>
-            </button>
+            <Tip label="Take store offline">
+              <button
+                onClick={() => setShowUnpublishModal(true)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-red-50 text-red-600 border border-red-200 text-sm font-medium rounded-xl hover:bg-red-100 transition-all"
+              >
+                <CloudOff className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Unpublish</span>
+              </button>
+            </Tip>
           ) : hasPublishedBefore ? (
-            <button
-              onClick={() => setShowPublishModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 gradient-bg text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all shadow-md"
-            >
-              <RotateCcw className="w-4 h-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Republish</span>
-            </button>
+            <Tip label="Re-publish your store">
+              <button
+                onClick={() => setShowPublishModal(true)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 gradient-bg text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all shadow-md"
+              >
+                <RotateCcw className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Republish</span>
+              </button>
+            </Tip>
           ) : (
-            <button
-              onClick={() => setShowPublishModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 gradient-bg text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all shadow-md"
-            >
-              <Rocket className="w-4 h-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Publish</span>
-            </button>
+            <Tip label="Make your store live">
+              <button
+                onClick={() => setShowPublishModal(true)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 gradient-bg text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all shadow-md"
+              >
+                <Rocket className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Publish</span>
+              </button>
+            </Tip>
           )}
         </div>
       </div>
 
       {/* Store frame — height fills canvas area, width derived from device aspect ratio */}
-      <div className="flex-1 overflow-hidden p-4 sm:p-6">
+      <div className="flex-1 overflow-hidden px-4 sm:px-6 py-2 sm:py-3">
         {/* Inner measurement div — clientWidth/clientHeight = available space after padding */}
         <div ref={canvasRef} className="w-full h-full flex justify-center items-center">
         <motion.div
@@ -405,32 +446,63 @@ export default function PreviewShell({ store, from = null }: Props) {
           }}
         >
           {/* Mock browser bar */}
-          <div className="bg-[#f0f0f0] rounded-t-2xl px-4 py-3 flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-400" />
-                <div className="w-3 h-3 rounded-full bg-amber-400" />
-                <div className="w-3 h-3 rounded-full bg-green-400" />
+          <div className="bg-[#f0f0f0] rounded-t-2xl px-3 py-2 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
               </div>
-              <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg px-3 py-1.5 flex items-center gap-2 overflow-hidden">
-                <Globe className={`w-3.5 h-3.5 flex-shrink-0 ${isPublished ? 'text-slate-400' : 'text-slate-300'}`} />
-                <span className={`text-xs font-mono truncate min-w-0 ${isPublished ? 'text-slate-500' : 'text-slate-400'}`}>
-                  {isPublished
-                    ? `https://${liveStore.publishedDomain ?? liveStore.domain}${currentPath === '/' ? '' : currentPath}`
-                    : `https://****.storee.io${currentPath === '/' ? '' : currentPath}`}
-                </span>
-                {isPublished ? (
-                  /* Live — green dot */
-                  <div className="ml-auto w-3.5 h-3.5 rounded-full bg-green-500/20 flex-shrink-0 flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                  </div>
-                ) : (
-                  /* Draft — amber dot + label */
-                  <div className="ml-auto flex items-center gap-1 flex-shrink-0">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                    <span className="text-[10px] font-medium text-amber-500">Draft</span>
-                  </div>
-                )}
+              {/* Address bar — click to open page navigator */}
+              <div className="relative flex-1 min-w-0">
+                <button
+                  ref={addrBarRef}
+                  onClick={() => setShowAddrDropdown(v => !v)}
+                  className="w-full bg-white border border-slate-200 rounded-md px-2.5 py-1 flex items-center gap-2 overflow-hidden hover:border-slate-300 transition-colors text-left"
+                >
+                  <Globe className={`w-3.5 h-3.5 flex-shrink-0 ${isPublished ? 'text-slate-400' : 'text-slate-300'}`} />
+                  <span className={`text-xs font-mono truncate min-w-0 flex-1 ${isPublished ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {isPublished
+                      ? `https://${liveStore.publishedDomain ?? liveStore.domain}${currentPath === '/' ? '' : currentPath}`
+                      : `https://****.storee.io${currentPath === '/' ? '' : currentPath}`}
+                  </span>
+                  <ChevronDown className={`w-3 h-3 flex-shrink-0 text-slate-400 transition-transform ${showAddrDropdown ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Page dropdown */}
+                <AnimatePresence>
+                  {showAddrDropdown && (
+                    <motion.div
+                      ref={addrDropdownRef}
+                      initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                      transition={{ duration: 0.12 }}
+                      className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden"
+                      style={{ minWidth: 220 }}
+                    >
+                      {[
+                        { path: '/',          label: 'Home' },
+                        { path: '/cart',      label: 'Cart' },
+                        { path: '/checkout',  label: 'Checkout' },
+                        { path: '/wishlist',  label: 'Wishlist' },
+                        { path: '/my-orders', label: 'My Orders' },
+                      ].map(({ path, label }) => (
+                        <button
+                          key={path}
+                          onClick={() => handleNavigate(path)}
+                          className="w-full flex items-center justify-between px-3.5 py-2.5 text-left hover:bg-slate-50 transition-colors group"
+                        >
+                          <span className="text-xs font-mono text-slate-600 group-hover:text-slate-900 truncate">{path}</span>
+                          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                            <span className="text-[10px] text-slate-400 hidden sm:block">{label}</span>
+                            {currentPath === path && <Check className="w-3.5 h-3.5 text-emerald-500" />}
+                          </div>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </div>
@@ -450,7 +522,7 @@ export default function PreviewShell({ store, from = null }: Props) {
               onScroll={handleScroll}
               style={{ overflowY: 'auto', height: '100%' }}
             >
-              <StorePreview store={liveStore} device={device} previewShell onPageChange={setCurrentPath} />
+              <StorePreview store={liveStore} device={device} previewShell onPageChange={setCurrentPath} navigateRef={navigateRef} />
             </div>
           </div>
 
@@ -468,13 +540,17 @@ export default function PreviewShell({ store, from = null }: Props) {
         <span className="absolute inset-0 rounded-full bg-emerald-400 opacity-20 animate-ping" style={{ animationDuration: '1.8s', animationDelay: '0.5s' }} />
         <span className="absolute inset-0 rounded-full bg-emerald-400 opacity-10 animate-ping" style={{ animationDuration: '1.8s', animationDelay: '1s' }} />
 
-        <button
-          onClick={() => router.push(`/canvas/${liveStore.id}?from=${encodeURIComponent(`/preview/${liveStore.id}`)}`)}
-          title="Edit Store"
-          className="relative w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200"
-        >
-          <PenLine className="w-5 h-5 text-slate-500" />
-        </button>
+        <Tip label="Edit in Editor" side="top">
+          <button
+            onClick={() => {
+              toast('Opening editor…', { duration: 1200 });
+              router.push(`/editor/${liveStore.id}?from=${encodeURIComponent(`/preview/${liveStore.id}`)}`);
+            }}
+            className="relative w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200"
+          >
+            <PenLine className="w-5 h-5 text-slate-500" />
+          </button>
+        </Tip>
       </div>
 
       {/* Regenerate Modal */}

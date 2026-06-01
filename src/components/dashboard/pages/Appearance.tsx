@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Palette, Type, Layout, Check, X, SlidersHorizontal, Save } from 'lucide-react';
+import { Palette, Type, Layout, Check, X, SlidersHorizontal, Save, Globe, Package } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
+import { PROMPT_LANGUAGES, PROMPT_CURRENCIES, EMPTY_THEME_COLORS } from '../../shared/PromptBox';
+import type { ThemeColors } from '../../../lib/claudeApiClient';
+import type { StoreCurrency } from '../../../context/StoreContext';
 
-// ── Static data (mirrors HeroSection) ────────────────────────────────────────
+// ── Static data ───────────────────────────────────────────────────────────────
 
 const singlePresets = [
   '#ef4444', '#f97316', '#f59e0b', '#eab308',
@@ -22,20 +25,20 @@ const gradientPresets: [string, string][] = [
 ];
 
 const fonts = [
-  { name: 'Inter',             sample: 'Aa' },
-  { name: 'Poppins',           sample: 'Aa' },
-  { name: 'DM Sans',           sample: 'Aa' },
-  { name: 'Plus Jakarta Sans', sample: 'Aa' },
-  { name: 'Nunito',            sample: 'Aa' },
-  { name: 'Geist',             sample: 'Aa' },
+  { name: 'Inter' },
+  { name: 'Poppins' },
+  { name: 'DM Sans' },
+  { name: 'Plus Jakarta Sans' },
+  { name: 'Nunito' },
+  { name: 'Geist' },
 ];
 
 const layouts = [
-  { id: 'minimal',     name: 'Minimal',      desc: 'Clean & spacious' },
-  { id: 'bold',        name: 'Bold',         desc: 'High-impact visuals' },
-  { id: 'elegant',     name: 'Elegant',      desc: 'Refined & premium' },
-  { id: 'modern',      name: 'Modern',       desc: 'Fresh & dynamic' },
-  { id: 'playful',     name: 'Playful',      desc: 'Fun & colorful' },
+  { id: 'minimal',  name: 'Minimal',  desc: 'Clean & spacious' },
+  { id: 'bold',     name: 'Bold',     desc: 'High-impact visuals' },
+  { id: 'elegant',  name: 'Elegant',  desc: 'Refined & premium' },
+  { id: 'modern',   name: 'Modern',   desc: 'Fresh & dynamic' },
+  { id: 'playful',  name: 'Playful',  desc: 'Fun & colorful' },
 ];
 
 const moodOptions = [
@@ -44,7 +47,13 @@ const moodOptions = [
   { value: 'energetic',    label: 'Energetic',    emoji: '⚡' },
   { value: 'professional', label: 'Professional', emoji: '💼' },
   { value: 'romantic',     label: 'Romantic',     emoji: '🌸' },
-];
+] as const;
+
+const productCountOptions = [
+  { value: 'few',    label: 'Few',      sub: '~6 items'  },
+  { value: 'medium', label: 'Standard', sub: '~12 items' },
+  { value: 'many',   label: 'Many',     sub: '~18 items' },
+] as const;
 
 const featureList = [
   { key: 'reviews',      label: 'Reviews',      emoji: '⭐', desc: 'Product review section' },
@@ -59,25 +68,66 @@ const featureList = [
 
 type FeatureKey = typeof featureList[number]['key'];
 
-// ── Section wrapper ───────────────────────────────────────────────────────────
+// Theme color groups for organized display
+const THEME_COLOR_GROUPS = [
+  {
+    label: 'Brand',
+    desc: 'Accent & highlight color',
+    entries: [
+      { key: 'accent' as keyof ThemeColors, label: 'Accent' },
+    ],
+  },
+  {
+    label: 'Surfaces',
+    desc: 'Page & card backgrounds',
+    entries: [
+      { key: 'background' as keyof ThemeColors, label: 'Background' },
+      { key: 'surface'    as keyof ThemeColors, label: 'Surface' },
+      { key: 'border'     as keyof ThemeColors, label: 'Border' },
+    ],
+  },
+  {
+    label: 'Text',
+    desc: 'Typography colors',
+    entries: [
+      { key: 'textPrimary'   as keyof ThemeColors, label: 'Primary Text' },
+      { key: 'textSecondary' as keyof ThemeColors, label: 'Secondary Text' },
+    ],
+  },
+  {
+    label: 'Feedback',
+    desc: 'Status & notification colors',
+    entries: [
+      { key: 'success' as keyof ThemeColors, label: 'Success' },
+      { key: 'danger'  as keyof ThemeColors, label: 'Danger' },
+    ],
+  },
+];
 
-function Section({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
+// ── Reusable UI ───────────────────────────────────────────────────────────────
+
+function Section({ icon: Icon, title, subtitle, children }: {
+  icon: React.ElementType; title: string; subtitle?: string; children: React.ReactNode;
+}) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-6">
-      <div className="flex items-center gap-3 mb-5">
-        <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
+      <div className="flex items-start gap-3 mb-5">
+        <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
           <Icon className="w-4 h-4 text-slate-600" />
         </div>
-        <h3 className="font-bold text-slate-900">{title}</h3>
+        <div>
+          <h3 className="font-bold text-slate-900">{title}</h3>
+          {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+        </div>
       </div>
       {children}
     </div>
   );
 }
 
-// ── Color swatch button ───────────────────────────────────────────────────────
-
-function ColorSwatch({ bg, selected, onClick, title }: { bg: string; selected: boolean; onClick: () => void; title?: string }) {
+function ColorSwatch({ bg, selected, onClick, title }: {
+  bg: string; selected: boolean; onClick: () => void; title?: string;
+}) {
   return (
     <button
       onClick={onClick}
@@ -87,8 +137,6 @@ function ColorSwatch({ bg, selected, onClick, title }: { bg: string; selected: b
     />
   );
 }
-
-// ── Custom hex row ────────────────────────────────────────────────────────────
 
 function HexInput({ value, onChange, label }: { value: string; onChange: (v: string) => void; label?: string }) {
   return (
@@ -134,46 +182,69 @@ function HexInput({ value, onChange, label }: { value: string; onChange: (v: str
 export default function Appearance() {
   const { activeStore, updateActiveStore } = useStore();
   const design = activeStore?.design;
+  const adv    = activeStore?.advancedOptions;
 
-  // ── Derive initial values from store ────────────────────────────────────────
-  const initColor1 = activeStore?.primaryColor || '#10b981';
-  const initColor2 = design?.accentColor && design.accentColor !== initColor1 ? design.accentColor : '#06b6d4';
+  // ── Derived initial values ──────────────────────────────────────────────────
+  const initColor1  = activeStore?.primaryColor || '#10b981';
+  const initColor2  = design?.accentColor && design.accentColor !== initColor1 ? design.accentColor : '#06b6d4';
   const isGradient  = !!(design?.accentColor && design.accentColor !== activeStore?.primaryColor);
 
   // ── State ───────────────────────────────────────────────────────────────────
-  const [colorMode, setColorMode] = useState<'single' | 'gradient'>(isGradient ? 'gradient' : 'single');
-  const [color1, setColor1]       = useState(initColor1);
-  const [color2, setColor2]       = useState(initColor2);
-  const [font, setFont]           = useState(activeStore?.font || 'Inter');
-  const [layout, setLayout]       = useState<string>(design?.layoutStyle || 'minimal');
-  const [mood, setMood]           = useState(activeStore?.mood || '');
-  const [audience, setAudience]   = useState(activeStore?.audience || '');
+  const [colorMode,    setColorMode]   = useState<'single' | 'gradient'>(isGradient ? 'gradient' : 'single');
+  const [color1,       setColor1]      = useState(initColor1);
+  const [color2,       setColor2]      = useState(initColor2);
+  const [themeColors,  setThemeColors] = useState<ThemeColors>(adv?.themeColors ?? { ...EMPTY_THEME_COLORS });
+  const [font,         setFont]        = useState(activeStore?.font || 'Inter');
+  const [layout,       setLayout]      = useState<string>(design?.layoutStyle || 'minimal');
+  const [mood,         setMood]        = useState(activeStore?.mood || adv?.mood || '');
+  const [audience,     setAudience]    = useState(activeStore?.audience || adv?.audience || '');
+  const [productCount, setProductCount]= useState<'' | 'few' | 'medium' | 'many'>(adv?.productCount || '');
+  const [language,     setLanguage]    = useState(activeStore?.language || 'English');
+  const [currency,     setCurrency]    = useState<StoreCurrency>(activeStore?.currency ?? PROMPT_CURRENCIES[0]);
 
   const initFeatures: Record<FeatureKey, boolean> = {
-    reviews:      true,
-    wishlist:     true,
-    newsletter:   design ? !!design.newsletter : true,
-    promoBar:     design ? !!design.promoBar   : true,
-    faq:          design ? !!(design.faq?.length)          : true,
-    testimonials: design ? !!(design.testimonials?.length) : true,
-    brandStory:   design ? !!design.brandStory  : true,
-    trustBadges:  design ? !!(design.trustBadges?.length)  : true,
+    reviews:      adv?.features?.reviews      ?? true,
+    wishlist:     adv?.features?.wishlist     ?? true,
+    newsletter:   adv?.features?.newsletter   ?? (design ? !!design.newsletter : true),
+    promoBar:     adv?.features?.promoBar     ?? (design ? !!design.promoBar   : true),
+    faq:          adv?.features?.faq          ?? (design ? !!(design.faq?.length)          : true),
+    testimonials: adv?.features?.testimonials ?? (design ? !!(design.testimonials?.length) : true),
+    brandStory:   adv?.features?.brandStory   ?? (design ? !!design.brandStory  : true),
+    trustBadges:  adv?.features?.trustBadges  ?? (design ? !!(design.trustBadges?.length)  : true),
   };
   const [features, setFeatures] = useState(initFeatures);
 
   const [saved, setSaved] = useState(false);
 
-  // Keep in sync when store switches
+  // Sync when active store switches
   useEffect(() => {
-    setColor1(activeStore?.primaryColor || '#10b981');
-    const ac = activeStore?.design?.accentColor;
-    const grad = !!(ac && ac !== activeStore?.primaryColor);
+    const s   = activeStore;
+    const d   = s?.design;
+    const a   = s?.advancedOptions;
+    const pc  = s?.primaryColor || '#10b981';
+    const ac  = d?.accentColor;
+    const grad = !!(ac && ac !== pc);
+    setColor1(pc);
     setColorMode(grad ? 'gradient' : 'single');
     setColor2(ac && grad ? ac : '#06b6d4');
-    setFont(activeStore?.font || 'Inter');
-    setLayout(activeStore?.design?.layoutStyle || 'minimal');
-    setMood(activeStore?.mood || '');
-    setAudience(activeStore?.audience || '');
+    setThemeColors(a?.themeColors ?? { ...EMPTY_THEME_COLORS });
+    setFont(s?.font || 'Inter');
+    setLayout(d?.layoutStyle || 'minimal');
+    setMood(s?.mood || a?.mood || '');
+    setAudience(s?.audience || a?.audience || '');
+    setProductCount(a?.productCount || '');
+    setLanguage(s?.language || 'English');
+    setCurrency(s?.currency ?? PROMPT_CURRENCIES[0]);
+    setFeatures({
+      reviews:      a?.features?.reviews      ?? true,
+      wishlist:     a?.features?.wishlist     ?? true,
+      newsletter:   a?.features?.newsletter   ?? (d ? !!d.newsletter : true),
+      promoBar:     a?.features?.promoBar     ?? (d ? !!d.promoBar   : true),
+      faq:          a?.features?.faq          ?? (d ? !!(d.faq?.length) : true),
+      testimonials: a?.features?.testimonials ?? (d ? !!(d.testimonials?.length) : true),
+      brandStory:   a?.features?.brandStory   ?? (d ? !!d.brandStory  : true),
+      trustBadges:  a?.features?.trustBadges  ?? (d ? !!(d.trustBadges?.length)  : true),
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeStore?.id]);
 
@@ -183,8 +254,8 @@ export default function Appearance() {
 
     const newDesign = {
       ...(activeStore.design ?? {} as NonNullable<typeof activeStore.design>),
-      layoutStyle: layout as NonNullable<typeof activeStore.design>['layoutStyle'],
-      accentColor: colorMode === 'gradient' ? color2 : color1,
+      layoutStyle:  layout as NonNullable<typeof activeStore.design>['layoutStyle'],
+      accentColor:  colorMode === 'gradient' ? color2 : color1,
       newsletter:   features.newsletter   ? (activeStore.design?.newsletter ?? { headline: 'Stay in the loop', subtext: 'Subscribe for exclusive deals and new arrivals.' }) : undefined,
       promoBar:     features.promoBar     ? (activeStore.design?.promoBar   ?? '🎉 Free shipping on orders over $50!') : undefined,
       faq:          features.faq          ? (activeStore.design?.faq        ?? []) : undefined,
@@ -192,24 +263,43 @@ export default function Appearance() {
       trustBadges:  features.trustBadges  ? (activeStore.design?.trustBadges ?? []) : undefined,
     };
 
-    updateActiveStore({ primaryColor: color1, font, mood, audience, design: newDesign });
+    // Merge new advancedOptions
+    const newAdvancedOptions = {
+      ...(activeStore.advancedOptions ?? {}),
+      themeColors,
+      mood:         mood as NonNullable<typeof activeStore.advancedOptions>['mood'],
+      audience,
+      productCount,
+      features,
+    };
 
-    // If already published, sync changes to live storefront immediately
+    updateActiveStore({
+      primaryColor:    color1,
+      font,
+      mood,
+      audience,
+      language,
+      currency,
+      advancedOptions: newAdvancedOptions,
+      design:          newDesign,
+    });
+
+    // Sync to live store if published
     if (activeStore.status === 'Published') {
       const subdomain = activeStore.publishedDomain?.split('.')[0] ?? activeStore.domain?.split('.')[0];
       if (subdomain) {
         fetch('/api/publish-store', {
-          method: 'POST',
+          method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             subdomain,
-            name: activeStore.name,
+            name:         activeStore.name,
             primaryColor: color1,
-            category: activeStore.category,
-            templateId: activeStore.template?.id,
-            design: newDesign,
-            currency: activeStore.currency,
-            language: activeStore.language,
+            category:     activeStore.category,
+            templateId:   activeStore.template?.id,
+            design:       newDesign,
+            currency,
+            language,
             font,
             mood,
             audience,
@@ -235,9 +325,7 @@ export default function Appearance() {
         <button
           onClick={handleSave}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm ${
-            saved
-              ? 'bg-emerald-500 text-white'
-              : 'gradient-bg text-white hover:opacity-90'
+            saved ? 'bg-emerald-500 text-white' : 'gradient-bg text-white hover:opacity-90'
           }`}
         >
           {saved ? <><Check className="w-4 h-4" />Saved!</> : <><Save className="w-4 h-4" />Save Changes</>}
@@ -245,7 +333,7 @@ export default function Appearance() {
       </div>
 
       {/* ── Brand Color ──────────────────────────────────────────────────────── */}
-      <Section icon={Palette} title="Brand Color">
+      <Section icon={Palette} title="Brand Color" subtitle="Primary color used across buttons, links, and highlights">
 
         {/* Mode tabs */}
         <div className="flex gap-1.5 mb-5 bg-slate-100 p-1 rounded-xl w-fit">
@@ -288,10 +376,7 @@ export default function Appearance() {
                 />
               ))}
             </div>
-
-            {/* Preview bar */}
             <div className="h-8 rounded-xl mb-4 transition-all" style={{ background: `linear-gradient(90deg, ${color1}, ${color2})` }} />
-
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Custom</p>
             <div className="flex gap-3">
               <HexInput value={color1} onChange={setColor1} label="Color 1" />
@@ -301,8 +386,37 @@ export default function Appearance() {
         )}
       </Section>
 
+      {/* ── Theme Colors ─────────────────────────────────────────────────────── */}
+      <Section icon={Palette} title="Theme Colors" subtitle="Fine-tune individual colors for surfaces, text, and feedback states">
+        <div className="space-y-5">
+          {THEME_COLOR_GROUPS.map(group => (
+            <div key={group.label}>
+              <div className="flex items-center gap-2 mb-3">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{group.label}</p>
+                <span className="text-[10px] text-slate-400">— {group.desc}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {group.entries.map(({ key, label }) => (
+                  <HexInput
+                    key={key}
+                    label={label}
+                    value={themeColors[key] || ''}
+                    onChange={v => setThemeColors(prev => ({ ...prev, [key]: v }))}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+          <p className="text-xs text-slate-400 flex items-start gap-1.5 pt-1">
+            <span>💡</span>
+            Leave fields empty to let the AI choose colors based on your brand.
+            Filled fields override the AI-generated palette.
+          </p>
+        </div>
+      </Section>
+
       {/* ── Typography ───────────────────────────────────────────────────────── */}
-      <Section icon={Type} title="Typography">
+      <Section icon={Type} title="Typography" subtitle="Font family used across the store">
         <div className="grid grid-cols-3 gap-3">
           {fonts.map(f => (
             <button
@@ -318,7 +432,7 @@ export default function Appearance() {
       </Section>
 
       {/* ── Layout Style ─────────────────────────────────────────────────────── */}
-      <Section icon={Layout} title="Layout Style">
+      <Section icon={Layout} title="Layout Style" subtitle="Overall visual structure of your store">
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
           {layouts.map(l => (
             <button
@@ -337,8 +451,56 @@ export default function Appearance() {
         </div>
       </Section>
 
+      {/* ── Localization ─────────────────────────────────────────────────────── */}
+      <Section icon={Globe} title="Localization" subtitle="Store language and currency displayed to customers">
+
+        {/* Language */}
+        <div className="mb-6">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Language</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {PROMPT_LANGUAGES.map(lang => (
+              <button
+                key={lang}
+                onClick={() => setLanguage(lang)}
+                className={`px-3 py-2.5 rounded-xl border-2 text-sm font-medium text-center transition-all ${
+                  language === lang
+                    ? 'bg-emerald-50 border-emerald-400 text-emerald-700'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-white'
+                }`}
+              >
+                {lang}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Currency */}
+        <div>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Currency</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {PROMPT_CURRENCIES.map(curr => (
+              <button
+                key={curr.code}
+                onClick={() => setCurrency(curr)}
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-medium text-left transition-all ${
+                  currency?.code === curr.code
+                    ? 'bg-emerald-50 border-emerald-400 text-emerald-700'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-white'
+                }`}
+              >
+                <span className="font-bold text-base leading-none">{curr.symbol}</span>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold truncate">{curr.code}</p>
+                  <p className="text-[10px] text-slate-400 truncate">{curr.label}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </Section>
+
       {/* ── Advanced ─────────────────────────────────────────────────────────── */}
-      <Section icon={SlidersHorizontal} title="Advanced">
+      <Section icon={SlidersHorizontal} title="Advanced" subtitle="Tone, audience, catalog size, and optional features">
 
         {/* Store Mood */}
         <div className="mb-6">
@@ -372,6 +534,29 @@ export default function Appearance() {
             placeholder="e.g. young women 18–28, tech enthusiasts, parents..."
             className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-colors"
           />
+        </div>
+
+        {/* Product Count */}
+        <div className="mb-6">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Catalog Size</p>
+          <div className="flex gap-2">
+            {productCountOptions.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setProductCount(prev => prev === opt.value ? '' : opt.value)}
+                className={`flex-1 flex flex-col items-center gap-0.5 py-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                  productCount === opt.value
+                    ? 'bg-emerald-50 border-emerald-400 text-emerald-700'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-white'
+                }`}
+              >
+                <Package className="w-4 h-4" />
+                <span className="text-xs font-bold">{opt.label}</span>
+                <span className="text-[10px] text-slate-400">{opt.sub}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-slate-400 mt-2">Controls how many products are displayed on the homepage.</p>
         </div>
 
         {/* Optional Features */}
