@@ -7189,53 +7189,62 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
           </div>
         )}
 
-        {/* Features strip */}
-        {features.length > 0 && (
-          <div data-editor-section="features" className="px-4 pt-6 pb-4 space-y-3" style={{ borderTop: `4px solid ${tt.divider}` }}>
-            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: tt.textMuted }}>Why choose us</p>
-            {features.slice(0, 4).map((f, i) => (
-              <div key={i} className="flex items-center gap-3 py-2">
-                <EmojiIcon emoji={f.icon} size={22} color={tt.textSecondary} strokeWidth={1.75} />
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: tt.textPrimary }}>
-                    <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                  </p>
-                  <p className="text-xs" style={{ color: tt.textSecondary }}>
-                    <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
 
-        {/* Testimonials */}
-        {testimonials.length > 0 && (
-          <div data-editor-section="testimonials" className="px-4 pt-4 pb-4 space-y-3" style={{ borderTop: `4px solid ${tt.divider}` }}>
-            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: tt.textMuted }}>Reviews</p>
-            {testimonials.slice(0, 3).map((t, i) => (
-              <div key={i} className="p-3 rounded-xl" style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}` }}>
-                <Stars n={t.rating} />
-                <p className="text-xs mt-1.5 italic" style={{ color: tt.textSecondary }}>
-                  "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
-                </p>
-                <p className="text-[10px] mt-1.5 font-semibold" style={{ color: tt.textMuted }}>
-                  â€” <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />, <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+        {/* Reorderable bottom sections */}
+        {(() => {
+          const sectionOrder = (design.designTokens?.sections as Array<{ type: string }> | undefined)
+            ?.map(s => s.type).filter(t => ['features','testimonials','brandStory'].includes(t))
+            ?? ['features', 'testimonials', 'brandStory'];
+
+          const sectionMap: Record<string, React.ReactNode> = {
+            features: features.length > 0 ? (
+              <div key="features" data-editor-section="features" className="px-4 pt-6 pb-4 space-y-3" style={{ borderTop: `4px solid ${tt.divider}` }}>
+                {features.slice(0, 4).map((f, i) => (
+                  <div key={i} className="flex items-start gap-3 py-2">
+                    <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-xl" style={{ background: tt.surfaceBg }}>
+                      <EmojiIcon emoji={f.icon} size={18} color={pc} strokeWidth={1.5} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold" style={{ color: tt.textPrimary }}>
+                        <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                      </p>
+                      <p className="text-xs leading-relaxed mt-0.5" style={{ color: tt.textSecondary }}>
+                        <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null,
+
+            testimonials: testimonials.length > 0 ? (
+              <div key="testimonials" data-editor-section="testimonials" className="px-4 pt-4 pb-4 space-y-3" style={{ borderTop: `4px solid ${tt.divider}` }}>
+                {testimonials.slice(0, 3).map((t, i) => (
+                  <div key={i} className="rounded-2xl p-4" style={{ background: tt.surfaceBg }}>
+                    <Stars n={t.rating} />
+                    <p className="text-sm leading-relaxed mt-2 mb-2" style={{ color: tt.textSecondary }}>
+                      "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
+                    </p>
+                    <p className="text-xs font-bold" style={{ color: tt.textPrimary }}>
+                      - <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : null,
+
+            brandStory: brandStory ? (
+              <div key="brandStory" data-editor-section="brandStory" className="px-4 py-5" style={{ borderTop: `4px solid ${tt.divider}`, background: tt.surfaceBg }}>
+                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: pc }}>Our Story</p>
+                <p className="text-sm leading-relaxed" style={{ color: tt.textSecondary }}>
+                  <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
                 </p>
               </div>
-            ))}
-          </div>
-        )}
+            ) : null,
+          };
 
-        {/* Brand story */}
-        {brandStory && (
-          <div data-editor-section="brandStory" className="px-4 py-5" style={{ borderTop: `4px solid ${tt.divider}`, background: tt.surfaceBg }}>
-            <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: tt.textMuted }}>Our Story</p>
-            <p className="text-sm leading-relaxed" style={{ color: tt.textSecondary }}>
-              <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
-            </p>
-          </div>
-        )}
+          return sectionOrder.map(type => sectionMap[type] ?? null);
+        })()}
 
         <div className="py-4 text-center">
           <p className="text-[10px]" style={{ color: tt.textMuted }}>
@@ -8173,65 +8182,91 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
         </section>
       )}
 
-      {/* Features */}
-      {features.length > 0 && (
-        <section data-editor-section="features" style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '4rem', paddingBottom: '4rem' }}>
-          <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-6' : 'grid-cols-3 gap-10'}`}>
-            {features.map((f, i) => (
-              <div key={i} className="flex flex-col gap-3">
-                <div className="h-px w-8" style={{ background: pc }} />
-                <span className="text-3xl">{f.icon}</span>
-                <h3 className="text-sm font-black uppercase tracking-widest" style={{ color: tt.textPrimary }}>
-                  <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                </h3>
-                <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>
-                  <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+
+      {/* Reorderable bottom sections */}
+      {(() => {
+        const sectionOrder = (design.designTokens?.sections as Array<{ type: string }> | undefined)
+          ?.map(s => s.type).filter(t => ['features','testimonials','brandStory','stats','faq','newsletter'].includes(t))
+          ?? ['features', 'testimonials', 'brandStory', 'stats', 'faq', 'newsletter'];
+
+        const sectionMap: Record<string, React.ReactNode> = {
+          features: features.length > 0 ? (
+            <section key="features" data-editor-section="features" style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '4rem', paddingBottom: '4rem' }}>
+              <div className="max-w-6xl mx-auto px-5">
+                <div className={`grid ${isMobile ? 'grid-cols-1 gap-6' : 'grid-cols-3 gap-10'}`}>
+                  {features.map((f, i) => (
+                    <div key={i} className="flex flex-col gap-3">
+                      <div className="h-0.5 w-8" style={{ background: pc }} />
+                      <EmojiIcon emoji={f.icon} size={28} color={pc} strokeWidth={1.5} />
+                      <h3 className="text-sm font-black uppercase tracking-widest" style={{ color: tt.textPrimary }}>
+                        <EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                      </h3>
+                      <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>
+                        <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ) : null,
+
+          testimonials: testimonials.length > 0 ? (
+            <section key="testimonials" data-editor-section="testimonials" style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, paddingTop: '4rem', paddingBottom: '4rem' }}>
+              <div className="max-w-6xl mx-auto px-5">
+                <div className={`grid ${isMobile ? 'grid-cols-1 gap-5' : 'grid-cols-3 gap-8'}`}>
+                  {testimonials.map((t, i) => (
+                    <div key={i} className="flex flex-col gap-3">
+                      <Stars n={t.rating} />
+                      <p className="text-sm italic leading-relaxed" style={{ color: tt.textSecondary }}>
+                        "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
+                      </p>
+                      <div className="h-px" style={{ background: tt.divider }} />
+                      <p className="text-xs font-black uppercase tracking-widest" style={{ color: tt.textPrimary }}>
+                        <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                      </p>
+                      <p className="text-[10px]" style={{ color: tt.textMuted }}>
+                        <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ) : null,
+
+          brandStory: brandStory ? (
+            <section key="brandStory" data-editor-section="brandStory" style={{ paddingTop: '4rem', paddingBottom: '4rem' }}>
+              <div className="max-w-2xl mx-auto px-5 text-center">
+                <p className="text-5xl font-black mb-6 opacity-15" style={{ color: tt.textPrimary }}>&ldquo;</p>
+                <p className="text-base leading-relaxed italic" style={{ color: tt.textSecondary }}>
+                  <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
                 </p>
               </div>
-            ))}
-          </div>
-        </section>
-      )}
+            </section>
+          ) : null,
 
-      {testimonials.length > 0 && (
-        <section data-editor-section="testimonials" style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, paddingTop: '4rem', paddingBottom: '4rem' }}>
-          <div className="max-w-6xl mx-auto px-5">
-            <h2 className="font-black text-xl mb-10 uppercase tracking-widest text-center" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>Voices</h2>
-            <div className={`grid ${isMobile ? 'grid-cols-1 gap-5' : 'grid-cols-3 gap-8'}`}>
-              {testimonials.map((t, i) => (
-                <div key={i} className="flex flex-col gap-3">
-                  <Stars n={t.rating} />
-                  <p className="text-sm italic leading-relaxed" style={{ color: tt.textSecondary }}>
-                    "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
-                  </p>
-                  <div className="h-px" style={{ background: tt.divider }} />
-                  <p className="text-xs font-black uppercase tracking-widest" style={{ color: tt.textPrimary }}>
-                    <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                  </p>
-                  <p className="text-[10px]" style={{ color: tt.textMuted }}>
-                    <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                  </p>
-                </div>
-              ))}
+          stats: stats && stats.length > 0 ? (
+            <div key="stats" data-editor-section="stats">
+              <StatsRow stats={stats} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />
             </div>
-          </div>
-        </section>
-      )}
+          ) : null,
 
-      {brandStory && (
-        <section data-editor-section="brandStory" style={{ paddingTop: '4rem', paddingBottom: '4rem', borderTop: `1px solid ${tt.divider}` }}>
-          <div className="max-w-2xl mx-auto px-5 text-center">
-            <p className="text-5xl font-black mb-6 opacity-15" style={{ color: tt.textPrimary, fontFamily: tt.headingFont }}>"</p>
-            <p className="text-base leading-relaxed italic" style={{ color: tt.textSecondary }}>
-              <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
-            </p>
-          </div>
-        </section>
-      )}
+          faq: faq && faq.length > 0 ? (
+            <div key="faq" data-editor-section="faq">
+              <FAQSection faq={faq} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />
+            </div>
+          ) : null,
 
-      {stats && stats.length > 0 && <StatsRow stats={stats} primaryColor={pc} device={device} dark={isDark(tt.pageBg)} />}
-      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={pc} device={device} dark={isDark(tt.pageBg)} editMode={editMode} onFieldChange={onFieldChange} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={pc} device={device} dark={isDark(tt.pageBg)} editMode={editMode} onFieldChange={onFieldChange} />}
+          newsletter: newsletter ? (
+            <div key="newsletter" data-editor-section="newsletter">
+              <NewsletterSection newsletter={newsletter} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />
+            </div>
+          ) : null,
+        };
+
+        return sectionOrder.map(type => sectionMap[type] ?? null);
+      })()}
 
       <footer style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '2rem', paddingBottom: '2rem' }}>
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
