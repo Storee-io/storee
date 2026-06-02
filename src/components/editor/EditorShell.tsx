@@ -495,6 +495,11 @@ export default function EditorShell({ store, from }: Props) {
   return (
     <div className="flex flex-col h-screen bg-white overflow-hidden">
 
+      {/* Force touch-action:none on Reorder items so Framer Motion drag works inside
+          an overflow-y:auto scroll container. FM sets pan-x internally via inline style
+          but !important from a <style> tag overrides it. */}
+      <style>{`.section-reorder-item{touch-action:none!important}`}</style>
+
       {/* Inject edit-mode CSS */}
       <EditModeCss active={editMode} />
 
@@ -671,8 +676,9 @@ export default function EditorShell({ store, from }: Props) {
                           position: 'relative',
                           zIndex: draggingType === item.type ? 50 : undefined,
                           boxShadow: draggingType === item.type ? '0 8px 20px rgba(0,0,0,0.13)' : 'none',
+                          touchAction: 'none',
                         }}
-                        className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border ${
+                        className={`section-reorder-item flex items-center gap-2 px-2.5 py-2 rounded-xl border ${
                           isLocked
                             ? 'cursor-default bg-slate-50 border-slate-100'
                             : item.hasContent
