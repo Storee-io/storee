@@ -15,12 +15,21 @@ function EditorInner({ storeId }: { storeId: string }) {
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
 
-  const store =
-    stores.find(s => s.id === storeId) ||
-    (generatedStore?.id === storeId ? generatedStore : null) ||
-    (activeStore?.id === storeId ? activeStore : null) ||
-    generatedStore ||
-    activeStore;
+  // Try to find the store by ID — never silently fall back to a different store.
+  // Priority: context stores → generatedStore → activeStore → localStorage fallback.
+  const store = (() => {
+    const fromContext =
+      stores.find(s => s.id === storeId) ||
+      (generatedStore?.id === storeId ? generatedStore : null) ||
+      (activeStore?.id === storeId ? activeStore : null);
+    if (fromContext) return fromContext;
+    // If stores haven't loaded from Supabase yet, the store might only be in localStorage.
+    try {
+      const raw = localStorage.getItem(`storee_store_${storeId}`);
+      if (raw) return JSON.parse(raw);
+    } catch { /* ignore */ }
+    return null;
+  })();
 
   if (!store) {
     return (
