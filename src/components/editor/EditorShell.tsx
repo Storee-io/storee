@@ -38,6 +38,10 @@ const SECTION_META: Record<string, { label: string; icon: React.ElementType; edi
 
 const DEFAULT_SECTION_ORDER = ['hero', 'trust', 'collections', 'products', 'features', 'testimonials', 'stats', 'brandStory', 'faq', 'newsletter'];
 
+// Legacy layouts (no designTokens) only support reordering these sections via design.sectionOrder.
+// hero/trust/collections/products are hardcoded at the top of each legacy layout.
+const LEGACY_REORDERABLE_SECTIONS = new Set(['features', 'testimonials', 'brandStory', 'stats', 'faq', 'newsletter']);
+
 const FIELD_LABELS: Record<string, string> = {
   heroTitle:          'Headline',
   heroSubtitle:       'Subheadline',
@@ -345,6 +349,8 @@ export default function EditorShell({ store, from }: Props) {
 
   // â”€â”€ Build preview store â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+  const isLegacyLayout = !liveContextStore.design?.designTokens && !liveContextStore.design?.designSystem;
+
   // Build sections array from current drag order (for designTokens stores)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const buildReorderedDesignTokens = (): any => {
@@ -359,6 +365,13 @@ export default function EditorShell({ store, from }: Props) {
     };
     return result;
   };
+
+  // For legacy layouts, only pass the sections that are actually inside the sectionMap.
+  // hero/trust/collections/products are hardcoded at the top of each legacy layout and
+  // can't be reordered via sectionOrder — passing them causes null renders in the sectionMap.
+  const effectiveSectionOrder = isLegacyLayout
+    ? sectionItems.map(i => i.type).filter(t => LEGACY_REORDERABLE_SECTIONS.has(t))
+    : sectionItems.map(i => i.type);
 
   const previewStore: Store = {
     ...liveContextStore,
@@ -382,7 +395,7 @@ export default function EditorShell({ store, from }: Props) {
       stats,
       sectionHeadings,
       footerNote: footerNote || undefined,
-      sectionOrder: sectionItems.map(i => i.type),
+      sectionOrder: effectiveSectionOrder,
       // Override section order when designTokens exist
       ...(liveContextStore.design?.designTokens ? {
         designTokens: buildReorderedDesignTokens(),
@@ -421,7 +434,7 @@ export default function EditorShell({ store, from }: Props) {
       stats,
       sectionHeadings,
       footerNote: footerNote || undefined,
-      sectionOrder: sectionItems.map(i => i.type),
+      sectionOrder: effectiveSectionOrder,
       // Persist reordered sections
       ...(liveContextStore.design?.designTokens ? {
         designTokens: buildReorderedDesignTokens(),
