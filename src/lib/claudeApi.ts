@@ -351,6 +351,35 @@ type LayoutStyle = typeof VALID_LAYOUTS[number];
 
 // ── Build store config from parsed Claude response ────────────────────────────
 
+// Default section order — used when Claude omits the sections array from designTokens.
+const DEFAULT_TOKEN_SECTIONS: Array<{ type: string }> = [
+  { type: 'hero' }, { type: 'trust' }, { type: 'collections' }, { type: 'products' },
+  { type: 'features' }, { type: 'testimonials' }, { type: 'stats' },
+  { type: 'brandStory' }, { type: 'faq' }, { type: 'newsletter' },
+];
+
+// Ensure designTokens always has a sections array so the editor can reorder all sections.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function ensureSections(dt: any, parsed: ClaudeStoreResponse): any {
+  if (dt?.sections?.length) return dt;
+  const sections = DEFAULT_TOKEN_SECTIONS.filter(s => {
+    switch (s.type) {
+      case 'hero':         return true;
+      case 'trust':        return (parsed.trustBadges?.length ?? 0) > 0;
+      case 'collections':  return (parsed.collections?.length ?? 0) > 0;
+      case 'products':     return (parsed.products?.length ?? 0) > 0;
+      case 'features':     return (parsed.features?.length ?? 0) > 0;
+      case 'testimonials': return (parsed.testimonials?.length ?? 0) > 0;
+      case 'stats':        return (parsed.stats?.length ?? 0) > 0;
+      case 'brandStory':   return !!parsed.brandStory;
+      case 'faq':          return (parsed.faq?.length ?? 0) > 0;
+      case 'newsletter':   return !!parsed.newsletter?.headline;
+      default:             return false;
+    }
+  }).map(s => s.type === 'hero' && dt?.heroStyle ? { ...s, variant: dt.heroStyle } : s);
+  return { ...dt, sections };
+}
+
 export function buildStoreConfig(parsed: ClaudeStoreResponse): GeneratedStoreConfig | null {
   // Normalise layoutStyle — it drives the entire visual design
   const layoutStyle: LayoutStyle = VALID_LAYOUTS.includes(parsed.layoutStyle as LayoutStyle)
@@ -390,7 +419,7 @@ export function buildStoreConfig(parsed: ClaudeStoreResponse): GeneratedStoreCon
     ...(parsed.scrollingItems  ? { scrollingItems:  parsed.scrollingItems  } : {}),
     ...(parsed.instagramPosts  ? { instagramPosts:  parsed.instagramPosts  } : {}),
     ...(parsed.designSystem    ? { designSystem:    parsed.designSystem    } : {}),
-    ...(parsed.designTokens    ? { designTokens:    parsed.designTokens    } : {}),
+    ...(parsed.designTokens    ? { designTokens:    ensureSections(parsed.designTokens, parsed) } : {}),
   };
 
   return {
