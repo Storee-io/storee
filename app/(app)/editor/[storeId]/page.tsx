@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useStore } from '@/src/context/StoreContext';
 import EditorShell from '@/src/components/editor/EditorShell';
@@ -14,6 +14,9 @@ function EditorInner({ storeId }: { storeId: string }) {
   const { stores, activeStore, generatedStore } = useStore();
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
+  // Prevent accessing localStorage during SSR to avoid hydration mismatch.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // Try to find the store by ID — never silently fall back to a different store.
   // Priority: context stores → generatedStore → activeStore → localStorage fallback.
@@ -23,7 +26,8 @@ function EditorInner({ storeId }: { storeId: string }) {
       (generatedStore?.id === storeId ? generatedStore : null) ||
       (activeStore?.id === storeId ? activeStore : null);
     if (fromContext) return fromContext;
-    // If stores haven't loaded from Supabase yet, the store might only be in localStorage.
+    // Only access localStorage after mount — keeps server/client render in sync.
+    if (!mounted) return null;
     try {
       const raw = localStorage.getItem(`storee_store_${storeId}`);
       if (raw) return JSON.parse(raw);
