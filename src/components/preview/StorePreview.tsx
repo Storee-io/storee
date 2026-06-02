@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
@@ -7733,172 +7733,116 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
         </header>
       </div>
 
-      {/* â”€â”€ Hero â€” clean, text-centered â”€â”€ */}
-      <section data-editor-section="hero" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${Math.round(sectionPy * 0.7)}px`, textAlign: 'center' }}>
-        <p className="text-xs uppercase tracking-[0.3em] mb-4" style={{ color: pc }}>
-          <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-        </p>
-        <h1 className="font-black leading-tight mx-auto px-6 mb-5"
-          style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '2rem' : '3.5rem', maxWidth: '16ch' }}>
-          <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-        </h1>
-        <p className="text-sm leading-relaxed mx-auto px-6 mb-8" style={{ color: tt.textSecondary, maxWidth: '45ch' }}>
-          <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
-        </p>
-        <button onClick={editMode ? undefined : scrollToProducts}
-          className="inline-flex items-center gap-2 px-7 py-3 text-sm font-bold transition-all hover:opacity-85"
-          style={{ background: pc, color: pcText, borderRadius: tt.btnRadius, transition: getMotionTransition(motion) }}>
-          <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /> <ArrowRight className="w-4 h-4" />
-        </button>
-      </section>
-
-      {/* â”€â”€ Collections â”€â”€ */}
-      {isInstagram ? (
-        /* Instagram: story-ring circles */
-        <div style={{ borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}`, background: tt.surfaceBg }}>
-          <div className="flex gap-4 px-4 py-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-            {[{ name: 'All', emoji: 'âœ¨' }, ...collections].map((c, i) => (
-              <button key={i} onClick={() => setSelectedCol(i)} className="flex flex-col items-center gap-1.5 flex-shrink-0">
-                {/* Instagram gradient ring */}
-                <div className="p-[2px] rounded-full" style={{
-                  background: selectedCol === i
-                    ? 'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)'
-                    : tt.surfaceBorder,
-                }}>
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl"
-                    style={{ background: tt.surfaceBg, border: `2px solid ${tt.surfaceBg}` }}>
-                    {c.emoji}
-                  </div>
-                </div>
-                <span className="text-[10px] font-medium max-w-[48px] text-center leading-tight truncate"
-                  style={{ color: selectedCol === i ? tt.textPrimary : tt.textMuted }}>
-                  {c.name}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : (
-        /* Default: pill filters */
-        <div style={{ borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
-          <div className="max-w-6xl mx-auto px-5 py-3 flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-            {[{ name: 'All', emoji: 'âœ¦' }, ...collections].map((c, i) => (
-              <button key={i} onClick={() => setSelectedCol(i)}
-                className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-all"
-                style={selectedCol === i
-                  ? { background: pc, color: pcText, borderRadius: tt.btnRadius, transition: getMotionTransition(motion) }
-                  : { background: tt.surfaceBg, color: tt.textSecondary, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.btnRadius }}>
-                {c.emoji} {c.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {trustBadges.length > 0 && <TrustBadgesRow badges={trustBadges} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
-
-      {/* â”€â”€ Product grid â”€â”€ */}
-      <section ref={productsRef} className="max-w-6xl mx-auto px-4"
-        style={{ paddingTop: `${isInstagram ? 2 : sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
-        <div style={isInstagram ? {
-          display: 'grid',
-          gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)',
-          gap: '2px',
-        } : {
-          columnCount: isMobile ? 2 : 3,
-          columnGap: '12px',
-        }}>
-          {displayed.map((p, idx) => (
-            <div key={p.id}
-              style={isInstagram ? {
-                aspectRatio: '1/1',
-                overflow: 'hidden',
-                cursor: 'pointer',
-                position: 'relative',
-              } : {
-                breakInside: 'avoid',
-                marginBottom: '12px',
-                borderRadius: tt.surfaceRadius,
-                overflow: 'hidden',
-                cursor: 'pointer',
-                background: tt.surfaceBg,
-                boxShadow: getElevationShadow(elevation),
-                transition: getMotionTransition(motion),
-              }}
-              onClick={() => onProductClick(p)}
-              onMouseEnter={e => {
-                if (!isInstagram && motion !== 'none') {
-                  (e.currentTarget as HTMLElement).style.transform = getHoverScale(motion);
-                  (e.currentTarget as HTMLElement).style.boxShadow = getElevationShadow('raised');
-                }
-              }}
-              onMouseLeave={e => {
-                if (!isInstagram) {
-                  (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-                  (e.currentTarget as HTMLElement).style.boxShadow = getElevationShadow(elevation);
-                }
-              }}
-            >
-              {/* Image */}
-              <div style={{ aspectRatio: aspectRatios[idx % aspectRatios.length], position: 'relative', overflow: 'hidden' }}>
-                <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
-                {isInstagram ? (
-                  /* Instagram hover overlay */
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 opacity-0 hover:opacity-100 transition-opacity"
-                    style={{ background: 'rgba(0,0,0,0.45)' }}>
-                    <span className="text-white text-xs font-bold">{fmtPrice(p.price)}</span>
-                    <button
-                      onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
-                      className="mt-1 px-3 py-1 text-[10px] font-bold rounded-full"
-                      style={{ background: pc, color: pcText }}
-                    >Shop</button>
-                  </div>
-                ) : (
-                  <>
-                    {p.badge && (
-                      <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5"
-                        style={{ background: pc, color: pcText, borderRadius: '999px' }}>{p.badge}</span>
-                    )}
-                    <button
-                      data-wishlist-btn=""
-                      onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
-                      className="absolute top-2 right-2 w-7 h-7 bg-white/85 backdrop-blur flex items-center justify-center rounded-full shadow transition-all hover:scale-110 active:scale-95"
-                    >
-                      <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {/* Card info â€” hidden for Instagram (shows on hover overlay) */}
-              {!isInstagram && (
-                <div className="p-3">
-                  <p className="text-xs font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
-                  <div className="flex items-center justify-between mt-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-black" style={{ color: pc }}>{fmtPrice(p.price)}</span>
-                      {p.originalPrice && <span className="text-[10px] line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
-                    </div>
-                    <button
-                      onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
-                      className="w-7 h-7 flex items-center justify-center text-white text-sm font-bold rounded-full transition-all hover:opacity-85 active:scale-95"
-                      style={{ background: pc, transition: getMotionTransition(motion) }}
-                    >+</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* Reorderable sections â€” order driven by designTokens.sections */}
       {(() => {
         const sectionOrder = (design.designTokens?.sections as Array<{ type: string }> | undefined)
           ?.map(s => s.type)
-          ?? ['features', 'testimonials', 'brandStory', 'stats', 'faq', 'newsletter'];
+          ?? ['hero', 'collections', 'trust', 'products', 'features', 'testimonials', 'brandStory', 'stats', 'faq', 'newsletter'];
 
         const sectionMap: Record<string, React.ReactNode> = {
+          hero: (
+            <section key="hero" data-editor-section="hero" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${Math.round(sectionPy * 0.7)}px`, textAlign: 'center' }}>
+              <p className="text-xs uppercase tracking-[0.3em] mb-4" style={{ color: pc }}>
+                <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              </p>
+              <h1 className="font-black leading-tight mx-auto px-6 mb-5"
+                style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '2rem' : '3.5rem', maxWidth: '16ch' }}>
+                <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              </h1>
+              <p className="text-sm leading-relaxed mx-auto px-6 mb-8" style={{ color: tt.textSecondary, maxWidth: '45ch' }}>
+                <EditSpan field="heroSubtitle" value={heroSubtitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} />
+              </p>
+              <button onClick={editMode ? undefined : scrollToProducts}
+                className="inline-flex items-center gap-2 px-7 py-3 text-sm font-bold transition-all hover:opacity-85"
+                style={{ background: pc, color: pcText, borderRadius: tt.btnRadius, transition: getMotionTransition(motion) }}>
+                <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /> <ArrowRight className="w-4 h-4" />
+              </button>
+            </section>
+          ),
+
+          collections: collections.length > 0 ? (
+            <div key="collections" data-editor-section="collections">
+              {isInstagram ? (
+                <div style={{ borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}`, background: tt.surfaceBg }}>
+                  <div className="flex gap-4 px-4 py-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                    {[{ name: 'All', emoji: '✨' }, ...collections].map((c, i) => (
+                      <button key={i} onClick={() => setSelectedCol(i)} className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                        <div className="p-[2px] rounded-full" style={{ background: selectedCol === i ? 'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)' : tt.surfaceBorder }}>
+                          <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl" style={{ background: tt.surfaceBg, border: `2px solid ${tt.surfaceBg}` }}>{c.emoji}</div>
+                        </div>
+                        <span className="text-[10px] font-medium max-w-[48px] text-center leading-tight truncate" style={{ color: selectedCol === i ? tt.textPrimary : tt.textMuted }}>{c.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
+                  <div className="max-w-6xl mx-auto px-5 py-3 flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                    {[{ name: 'All', emoji: '✦' }, ...collections].map((c, i) => (
+                      <button key={i} onClick={() => setSelectedCol(i)}
+                        className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-all"
+                        style={selectedCol === i ? { background: pc, color: pcText, borderRadius: tt.btnRadius } : { background: tt.surfaceBg, color: tt.textSecondary, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.btnRadius }}>
+                        {c.emoji} {c.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : null,
+
+          trust: trustBadges.length > 0 ? (
+            <div key="trust" data-editor-section="trust">
+              <TrustBadgesRow badges={trustBadges} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />
+            </div>
+          ) : null,
+
+          products: (
+            <section key="products" ref={productsRef} data-editor-section="products" className="max-w-6xl mx-auto px-4"
+              style={{ paddingTop: `${isInstagram ? 2 : sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
+              <div style={isInstagram ? { display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)', gap: '2px' } : { columnCount: isMobile ? 2 : 3, columnGap: '12px' }}>
+                {displayed.map((p, idx) => (
+                  <div key={p.id}
+                    style={isInstagram ? { aspectRatio: '1/1', overflow: 'hidden', cursor: 'pointer', position: 'relative' } : { breakInside: 'avoid', marginBottom: '12px', borderRadius: tt.surfaceRadius, overflow: 'hidden', cursor: 'pointer', background: tt.surfaceBg, boxShadow: getElevationShadow(elevation), transition: getMotionTransition(motion) }}
+                    onClick={() => onProductClick(p)}
+                    onMouseEnter={e => { if (!isInstagram && motion !== 'none') { (e.currentTarget as HTMLElement).style.transform = getHoverScale(motion); (e.currentTarget as HTMLElement).style.boxShadow = getElevationShadow('raised'); } }}
+                    onMouseLeave={e => { if (!isInstagram) { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLElement).style.boxShadow = getElevationShadow(elevation); } }}
+                  >
+                    <div style={{ aspectRatio: aspectRatios[idx % aspectRatios.length], position: 'relative', overflow: 'hidden' }}>
+                      <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
+                      {isInstagram ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 opacity-0 hover:opacity-100 transition-opacity" style={{ background: 'rgba(0,0,0,0.45)' }}>
+                          <span className="text-white text-xs font-bold">{fmtPrice(p.price)}</span>
+                          <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }} className="mt-1 px-3 py-1 text-[10px] font-bold rounded-full" style={{ background: pc, color: pcText }}>Shop</button>
+                        </div>
+                      ) : (
+                        <>
+                          {p.badge && <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5" style={{ background: pc, color: pcText, borderRadius: '999px' }}>{p.badge}</span>}
+                          <button data-wishlist-btn="" onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }} className="absolute top-2 right-2 w-7 h-7 bg-white/85 backdrop-blur flex items-center justify-center rounded-full shadow transition-all hover:scale-110 active:scale-95">
+                            <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                    {!isInstagram && (
+                      <div className="p-3">
+                        <p className="text-xs font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+                        <div className="flex items-center justify-between mt-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-black" style={{ color: pc }}>{fmtPrice(p.price)}</span>
+                            {p.originalPrice && <span className="text-[10px] line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
+                          </div>
+                          <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }} className="w-7 h-7 flex items-center justify-center text-white text-sm font-bold rounded-full transition-all hover:opacity-85 active:scale-95" style={{ background: pc, transition: getMotionTransition(motion) }}>+</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          ),
+
           features: features.length > 0 ? (
             <section key="features" data-editor-section="features" style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}` }}>
               <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>

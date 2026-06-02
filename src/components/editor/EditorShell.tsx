@@ -1,4 +1,4 @@
-﻿﻿'use client';
+﻿'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -349,12 +349,10 @@ export default function EditorShell({ store, from }: Props) {
 
   // â"€â"€ Build preview store â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
-  // Legacy layout = no designTokens at all, OR has designTokens but no sections array.
-  // In both cases, the preview layout hardcodes hero/trust/collections/products at the top
-  // and only reorders the bottom 6 sections via sectionOrder/sectionMap.
-  const isLegacyLayout =
-    (!liveContextStore.design?.designTokens && !liveContextStore.design?.designSystem) ||
-    (!!liveContextStore.design?.designTokens && !liveContextStore.design?.designTokens?.sections?.length);
+  // Legacy layout = no designTokens/designSystem at all.
+  // Token-based layouts (MasonryLayout etc.) now have all sections in their sectionMap
+  // and render fully via sectionOrder — no sections are locked for those stores.
+  const isLegacyLayout = !liveContextStore.design?.designTokens && !liveContextStore.design?.designSystem;
 
   // Build sections array from current drag order (for designTokens stores)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
