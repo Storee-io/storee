@@ -7514,72 +7514,99 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
         </div>
       </div>
 
-      {trustBadges.length > 0 && <TrustBadgesRow badges={trustBadges} primaryColor={pc} device={device} />}
 
-      {/* â”€â”€ Product grid â€” variant by productGrid token â”€â”€ */}
-      <section ref={productsRef} className="max-w-7xl mx-auto px-6" style={{ paddingTop: isMobile ? '2.5rem' : `${sectionPy}px`, paddingBottom: isMobile ? '2.5rem' : `${sectionPy}px` }}>
-        <div className="flex items-end justify-between mb-8">
-          <h2 className="font-black tracking-tight" style={{ ...headingStyle(tt, isMobile ? 1.5 : 2.25), color: tt.textPrimary }}>
-            Featured
-          </h2>
-          <button onClick={scrollToProducts} className="text-xs font-semibold uppercase tracking-widest flex items-center gap-1.5" style={{ color: pc }}>
-            View all <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-        {renderProductsGrid()}
-      </section>
+      {/* All sections rendered via sectionOrder from designTokens.sections */}
+      {(() => {
+        const sectionOrder = (design.designTokens?.sections as Array<{ type: string }> | undefined)
+          ?.map(s => s.type)
+          ?? ['trust', 'products', 'features', 'testimonials', 'brandStory', 'stats', 'faq', 'newsletter'];
 
-      {/* â”€â”€ Features â”€â”€ */}
-      {features.length > 0 && (
-        <section style={{ borderTop: `1px solid ${tt.divider}`, background: tt.surfaceBg }}>
-          <div className="max-w-7xl mx-auto px-6" style={{ paddingTop: isMobile ? '2.5rem' : '5rem', paddingBottom: isMobile ? '2.5rem' : '5rem' }}>
-            <h2 className="font-black tracking-tight mb-10" style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '1.25rem' : '1.75rem' }}>Why us</h2>
-            <div className={`grid ${isMobile ? 'grid-cols-1 gap-6' : 'grid-cols-3 gap-10'}`}>
-              {features.map((f, i) => (
-                <div key={i} className="flex flex-col gap-3">
-                  <div className="h-px w-12" style={{ background: pc }} />
-                  <EmojiIcon emoji={f.icon} size={28} color={pc} strokeWidth={1.5} />
-                  <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: tt.textPrimary }}>{f.title}</h3>
-                  <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
-                </div>
-              ))}
+        const sectionMap: Record<string, React.ReactNode> = {
+          trust: trustBadges.length > 0 ? (
+            <div key="trust" data-editor-section="trust">
+              <TrustBadgesRow badges={trustBadges} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />
             </div>
-          </div>
-        </section>
-      )}
+          ) : null,
 
-      {/* â”€â”€ Testimonials â”€â”€ */}
-      {testimonials.length > 0 && (
-        <section style={{ borderTop: `1px solid ${tt.divider}` }}>
-          <div className="max-w-7xl mx-auto px-6" style={{ paddingTop: isMobile ? '2.5rem' : '5rem', paddingBottom: isMobile ? '2.5rem' : '5rem' }}>
-            <h2 className="font-black tracking-tight mb-10 text-center" style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '1.25rem' : '1.75rem' }}>What people say</h2>
-            <div className={`grid ${isMobile ? 'grid-cols-1 gap-5' : 'grid-cols-3 gap-8'}`}>
-              {testimonials.map((t, i) => (
-                <div key={i} className="flex flex-col gap-3">
-                  <Stars n={t.rating} />
-                  <p className="text-sm leading-relaxed italic flex-1" style={{ color: tt.textSecondary }}>"{t.text}"</p>
-                  <div className="h-px" style={{ background: tt.divider }} />
-                  <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>{t.author}</p>
-                  <p className="text-[10px]" style={{ color: tt.textMuted }}>{t.role}</p>
+          products: (
+            <section key="products" ref={productsRef} data-editor-section="products" className="max-w-7xl mx-auto px-6" style={{ paddingTop: isMobile ? '2.5rem' : `${sectionPy}px`, paddingBottom: isMobile ? '2.5rem' : `${sectionPy}px` }}>
+              <div className="flex items-end justify-between mb-8">
+                <h2 className="font-black tracking-tight" style={{ ...headingStyle(tt, isMobile ? 1.1 : 1.35), color: tt.textPrimary }}>Featured</h2>
+                <button onClick={scrollToProducts} className="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 hover:gap-3 transition-all" style={{ color: pc }}>
+                  View all <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              {renderProductsGrid()}
+            </section>
+          ),
+
+          features: features.length > 0 ? (
+            <section key="features" data-editor-section="features" style={{ borderTop: `1px solid ${tt.divider}`, background: tt.surfaceBg }}>
+              <div className="max-w-7xl mx-auto px-6" style={{ paddingTop: isMobile ? '2.5rem' : '5rem', paddingBottom: isMobile ? '2.5rem' : '5rem' }}>
+                <h2 className="font-black tracking-tight mb-10" style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '1.25rem' : '1.75rem' }}>Why us</h2>
+                <div className={`grid ${isMobile ? 'grid-cols-1 gap-6' : 'grid-cols-3 gap-10'}`}>
+                  {features.map((f, i) => (
+                    <div key={i} className="flex flex-col gap-3">
+                      <div className="h-px w-12" style={{ background: pc }} />
+                      <EmojiIcon emoji={f.icon} size={28} color={pc} strokeWidth={1.5} />
+                      <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: tt.textPrimary }}>{f.title}</h3>
+                      <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+            </section>
+          ) : null,
+
+          testimonials: testimonials.length > 0 ? (
+            <section key="testimonials" data-editor-section="testimonials" style={{ borderTop: `1px solid ${tt.divider}` }}>
+              <div className="max-w-7xl mx-auto px-6" style={{ paddingTop: isMobile ? '2.5rem' : '5rem', paddingBottom: isMobile ? '2.5rem' : '5rem' }}>
+                <h2 className="font-black tracking-tight mb-10 text-center" style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '1.25rem' : '1.75rem' }}>What they say</h2>
+                <div className={`grid ${isMobile ? 'grid-cols-1 gap-5' : 'grid-cols-3 gap-8'}`}>
+                  {testimonials.map((t, i) => (
+                    <div key={i} className="flex flex-col gap-3">
+                      <Stars n={t.rating} />
+                      <p className="text-sm leading-relaxed italic flex-1" style={{ color: tt.textSecondary }}>{t.text}</p>
+                      <div className="h-px" style={{ background: tt.divider }} />
+                      <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>{t.author}</p>
+                      <p className="text-[10px]" style={{ color: tt.textMuted }}>{t.role}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ) : null,
+
+          brandStory: brandStory ? (
+            <section key="brandStory" data-editor-section="brandStory" style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}` }}>
+              <div className="max-w-3xl mx-auto px-6 text-center" style={{ paddingTop: isMobile ? '2.5rem' : '5rem', paddingBottom: isMobile ? '2.5rem' : '5rem' }}>
+                <p className="text-4xl mb-6 opacity-20" style={{ color: pc, fontFamily: tt.headingFont }}>&ldquo;</p>
+                <p className="text-base leading-relaxed italic font-medium" style={{ color: tt.textSecondary }}>{brandStory}</p>
+              </div>
+            </section>
+          ) : null,
+
+          stats: stats && stats.length > 0 ? (
+            <div key="stats" data-editor-section="stats">
+              <StatsRow stats={stats} primaryColor={pc} device={device} dark={isDarkPalette} editMode={editMode} onFieldChange={onFieldChange} />
             </div>
-          </div>
-        </section>
-      )}
+          ) : null,
 
-      {brandStory && (
-        <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}` }}>
-          <div className="max-w-3xl mx-auto px-6 text-center" style={{ paddingTop: isMobile ? '2.5rem' : '5rem', paddingBottom: isMobile ? '2.5rem' : '5rem' }}>
-            <p className="text-4xl mb-6 opacity-20" style={{ color: pc, fontFamily: tt.headingFont }}>"</p>
-            <p className="text-base leading-relaxed italic font-medium" style={{ color: tt.textSecondary }}>{brandStory}</p>
-          </div>
-        </section>
-      )}
+          faq: faq && faq.length > 0 ? (
+            <div key="faq" data-editor-section="faq">
+              <FAQSection faq={faq} primaryColor={pc} device={device} dark={isDarkPalette} editMode={editMode} onFieldChange={onFieldChange} />
+            </div>
+          ) : null,
 
-      {stats && stats.length > 0 && <StatsRow stats={stats} primaryColor={pc} device={device} dark={isDarkPalette} />}
-      {faq && faq.length > 0 && <FAQSection faq={faq} primaryColor={pc} device={device} dark={isDarkPalette} />}
-      {newsletter && <NewsletterSection newsletter={newsletter} primaryColor={pc} device={device} dark={isDarkPalette} />}
+          newsletter: newsletter ? (
+            <div key="newsletter" data-editor-section="newsletter">
+              <NewsletterSection newsletter={newsletter} primaryColor={pc} device={device} dark={isDarkPalette} editMode={editMode} onFieldChange={onFieldChange} />
+            </div>
+          ) : null,
+        };
+
+        return sectionOrder.map(type => sectionMap[type] ?? null);
+      })()}
 
       {/* â”€â”€ Footer â”€â”€ */}
       <footer style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '2rem', paddingBottom: '2rem' }}>
