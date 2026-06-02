@@ -7497,31 +7497,36 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
       </div>
 
       {/* â”€â”€ Hero â€” variant by heroStyle token â”€â”€ */}
-      {renderEditorialHero()}
-
-      {/* â”€â”€ Collections â€” editorial tag pills â”€â”€ */}
-      <div style={{ borderBottom: `1px solid ${tt.divider}`, background: tt.headerBg }}>
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          {[{ name: 'All', emoji: 'âœ¦' }, ...collections].map((c, i) => (
-            <button key={i} onClick={() => setSelectedCol(i)}
-              className="flex-shrink-0 flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest transition-all"
-              style={selectedCol === i
-                ? { background: tt.textPrimary, color: tt.pageBg, borderRadius: tt.btnRadius }
-                : { background: 'transparent', color: tt.textSecondary, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.btnRadius }}>
-              <span>{c.emoji}</span> {c.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
 
       {/* All sections rendered via sectionOrder from designTokens.sections */}
       {(() => {
         const sectionOrder = (design.designTokens?.sections as Array<{ type: string }> | undefined)
           ?.map(s => s.type)
-          ?? ['trust', 'products', 'features', 'testimonials', 'brandStory', 'stats', 'faq', 'newsletter'];
+          ?? ['hero', 'collections', 'trust', 'products', 'features', 'testimonials', 'brandStory', 'stats', 'faq', 'newsletter'];
 
         const sectionMap: Record<string, React.ReactNode> = {
+          hero: (
+            <div key="hero" data-editor-section="hero">
+              {renderEditorialHero()}
+            </div>
+          ),
+
+          collections: collections.length > 0 ? (
+            <div key="collections" data-editor-section="collections" style={{ borderBottom: `1px solid ${tt.divider}`, background: tt.headerBg }}>
+              <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                {[{ name: 'All', emoji: '✦' }, ...collections].map((c, i) => (
+                  <button key={i} onClick={() => setSelectedCol(i)}
+                    className="flex-shrink-0 flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all"
+                    style={selectedCol === i
+                      ? { background: tt.textPrimary, color: tt.pageBg, borderRadius: tt.btnRadius }
+                      : { background: 'transparent', color: tt.textSecondary, border: `1px solid ${tt.divider}`, borderRadius: tt.btnRadius }}>
+                    <span>{c.emoji}</span> {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null,
+
           trust: trustBadges.length > 0 ? (
             <div key="trust" data-editor-section="trust">
               <TrustBadgesRow badges={trustBadges} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />
