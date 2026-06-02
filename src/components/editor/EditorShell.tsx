@@ -7,7 +7,7 @@ import {
   Monitor, Tablet, Smartphone, ChevronDown, ChevronRight, ChevronUp,
   Check, Save, Globe, ArrowLeft, Sparkles, Mail,
   BookOpen, Megaphone, Layers, Plus, Trash2,
-  Star, HelpCircle, Type,
+  Star, HelpCircle, Type, Eye,
   Edit2, GripVertical, MousePointer, Layout,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
@@ -517,20 +517,25 @@ export default function EditorShell({ store, from }: Props) {
             ))}
           </div>
 
-          {/* Edit toggle — single button */}
-          <Tip label={editMode ? 'Exit edit mode' : 'Click text in canvas to edit inline'}>
-            <button
-              onClick={() => setEditMode(m => !m)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
-                editMode
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700'
-              }`}
-            >
-              <MousePointer className="w-3.5 h-3.5" />
-              <span>Edit</span>
-            </button>
-          </Tip>
+          {/* Edit / Preview toggle */}
+          <div className="flex items-center bg-slate-100 rounded-xl h-8 px-[3px] gap-0.5">
+            <Tip label="Preview mode">
+              <button
+                onClick={() => setEditMode(false)}
+                className={`flex items-center gap-1.5 px-1.5 py-[3px] rounded-lg text-sm font-medium transition-all ${!editMode ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                <Eye className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Preview</span>
+              </button>
+            </Tip>
+            <Tip label="Click text to edit inline">
+              <button
+                onClick={() => setEditMode(true)}
+                className={`flex items-center gap-1.5 px-1.5 py-[3px] rounded-lg text-sm font-medium transition-all ${editMode ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                <Edit2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Edit</span>
+              </button>
+            </Tip>
+          </div>
         </div>
 
         {/* Right â€” live link + save */}
