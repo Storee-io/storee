@@ -8,7 +8,7 @@ import {
   Check, Save, Globe, ArrowLeft, Sparkles, Mail,
   BookOpen, Megaphone, Layers, Plus, Trash2,
   Star, HelpCircle, Type,
-  Edit2, Eye, GripVertical, MousePointer, Layout,
+  Edit2, GripVertical, MousePointer, Layout,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from '../preview/StorePreview';
@@ -274,8 +274,12 @@ export default function EditorShell({ store, from }: Props) {
     setSectionHeadings(ds?.sectionHeadings ?? {});
     setFooterNote(ds?.footerNote ?? '');
     setSectionItems(deriveInitialSections(ds));
+  // Only re-sync when the active store ID changes (switching stores).
+  // Do NOT include liveContextStore.design — it creates a new reference every render
+  // (StoreContext re-creates objects), which would reset sectionItems and other local
+  // edits on every render cycle.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveContextStore.id, liveContextStore.design, liveContextStore.primaryColor]);
+  }, [liveContextStore.id]);
 
   // â”€â”€ onFieldChange handler (called from canvas contenteditable) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -349,11 +353,11 @@ export default function EditorShell({ store, from }: Props) {
     // Preserve variant/props per section from the original
     const srcSections = (dt.sections ?? []) as Array<{ type: string; variant?: string; props?: unknown }>;
     const srcMap = new Map(srcSections.map(s => [s.type, s]));
-    return {
+    const result = {
       ...dt,
       sections: sectionItems.map(item => srcMap.get(item.type) ?? { type: item.type }),
-      sectionOrder: undefined,
     };
+    return result;
   };
 
   const previewStore: Store = {
@@ -513,25 +517,20 @@ export default function EditorShell({ store, from }: Props) {
             ))}
           </div>
 
-          {/* Edit / Preview toggle */}
-          <div className="flex items-center bg-slate-100 rounded-xl h-8 px-[3px] gap-0.5">
-            <Tip label="Preview mode">
-              <button
-                onClick={() => setEditMode(false)}
-                className={`flex items-center gap-1.5 px-1.5 py-[3px] rounded-lg text-sm font-medium transition-all ${!editMode ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
-              >
-                <Eye className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Preview</span>
-              </button>
-            </Tip>
-            <Tip label="Click text to edit inline">
-              <button
-                onClick={() => setEditMode(true)}
-                className={`flex items-center gap-1.5 px-1.5 py-[3px] rounded-lg text-sm font-medium transition-all ${editMode ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-              >
-                <Edit2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Edit</span>
-              </button>
-            </Tip>
-          </div>
+          {/* Edit toggle — single button */}
+          <Tip label={editMode ? 'Exit edit mode' : 'Click text in canvas to edit inline'}>
+            <button
+              onClick={() => setEditMode(m => !m)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
+                editMode
+                  ? 'bg-slate-900 text-white shadow-md'
+                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700'
+              }`}
+            >
+              <MousePointer className="w-3.5 h-3.5" />
+              <span>Edit</span>
+            </button>
+          </Tip>
         </div>
 
         {/* Right â€” live link + save */}
@@ -603,7 +602,6 @@ export default function EditorShell({ store, from }: Props) {
                 exit={{ opacity: 0, x: -10 }}
                 transition={{ duration: 0.15 }}
                 className="flex-1 overflow-y-auto"
-                layoutScroll
               >
                 <div className="px-4 pt-4 pb-2">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Drag or use â†‘â†“ to reorder</p>
@@ -705,20 +703,6 @@ export default function EditorShell({ store, from }: Props) {
                   })}
                 </Reorder.Group>
 
-                {/* Edit mode callout */}
-                {!editMode && (
-                  <div className="mx-4 mt-2 mb-4 p-3 bg-slate-50 rounded-xl border border-slate-200">
-                    <p className="text-xs text-slate-500 leading-relaxed">
-                      Switch to <strong>Edit mode</strong> to click text in the preview and edit it inline.
-                    </p>
-                    <button
-                      onClick={() => setEditMode(true)}
-                      className="mt-2 w-full py-1.5 text-xs font-semibold text-emerald-600 border border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors"
-                    >
-                      Enable Edit Mode
-                    </button>
-                  </div>
-                )}
               </motion.div>
             ) : (
               <motion.div
@@ -831,20 +815,6 @@ export default function EditorShell({ store, from }: Props) {
           {/* Floating text-format toolbar â€” fixed position, escapes overflow */}
           <FloatingToolbar editMode={editMode} containerRef={previewRef} />
 
-          {/* Edit mode hint bar */}
-          <AnimatePresence>
-            {editMode && (
-              <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                className="absolute top-[68px] left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-xs font-semibold rounded-full shadow-lg pointer-events-none"
-              >
-                <MousePointer className="w-3.5 h-3.5" />
-                Click any text in the preview to edit it directly
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/*
             transform:translateZ(0) is on the FRAME WRAPPER (not the scroll div).
@@ -854,7 +824,7 @@ export default function EditorShell({ store, from }: Props) {
             move the fixed overlays (fixed inside a scrollable transform = scrolls).
           */}
           <div
-            className={`bg-white shadow-xl overflow-hidden transition-all duration-300 flex flex-col ${editMode ? 'ring-2 ring-emerald-400/40' : ''}`}
+            className="bg-white shadow-xl overflow-hidden flex flex-col"
             style={{
               height: '100%',
               aspectRatio:
@@ -885,4 +855,5 @@ export default function EditorShell({ store, from }: Props) {
     </div>
   );
 }
+
 
