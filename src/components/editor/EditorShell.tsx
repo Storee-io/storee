@@ -184,7 +184,12 @@ function deriveInitialSections(design: StoreDesign | undefined): SectionItem[] {
   } else {
     order = DEFAULT_SECTION_ORDER;
   }
-  return order.map(type => ({ type, hasContent: sectionHasContent(type, design) }));
+  // Only include section types the editor knows about (have SECTION_META entries).
+  // Unknown types (e.g. scrollingBanner, editorialBanner) are invisible in the sidebar
+  // and cause Move Up/Down and drag to appear broken (swapping with invisible items).
+  return order
+    .filter(type => type in SECTION_META)
+    .map(type => ({ type, hasContent: sectionHasContent(type, design) }));
 }
 
 // â"€â"€ Edit mode CSS injector â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
