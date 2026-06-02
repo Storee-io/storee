@@ -607,6 +607,7 @@ export default function EditorShell({ store, from }: Props) {
                 exit={{ opacity: 0, x: -10 }}
                 transition={{ duration: 0.15 }}
                 className="flex-1 overflow-y-auto"
+                layoutScroll
               >
                 <div className="px-4 pt-4 pb-2">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Drag or use â†‘â†“ to reorder</p>
@@ -639,25 +640,22 @@ export default function EditorShell({ store, from }: Props) {
                       <Reorder.Item
                         key={item.type}
                         value={item}
+                        as="div"
                         layout
+                        onDragStart={() => setDraggingType(item.type)}
+                        onDragEnd={() => setDraggingType(null)}
+                        style={{
+                          position: 'relative',
+                          zIndex: draggingType === item.type ? 50 : undefined,
+                          boxShadow: draggingType === item.type ? '0 8px 20px rgba(0,0,0,0.13)' : 'none',
+                        }}
+                        className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border cursor-grab active:cursor-grabbing ${
+                          item.hasContent
+                            ? 'bg-white border-slate-200 hover:border-emerald-300'
+                            : 'bg-slate-50 border-slate-100 opacity-50'
+                        }`}
                       >
-                        <div
-                          style={{
-                            position: 'relative',
-                            zIndex: draggingType === item.type ? 50 : 'auto',
-                            boxShadow: draggingType === item.type ? '0 8px 20px rgba(0,0,0,0.13)' : 'none',
-                            scale: draggingType === item.type ? 1.02 : 1,
-                            transition: draggingType === item.type ? 'none' : 'box-shadow 0.15s ease, scale 0.15s ease',
-                          }}
-                          className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border cursor-default ${
-                            item.hasContent
-                              ? 'bg-white border-slate-200 hover:border-emerald-300'
-                              : 'bg-slate-50 border-slate-100 opacity-50'
-                          }`}
-                          onDragStart={() => setDraggingType(item.type)}
-                          onDragEnd={() => setDraggingType(null)}
-                        >
-                        <GripVertical className="w-3.5 h-3.5 text-slate-300 flex-shrink-0 cursor-grab active:cursor-grabbing" />
+                        <GripVertical className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
                         <div
                           className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
                           style={{ background: item.hasContent ? 'rgba(16,185,129,0.1)' : 'rgba(148,163,184,0.1)' }}
@@ -701,7 +699,6 @@ export default function EditorShell({ store, from }: Props) {
                         ) : (
                           <span className="text-[9px] text-slate-300 font-medium flex-shrink-0">empty</span>
                         )}
-                        </div>
                       </Reorder.Item>
                     );
                   })}
