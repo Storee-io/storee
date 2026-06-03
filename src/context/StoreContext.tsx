@@ -8,7 +8,7 @@ import { generateStoreData } from '../data/storeDataGenerator';
 import type { StoreData } from '../data/storeDataGenerator';
 import type { StoreDesign } from '../lib/claudeApi';
 import type { AdvancedOptions } from '../lib/claudeApiClient';
-import { supabase, fetchUserStores, upsertStore } from '../lib/supabase';
+import { supabase, fetchUserStores, upsertStore, touchStoreLastUsed } from '../lib/supabase';
 
 export type { StoreData };
 export type { StoreDesign };
@@ -120,6 +120,7 @@ export interface Store {
   template?: Template;
   primaryColor: string;
   createdAt: string;
+  lastUsedAt?: string;
   category: string;
   revenue: number;
   orders: number;
@@ -195,6 +196,31 @@ const DEMO_STORES: Store[] = [
   },
 ];
 
+// ── Last-used tracking ────────────────────────────────────────────────────────
+const LAST_USED_KEY = 'storee_last_used';
+
+function readLastUsed(): Record<string, string> {
+  try { return JSON.parse(localStorage.getItem(LAST_USED_KEY) ?? '{}'); }
+  catch { return {}; }
+}
+
+function writeLastUsed(storeId: string) {
+  try {
+    const map = readLastUsed();
+    map[storeId] = new Date().toISOString();
+    localStorage.setItem(LAST_USED_KEY, JSON.stringify(map));
+  } catch { /* quota */ }
+}
+
+function sortByLastUsed(stores: Store[]): Store[] {
+  const lastUsed = readLastUsed();
+  return [...stores].sort((a, b) => {
+    const ta = lastUsed[a.id] ?? a.createdAt ?? '';
+    const tb = lastUsed[b.id] ?? b.createdAt ?? '';
+    return new Date(tb).getTime() - new Date(ta).getTime();
+  });
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [stores, setStores] = useState<Store[]>(DEMO_STORES);
   const [activeStore, setActiveStoreState] = useState<Store>(DEMO_STORES[0]);
@@ -249,12 +275,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         } catch { /* skip malformed */ }
       }
       if (guestStores.length > 0) {
-        // Sort newest first (createdAt desc)
-        guestStores.sort((a, b) =>
-          new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
-        );
-        setStores(guestStores);
-        setActiveStoreState(guestStores[0]);
+        const sorted = sortByLastUsed(guestStores);
+        setStores(sorted);
+        setActiveStoreState(sorted[0]);
       } else {
         setStores(DEMO_STORES);
         setActiveStoreState(DEMO_STORES[0]);
@@ -272,8 +295,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     try {
       const userStores = await fetchUserStores(uid);
       if (userStores.length > 0) {
-        setStores(userStores);
-        setActiveStoreState(userStores[0]);
+        const sorted = sortByLastUsed(userStores);
+        setStores(sorted);
+        setActiveStoreState(sorted[0]);
       } else {
         setStores([]);
         setActiveStoreState(DEMO_STORES[0]);
@@ -286,12 +310,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }
 
   const setActiveStore = useCallback((store: Store) => {
+    // Update last_used_at — Supabase for logged-in users, localStorage for guests
+    if (userId) {
+      touchStoreLastUsed(store.id).catch(() => {}); // fire-and-forget
+    } else {
+      writeLastUsed(store.id);
+    }
     setActiveStoreState(store);
-  }, []);
+    setStores(prev => sortByLastUsed(prev));
+  }, [userId]);
 
   const addStore = useCallback(async (store: Store) => {
-    // Optimistic update
-    setStores(prev => prev.find(s => s.id === store.id) ? prev : [...prev, store]);
+    // Optimistic update — mark as just used so it sorts to top
+    writeLastUsed(store.id);
+    setStores(prev => sortByLastUsed(prev.find(s => s.id === store.id) ? prev : [...prev, store]));
     setActiveStoreState(store);
     // Persist to Supabase if logged in
     if (userId) {

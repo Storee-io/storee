@@ -43,6 +43,7 @@ interface StoreRow {
   custom_domain: string | null;
   created_at: string;
   updated_at: string;
+  last_used_at: string | null;
 }
 
 import { templates } from '../data/templates';
@@ -68,6 +69,7 @@ export function rowToStore(row: StoreRow): Store {
     shippingSettings: row.shipping_settings ?? undefined,
     paymentSettings: row.payment_settings ?? undefined,
     customDomain: row.custom_domain ?? undefined,
+    lastUsedAt: row.last_used_at ?? undefined,
   };
 }
 
@@ -93,6 +95,7 @@ export function storeToRow(store: Store, userId: string): Omit<StoreRow, 'update
     payment_settings: store.paymentSettings ?? null,
     custom_domain: store.customDomain ?? null,
     created_at: store.createdAt,
+    last_used_at: store.lastUsedAt ?? null,
   };
 }
 
@@ -103,13 +106,21 @@ export async function fetchUserStores(userId: string): Promise<Store[]> {
     .from('stores')
     .select('*')
     .eq('user_id', userId)
-    .order('created_at', { ascending: true });
+    .order('last_used_at', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false });
 
   if (error) {
     console.warn('[supabase] fetchUserStores:', error.message);
     return [];
   }
   return (data as StoreRow[]).map(rowToStore);
+}
+
+export async function touchStoreLastUsed(storeId: string): Promise<void> {
+  await supabase
+    .from('stores')
+    .update({ last_used_at: new Date().toISOString() })
+    .eq('id', storeId);
 }
 
 export async function upsertStore(store: Store, userId: string): Promise<void> {
