@@ -72,7 +72,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const { notifications, markAsRead, markAllRead, unreadCount } = useNotifications();
 
   return (
-    <header className="bg-white border-b border-slate-200 px-4 lg:px-6 h-12 flex items-center justify-between flex-shrink-0">
+    <header className="bg-white border-b border-slate-200 px-4 lg:px-6 h-12 flex items-center justify-between flex-shrink-0" style={{ boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>
       {/* Left */}
       <div className="flex items-center gap-2 min-w-0">
         <button
@@ -82,7 +82,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           <Menu className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2.5 min-w-0">
-        <h1 className="text-[15px] font-bold text-slate-900 truncate max-w-[120px] sm:max-w-none">{activeStore?.name || 'Dashboard'}</h1>
+        <h1 className="font-semibold text-slate-900 text-sm sm:text-base truncate">{activeStore?.name || 'Dashboard'}</h1>
 
         {activeStore?.status === 'Published' ? (
           <DropdownMenu>
@@ -127,7 +127,6 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 hover:bg-slate-100 transition-colors"
             >
-              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-emerald-400" />
               <span className="text-xs text-slate-600 truncate max-w-[140px]">
                 {activeStore.domain}
               </span>
@@ -146,15 +145,6 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           </div>
         )}
 
-        {/* Editor button */}
-        <Link
-          href={activeStore ? `/editor/${activeStore.id}?from=/dashboard` : '/editor'}
-          className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold text-white gradient-bg rounded-xl hover:opacity-90 transition-all shadow-sm"
-        >
-          <PenLine className="w-4 h-4" />
-          Editor
-        </Link>
-
         {/* Preview button */}
         <Link
           href={activeStore ? `/preview/${activeStore.id}?from=/dashboard` : '/preview?from=/dashboard'}
@@ -162,6 +152,15 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         >
           <Eye className="w-4 h-4" />
           Preview
+        </Link>
+
+        {/* Editor button */}
+        <Link
+          href={activeStore ? `/editor/${activeStore.id}?from=/dashboard` : '/editor'}
+          className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-all"
+        >
+          <PenLine className="w-4 h-4" />
+          Editor
         </Link>
 
         {/* Divider */}

@@ -176,12 +176,12 @@ export default function MyStoresPage() {
                           <div className="flex items-center gap-2 min-w-0">
                             <h3 className="text-sm font-semibold text-slate-800 truncate leading-tight">{store.name}</h3>
                             {isPublished ? (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-600 flex-shrink-0">
+                              <button className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors flex-shrink-0">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                 Live
-                              </span>
+                              </button>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-600 flex-shrink-0">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-500 flex-shrink-0">
                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                                 Draft
                               </span>

@@ -489,8 +489,14 @@ export default function CanvasShell({ store, from }: Props) {
           <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
           <span className="font-semibold text-slate-900 text-sm sm:text-base truncate">{storeName}</span>
           {isPublished
-            ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 flex-shrink-0">LIVE</span>
-            : <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 flex-shrink-0">DRAFT</span>
+            ? <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                Live
+              </button>
+            : <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-500">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                Draft
+              </span>
           }
         </div>
 
