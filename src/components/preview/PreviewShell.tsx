@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw, Check, ChevronDown, PencilLine } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, Globe, Rocket, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw, Check, ChevronDown, PencilLine } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from './StorePreview';
 import PublishModal from './PublishModal';
@@ -101,7 +101,7 @@ export default function PreviewShell({ store, from = null }: Props) {
     return () => ro.disconnect();
   }, [device]);
 
-  const { updateActiveStore, addStore, stores, setActiveStore, setGeneratedStore, setGenerationState, activeStore } = useStore();
+  const { updateActiveStore, setGeneratedStore, setGenerationState, activeStore } = useStore();
   const router = useRouter();
 
   // Use activeStore from context when it matches — stays reactive after publish/unpublish
@@ -129,16 +129,6 @@ export default function PreviewShell({ store, from = null }: Props) {
     toast.success('Store unpublished', { description: 'Your store is no longer publicly accessible.' });
   };
 
-  const handleDashboardClick = async () => {
-    const isKnown = stores.some(s => s.id === store.id);
-    if (!isKnown) {
-      await addStore(store);
-    } else {
-      setActiveStore(store);
-    }
-    toast('Opening dashboard…', { duration: 1200 });
-    router.push('/dashboard');
-  };
 
   const openRegenModal = () => {
     // Pre-fill PromptBox from current store values
@@ -332,6 +322,18 @@ export default function PreviewShell({ store, from = null }: Props) {
             ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 flex-shrink-0">LIVE</span>
             : <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 flex-shrink-0">DRAFT</span>
           }
+
+          {/* Regenerate — secondary action on left side */}
+          <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
+          <Tip label="Regenerate store">
+            <button
+              onClick={openRegenModal}
+              disabled={isRegenerating}
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors disabled:opacity-40 flex-shrink-0"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 flex-shrink-0 ${isRegenerating ? 'animate-spin' : ''}`} />
+            </button>
+          </Tip>
         </div>
 
         {/* Center — device switcher (truly centered) */}
@@ -354,31 +356,8 @@ export default function PreviewShell({ store, from = null }: Props) {
           ))}
         </div>
 
-        {/* Right — icon-only action buttons */}
-        <div className="flex items-center gap-1 flex-1 justify-end">
-          {/* Regenerate */}
-          <Tip label="Regenerate store">
-            <button
-              onClick={openRegenModal}
-              disabled={isRegenerating}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40"
-            >
-              <RefreshCw className={`w-4 h-4 flex-shrink-0 ${isRegenerating ? 'animate-spin' : ''}`} />
-              <span className="hidden lg:inline">Regenerate</span>
-            </button>
-          </Tip>
-
-          {/* Dashboard */}
-          <Tip label="Go to Dashboard">
-            <button
-              onClick={handleDashboardClick}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
-            >
-              <LayoutDashboard className="w-4 h-4 flex-shrink-0" />
-              <span className="hidden lg:inline">Dashboard</span>
-            </button>
-          </Tip>
-
+        {/* Right — action buttons (Edit + Publish) */}
+        <div className="flex items-center gap-1 flex-shrink-0">
           {/* Edit */}
           <button
             onClick={() => router.push(`/editor/${liveStore.id}?from=${encodeURIComponent(`/preview/${liveStore.id}`)}`)}
