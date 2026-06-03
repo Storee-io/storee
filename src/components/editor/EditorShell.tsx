@@ -244,6 +244,8 @@ export default function EditorShell({ store, from }: Props) {
   const [sidebarTab, setSidebarTab] = useState<'sections' | 'properties'>('sections');
   const [draggingType, setDraggingType] = useState<string | null>(null);
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [canvasPage, setCanvasPage] = useState<string>('/');
+  const canvasNavigateRef = useRef<((path: string) => void) | null>(null);
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialMountRef = useRef(true);
   const persistStoreRef = useRef<(() => Promise<void>) | null>(null);
@@ -688,9 +690,35 @@ export default function EditorShell({ store, from }: Props) {
             ))}
           </div>
 
+          {/* Non-home page state */}
+          {canvasPage !== '/' && (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center">
+                <Eye className="w-5 h-5 text-slate-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-700 mb-1">
+                  {canvasPage.startsWith('/product') ? 'Product Page'
+                    : canvasPage === '/cart' ? 'Cart Page'
+                    : canvasPage === '/checkout' ? 'Checkout Page'
+                    : canvasPage === '/wishlist' ? 'Wishlist Page'
+                    : canvasPage === '/my-orders' ? 'My Orders Page'
+                    : canvasPage}
+                </p>
+                <p className="text-xs text-slate-400">Sections & Properties are only editable on the Home page.</p>
+              </div>
+              <button
+                onClick={() => { canvasNavigateRef.current?.('/'); setCanvasPage('/'); }}
+                className="px-4 py-2 text-xs font-semibold text-white rounded-xl transition-all gradient-bg hover:opacity-90"
+              >
+                ← Back to Home
+              </button>
+            </div>
+          )}
+
           {/* Sections panel */}
           <AnimatePresence initial={false} mode="wait">
-            {sidebarTab === 'sections' ? (
+            {canvasPage === '/' && sidebarTab === 'sections' ? (
               <motion.div
                 key="sections-panel"
                 initial={{ opacity: 0, x: -10 }}
@@ -808,7 +836,7 @@ export default function EditorShell({ store, from }: Props) {
                 </Reorder.Group>
 
               </motion.div>
-            ) : (
+            ) : canvasPage === '/' ? (
               <motion.div
                 key="properties-panel"
                 initial={{ opacity: 0, x: 10 }}
@@ -902,7 +930,7 @@ export default function EditorShell({ store, from }: Props) {
                   <p className="text-xs text-slate-400">Leave empty to hide.</p>
                 </Section>
               </motion.div>
-            )}
+            ) : null}
           </AnimatePresence>
 
           {/* Bottom hint */}
@@ -994,7 +1022,7 @@ export default function EditorShell({ store, from }: Props) {
               onMouseUp={() => { dragOriginRef.current = null; }}
               onMouseLeave={() => { dragOriginRef.current = null; }}
             >
-              <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} />
+              <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} onPageChange={setCanvasPage} navigateRef={canvasNavigateRef} />
             </div>
           </div>
         </main>
