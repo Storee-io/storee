@@ -8,7 +8,7 @@ import {
   Check, Rocket, ArrowLeft, Sparkles, Mail,
   BookOpen, Megaphone, Layers, Plus, Trash2,
   Star, HelpCircle, Type, Eye, Lock,
-  Edit2, GripVertical, MousePointer, MousePointerClick, Layout, Pencil,
+  Edit2, GripVertical, MousePointer, Layout, Pencil,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from '../preview/StorePreview';
@@ -577,8 +577,8 @@ export default function EditorShell({ store, from }: Props) {
           }
         </div>
 
-        {/* Center â€" device switcher + edit/preview toggle */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Center — device switcher (truly centered) */}
+        <div className="flex items-center flex-shrink-0">
           <div className="flex items-center bg-slate-100 rounded-xl h-8 px-[3px] gap-0.5">
             {([
               { key: 'desktop', Icon: Monitor,    label: 'Desktop' },
@@ -588,27 +588,17 @@ export default function EditorShell({ store, from }: Props) {
               <Tip key={key} label={label}>
                 <button
                   onClick={() => setDevice(key)}
-                  className={`px-1.5 py-[6px] rounded-lg transition-all ${device === key ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`p-1.5 rounded-lg transition-all ${device === key ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                   <Icon className="w-3.5 h-3.5" />
                 </button>
               </Tip>
             ))}
           </div>
-
-          {/* Edit toggle */}
-          <Tip label={editMode ? 'Exit edit mode' : 'Click text to edit inline'}>
-            <button
-              onClick={() => setEditMode(v => !v)}
-              className={`flex items-center gap-1.5 px-3 h-8 rounded-xl text-sm font-medium transition-all ${editMode ? 'bg-blue-100 text-blue-600' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
-            >
-              <MousePointerClick className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Edit</span>
-            </button>
-          </Tip>
         </div>
 
         {/* Right — autosave status + Preview + Publish */}
-        <div className="flex items-center gap-2 flex-1 justify-end">
+        <div className="flex items-center gap-1 flex-1 justify-end">
           {/* Autosave status indicator */}
           <span className="hidden sm:inline text-xs transition-all">
             {isSaving
