@@ -439,7 +439,7 @@ export default function EditorShell({ store, from }: Props) {
   const SIDEBAR_MIN = 200;
   const SIDEBAR_MAX = 480;
   const [sidebarWidth, setSidebarWidth] = useState(288);
-  const isResizingSidebar = useRef(false);
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const resizeStartX = useRef(0);
   const resizeStartW = useRef(0);
 
@@ -464,14 +464,14 @@ export default function EditorShell({ store, from }: Props) {
   // Sidebar resize mouse handlers
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
-      if (!isResizingSidebar.current) return;
+      if (!isResizingSidebar) return;
       const delta = e.clientX - resizeStartX.current;
       const newW = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, resizeStartW.current + delta));
       setSidebarWidth(newW);
     };
     const onUp = () => {
-      if (!isResizingSidebar.current) return;
-      isResizingSidebar.current = false;
+      if (!isResizingSidebar) return;
+      setIsResizingSidebar(false);
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     };
@@ -481,7 +481,7 @@ export default function EditorShell({ store, from }: Props) {
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
     };
-  }, []);
+  }, [isResizingSidebar]);
 
   const scrollToSection = useCallback((sectionType: string) => {
     const el = previewRef.current?.querySelector(`[data-editor-section="${sectionType}"]`);
@@ -1041,10 +1041,13 @@ export default function EditorShell({ store, from }: Props) {
 
         {/* ── Sidebar resize handle ──────────────────────────────────────── */}
         <div
-          className="flex-shrink-0 w-0.5 relative group cursor-col-resize bg-slate-300 hover:bg-emerald-400 transition-colors duration-150"
+          className={`flex-shrink-0 relative group cursor-col-resize transition-all duration-150 ${
+            isResizingSidebar ? 'bg-emerald-400' : 'bg-slate-300 hover:bg-emerald-400'
+          }`}
+          style={{ width: isResizingSidebar ? '3px' : '1px' }}
           onMouseDown={e => {
             e.preventDefault();
-            isResizingSidebar.current = true;
+            setIsResizingSidebar(true);
             resizeStartX.current = e.clientX;
             resizeStartW.current = sidebarWidth;
             document.body.style.cursor = 'col-resize';
