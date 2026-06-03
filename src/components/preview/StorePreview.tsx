@@ -7021,182 +7021,78 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
       </header>
 
-      {/* â”€â”€ Story circles (collections) â”€â”€ */}
-      <div style={{ background: tt.surfaceBg, borderBottom: `1px solid ${tt.divider}` }}>
-        <div className="flex gap-4 px-4 py-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          {[{ name: 'All', emoji: 'âœ¨' }, ...collections].map((c, i) => (
-            <button key={i} onClick={() => setSelectedCol(i)} className="flex flex-col items-center gap-1.5 flex-shrink-0">
-              <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-all`}
-                style={selectedCol === i
-                  ? { background: pc, boxShadow: `0 0 0 3px ${tt.surfaceBg}, 0 0 0 5px ${pc}` }
-                  : { background: tt.pageBg, border: `2px solid ${tt.surfaceBorder}` }}>
-                {c.emoji}
-              </div>
-              <span className="text-[10px] font-semibold max-w-[52px] text-center leading-tight truncate"
-                style={{ color: selectedCol === i ? pc : tt.textMuted }}>
-                {c.name}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
 
-      {/* â”€â”€ Product list â€” personality-aware rendering â”€â”€ */}
-      <div ref={productsRef} style={{ background: tt.pageBg }}>
-        {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <span className="text-4xl">ðŸ”</span>
-            <p className="text-sm font-medium" style={{ color: tt.textMuted }}>No products found</p>
-          </div>
-        ) : dt?.personality?.includes('spotify') ? (
-          /* â”€â”€ Spotify: 2-col album art dark grid â”€â”€ */
-          <div className="grid grid-cols-2 gap-3 p-4">
-            {filtered.map(p => (
-              <div key={p.id} className="cursor-pointer group" onClick={() => onProductClick(p)}>
-                <div className="relative aspect-square rounded-lg overflow-hidden mb-2">
-                  <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 55%)' }} />
-                  <button
-                    onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
-                    className="absolute bottom-2 right-2 w-9 h-9 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                    style={{ background: pc, color: pcText }}
-                  >
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M8 5v14l11-7z"/></svg>
-                  </button>
-                  {p.badge && <span className="absolute top-2 left-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: pc, color: pcText }}>{p.badge}</span>}
-                </div>
-                <p className="text-xs font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
-                <p className="text-[10px] mt-0.5" style={{ color: tt.textMuted }}>{p.category} Â· {fmtPrice(p.price)}</p>
-              </div>
-            ))}
-          </div>
-        ) : dt?.personality?.includes('tiktok') ? (
-          /* â”€â”€ TikTok: full-width vertical video cards â”€â”€ */
-          <div className="flex flex-col gap-1 pb-2">
-            {filtered.map(p => (
-              <div key={p.id} className="relative cursor-pointer overflow-hidden" style={{ height: '280px' }} onClick={() => onProductClick(p)}>
-                <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
-                {/* Dark gradient overlay */}
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 50%)' }} />
-                {/* Badge top-left */}
-                {p.badge && <span className="absolute top-3 left-3 text-[10px] font-bold px-2 py-0.5 rounded-sm" style={{ background: pc, color: pcText }}>{p.badge}</span>}
-                {/* Content bottom */}
-                <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
-                  <p className="text-white font-bold text-base leading-tight">{p.name}</p>
-                  <p className="text-white/70 text-xs mt-0.5 line-clamp-1">{p.description}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <div>
-                      {p.originalPrice && <span className="text-white/50 text-xs line-through mr-1">{fmtPrice(p.originalPrice)}</span>}
-                      <span className="font-bold text-sm" style={{ color: pc }}>{fmtPrice(p.price)}</span>
-                    </div>
-                    <button
-                      onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
-                      className="px-4 py-1.5 text-xs font-bold rounded-sm transition-all active:scale-95"
-                      style={{ background: pc, color: pcText }}
-                    >Shop Now</button>
-                  </div>
-                </div>
-                {/* Side actions (TikTok-style) */}
-                <div className="absolute right-3 bottom-16 flex flex-col items-center gap-4">
-                  <button data-wishlist-btn="" onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }} className="flex flex-col items-center gap-0.5">
-                    <Heart className={`w-6 h-6 ${wishlist.has(p.id) ? 'fill-rose-500 text-rose-500' : 'text-white'}`} />
-                    <span className="text-white text-[9px]">{wishlist.has(p.id) ? 'Saved' : 'Save'}</span>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : dt?.personality?.includes('discord') ? (
-          /* â”€â”€ Discord: dark channel-list rows â”€â”€ */
-          <div>
-            <div className="px-4 pt-3 pb-1">
-              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: tt.textMuted }}>PRODUCTS â€” {filtered.length}</p>
+      {/* All sections — reorderable via designTokens.sections */}
+      {(() => {
+        const sectionOrder = (design.designTokens?.sections as Array<{ type: string }> | undefined)
+          ?.map(s => s.type).filter(t => ['trust','collections','products','features','testimonials','brandStory'].includes(t))
+          ?? ['trust', 'collections', 'products', 'features', 'testimonials', 'brandStory'];
+
+        const sectionMap: Record<string, React.ReactNode> = {
+          trust: trustBadges.length > 0 ? (
+            <div key="trust" data-editor-section="trust">
+              <TrustBadgesRow badges={trustBadges} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />
             </div>
-            {filtered.map(p => (
-              <div key={p.id}
-                className="flex items-center gap-3 px-2 mx-2 py-2 rounded-md cursor-pointer transition-colors hover:bg-white/5 active:bg-white/10"
-                onClick={() => onProductClick(p)}
-              >
-                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                  <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</span>
-                    {p.badge && <span className="text-[8px] font-bold px-1 py-0.5 rounded" style={{ background: pc, color: pcText }}>{p.badge}</span>}
-                  </div>
-                  <p className="text-[11px] truncate" style={{ color: tt.textMuted }}>{p.description}</p>
-                </div>
-                <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                  <span className="text-xs font-bold" style={{ color: pc }}>{fmtPrice(p.price)}</span>
-                  <button
-                    onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
-                    className="text-[10px] font-semibold px-2 py-0.5 rounded transition-all hover:opacity-80"
-                    style={{ background: alpha(pc, 0.2), color: pc }}
-                  >Add</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          /* â”€â”€ Default WhatsApp-style chat rows â”€â”€ */
-          <div>
-            {filtered.map((p) => (
-              <div key={p.id}
-                className="flex items-center gap-3 px-4 py-3 cursor-pointer active:opacity-70 transition-opacity"
-                style={{ borderBottom: `1px solid ${tt.divider}`, background: tt.surfaceBg }}
-                onClick={() => onProductClick(p)}
-              >
-                {/* Round product image */}
-                <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 shadow-sm">
-                  <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
-                </div>
+          ) : null,
 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-sm font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</span>
-                    {p.badge && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: alpha(pc, 0.12), color: pc }}>{p.badge}</span>
-                    )}
-                  </div>
-                  <p className="text-xs mt-0.5 line-clamp-1" style={{ color: tt.textSecondary }}>{p.description}</p>
-                  <div className="flex items-center justify-between mt-1.5">
-                    <span className="text-[10px] uppercase tracking-wide" style={{ color: tt.textMuted }}>{p.category}</span>
-                    <div className="flex items-center gap-2">
-                      {p.originalPrice && (
-                        <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>
-                      )}
-                      <span className="text-sm font-bold" style={{ color: pc }}>{fmtPrice(p.price)}</span>
+          collections: collections.length > 0 ? (
+            <div key="collections" data-editor-section="collections" style={{ background: tt.surfaceBg, borderBottom: `1px solid ${tt.divider}` }}>
+              <div className="flex gap-3 px-3 py-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                {[{ name: 'All', emoji: '✨' }, ...collections].map((c, i) => (
+                  <button key={i} onClick={() => setSelectedCol(i)} className="flex flex-col items-center gap-1 flex-shrink-0 min-w-[56px]">
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl" style={{ background: selectedCol === i ? pc : tt.pageBg, border: `2px solid ${selectedCol === i ? pc : tt.divider}` }}>{c.emoji}</div>
+                    <span className="text-[10px] font-medium text-center truncate max-w-[56px]" style={{ color: selectedCol === i ? pc : tt.textMuted }}>{c.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null,
+
+          products: (
+            <div key="products" ref={productsRef} data-editor-section="products" style={{ background: tt.pageBg }}>
+              {dt?.personality?.includes('spotify') ? (
+                <div className="px-4 py-3 space-y-2">
+                  {displayed.map(p => (
+                    <div key={p.id} className="flex items-center gap-3 py-2 cursor-pointer group" onClick={() => onProductClick(p)}>
+                      <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                        <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+                        <p className="text-xs" style={{ color: tt.textMuted }}>{p.category}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-black" style={{ color: pc }}>{fmtPrice(p.price)}</span>
+                        <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }} className="w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000' }}>+</button>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
+              ) : (
+                <div className={`grid gap-3 p-3 ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                  {displayed.map(p => (
+                    <div key={p.id} className="cursor-pointer" onClick={() => onProductClick(p)}>
+                      <div className="relative overflow-hidden" style={{ aspectRatio: '1/1', borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
+                        <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
+                        {p.badge && <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: '999px' }}>{p.badge}</span>}
+                        <button data-wishlist-btn="" onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }} className="absolute top-2 right-2 w-6 h-6 bg-white/80 backdrop-blur flex items-center justify-center rounded-full">
+                          <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
+                        </button>
+                      </div>
+                      <div className="mt-2 px-0.5">
+                        <p className="text-xs font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-sm font-black" style={{ color: pc }}>{fmtPrice(p.price)}</span>
+                          <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }} className="w-6 h-6 flex items-center justify-center rounded-full text-sm font-bold" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000' }}>+</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ),
 
-                {/* Add button */}
-                <button
-                  onClick={e => {
-                    e.stopPropagation();
-                    const btn = e.currentTarget as HTMLElement;
-                    onAddToCart(p, getProductImgRect(btn));
-                  }}
-                  className="flex-shrink-0 px-3 py-2 text-xs font-bold rounded-full transition-all hover:opacity-90 active:scale-95"
-                  style={{ background: pc, color: pcText }}
-                >
-                  {dt?.personality?.includes('whatsapp') ? 'Order' : '+ Add'}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-
-        {/* Reorderable bottom sections */}
-        {(() => {
-          const sectionOrder = (design.designTokens?.sections as Array<{ type: string }> | undefined)
-            ?.map(s => s.type).filter(t => ['features','testimonials','brandStory'].includes(t))
-            ?? ['features', 'testimonials', 'brandStory'];
-
-          const sectionMap: Record<string, React.ReactNode> = {
             features: features.length > 0 ? (
               <div key="features" data-editor-section="features" className="px-4 pt-6 pb-4 space-y-3" style={{ borderTop: `4px solid ${tt.divider}` }}>
                 {features.slice(0, 4).map((f, i) => (
@@ -8072,124 +7968,102 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
         </div>
       )}
 
-      {/* â”€â”€ Fullscreen product slides â”€â”€ */}
-      <div ref={scrollContainerRef}>
-        {spotlightProducts.map((p, idx) => (
-          <section key={p.id}
-            style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'flex-end', overflow: 'hidden' }}
-            onMouseEnter={() => setActiveSlide(idx)}
-          >
-            {/* Full-bleed background image */}
-            <div className="absolute inset-0">
-              <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
-              <div className="absolute inset-0" style={{
-                background: isDarkBg
-                  ? 'linear-gradient(to top, rgba(0,0,0,0.85) 35%, rgba(0,0,0,0.15) 70%, transparent)'
-                  : 'linear-gradient(to top, rgba(0,0,0,0.70) 30%, rgba(0,0,0,0.1) 70%, transparent)',
-              }} />
-              {/* Subtle left accent line */}
-              <div className="absolute left-0 top-16 bottom-16 w-0.5" style={{ background: pc, opacity: 0.7 }} />
-            </div>
 
-            {/* Content */}
-            <div className="relative w-full max-w-6xl mx-auto px-8 pb-16 pt-24">
-              <div className={isMobile ? '' : 'max-w-lg'}>
-                {p.badge && (
-                  <span className="inline-block text-[10px] font-black uppercase tracking-widest px-3 py-1 mb-4 rounded-full"
-                    style={{ background: pc, color: pcText }}>{p.badge}</span>
-                )}
-                <p className="text-xs uppercase tracking-[0.25em] mb-3 text-white/50">{p.category}</p>
-                <h2 className="font-black text-white leading-tight mb-3"
-                  style={{ fontFamily: tt.headingFont, fontSize: isMobile ? '2rem' : '3rem' }}>{p.name}</h2>
-                <p className="text-white/65 text-sm leading-relaxed mb-6 max-w-sm">{p.description}</p>
-                <div className="flex items-center gap-4">
-                  <span className="text-2xl font-black text-white">{fmtPrice(p.price)}</span>
-                  {p.originalPrice && <span className="text-lg line-through text-white/40">{fmtPrice(p.originalPrice)}</span>}
-                </div>
-                <div className="flex items-center gap-3 mt-5">
-                  <button
-                    onClick={e => { const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
-                    className="px-8 py-3.5 text-sm font-bold transition-all hover:opacity-90 active:scale-95"
-                    style={{ background: pc, color: pcText, borderRadius: tt.btnRadius, boxShadow: getElevationShadow('raised'), transition: getMotionTransition(motion) }}
-                  >Add to Cart</button>
-                  <button onClick={() => onProductClick(p)}
-                    className="px-6 py-3.5 text-sm font-medium text-white border border-white/25 hover:bg-white/10 transition-colors"
-                    style={{ borderRadius: tt.btnRadius }}>View Details</button>
-                  <button
-                    data-wishlist-btn=""
-                    onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
-                    className="w-11 h-11 flex items-center justify-center border border-white/25 text-white hover:bg-white/10 transition-colors"
-                    style={{ borderRadius: tt.btnRadius }}>
-                    <Heart className={`w-4 h-4 ${wishlist.has(p.id) ? 'fill-rose-400 text-rose-400' : ''}`} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Slide counter */}
-              <div className="absolute bottom-6 right-8 text-white/30 text-xs font-black tracking-widest">
-                {String(idx + 1).padStart(2, '0')} / {String(spotlightProducts.length).padStart(2, '0')}
-              </div>
-
-              {/* Scroll hint on first slide */}
-              {idx === 0 && (
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-white/30 animate-bounce">
-                  <ChevronDown className="w-4 h-4" />
-                  <span className="text-[9px] uppercase tracking-widest">Scroll</span>
-                </div>
-              )}
-            </div>
-          </section>
-        ))}
-      </div>
-
-      {/* â”€â”€ Rest of products grid (after the cinematic slides) â”€â”€ */}
-      {restProducts.length > 0 && (
-        <section style={{ paddingTop: '4rem', paddingBottom: '4rem' }}>
-          <div className="max-w-6xl mx-auto px-5">
-            <h2 className="font-black text-xl mb-8 uppercase tracking-widest" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>More Products</h2>
-            {/* Collections filter */}
-            <div className="flex gap-2 mb-6 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-              {collections.map((c, i) => (
-                <button key={i}
-                  className="flex-shrink-0 px-4 py-1.5 text-xs font-bold uppercase tracking-widest border transition-all"
-                  style={{ borderColor: tt.surfaceBorder, color: tt.textSecondary, borderRadius: tt.btnRadius }}>
-                  {c.emoji} {c.name}
-                </button>
-              ))}
-            </div>
-            <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} gap-4`}>
-              {restProducts.map(p => (
-                <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
-                  <div className="relative overflow-hidden" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius }}>
-                    <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    {p.badge && (
-                      <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5 rounded-full"
-                        style={{ background: pc, color: pcText }}>{p.badge}</span>
-                    )}
-                    <button
-                      onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
-                      className="absolute bottom-0 inset-x-0 py-2.5 text-[10px] font-bold uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-all"
-                      style={{ background: pc, color: pcText }}>Add to cart</button>
-                  </div>
-                  <div className="mt-2 px-0.5">
-                    <p className="text-xs font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
-                    <span className="text-xs font-black" style={{ color: tt.textPrimary }}>{fmtPrice(p.price)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-
-      {/* Reorderable bottom sections */}
+      {/* All sections — fully reorderable via designTokens.sections */}
       {(() => {
         const sectionOrder = (design.designTokens?.sections as Array<{ type: string }> | undefined)
-          ?.map(s => s.type).filter(t => ['features','testimonials','brandStory','stats','faq','newsletter'].includes(t))
-          ?? ['features', 'testimonials', 'brandStory', 'stats', 'faq', 'newsletter'];
+          ?.map(s => s.type).filter(t => ['hero','trust','collections','products','features','testimonials','brandStory','stats','faq','newsletter'].includes(t))
+          ?? ['hero', 'trust', 'collections', 'products', 'features', 'testimonials', 'brandStory', 'stats', 'faq', 'newsletter'];
 
         const sectionMap: Record<string, React.ReactNode> = {
+          hero: (
+            <div key="hero" data-editor-section="hero">
+              {/* Slide dot nav */}
+              {spotlightProducts.length > 1 && !isMobile && (
+                <div className="fixed right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2">
+                  {spotlightProducts.map((_, i) => (
+                    <button key={i} onClick={() => scrollToSlide(i)} style={{ width: activeSlide === i ? '8px' : '6px', height: activeSlide === i ? '24px' : '6px', borderRadius: '999px', transition: 'all 0.3s', background: isDark(tt.pageBg) ? (activeSlide === i ? '#ffffff' : 'rgba(255,255,255,0.3)') : (activeSlide === i ? tt.textPrimary : tt.textMuted) }} />
+                  ))}
+                </div>
+              )}
+              {/* Fullscreen product slides */}
+              <div ref={scrollContainerRef}>
+                {spotlightProducts.map((p, idx) => (
+                  <section key={p.id} data-editor-section="hero" style={{ position: 'relative', height: isMobile ? '85vh' : '100vh', display: 'flex', alignItems: 'flex-end', overflow: 'hidden' }}
+                    onMouseEnter={() => setActiveSlide(idx)}>
+                    <div className="absolute inset-0">
+                      <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${tt.pageBg}f0 0%, ${tt.pageBg}80 40%, transparent 70%)` }} />
+                      <div className="absolute left-0 top-0 bottom-0 w-1" style={{ background: pc }} />
+                    </div>
+                    <div className="relative w-full max-w-6xl mx-auto px-6 pb-16">
+                      <p className="text-xs uppercase tracking-[0.3em] mb-3 font-bold" style={{ color: pc }}>{p.category}</p>
+                      <h2 className="font-black leading-tight mb-3" style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '2rem' : '4rem', maxWidth: '14ch' }}>{p.name}</h2>
+                      <p className="text-sm mb-6" style={{ color: tt.textSecondary }}>{p.description}</p>
+                      <div className="flex items-center gap-4">
+                        <span className="text-2xl font-black" style={{ color: tt.textPrimary }}>{fmtPrice(p.price)}</span>
+                        {p.originalPrice && <span className="text-lg line-through opacity-50" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
+                        <button onClick={e => { const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }} className="px-8 py-3 text-sm font-bold uppercase tracking-widest transition-all hover:opacity-90 active:scale-95" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: tt.btnRadius }}>Add to Cart</button>
+                        <button data-wishlist-btn="" onClick={() => onToggleWishlist(p.id)} className="p-3 rounded-full" style={{ background: tt.surfaceBg }}>
+                          <Heart className={`w-5 h-5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
+                        </button>
+                      </div>
+                      {spotlightProducts.length > 1 && (
+                        <p className="text-xs mt-6 font-bold uppercase tracking-widest" style={{ color: tt.textMuted }}>
+                          {String(idx + 1).padStart(2, '0')} / {String(spotlightProducts.length).padStart(2, '0')}
+                        </p>
+                      )}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            </div>
+          ),
+
+          trust: trustBadges.length > 0 ? (
+            <div key="trust" data-editor-section="trust">
+              <TrustBadgesRow badges={trustBadges} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />
+            </div>
+          ) : null,
+
+          collections: collections.length > 0 ? (
+            <div key="collections" data-editor-section="collections" style={{ borderBottom: `1px solid ${tt.divider}`, paddingTop: '1.5rem', paddingBottom: '1.5rem' }}>
+              <div className="max-w-6xl mx-auto px-5 flex gap-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                {collections.map((c, i) => (
+                  <button key={i} onClick={() => setSelectedCol(i)} className="flex-shrink-0 flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wide transition-all"
+                    style={selectedCol === i ? { background: tt.textPrimary, color: tt.pageBg, borderRadius: tt.btnRadius } : { background: 'transparent', color: tt.textSecondary, border: `1px solid ${tt.divider}`, borderRadius: tt.btnRadius }}>
+                    {c.emoji} {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null,
+
+          products: restProducts.length > 0 ? (
+            <section key="products" ref={productsRef} data-editor-section="products" style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
+              <div className="max-w-6xl mx-auto px-5">
+                <div className={`grid ${isMobile ? 'grid-cols-2 gap-3' : 'grid-cols-3 gap-6'}`}>
+                  {restProducts.map(p => (
+                    <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
+                      <div className="relative overflow-hidden" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius }}>
+                        <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                        {p.badge && <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: '999px' }}>{p.badge}</span>}
+                        <button data-wishlist-btn="" onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }} className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-white/80 backdrop-blur shadow">
+                          <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
+                        </button>
+                        <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }} className="absolute bottom-0 inset-x-0 py-2.5 text-xs font-bold uppercase tracking-widest translate-y-full group-hover:translate-y-0 transition-transform" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000' }}>Add to Cart</button>
+                      </div>
+                      <div className="mt-3">
+                        <p className="text-xs font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+                        <p className="text-sm font-black mt-0.5" style={{ color: pc }}>{fmtPrice(p.price)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ) : null,
+
           features: features.length > 0 ? (
             <section key="features" data-editor-section="features" style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '4rem', paddingBottom: '4rem' }}>
               <div className="max-w-6xl mx-auto px-5">
