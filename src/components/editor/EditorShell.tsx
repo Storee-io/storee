@@ -1044,7 +1044,12 @@ export default function EditorShell({ store, from }: Props) {
           className={`flex-shrink-0 relative group cursor-col-resize transition-all duration-150 ${
             isResizingSidebar ? 'bg-emerald-400' : 'bg-slate-300 hover:bg-emerald-400'
           }`}
-          style={{ width: isResizingSidebar ? '3px' : '1px' }}
+          style={{
+            width: isResizingSidebar ? '3px' : '1px',
+            boxShadow: isResizingSidebar
+              ? '0 0 8px rgba(16, 185, 129, 0.3), -2px 0 4px rgba(0, 0, 0, 0.08), 2px 0 4px rgba(0, 0, 0, 0.08)'
+              : '-1px 0 2px rgba(0, 0, 0, 0.06), 1px 0 2px rgba(0, 0, 0, 0.06)'
+          }}
           onMouseDown={e => {
             e.preventDefault();
             setIsResizingSidebar(true);
