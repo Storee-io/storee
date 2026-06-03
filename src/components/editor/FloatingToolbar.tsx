@@ -375,7 +375,12 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
   return (
     <div
       ref={toolbarRef}
-      onMouseDown={e => e.preventDefault()}
+      onMouseDown={e => {
+        // Don't prevent default for select elements (they need mousedown to open dropdown)
+        if ((e.target as HTMLElement).tagName !== 'SELECT') {
+          e.preventDefault();
+        }
+      }}
       style={baseStyle}
       className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-xl shadow-xl px-1.5 py-1 select-none"
     >
@@ -383,7 +388,6 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       <select
         title="Text style"
         defaultValue="p"
-        onMouseDown={saveRange}
         onChange={e => {
           handleTextStyle(e.target.value);
           // Reset to allow re-selecting same value
@@ -438,7 +442,6 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       <select
         title="Font family"
         defaultValue=""
-        onMouseDown={saveRange}
         onChange={e => {
           handleFontFamily(e.target.value);
           // Reset to allow re-selecting same value
@@ -455,7 +458,6 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       <select
         title="Font size"
         defaultValue="16"
-        onMouseDown={saveRange}
         onChange={e => {
           handleFontSize(Number(e.target.value));
           // Reset to allow re-selecting same value
@@ -517,7 +519,6 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       <select
         title="Line height"
         defaultValue="1.5"
-        onMouseDown={saveRange}
         onChange={e => {
           handleLineHeight(e.target.value);
           // Reset to allow re-selecting same value
