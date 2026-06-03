@@ -303,9 +303,9 @@ export default function PreviewShell({ store, from = null }: Props) {
   };
 
   return (
-    <div className="h-screen bg-slate-100 flex flex-col overflow-hidden">
+    <div className="h-screen bg-slate-100 flex flex-col overflow-hidden font-sans" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', colorScheme: 'light' }}>
       {/* Toolbar */}
-      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 h-12 flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 h-12 flex items-center gap-3 flex-shrink-0 shadow-sm z-10" style={{ isolation: 'isolate' }}>
         {/* Left — back + store name */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <Tip label={backLabel}>
@@ -338,7 +338,8 @@ export default function PreviewShell({ store, from = null }: Props) {
         </div>
 
         {/* Center — device switcher (truly centered) */}
-        <div className="flex items-center bg-slate-100 rounded-xl h-8 px-[3px] gap-0.5 flex-shrink-0">
+        <div className="flex items-center flex-shrink-0">
+        <div className="flex items-center bg-slate-100 rounded-xl h-8 px-[3px] gap-0.5">
           {([
             { mode: 'desktop', Icon: Monitor,    label: 'Desktop' },
             { mode: 'tablet',  Icon: Tablet,     label: 'Tablet' },
@@ -355,6 +356,7 @@ export default function PreviewShell({ store, from = null }: Props) {
               </button>
             </Tip>
           ))}
+        </div>
         </div>
 
         {/* Right — action buttons (Edit + Publish) */}
