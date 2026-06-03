@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
@@ -24,7 +24,7 @@ import type { StoreDesign, RichProduct, DesignSystem, DesignTokens } from '../..
 import { makePriceFmt } from '../../lib/formatCurrency';
 import { supabase } from '../../lib/supabase';
 
-// â”€â”€ Clipboard helper (works in non-secure / iframe contexts) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Clipboard helper (works in non-secure / iframe contexts) ─────────────────
 function safeClipboardWrite(text: string) {
   if (navigator.clipboard) {
     navigator.clipboard.writeText(text).catch(() => execCommandCopy(text));
@@ -47,7 +47,7 @@ function execCommandCopy(text: string) {
 
 export type DeviceMode = 'desktop' | 'tablet' | 'mobile';
 
-// â”€â”€ Store feature flags & UI translations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Store feature flags & UI translations ─────────────────────────────────────
 interface UiT {
   subtotal: string; checkout: string; viewCart: string; startShopping: string;
   shippingNote: string; continueShopping: string; cartEmpty: string;
@@ -63,19 +63,19 @@ interface UiT {
 }
 
 const UI_T: Record<string, UiT> = {
-  en: { subtotal:'Subtotal', checkout:'Checkout â†’', viewCart:'View Full Cart', startShopping:'Start Shopping', shippingNote:'Shipping & discounts calculated at checkout', continueShopping:'Continue Shopping', cartEmpty:'Your cart is empty', orderSummary:'Order Summary', shipping:'Shipping', calcAtCheckout:'Calculated at checkout', promo:'Promo', appliedAtCheckout:'Applied at checkout', total:'Total', proceedCheckout:'Proceed to Checkout â†’', secureNote:'ðŸ”’ Secure & protected transaction', addMoreItems:'Add more items', orderReceived:'Order Received! ðŸŽ‰', thankYou:'Thank you for shopping at', orderNum:'Order #:', addToCart:'Add to Cart', addedToCart:'âœ“ Added to Cart!', availability:'Availability', inStock:'In Stock', delivery:'Delivery', deliveryDays:'2â€“4 business days', returns:'Returns', freeReturns:'Free 30-day returns', yourWishlist:'Your Wishlist', wishlistEmpty:'Your wishlist is empty', paymentInstructions:'Payment Instructions', back:'Back', remove:'Remove' },
-  id: { subtotal:'Subtotal', checkout:'Checkout â†’', viewCart:'Lihat Keranjang', startShopping:'Mulai Belanja', shippingNote:'Ongkos kirim & diskon dihitung saat checkout', continueShopping:'Lanjut Belanja', cartEmpty:'Keranjang Anda kosong', orderSummary:'Ringkasan Pesanan', shipping:'Ongkos Kirim', calcAtCheckout:'Dihitung saat checkout', promo:'Promo', appliedAtCheckout:'Diterapkan saat checkout', total:'Total', proceedCheckout:'Lanjut ke Pembayaran â†’', secureNote:'ðŸ”’ Transaksi aman & terlindungi', addMoreItems:'Tambah produk', orderReceived:'Pesanan Diterima! ðŸŽ‰', thankYou:'Terima kasih sudah belanja di', orderNum:'No. Pesanan:', addToCart:'Tambah ke Keranjang', addedToCart:'âœ“ Ditambahkan!', availability:'Ketersediaan', inStock:'Tersedia', delivery:'Pengiriman', deliveryDays:'2â€“4 hari kerja', returns:'Pengembalian', freeReturns:'Gratis 30 hari', yourWishlist:'Wishlist Saya', wishlistEmpty:'Wishlist Anda kosong', paymentInstructions:'Instruksi Pembayaran', back:'Kembali', remove:'Hapus' },
-  es: { subtotal:'Subtotal', checkout:'Pagar â†’', viewCart:'Ver Carrito', startShopping:'Empezar a Comprar', shippingNote:'EnvÃ­o y descuentos calculados al pagar', continueShopping:'Seguir Comprando', cartEmpty:'Tu carrito estÃ¡ vacÃ­o', orderSummary:'Resumen del Pedido', shipping:'EnvÃ­o', calcAtCheckout:'Calculado al pagar', promo:'Promo', appliedAtCheckout:'Aplicado al pagar', total:'Total', proceedCheckout:'Proceder al Pago â†’', secureNote:'ðŸ”’ TransacciÃ³n segura y protegida', addMoreItems:'Agregar mÃ¡s productos', orderReceived:'Â¡Pedido Recibido! ðŸŽ‰', thankYou:'Gracias por comprar en', orderNum:'Pedido #:', addToCart:'Agregar al Carrito', addedToCart:'âœ“ Â¡Agregado!', availability:'Disponibilidad', inStock:'En Stock', delivery:'Entrega', deliveryDays:'2â€“4 dÃ­as hÃ¡biles', returns:'Devoluciones', freeReturns:'30 dÃ­as gratis', yourWishlist:'Tu Lista de Deseos', wishlistEmpty:'Tu lista de deseos estÃ¡ vacÃ­a', paymentInstructions:'Instrucciones de Pago', back:'Volver', remove:'Eliminar' },
-  fr: { subtotal:'Sous-total', checkout:'Commander â†’', viewCart:'Voir le Panier', startShopping:'Commencer les Achats', shippingNote:'Livraison & rÃ©ductions calculÃ©es Ã  la caisse', continueShopping:'Continuer les Achats', cartEmpty:'Votre panier est vide', orderSummary:'RÃ©capitulatif de la Commande', shipping:'Livraison', calcAtCheckout:'CalculÃ© Ã  la caisse', promo:'Promo', appliedAtCheckout:'AppliquÃ© Ã  la caisse', total:'Total', proceedCheckout:'ProcÃ©der au Paiement â†’', secureNote:'ðŸ”’ Transaction sÃ©curisÃ©e', addMoreItems:'Ajouter des articles', orderReceived:'Commande ReÃ§ue ! ðŸŽ‰', thankYou:'Merci de votre achat chez', orderNum:'Commande nÂ° :', addToCart:'Ajouter au Panier', addedToCart:'âœ“ AjoutÃ© !', availability:'DisponibilitÃ©', inStock:'En Stock', delivery:'Livraison', deliveryDays:'2â€“4 jours ouvrÃ©s', returns:'Retours', freeReturns:'30 jours gratuits', yourWishlist:'Ma Liste de Souhaits', wishlistEmpty:'Votre liste est vide', paymentInstructions:'Instructions de Paiement', back:'Retour', remove:'Supprimer' },
-  de: { subtotal:'Zwischensumme', checkout:'Zur Kasse â†’', viewCart:'Warenkorb anzeigen', startShopping:'Einkaufen', shippingNote:'Versand & Rabatte werden an der Kasse berechnet', continueShopping:'Weiter Einkaufen', cartEmpty:'Ihr Warenkorb ist leer', orderSummary:'BestellÃ¼bersicht', shipping:'Versand', calcAtCheckout:'An der Kasse berechnet', promo:'Promo', appliedAtCheckout:'An der Kasse angewendet', total:'Gesamt', proceedCheckout:'Zur Kasse â†’', secureNote:'ðŸ”’ Sichere & geschÃ¼tzte Transaktion', addMoreItems:'Mehr Artikel hinzufÃ¼gen', orderReceived:'Bestellung eingegangen! ðŸŽ‰', thankYou:'Vielen Dank fÃ¼r Ihren Einkauf bei', orderNum:'Bestellung Nr.:', addToCart:'In den Warenkorb', addedToCart:'âœ“ HinzugefÃ¼gt!', availability:'VerfÃ¼gbarkeit', inStock:'Auf Lager', delivery:'Lieferung', deliveryDays:'2â€“4 Werktage', returns:'RÃ¼ckgabe', freeReturns:'30 Tage kostenlos', yourWishlist:'Meine Wunschliste', wishlistEmpty:'Ihre Wunschliste ist leer', paymentInstructions:'Zahlungsanweisungen', back:'ZurÃ¼ck', remove:'Entfernen' },
-  ja: { subtotal:'å°è¨ˆ', checkout:'è³¼å…¥æ‰‹ç¶šãã¸ â†’', viewCart:'ã‚«ãƒ¼ãƒˆã‚’è¦‹ã‚‹', startShopping:'è²·ã„ç‰©ã‚’å§‹ã‚ã‚‹', shippingNote:'é€æ–™ãƒ»å‰²å¼•ã¯ãƒã‚§ãƒƒã‚¯ã‚¢ã‚¦ãƒˆæ™‚ã«è¨ˆç®—ã•ã‚Œã¾ã™', continueShopping:'è²·ã„ç‰©ã‚’ç¶šã‘ã‚‹', cartEmpty:'ã‚«ãƒ¼ãƒˆã¯ç©ºã§ã™', orderSummary:'æ³¨æ–‡ã‚µãƒžãƒªãƒ¼', shipping:'é…é€æ–™', calcAtCheckout:'ãƒã‚§ãƒƒã‚¯ã‚¢ã‚¦ãƒˆæ™‚ã«è¨ˆç®—', promo:'ãƒ—ãƒ­ãƒ¢', appliedAtCheckout:'ãƒã‚§ãƒƒã‚¯ã‚¢ã‚¦ãƒˆæ™‚ã«é©ç”¨', total:'åˆè¨ˆ', proceedCheckout:'ãŠæ”¯æ‰•ã„ã¸ â†’', secureNote:'ðŸ”’ å®‰å…¨ãƒ»ä¿è­·ã•ã‚ŒãŸå–å¼•', addMoreItems:'å•†å“ã‚’è¿½åŠ ', orderReceived:'ã”æ³¨æ–‡ã‚’å—ã‘ä»˜ã‘ã¾ã—ãŸï¼ ðŸŽ‰', thankYou:'ã§ã®ãŠè²·ã„ç‰©ã‚ã‚ŠãŒã¨ã†ã”ã–ã„ã¾ã™', orderNum:'æ³¨æ–‡ç•ªå·ï¼š', addToCart:'ã‚«ãƒ¼ãƒˆã«è¿½åŠ ', addedToCart:'âœ“ è¿½åŠ ã—ã¾ã—ãŸï¼', availability:'åœ¨åº«çŠ¶æ³', inStock:'åœ¨åº«ã‚ã‚Š', delivery:'é…é€', deliveryDays:'2ã€œ4å–¶æ¥­æ—¥', returns:'è¿”å“', freeReturns:'30æ—¥é–“ç„¡æ–™', yourWishlist:'ã‚¦ã‚£ãƒƒã‚·ãƒ¥ãƒªã‚¹ãƒˆ', wishlistEmpty:'ã‚¦ã‚£ãƒƒã‚·ãƒ¥ãƒªã‚¹ãƒˆã¯ç©ºã§ã™', paymentInstructions:'ãŠæ”¯æ‰•ã„æ–¹æ³•', back:'æˆ»ã‚‹', remove:'å‰Šé™¤' },
-  ko: { subtotal:'ì†Œê³„', checkout:'ê²°ì œí•˜ê¸° â†’', viewCart:'ìž¥ë°”êµ¬ë‹ˆ ë³´ê¸°', startShopping:'ì‡¼í•‘ ì‹œìž‘', shippingNote:'ë°°ì†¡ë¹„ ë° í• ì¸ì€ ê²°ì œ ì‹œ ê³„ì‚°ë©ë‹ˆë‹¤', continueShopping:'ì‡¼í•‘ ê³„ì†í•˜ê¸°', cartEmpty:'ìž¥ë°”êµ¬ë‹ˆê°€ ë¹„ì–´ ìžˆìŠµë‹ˆë‹¤', orderSummary:'ì£¼ë¬¸ ìš”ì•½', shipping:'ë°°ì†¡ë¹„', calcAtCheckout:'ê²°ì œ ì‹œ ê³„ì‚°', promo:'í”„ë¡œëª¨', appliedAtCheckout:'ê²°ì œ ì‹œ ì ìš©', total:'í•©ê³„', proceedCheckout:'ê²°ì œ ì§„í–‰ â†’', secureNote:'ðŸ”’ ì•ˆì „í•˜ê³  ë³´í˜¸ëœ ê±°ëž˜', addMoreItems:'ìƒí’ˆ ë” ì¶”ê°€', orderReceived:'ì£¼ë¬¸ì´ ì ‘ìˆ˜ë˜ì—ˆìŠµë‹ˆë‹¤! ðŸŽ‰', thankYou:'ì—ì„œ êµ¬ë§¤í•´ ì£¼ì…”ì„œ ê°ì‚¬í•©ë‹ˆë‹¤', orderNum:'ì£¼ë¬¸ë²ˆí˜¸:', addToCart:'ìž¥ë°”êµ¬ë‹ˆì— ì¶”ê°€', addedToCart:'âœ“ ì¶”ê°€ë˜ì—ˆìŠµë‹ˆë‹¤!', availability:'ìž¬ê³  í˜„í™©', inStock:'ìž¬ê³  ìžˆìŒ', delivery:'ë°°ì†¡', deliveryDays:'2â€“4 ì˜ì—…ì¼', returns:'ë°˜í’ˆ', freeReturns:'30ì¼ ë¬´ë£Œ', yourWishlist:'ìœ„ì‹œë¦¬ìŠ¤íŠ¸', wishlistEmpty:'ìœ„ì‹œë¦¬ìŠ¤íŠ¸ê°€ ë¹„ì–´ ìžˆìŠµë‹ˆë‹¤', paymentInstructions:'ê²°ì œ ì•ˆë‚´', back:'ë’¤ë¡œ', remove:'ì‚­ì œ' },
-  zh: { subtotal:'å°è®¡', checkout:'åŽ»ç»“è´¦ â†’', viewCart:'æŸ¥çœ‹è´­ç‰©è½¦', startShopping:'å¼€å§‹è´­ç‰©', shippingNote:'è¿è´¹å’ŒæŠ˜æ‰£å°†åœ¨ç»“è´¦æ—¶è®¡ç®—', continueShopping:'ç»§ç»­è´­ç‰©', cartEmpty:'æ‚¨çš„è´­ç‰©è½¦æ˜¯ç©ºçš„', orderSummary:'è®¢å•æ‘˜è¦', shipping:'è¿è´¹', calcAtCheckout:'ç»“è´¦æ—¶è®¡ç®—', promo:'ä¼˜æƒ ', appliedAtCheckout:'ç»“è´¦æ—¶åº”ç”¨', total:'æ€»è®¡', proceedCheckout:'åŽ»ä»˜æ¬¾ â†’', secureNote:'ðŸ”’ å®‰å…¨å—ä¿æŠ¤çš„äº¤æ˜“', addMoreItems:'æ·»åŠ æ›´å¤šå•†å“', orderReceived:'è®¢å•å·²æ”¶åˆ°ï¼ ðŸŽ‰', thankYou:'æ„Ÿè°¢æ‚¨åœ¨ä»¥ä¸‹åœ°æ–¹è´­ç‰©ï¼š', orderNum:'è®¢å•å·ï¼š', addToCart:'åŠ å…¥è´­ç‰©è½¦', addedToCart:'âœ“ å·²æ·»åŠ ï¼', availability:'åº“å­˜çŠ¶æ€', inStock:'æœ‰è´§', delivery:'é…é€', deliveryDays:'2â€“4ä¸ªå·¥ä½œæ—¥', returns:'é€€è´§', freeReturns:'30å¤©å…è´¹é€€è´§', yourWishlist:'æˆ‘çš„å¿ƒæ„¿å•', wishlistEmpty:'å¿ƒæ„¿å•æ˜¯ç©ºçš„', paymentInstructions:'ä»˜æ¬¾è¯´æ˜Ž', back:'è¿”å›ž', remove:'åˆ é™¤' },
+  en: { subtotal:'Subtotal', checkout:'Checkout →', viewCart:'View Full Cart', startShopping:'Start Shopping', shippingNote:'Shipping & discounts calculated at checkout', continueShopping:'Continue Shopping', cartEmpty:'Your cart is empty', orderSummary:'Order Summary', shipping:'Shipping', calcAtCheckout:'Calculated at checkout', promo:'Promo', appliedAtCheckout:'Applied at checkout', total:'Total', proceedCheckout:'Proceed to Checkout →', secureNote:'🔒 Secure & protected transaction', addMoreItems:'Add more items', orderReceived:'Order Received! 🎉', thankYou:'Thank you for shopping at', orderNum:'Order #:', addToCart:'Add to Cart', addedToCart:'✓ Added to Cart!', availability:'Availability', inStock:'In Stock', delivery:'Delivery', deliveryDays:'2–4 business days', returns:'Returns', freeReturns:'Free 30-day returns', yourWishlist:'Your Wishlist', wishlistEmpty:'Your wishlist is empty', paymentInstructions:'Payment Instructions', back:'Back', remove:'Remove' },
+  id: { subtotal:'Subtotal', checkout:'Checkout →', viewCart:'Lihat Keranjang', startShopping:'Mulai Belanja', shippingNote:'Ongkos kirim & diskon dihitung saat checkout', continueShopping:'Lanjut Belanja', cartEmpty:'Keranjang Anda kosong', orderSummary:'Ringkasan Pesanan', shipping:'Ongkos Kirim', calcAtCheckout:'Dihitung saat checkout', promo:'Promo', appliedAtCheckout:'Diterapkan saat checkout', total:'Total', proceedCheckout:'Lanjut ke Pembayaran →', secureNote:'🔒 Transaksi aman & terlindungi', addMoreItems:'Tambah produk', orderReceived:'Pesanan Diterima! 🎉', thankYou:'Terima kasih sudah belanja di', orderNum:'No. Pesanan:', addToCart:'Tambah ke Keranjang', addedToCart:'✓ Ditambahkan!', availability:'Ketersediaan', inStock:'Tersedia', delivery:'Pengiriman', deliveryDays:'2–4 hari kerja', returns:'Pengembalian', freeReturns:'Gratis 30 hari', yourWishlist:'Wishlist Saya', wishlistEmpty:'Wishlist Anda kosong', paymentInstructions:'Instruksi Pembayaran', back:'Kembali', remove:'Hapus' },
+  es: { subtotal:'Subtotal', checkout:'Pagar →', viewCart:'Ver Carrito', startShopping:'Empezar a Comprar', shippingNote:'Envío y descuentos calculados al pagar', continueShopping:'Seguir Comprando', cartEmpty:'Tu carrito está vacío', orderSummary:'Resumen del Pedido', shipping:'Envío', calcAtCheckout:'Calculado al pagar', promo:'Promo', appliedAtCheckout:'Aplicado al pagar', total:'Total', proceedCheckout:'Proceder al Pago →', secureNote:'🔒 Transacción segura y protegida', addMoreItems:'Agregar más productos', orderReceived:'¡Pedido Recibido! 🎉', thankYou:'Gracias por comprar en', orderNum:'Pedido #:', addToCart:'Agregar al Carrito', addedToCart:'✓ ¡Agregado!', availability:'Disponibilidad', inStock:'En Stock', delivery:'Entrega', deliveryDays:'2–4 días hábiles', returns:'Devoluciones', freeReturns:'30 días gratis', yourWishlist:'Tu Lista de Deseos', wishlistEmpty:'Tu lista de deseos está vacía', paymentInstructions:'Instrucciones de Pago', back:'Volver', remove:'Eliminar' },
+  fr: { subtotal:'Sous-total', checkout:'Commander →', viewCart:'Voir le Panier', startShopping:'Commencer les Achats', shippingNote:'Livraison & réductions calculées à la caisse', continueShopping:'Continuer les Achats', cartEmpty:'Votre panier est vide', orderSummary:'Récapitulatif de la Commande', shipping:'Livraison', calcAtCheckout:'Calculé à la caisse', promo:'Promo', appliedAtCheckout:'Appliqué à la caisse', total:'Total', proceedCheckout:'Procéder au Paiement →', secureNote:'🔒 Transaction sécurisée', addMoreItems:'Ajouter des articles', orderReceived:'Commande Reçue ! 🎉', thankYou:'Merci de votre achat chez', orderNum:'Commande n° :', addToCart:'Ajouter au Panier', addedToCart:'✓ Ajouté !', availability:'Disponibilité', inStock:'En Stock', delivery:'Livraison', deliveryDays:'2–4 jours ouvrés', returns:'Retours', freeReturns:'30 jours gratuits', yourWishlist:'Ma Liste de Souhaits', wishlistEmpty:'Votre liste est vide', paymentInstructions:'Instructions de Paiement', back:'Retour', remove:'Supprimer' },
+  de: { subtotal:'Zwischensumme', checkout:'Zur Kasse →', viewCart:'Warenkorb anzeigen', startShopping:'Einkaufen', shippingNote:'Versand & Rabatte werden an der Kasse berechnet', continueShopping:'Weiter Einkaufen', cartEmpty:'Ihr Warenkorb ist leer', orderSummary:'Bestellübersicht', shipping:'Versand', calcAtCheckout:'An der Kasse berechnet', promo:'Promo', appliedAtCheckout:'An der Kasse angewendet', total:'Gesamt', proceedCheckout:'Zur Kasse →', secureNote:'🔒 Sichere & geschützte Transaktion', addMoreItems:'Mehr Artikel hinzufügen', orderReceived:'Bestellung eingegangen! 🎉', thankYou:'Vielen Dank für Ihren Einkauf bei', orderNum:'Bestellung Nr.:', addToCart:'In den Warenkorb', addedToCart:'✓ Hinzugefügt!', availability:'Verfügbarkeit', inStock:'Auf Lager', delivery:'Lieferung', deliveryDays:'2–4 Werktage', returns:'Rückgabe', freeReturns:'30 Tage kostenlos', yourWishlist:'Meine Wunschliste', wishlistEmpty:'Ihre Wunschliste ist leer', paymentInstructions:'Zahlungsanweisungen', back:'Zurück', remove:'Entfernen' },
+  ja: { subtotal:'小計', checkout:'購入手続きへ →', viewCart:'カートを見る', startShopping:'買い物を始める', shippingNote:'送料・割引はチェックアウト時に計算されます', continueShopping:'買い物を続ける', cartEmpty:'カートは空です', orderSummary:'注文サマリー', shipping:'配送料', calcAtCheckout:'チェックアウト時に計算', promo:'プロモ', appliedAtCheckout:'チェックアウト時に適用', total:'合計', proceedCheckout:'お支払いへ →', secureNote:'🔒 安全・保護された取引', addMoreItems:'商品を追加', orderReceived:'ご注文を受け付けました！ 🎉', thankYou:'でのお買い物ありがとうございます', orderNum:'注文番号：', addToCart:'カートに追加', addedToCart:'✓ 追加しました！', availability:'在庫状況', inStock:'在庫あり', delivery:'配送', deliveryDays:'2〜4営業日', returns:'返品', freeReturns:'30日間無料', yourWishlist:'ウィッシュリスト', wishlistEmpty:'ウィッシュリストは空です', paymentInstructions:'お支払い方法', back:'戻る', remove:'削除' },
+  ko: { subtotal:'소계', checkout:'결제하기 →', viewCart:'장바구니 보기', startShopping:'쇼핑 시작', shippingNote:'배송비 및 할인은 결제 시 계산됩니다', continueShopping:'쇼핑 계속하기', cartEmpty:'장바구니가 비어 있습니다', orderSummary:'주문 요약', shipping:'배송비', calcAtCheckout:'결제 시 계산', promo:'프로모', appliedAtCheckout:'결제 시 적용', total:'합계', proceedCheckout:'결제 진행 →', secureNote:'🔒 안전하고 보호된 거래', addMoreItems:'상품 더 추가', orderReceived:'주문이 접수되었습니다! 🎉', thankYou:'에서 구매해 주셔서 감사합니다', orderNum:'주문번호:', addToCart:'장바구니에 추가', addedToCart:'✓ 추가되었습니다!', availability:'재고 현황', inStock:'재고 있음', delivery:'배송', deliveryDays:'2–4 영업일', returns:'반품', freeReturns:'30일 무료', yourWishlist:'위시리스트', wishlistEmpty:'위시리스트가 비어 있습니다', paymentInstructions:'결제 안내', back:'뒤로', remove:'삭제' },
+  zh: { subtotal:'小计', checkout:'去结账 →', viewCart:'查看购物车', startShopping:'开始购物', shippingNote:'运费和折扣将在结账时计算', continueShopping:'继续购物', cartEmpty:'您的购物车是空的', orderSummary:'订单摘要', shipping:'运费', calcAtCheckout:'结账时计算', promo:'优惠', appliedAtCheckout:'结账时应用', total:'总计', proceedCheckout:'去付款 →', secureNote:'🔒 安全受保护的交易', addMoreItems:'添加更多商品', orderReceived:'订单已收到！ 🎉', thankYou:'感谢您在以下地方购物：', orderNum:'订单号：', addToCart:'加入购物车', addedToCart:'✓ 已添加！', availability:'库存状态', inStock:'有货', delivery:'配送', deliveryDays:'2–4个工作日', returns:'退货', freeReturns:'30天免费退货', yourWishlist:'我的心愿单', wishlistEmpty:'心愿单是空的', paymentInstructions:'付款说明', back:'返回', remove:'删除' },
 };
 
 const LANG_CODE_MAP: Record<string, string> = {
-  'English': 'en', 'Bahasa Indonesia': 'id', 'EspaÃ±ol': 'es',
-  'FranÃ§ais': 'fr', 'Deutsch': 'de', 'æ—¥æœ¬èªž': 'ja', 'í•œêµ­ì–´': 'ko', 'ä¸­æ–‡': 'zh',
+  'English': 'en', 'Bahasa Indonesia': 'id', 'Español': 'es',
+  'Français': 'fr', 'Deutsch': 'de', '日本語': 'ja', '한국어': 'ko', '中文': 'zh',
 };
 
 interface StoreFlags {
@@ -88,7 +88,7 @@ const EN_FLAGS: StoreFlags = { showWishlist: true, showReviews: true, uiT: UI_T.
 const StoreFlagsCtx = React.createContext<StoreFlags>(EN_FLAGS);
 const useStoreFlags = () => React.useContext(StoreFlagsCtx);
 
-// â”€â”€ Emoji â†’ Lucide icon mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Emoji → Lucide icon mapping ───────────────────────────────────────────────
 // Maps the emoji strings Claude generates in features/trustBadges/stats
 // to crisp SVG Lucide icons. Falls back to emoji text if no match found.
 
@@ -96,61 +96,61 @@ type LucideComp = React.ComponentType<{ size?: number; color?: string; strokeWid
 
 const EMOJI_ICON_MAP: Record<string, LucideComp> = {
   // Tools & Build
-  'ðŸ”§': Wrench,   'ðŸ”©': Wrench,   'âš™ï¸': Settings,  'ðŸ› ï¸': Hammer,   'ðŸª›': Wrench,
+  '🔧': Wrench,   '🔩': Wrench,   '⚙️': Settings,  '🛠️': Hammer,   '🪛': Wrench,
   // Shipping & Delivery
-  'ðŸšš': Truck,    'ðŸš›': Truck,    'ðŸ“¦': Package,   'ðŸšœ': Truck,
+  '🚚': Truck,    '🚛': Truck,    '📦': Package,   '🚜': Truck,
   // Security & Trust
-  'ðŸ›¡ï¸': Shield,  'ðŸ”’': Lock,     'ðŸ”': Lock,      'âœ…': ShieldCheck, 'ðŸ”“': ShieldCheck,
+  '🛡️': Shield,  '🔒': Lock,     '🔐': Lock,      '✅': ShieldCheck, '🔓': ShieldCheck,
   // Quality & Awards
-  'â­': Star,     'ðŸŒŸ': Star,     'ðŸ†': Trophy,    'ðŸ¥‡': Medal,     'ðŸŽ–ï¸': Award,    'ðŸ…': Award,
+  '⭐': Star,     '🌟': Star,     '🏆': Trophy,    '🥇': Medal,     '🎖️': Award,    '🏅': Award,
   // Nature & Organic
-  'ðŸŒ¿': Leaf,     'ðŸŒ±': Sprout,   'ðŸƒ': Leaf,      'ðŸŒ¾': Wheat,     'ðŸŒ²': Trees,    'ðŸŒ³': Trees,
-  'ðŸŒ»': Sun,      'ðŸŒº': Flower2,  'ðŸŒ¸': Flower2,
+  '🌿': Leaf,     '🌱': Sprout,   '🍃': Leaf,      '🌾': Wheat,     '🌲': Trees,    '🌳': Trees,
+  '🌻': Sun,      '🌺': Flower2,  '🌸': Flower2,
   // Energy & Performance
-  'âš¡': Zap,      'ðŸ”‹': Battery,  'ðŸš€': Rocket,    'ðŸ”¥': Flame,
+  '⚡': Zap,      '🔋': Battery,  '🚀': Rocket,    '🔥': Flame,
   // Money & Finance
-  'ðŸ’°': Coins,    'ðŸ’µ': DollarSign, 'ðŸ’³': CreditCard, 'ðŸ’´': Banknote, 'ðŸ’¶': Banknote,
+  '💰': Coins,    '💵': DollarSign, '💳': CreditCard, '💴': Banknote, '💶': Banknote,
   // Data & Analytics
-  'ðŸ“ˆ': TrendingUp, 'ðŸ“Š': BarChart2, 'ðŸŽ¯': Target,
+  '📈': TrendingUp, '📊': BarChart2, '🎯': Target,
   // Communication
-  'ðŸ’¬': MessageCircle, 'ðŸ“ž': Phone, 'â˜Žï¸': Phone, 'âœ‰ï¸': Mail, 'ðŸ“§': Mail, 'ðŸ“¢': Mic,
+  '💬': MessageCircle, '📞': Phone, '☎️': Phone, '✉️': Mail, '📧': Mail, '📢': Mic,
   // Time
-  'â°': Clock,    'ðŸ•': Clock,    'âŒš': Watch,     'â±ï¸': Timer,
+  '⏰': Clock,    '🕐': Clock,    '⌚': Watch,     '⏱️': Timer,
   // Technology
-  'ðŸ“±': Smartphone, 'ðŸ’»': Laptop, 'ðŸ–¥ï¸': Monitor,  'ðŸ“º': Tv,       'ðŸ“·': Camera,   'ðŸŽ¬': Video,
-  'ðŸŽ§': Headphones, 'ðŸŽ¤': Mic,    'ðŸ“»': Radio,
+  '📱': Smartphone, '💻': Laptop, '🖥️': Monitor,  '📺': Tv,       '📷': Camera,   '🎬': Video,
+  '🎧': Headphones, '🎤': Mic,    '📻': Radio,
   // Creative & Design
-  'ðŸŽ¨': Palette,  'ðŸ’¡': Lightbulb, 'âœ¨': Sparkles, 'ðŸª„': Wand2,   'ðŸ–Œï¸': Paintbrush, 'âœï¸': PenTool,
-  'âœ‚ï¸': Scissors, 'ðŸª¶': Feather,
+  '🎨': Palette,  '💡': Lightbulb, '✨': Sparkles, '🪄': Wand2,   '🖌️': Paintbrush, '✏️': PenTool,
+  '✂️': Scissors, '🪶': Feather,
   // Love & Wellness
-  'â¤ï¸': Heart,   'ðŸ’™': Heart,    'ðŸ’š': Heart,    'ðŸ’œ': Heart,    'ðŸ§¡': Heart,    'ðŸ¤': Heart,
-  'ðŸ˜Š': Smile,   'ðŸ˜': Heart,    'ðŸ§˜': Activity,  'ðŸ‹ï¸': Dumbbell, 'ðŸ’ª': Dumbbell,
+  '❤️': Heart,   '💙': Heart,    '💚': Heart,    '💜': Heart,    '🧡': Heart,    '🤍': Heart,
+  '😊': Smile,   '😍': Heart,    '🧘': Activity,  '🏋️': Dumbbell, '💪': Dumbbell,
   // People & Social
-  'ðŸ‘¤': User,    'ðŸ‘¥': Users,    'ðŸ¤': Handshake, 'ðŸ‘': ThumbsUp,
+  '👤': User,    '👥': Users,    '🤝': Handshake, '👍': ThumbsUp,
   // Navigation & Location
-  'ðŸŒ': Globe,   'ðŸŒŽ': Globe,    'ðŸŒ': Globe2,   'ðŸ“': MapPin,   'ðŸ—ºï¸': Map,
-  'ðŸ§­': Compass,
+  '🌍': Globe,   '🌎': Globe,    '🌏': Globe2,   '📍': MapPin,   '🗺️': Map,
+  '🧭': Compass,
   // Home & Life
-  'ðŸ ': Home,    'ðŸ¡': Home,     'ðŸ—ï¸': Building, 'ðŸª': StoreIcon,
+  '🏠': Home,    '🏡': Home,     '🏗️': Building, '🏪': StoreIcon,
   // Transport
-  'ðŸš—': Car,     'ðŸš™': Car,      'âœˆï¸': Plane,    'ðŸš¢': Ship,     'âš“': Anchor,
-  'ðŸšŒ': Bus,     'ðŸš²': Bike,
+  '🚗': Car,     '🚙': Car,      '✈️': Plane,    '🚢': Ship,     '⚓': Anchor,
+  '🚌': Bus,     '🚲': Bike,
   // Weather & Nature elements
-  'ðŸŒ™': Moon,    'â˜€ï¸': Sun,      'â„ï¸': Snowflake, 'ðŸ’§': Droplets, 'ðŸŒŠ': Waves,
-  'ðŸ’¨': Wind,    'ðŸŒ¡ï¸': Thermometer, 'â›°ï¸': Mountain,
+  '🌙': Moon,    '☀️': Sun,      '❄️': Snowflake, '💧': Droplets, '🌊': Waves,
+  '💨': Wind,    '🌡️': Thermometer, '⛰️': Mountain,
   // Music & Entertainment
-  'ðŸŽµ': Music,   'ðŸŽ¶': Music2,   'ðŸŽ¸': Music,    'ðŸ¥': Music2,
+  '🎵': Music,   '🎶': Music2,   '🎸': Music,    '🥁': Music2,
   // Food & Drink
-  'â˜•': Coffee,  'ðŸµ': Coffee,   'ðŸ½ï¸': Utensils, 'ðŸ´': Utensils,
+  '☕': Coffee,  '🍵': Coffee,   '🍽️': Utensils, '🍴': Utensils,
   // Luxury & Special
-  'ðŸ’Ž': Gem,     'ðŸ‘‘': Crown,    'ðŸŽ': Gift,     'ðŸŽ‰': Sparkles,
+  '💎': Gem,     '👑': Crown,    '🎁': Gift,     '🎉': Sparkles,
   // Knowledge & Education
-  'ðŸ“š': BookOpen, 'ðŸ“–': BookOpen, 'ðŸŽ“': GraduationCap, 'ðŸ§ ': Brain,
+  '📚': BookOpen, '📖': BookOpen, '🎓': GraduationCap, '🧠': Brain,
   // Misc utility
-  'ðŸ”‘': Key,     'ðŸ—ï¸': Key,     'ðŸ””': Bell,     'ðŸ“‹': ClipboardList, 'ðŸ“„': FileText,
-  'ðŸ”„': RefreshCw, 'â“': HelpCircle, 'â—': AlertCircle, 'ðŸ“': Ruler,
-  'ðŸ§®': Calculator, 'ðŸ—‚ï¸': Layers, 'ðŸ’¼': Briefcase, 'ðŸ§³': Briefcase,
-  'ðŸ”­': Compass, 'ðŸ§ª': Activity,
+  '🔑': Key,     '🗝️': Key,     '🔔': Bell,     '📋': ClipboardList, '📄': FileText,
+  '🔄': RefreshCw, '❓': HelpCircle, '❗': AlertCircle, '📏': Ruler,
+  '🧮': Calculator, '🗂️': Layers, '💼': Briefcase, '🧳': Briefcase,
+  '🔭': Compass, '🧪': Activity,
 };
 
 /**
@@ -171,7 +171,7 @@ function EmojiIcon({
   className?: string;
 }) {
   // Normalize: trim + strip variation selectors (U+FE0F etc.)
-  const key = emoji?.trim().replace(/[ï¸Žï¸]/g, '') ?? '';
+  const key = emoji?.trim().replace(/[︎️]/g, '') ?? '';
   const LucideIcon = EMOJI_ICON_MAP[key] ?? EMOJI_ICON_MAP[emoji?.trim() ?? ''];
   if (LucideIcon) {
     return <LucideIcon size={size} color={color} strokeWidth={strokeWidth} className={className} />;
@@ -180,7 +180,7 @@ function EmojiIcon({
   return <span className={className} style={{ fontSize: `${size}px`, lineHeight: 1 }}>{emoji}</span>;
 }
 
-// â”€â”€ Canvas editor: inline contenteditable text helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Canvas editor: inline contenteditable text helper ────────────────────────
 // Renders a <span contentEditable> in edit mode, plain text fragment otherwise.
 // Uses a callback ref so external value syncs to DOM without disrupting cursor.
 
@@ -240,7 +240,7 @@ interface LayoutProps {
   onAddToCart: (p: RichProduct, sourceRect?: DOMRect) => void;
   onCartClick: () => void;
   cartCount: number;
-  /** Pre-bound price formatter â€” call fmtPrice(amount) to get locale-correct string */
+  /** Pre-bound price formatter — call fmtPrice(amount) to get locale-correct string */
   fmtPrice: (amount: number) => string;
   onUserClick: () => void;
   buyerEmail: string | null;
@@ -248,12 +248,12 @@ interface LayoutProps {
   wishlist: Set<string>;
   onToggleWishlist: (id: string) => void;
   onWishlistClick: () => void;
-  // Canvas editor â€” optional; only set when CanvasShell is active
+  // Canvas editor — optional; only set when CanvasShell is active
   editMode?: boolean;
   onFieldChange?: (field: string, value: string) => void;
 }
 
-// â”€â”€ Cart toast popup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Cart toast popup ─────────────────────────────────────────────────────────
 
 interface CartToastItem {
   id: string;
@@ -341,7 +341,7 @@ function CartToast({ item, primaryColor, fmtPrice, onClose, onViewCart, previewS
   return toast;
 }
 
-// â”€â”€ Cart fly animation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Cart fly animation ────────────────────────────────────────────────────────
 
 interface FlyItem {
   id: string;
@@ -352,7 +352,7 @@ interface FlyItem {
   image?: string;
 }
 
-/** Pixels per second â€” keep this constant so speed looks uniform at any distance */
+/** Pixels per second — keep this constant so speed looks uniform at any distance */
 const FLY_SPEED = 900; // px/s
 const FLY_MIN   = 0.3; // s
 const FLY_MAX   = 1.1; // s
@@ -371,7 +371,7 @@ function FlyingDot({ item, primaryColor, containerEl }: {
     return () => cancelAnimationFrame(raf1);
   }, []);
 
-  // Convert viewport coords â†’ container-relative coords so the dot stays
+  // Convert viewport coords → container-relative coords so the dot stays
   // inside the preview frame and is clipped by its overflow:hidden.
   const containerRect = containerEl?.getBoundingClientRect();
   const ox = containerRect?.left ?? 0;
@@ -386,7 +386,7 @@ function FlyingDot({ item, primaryColor, containerEl }: {
   const srcX = item.startX - ox;
   const srcY = item.startY - oy;
 
-  // Duration proportional to distance â†’ constant apparent speed
+  // Duration proportional to distance → constant apparent speed
   const dx = targetX - srcX;
   const dy = targetY - srcY;
   const dist = Math.sqrt(dx * dx + dy * dy);
@@ -443,7 +443,7 @@ function FlyingDot({ item, primaryColor, containerEl }: {
   return createPortal(dot, containerEl);
 }
 
-// â”€â”€ Cart fly source rect helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Cart fly source rect helper ───────────────────────────────────────────────
 // Given a button element inside a product card, finds the product image element
 // and returns its bounding rect (preserving the real image shape/aspect ratio).
 // Falls back to the card image container, then the button itself.
@@ -458,7 +458,7 @@ function getProductImgRect(btn: HTMLElement): DOMRect {
   return btn.getBoundingClientRect();
 }
 
-// â”€â”€ Image fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Image fallback ────────────────────────────────────────────────────────────
 
 const PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='3'%3E%3Crect width='4' height='3' fill='%23f1f5f9'/%3E%3C/svg%3E";
 
@@ -489,7 +489,7 @@ function ProductImg({ src, alt, className, style, fallback }: { src?: string; al
   );
 }
 
-// â”€â”€ Utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Utilities ─────────────────────────────────────────────────────────────────
 
 function isDark(hex: string): boolean {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -519,7 +519,7 @@ function gridCols(device: DeviceMode) {
   return device === 'mobile' ? 'grid-cols-2' : device === 'tablet' ? 'grid-cols-3' : 'grid-cols-4';
 }
 
-// â”€â”€ Theme helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Theme helpers ─────────────────────────────────────────────────────────────
 
 function getLayoutFont(style?: string): string {
   switch (style) {
@@ -679,7 +679,7 @@ function getCommerceTheme(primaryColor: string, layoutStyle?: string): CommerceT
   return { ...base, primary: pc, primaryContrast: contrast };
 }
 
-// â”€â”€ Shared interactive pages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Shared interactive pages ──────────────────────────────────────────────────
 
 function ProductDetailPage({ product, primaryColor, storeName, device, onBack, onAddToCart, onCartClick, cartCount, fmtPrice, layoutStyle }: {
   product: RichProduct; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
@@ -721,12 +721,12 @@ function ProductDetailPage({ product, primaryColor, storeName, device, onBack, o
           </div>
           <div data-reviews-section="" className="flex items-center gap-1.5">
             {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
-            <span className="text-sm ml-1" style={{ color: t.textMuted }}>(4.8) Â· 124 reviews</span>
+            <span className="text-sm ml-1" style={{ color: t.textMuted }}>(4.8) · 124 reviews</span>
           </div>
           <p className="text-sm leading-relaxed" style={{ color: t.textSecondary }}>{product.description || 'Premium quality product crafted with care and precision.'}</p>
           <div className="flex items-center gap-3 mt-2">
             <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.surfaceBorder}`, borderRadius: t.inputRadius }}>
-              <button onClick={() => setQty(q => Math.max(1, q - 1))} className="w-11 h-11 flex items-center justify-center text-lg font-bold transition-colors" style={{ color: t.textSecondary }}>âˆ’</button>
+              <button onClick={() => setQty(q => Math.max(1, q - 1))} className="w-11 h-11 flex items-center justify-center text-lg font-bold transition-colors" style={{ color: t.textSecondary }}>−</button>
               <span className="w-10 text-center text-sm font-bold" style={{ color: t.textPrimary }}>{qty}</span>
               <button onClick={() => setQty(q => q + 1)} className="w-11 h-11 flex items-center justify-center text-lg font-bold transition-colors" style={{ color: t.textSecondary }}>+</button>
             </div>
@@ -745,7 +745,7 @@ function ProductDetailPage({ product, primaryColor, storeName, device, onBack, o
   );
 }
 
-// â”€â”€ Cart Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Cart Sidebar ──────────────────────────────────────────────────────────────
 function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart, onCheckout, onUpdateQty, layoutStyle, editMode, previewShell }: {
   cart: CartItem[]; primaryColor: string; fmtPrice: (n: number) => string;
   device: DeviceMode; layoutStyle?: string; editMode?: boolean; previewShell?: boolean;
@@ -758,10 +758,10 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
   const isMobile = device === 'mobile';
 
   // Always position:fixed.
-  // previewShell/editMode â†’ NOT portaled; transform:translateZ(0) on the frame
+  // previewShell/editMode → NOT portaled; transform:translateZ(0) on the frame
   //   container contains the fixed element inside the frame (not real viewport).
-  //   height:'100%' on a fixed element in a transformed ancestor = frame height â†’ sticky CTA âœ“
-  // live store â†’ portaled to body; fixed to real viewport.
+  //   height:'100%' on a fixed element in a transformed ancestor = frame height → sticky CTA ✓
+  // live store → portaled to body; fixed to real viewport.
   const isContained = editMode || previewShell;
   const pos = 'fixed';
   const h   = '100%';
@@ -838,7 +838,7 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
                 <p className="text-xs font-bold mt-0.5" style={{ color: t.primary }}>{fmtPrice(p.price)}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.surfaceBorder}`, borderRadius: '6px' }}>
-                    <button onClick={() => onUpdateQty(p.id, -1)} className="w-6 h-6 flex items-center justify-center text-sm font-medium" style={{ color: t.textSecondary }}>âˆ’</button>
+                    <button onClick={() => onUpdateQty(p.id, -1)} className="w-6 h-6 flex items-center justify-center text-sm font-medium" style={{ color: t.textSecondary }}>−</button>
                     <span className="w-6 text-center text-xs font-bold" style={{ color: t.textPrimary }}>{qty}</span>
                     <button onClick={() => onUpdateQty(p.id, 1)} className="w-6 h-6 flex items-center justify-center text-sm font-medium" style={{ color: t.textSecondary }}>+</button>
                   </div>
@@ -896,7 +896,7 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
   );
 
   // Live store: portal to body so position:fixed is relative to the real viewport (sticky).
-  // In editMode/previewShell: render inline â€” position:absolute clipped inside the frame.
+  // In editMode/previewShell: render inline — position:absolute clipped inside the frame.
   if (!isContained) {
     if (typeof document === 'undefined') return null;
     return createPortal(content, document.body);
@@ -961,7 +961,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
                         </button>
                       </div>
                       <div className="flex items-center overflow-hidden mt-2" style={{ border: `1px solid ${t.surfaceBorder}`, borderRadius: '8px' }}>
-                        <button onClick={() => onUpdateQty(p.id, -1)} className="w-8 h-8 flex items-center justify-center text-base font-medium" style={{ color: t.textSecondary }}>âˆ’</button>
+                        <button onClick={() => onUpdateQty(p.id, -1)} className="w-8 h-8 flex items-center justify-center text-base font-medium" style={{ color: t.textSecondary }}>−</button>
                         <span className="w-8 text-center text-xs font-bold" style={{ color: t.textPrimary }}>{qty}</span>
                         <button onClick={() => onUpdateQty(p.id, 1)} className="w-8 h-8 flex items-center justify-center text-base font-medium" style={{ color: t.textSecondary }}>+</button>
                       </div>
@@ -1020,84 +1020,84 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
 
 const INDONESIAN_PROVINCES = ['Aceh','Bali','Banten','Bengkulu','DI Yogyakarta','DKI Jakarta','Gorontalo','Jambi','Jawa Barat','Jawa Tengah','Jawa Timur','Kalimantan Barat','Kalimantan Selatan','Kalimantan Tengah','Kalimantan Timur','Kalimantan Utara','Kepulauan Bangka Belitung','Kepulauan Riau','Lampung','Maluku','Maluku Utara','Nusa Tenggara Barat','Nusa Tenggara Timur','Papua','Papua Barat','Riau','Sulawesi Barat','Sulawesi Selatan','Sulawesi Tengah','Sulawesi Tenggara','Sulawesi Utara','Sumatera Barat','Sumatera Selatan','Sumatera Utara'];
 
-const PAYMENT_ICONS: Record<string, string> = { bank_transfer: 'ðŸ¦', qris: 'ðŸ“±', cod: 'ðŸ’µ', ewallet: 'ðŸ‘›', gopay: 'ðŸŸ¢', ovo: 'ðŸŸ£', dana: 'ðŸ”µ' };
+const PAYMENT_ICONS: Record<string, string> = { bank_transfer: '🏦', qris: '📱', cod: '💵', ewallet: '👛', gopay: '🟢', ovo: '🟣', dana: '🔵' };
 
-// â”€â”€ Country codes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Country codes ─────────────────────────────────────────────────────────────
 const COUNTRY_CODES: { code: string; name: string; dial: string; flag: string }[] = [
-  { code: 'ID', name: 'Indonesia',         dial: '62',  flag: 'ðŸ‡®ðŸ‡©' },
-  { code: 'MY', name: 'Malaysia',          dial: '60',  flag: 'ðŸ‡²ðŸ‡¾' },
-  { code: 'SG', name: 'Singapore',         dial: '65',  flag: 'ðŸ‡¸ðŸ‡¬' },
-  { code: 'PH', name: 'Philippines',       dial: '63',  flag: 'ðŸ‡µðŸ‡­' },
-  { code: 'TH', name: 'Thailand',          dial: '66',  flag: 'ðŸ‡¹ðŸ‡­' },
-  { code: 'VN', name: 'Vietnam',           dial: '84',  flag: 'ðŸ‡»ðŸ‡³' },
-  { code: 'MM', name: 'Myanmar',           dial: '95',  flag: 'ðŸ‡²ðŸ‡²' },
-  { code: 'KH', name: 'Cambodia',          dial: '855', flag: 'ðŸ‡°ðŸ‡­' },
-  { code: 'BN', name: 'Brunei',            dial: '673', flag: 'ðŸ‡§ðŸ‡³' },
-  { code: 'LA', name: 'Laos',              dial: '856', flag: 'ðŸ‡±ðŸ‡¦' },
-  { code: 'TL', name: 'Timor-Leste',       dial: '670', flag: 'ðŸ‡¹ðŸ‡±' },
-  { code: 'JP', name: 'Japan',             dial: '81',  flag: 'ðŸ‡¯ðŸ‡µ' },
-  { code: 'KR', name: 'South Korea',       dial: '82',  flag: 'ðŸ‡°ðŸ‡·' },
-  { code: 'CN', name: 'China',             dial: '86',  flag: 'ðŸ‡¨ðŸ‡³' },
-  { code: 'HK', name: 'Hong Kong',         dial: '852', flag: 'ðŸ‡­ðŸ‡°' },
-  { code: 'TW', name: 'Taiwan',            dial: '886', flag: 'ðŸ‡¹ðŸ‡¼' },
-  { code: 'IN', name: 'India',             dial: '91',  flag: 'ðŸ‡®ðŸ‡³' },
-  { code: 'PK', name: 'Pakistan',          dial: '92',  flag: 'ðŸ‡µðŸ‡°' },
-  { code: 'BD', name: 'Bangladesh',        dial: '880', flag: 'ðŸ‡§ðŸ‡©' },
-  { code: 'LK', name: 'Sri Lanka',         dial: '94',  flag: 'ðŸ‡±ðŸ‡°' },
-  { code: 'NP', name: 'Nepal',             dial: '977', flag: 'ðŸ‡³ðŸ‡µ' },
-  { code: 'AU', name: 'Australia',         dial: '61',  flag: 'ðŸ‡¦ðŸ‡º' },
-  { code: 'NZ', name: 'New Zealand',       dial: '64',  flag: 'ðŸ‡³ðŸ‡¿' },
-  { code: 'US', name: 'United States',     dial: '1',   flag: 'ðŸ‡ºðŸ‡¸' },
-  { code: 'CA', name: 'Canada',            dial: '1',   flag: 'ðŸ‡¨ðŸ‡¦' },
-  { code: 'GB', name: 'United Kingdom',    dial: '44',  flag: 'ðŸ‡¬ðŸ‡§' },
-  { code: 'IE', name: 'Ireland',           dial: '353', flag: 'ðŸ‡®ðŸ‡ª' },
-  { code: 'DE', name: 'Germany',           dial: '49',  flag: 'ðŸ‡©ðŸ‡ª' },
-  { code: 'FR', name: 'France',            dial: '33',  flag: 'ðŸ‡«ðŸ‡·' },
-  { code: 'IT', name: 'Italy',             dial: '39',  flag: 'ðŸ‡®ðŸ‡¹' },
-  { code: 'ES', name: 'Spain',             dial: '34',  flag: 'ðŸ‡ªðŸ‡¸' },
-  { code: 'PT', name: 'Portugal',          dial: '351', flag: 'ðŸ‡µðŸ‡¹' },
-  { code: 'NL', name: 'Netherlands',       dial: '31',  flag: 'ðŸ‡³ðŸ‡±' },
-  { code: 'BE', name: 'Belgium',           dial: '32',  flag: 'ðŸ‡§ðŸ‡ª' },
-  { code: 'CH', name: 'Switzerland',       dial: '41',  flag: 'ðŸ‡¨ðŸ‡­' },
-  { code: 'AT', name: 'Austria',           dial: '43',  flag: 'ðŸ‡¦ðŸ‡¹' },
-  { code: 'SE', name: 'Sweden',            dial: '46',  flag: 'ðŸ‡¸ðŸ‡ª' },
-  { code: 'NO', name: 'Norway',            dial: '47',  flag: 'ðŸ‡³ðŸ‡´' },
-  { code: 'DK', name: 'Denmark',           dial: '45',  flag: 'ðŸ‡©ðŸ‡°' },
-  { code: 'FI', name: 'Finland',           dial: '358', flag: 'ðŸ‡«ðŸ‡®' },
-  { code: 'PL', name: 'Poland',            dial: '48',  flag: 'ðŸ‡µðŸ‡±' },
-  { code: 'CZ', name: 'Czech Republic',    dial: '420', flag: 'ðŸ‡¨ðŸ‡¿' },
-  { code: 'HU', name: 'Hungary',           dial: '36',  flag: 'ðŸ‡­ðŸ‡º' },
-  { code: 'RO', name: 'Romania',           dial: '40',  flag: 'ðŸ‡·ðŸ‡´' },
-  { code: 'GR', name: 'Greece',            dial: '30',  flag: 'ðŸ‡¬ðŸ‡·' },
-  { code: 'RU', name: 'Russia',            dial: '7',   flag: 'ðŸ‡·ðŸ‡º' },
-  { code: 'UA', name: 'Ukraine',           dial: '380', flag: 'ðŸ‡ºðŸ‡¦' },
-  { code: 'TR', name: 'Turkey',            dial: '90',  flag: 'ðŸ‡¹ðŸ‡·' },
-  { code: 'SA', name: 'Saudi Arabia',      dial: '966', flag: 'ðŸ‡¸ðŸ‡¦' },
-  { code: 'AE', name: 'UAE',               dial: '971', flag: 'ðŸ‡¦ðŸ‡ª' },
-  { code: 'QA', name: 'Qatar',             dial: '974', flag: 'ðŸ‡¶ðŸ‡¦' },
-  { code: 'KW', name: 'Kuwait',            dial: '965', flag: 'ðŸ‡°ðŸ‡¼' },
-  { code: 'BH', name: 'Bahrain',           dial: '973', flag: 'ðŸ‡§ðŸ‡­' },
-  { code: 'OM', name: 'Oman',              dial: '968', flag: 'ðŸ‡´ðŸ‡²' },
-  { code: 'JO', name: 'Jordan',            dial: '962', flag: 'ðŸ‡¯ðŸ‡´' },
-  { code: 'LB', name: 'Lebanon',           dial: '961', flag: 'ðŸ‡±ðŸ‡§' },
-  { code: 'IL', name: 'Israel',            dial: '972', flag: 'ðŸ‡®ðŸ‡±' },
-  { code: 'IR', name: 'Iran',              dial: '98',  flag: 'ðŸ‡®ðŸ‡·' },
-  { code: 'IQ', name: 'Iraq',              dial: '964', flag: 'ðŸ‡®ðŸ‡¶' },
-  { code: 'EG', name: 'Egypt',             dial: '20',  flag: 'ðŸ‡ªðŸ‡¬' },
-  { code: 'ZA', name: 'South Africa',      dial: '27',  flag: 'ðŸ‡¿ðŸ‡¦' },
-  { code: 'NG', name: 'Nigeria',           dial: '234', flag: 'ðŸ‡³ðŸ‡¬' },
-  { code: 'KE', name: 'Kenya',             dial: '254', flag: 'ðŸ‡°ðŸ‡ª' },
-  { code: 'GH', name: 'Ghana',             dial: '233', flag: 'ðŸ‡¬ðŸ‡­' },
-  { code: 'TZ', name: 'Tanzania',          dial: '255', flag: 'ðŸ‡¹ðŸ‡¿' },
-  { code: 'ET', name: 'Ethiopia',          dial: '251', flag: 'ðŸ‡ªðŸ‡¹' },
-  { code: 'UG', name: 'Uganda',            dial: '256', flag: 'ðŸ‡ºðŸ‡¬' },
-  { code: 'RW', name: 'Rwanda',            dial: '250', flag: 'ðŸ‡·ðŸ‡¼' },
-  { code: 'MX', name: 'Mexico',            dial: '52',  flag: 'ðŸ‡²ðŸ‡½' },
-  { code: 'BR', name: 'Brazil',            dial: '55',  flag: 'ðŸ‡§ðŸ‡·' },
-  { code: 'AR', name: 'Argentina',         dial: '54',  flag: 'ðŸ‡¦ðŸ‡·' },
-  { code: 'CL', name: 'Chile',             dial: '56',  flag: 'ðŸ‡¨ðŸ‡±' },
-  { code: 'CO', name: 'Colombia',          dial: '57',  flag: 'ðŸ‡¨ðŸ‡´' },
-  { code: 'PE', name: 'Peru',              dial: '51',  flag: 'ðŸ‡µðŸ‡ª' },
+  { code: 'ID', name: 'Indonesia',         dial: '62',  flag: '🇮🇩' },
+  { code: 'MY', name: 'Malaysia',          dial: '60',  flag: '🇲🇾' },
+  { code: 'SG', name: 'Singapore',         dial: '65',  flag: '🇸🇬' },
+  { code: 'PH', name: 'Philippines',       dial: '63',  flag: '🇵🇭' },
+  { code: 'TH', name: 'Thailand',          dial: '66',  flag: '🇹🇭' },
+  { code: 'VN', name: 'Vietnam',           dial: '84',  flag: '🇻🇳' },
+  { code: 'MM', name: 'Myanmar',           dial: '95',  flag: '🇲🇲' },
+  { code: 'KH', name: 'Cambodia',          dial: '855', flag: '🇰🇭' },
+  { code: 'BN', name: 'Brunei',            dial: '673', flag: '🇧🇳' },
+  { code: 'LA', name: 'Laos',              dial: '856', flag: '🇱🇦' },
+  { code: 'TL', name: 'Timor-Leste',       dial: '670', flag: '🇹🇱' },
+  { code: 'JP', name: 'Japan',             dial: '81',  flag: '🇯🇵' },
+  { code: 'KR', name: 'South Korea',       dial: '82',  flag: '🇰🇷' },
+  { code: 'CN', name: 'China',             dial: '86',  flag: '🇨🇳' },
+  { code: 'HK', name: 'Hong Kong',         dial: '852', flag: '🇭🇰' },
+  { code: 'TW', name: 'Taiwan',            dial: '886', flag: '🇹🇼' },
+  { code: 'IN', name: 'India',             dial: '91',  flag: '🇮🇳' },
+  { code: 'PK', name: 'Pakistan',          dial: '92',  flag: '🇵🇰' },
+  { code: 'BD', name: 'Bangladesh',        dial: '880', flag: '🇧🇩' },
+  { code: 'LK', name: 'Sri Lanka',         dial: '94',  flag: '🇱🇰' },
+  { code: 'NP', name: 'Nepal',             dial: '977', flag: '🇳🇵' },
+  { code: 'AU', name: 'Australia',         dial: '61',  flag: '🇦🇺' },
+  { code: 'NZ', name: 'New Zealand',       dial: '64',  flag: '🇳🇿' },
+  { code: 'US', name: 'United States',     dial: '1',   flag: '🇺🇸' },
+  { code: 'CA', name: 'Canada',            dial: '1',   flag: '🇨🇦' },
+  { code: 'GB', name: 'United Kingdom',    dial: '44',  flag: '🇬🇧' },
+  { code: 'IE', name: 'Ireland',           dial: '353', flag: '🇮🇪' },
+  { code: 'DE', name: 'Germany',           dial: '49',  flag: '🇩🇪' },
+  { code: 'FR', name: 'France',            dial: '33',  flag: '🇫🇷' },
+  { code: 'IT', name: 'Italy',             dial: '39',  flag: '🇮🇹' },
+  { code: 'ES', name: 'Spain',             dial: '34',  flag: '🇪🇸' },
+  { code: 'PT', name: 'Portugal',          dial: '351', flag: '🇵🇹' },
+  { code: 'NL', name: 'Netherlands',       dial: '31',  flag: '🇳🇱' },
+  { code: 'BE', name: 'Belgium',           dial: '32',  flag: '🇧🇪' },
+  { code: 'CH', name: 'Switzerland',       dial: '41',  flag: '🇨🇭' },
+  { code: 'AT', name: 'Austria',           dial: '43',  flag: '🇦🇹' },
+  { code: 'SE', name: 'Sweden',            dial: '46',  flag: '🇸🇪' },
+  { code: 'NO', name: 'Norway',            dial: '47',  flag: '🇳🇴' },
+  { code: 'DK', name: 'Denmark',           dial: '45',  flag: '🇩🇰' },
+  { code: 'FI', name: 'Finland',           dial: '358', flag: '🇫🇮' },
+  { code: 'PL', name: 'Poland',            dial: '48',  flag: '🇵🇱' },
+  { code: 'CZ', name: 'Czech Republic',    dial: '420', flag: '🇨🇿' },
+  { code: 'HU', name: 'Hungary',           dial: '36',  flag: '🇭🇺' },
+  { code: 'RO', name: 'Romania',           dial: '40',  flag: '🇷🇴' },
+  { code: 'GR', name: 'Greece',            dial: '30',  flag: '🇬🇷' },
+  { code: 'RU', name: 'Russia',            dial: '7',   flag: '🇷🇺' },
+  { code: 'UA', name: 'Ukraine',           dial: '380', flag: '🇺🇦' },
+  { code: 'TR', name: 'Turkey',            dial: '90',  flag: '🇹🇷' },
+  { code: 'SA', name: 'Saudi Arabia',      dial: '966', flag: '🇸🇦' },
+  { code: 'AE', name: 'UAE',               dial: '971', flag: '🇦🇪' },
+  { code: 'QA', name: 'Qatar',             dial: '974', flag: '🇶🇦' },
+  { code: 'KW', name: 'Kuwait',            dial: '965', flag: '🇰🇼' },
+  { code: 'BH', name: 'Bahrain',           dial: '973', flag: '🇧🇭' },
+  { code: 'OM', name: 'Oman',              dial: '968', flag: '🇴🇲' },
+  { code: 'JO', name: 'Jordan',            dial: '962', flag: '🇯🇴' },
+  { code: 'LB', name: 'Lebanon',           dial: '961', flag: '🇱🇧' },
+  { code: 'IL', name: 'Israel',            dial: '972', flag: '🇮🇱' },
+  { code: 'IR', name: 'Iran',              dial: '98',  flag: '🇮🇷' },
+  { code: 'IQ', name: 'Iraq',              dial: '964', flag: '🇮🇶' },
+  { code: 'EG', name: 'Egypt',             dial: '20',  flag: '🇪🇬' },
+  { code: 'ZA', name: 'South Africa',      dial: '27',  flag: '🇿🇦' },
+  { code: 'NG', name: 'Nigeria',           dial: '234', flag: '🇳🇬' },
+  { code: 'KE', name: 'Kenya',             dial: '254', flag: '🇰🇪' },
+  { code: 'GH', name: 'Ghana',             dial: '233', flag: '🇬🇭' },
+  { code: 'TZ', name: 'Tanzania',          dial: '255', flag: '🇹🇿' },
+  { code: 'ET', name: 'Ethiopia',          dial: '251', flag: '🇪🇹' },
+  { code: 'UG', name: 'Uganda',            dial: '256', flag: '🇺🇬' },
+  { code: 'RW', name: 'Rwanda',            dial: '250', flag: '🇷🇼' },
+  { code: 'MX', name: 'Mexico',            dial: '52',  flag: '🇲🇽' },
+  { code: 'BR', name: 'Brazil',            dial: '55',  flag: '🇧🇷' },
+  { code: 'AR', name: 'Argentina',         dial: '54',  flag: '🇦🇷' },
+  { code: 'CL', name: 'Chile',             dial: '56',  flag: '🇨🇱' },
+  { code: 'CO', name: 'Colombia',          dial: '57',  flag: '🇨🇴' },
+  { code: 'PE', name: 'Peru',              dial: '51',  flag: '🇵🇪' },
 ];
 
 function detectDefaultCountry(): string {
@@ -1245,7 +1245,7 @@ function PhoneCountrySelect({ selectedCode, onChangeCode, t }: {
     if (open) setSearch('');
   };
 
-  // Stable ref callback â€” useCallback prevents re-runs on re-render (only fires on mount/unmount)
+  // Stable ref callback — useCallback prevents re-runs on re-render (only fires on mount/unmount)
   const searchInputRef = useCallback((el: HTMLInputElement | null) => {
     if (!el) return;
     el.value = '';
@@ -1272,7 +1272,7 @@ function PhoneCountrySelect({ selectedCode, onChangeCode, t }: {
           <input
             ref={searchInputRef}
             type="text"
-            placeholder="Cari negara atau kodeâ€¦"
+            placeholder="Cari negara atau kode…"
             style={{
               display: 'block', width: '100%', padding: '10px 12px', fontSize: 12, outline: 'none',
               background: t.inputBg, border: 'none', borderBottom: `1px solid ${t.divider}`,
@@ -1327,7 +1327,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
 
   const enabledShippingMethods = (shippingSettings?.methods ?? DEFAULT_SHIPPING_METHODS).filter(m => m.enabled);
   const shippingMethods: ShippingMethod[] = enabledShippingMethods.length > 0 ? enabledShippingMethods : [
-    { id: 'flat', name: 'Standard Shipping', price: 15000, estimatedDays: '2â€“3 days', enabled: true, icon: 'ðŸ“¦' }
+    { id: 'flat', name: 'Standard Shipping', price: 15000, estimatedDays: '2–3 days', enabled: true, icon: '📦' }
   ];
   const [selectedShippingId, setSelectedShippingId] = useState(shippingMethods[0]?.id ?? '');
   const [promoCode, setPromoCode] = useState('');
@@ -1359,7 +1359,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         {/* Left: form sections */}
         <div className="space-y-4">
 
-          {/* Contact & Shipping â€” merged */}
+          {/* Contact & Shipping — merged */}
           <div className="shadow-sm overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
             <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(t.primary, 0.1) }}>
@@ -1477,7 +1477,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               })}
               {freeThreshold && subtotal < freeThreshold && (
                 <div className="mt-2 px-4 py-2.5 rounded-xl border text-xs text-amber-700" style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
-                  ðŸŽ Add {fmtPrice(freeThreshold - subtotal)} more for free shipping!
+                  🎁 Add {fmtPrice(freeThreshold - subtotal)} more for free shipping!
                 </div>
               )}
             </div>
@@ -1493,7 +1493,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             </div>
             <div className="p-5 space-y-2">
               {paymentMethods.map(pm => {
-                const icon = PAYMENT_ICONS[pm.id] ?? PAYMENT_ICONS[pm.type] ?? 'ðŸ’³';
+                const icon = PAYMENT_ICONS[pm.id] ?? PAYMENT_ICONS[pm.type] ?? '💳';
                 const isSelected = selectedPayId === pm.id;
                 return (
                   <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }}>
@@ -1505,7 +1505,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
                       {pm.type === 'bank_transfer' && pm.bankName && (
-                        <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{pm.bankName} Â· ****{pm.accountNumber?.slice(-4)}</p>
+                        <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{pm.bankName} · ****{pm.accountNumber?.slice(-4)}</p>
                       )}
                       {pm.type === 'ewallet' && pm.ewalletNumber && (
                         <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{pm.ewalletNumber}</p>
@@ -1526,7 +1526,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       )}
                       {isSelected && pm.type === 'qris' && (
                         <div className="mt-3 flex justify-center p-4" style={{ background: t.inputBg, borderRadius: t.inputRadius, border: `1px solid ${t.surfaceBorder}` }}>
-                          <div className="w-28 h-28 rounded-xl flex items-center justify-center text-4xl" style={{ background: t.pageBg }}>ðŸ“±</div>
+                          <div className="w-28 h-28 rounded-xl flex items-center justify-center text-4xl" style={{ background: t.pageBg }}>📱</div>
                         </div>
                       )}
                     </div>
@@ -1560,7 +1560,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 {promoApplied ? <Check className="w-4 h-4" /> : 'Apply'}
               </button>
             </div>
-            {promoApplied && <p className="text-xs mt-2 font-medium" style={{ color: t.successText }}>âœ“ Code applied! 10% discount.</p>}
+            {promoApplied && <p className="text-xs mt-2 font-medium" style={{ color: t.successText }}>✓ Code applied! 10% discount.</p>}
           </div>
         </div>
 
@@ -1575,7 +1575,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium truncate" style={{ color: t.textPrimary }}>{p.name}</p>
-                  <p className="text-[10px]" style={{ color: t.textMuted }}>Ã—{qty}</p>
+                  <p className="text-[10px]" style={{ color: t.textMuted }}>×{qty}</p>
                 </div>
                 <span className="text-xs font-bold" style={{ color: t.textPrimary }}>{fmtPrice(p.price * qty)}</span>
               </div>
@@ -1590,7 +1590,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             {discount > 0 && (
               <div className="flex justify-between text-xs font-medium" style={{ color: t.successText }}>
                 <span>Promo discount</span>
-                <span>âˆ’{fmtPrice(discount)}</span>
+                <span>−{fmtPrice(discount)}</span>
               </div>
             )}
             <div className="flex justify-between font-bold pt-1.5" style={{ borderTop: `1px solid ${t.divider}` }}>
@@ -1603,9 +1603,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity"
             style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
           >
-            Place Order ðŸš€
+            Place Order 🚀
           </button>
-          <p className="text-[10px] text-center" style={{ color: t.textMuted }}>ðŸ”’ Secure &amp; protected payment</p>
+          <p className="text-[10px] text-center" style={{ color: t.textMuted }}>🔒 Secure &amp; protected payment</p>
         </div>
       </div>
     </div>
@@ -1652,7 +1652,7 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
         {payment && (
           <div className="shadow-sm mb-4 overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
             <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: `1px solid ${t.divider}` }}>
-              <span className="text-xl">{PAYMENT_ICONS[payment.id] ?? PAYMENT_ICONS[payment.type] ?? 'ðŸ’³'}</span>
+              <span className="text-xl">{PAYMENT_ICONS[payment.id] ?? PAYMENT_ICONS[payment.type] ?? '💳'}</span>
               <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>{uiT.paymentInstructions}</h3>
             </div>
             <div className="p-5">
@@ -1694,7 +1694,7 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
 
               {payment.type === 'qris' && (
                 <div className="text-center space-y-3">
-                  <div className="w-36 h-36 rounded-2xl mx-auto flex items-center justify-center text-5xl" style={{ background: t.inputBg }}>ðŸ“±</div>
+                  <div className="w-36 h-36 rounded-2xl mx-auto flex items-center justify-center text-5xl" style={{ background: t.inputBg }}>📱</div>
                   <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>Total: <span style={{ color: t.primary }}>{fmtPrice(total)}</span></p>
                   {payment.instructions && <p className="text-xs leading-relaxed" style={{ color: t.textMuted }}>{payment.instructions}</p>}
                 </div>
@@ -1702,7 +1702,7 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
 
               {payment.type === 'cod' && (
                 <div className="flex items-start gap-3 p-4 rounded-xl border" style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
-                  <span className="text-2xl">ðŸ’µ</span>
+                  <span className="text-2xl">💵</span>
                   <div>
                     <p className="text-sm font-bold" style={{ color: t.textPrimary }}>Cash on Delivery</p>
                     <p className="text-sm font-bold mt-0.5" style={{ color: t.primary }}>Prepare {fmtPrice(total)}</p>
@@ -1743,10 +1743,10 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
           <p className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: t.textMuted }}>Order Status</p>
           <div className="flex items-center">
             {[
-              { icon: 'ðŸ“‹', label: 'Processing', active: true },
-              { icon: 'ðŸ“¦', label: 'Packing', active: false },
-              { icon: 'ðŸšš', label: 'Shipped', active: false },
-              { icon: 'âœ…', label: 'Delivered', active: false },
+              { icon: '📋', label: 'Processing', active: true },
+              { icon: '📦', label: 'Packing', active: false },
+              { icon: '🚚', label: 'Shipped', active: false },
+              { icon: '✅', label: 'Delivered', active: false },
             ].map((step, i, arr) => (
               <div key={step.label} className="flex items-center flex-1">
                 <div className="flex flex-col items-center flex-shrink-0">
@@ -1774,7 +1774,7 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
           <div className="mt-3 p-3 rounded-xl text-center" style={{ background: t.inputBg }}>
             <p className="text-xs mb-1.5" style={{ color: t.textMuted }}>Want to track this order anytime?</p>
             <button onClick={onShowAuth} className="text-xs font-semibold" style={{ color: t.primary }}>
-              Create a free account â†’
+              Create a free account →
             </button>
           </div>
         )}
@@ -1788,7 +1788,7 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
   );
 }
 
-// â”€â”€ Shared section components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Shared section components ────────────────────────────────────────────────
 
 function PromoBar({ text, primaryColor, editMode, onFieldChange }: { text: string; primaryColor: string; editMode?: boolean; onFieldChange?: (f: string, v: string) => void }) {
   const [dismissed, setDismissed] = useState(false);
@@ -1799,7 +1799,7 @@ function PromoBar({ text, primaryColor, editMode, onFieldChange }: { text: strin
       <p className="text-xs font-semibold text-center" style={{ color: dark ? '#fff' : '#111' }}>
         <EditSpan field="promoBar" value={text} editMode={editMode} onFieldChange={onFieldChange} singleLine />
       </p>
-      {!editMode && <button onClick={() => setDismissed(true)} className="absolute right-4 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition-opacity text-sm font-bold" style={{ color: dark ? '#fff' : '#111' }}>âœ•</button>}
+      {!editMode && <button onClick={() => setDismissed(true)} className="absolute right-4 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition-opacity text-sm font-bold" style={{ color: dark ? '#fff' : '#111' }}>✕</button>}
     </div>
   );
 }
@@ -1937,7 +1937,7 @@ function NewsletterSection({ newsletter, primaryColor, dark = false, elegant = f
           </p>
           {submitted ? (
             <div className="flex items-center justify-center gap-2 text-sm font-semibold" style={{ color: inverted ? '#fff' : primaryColor }}>
-              <span>âœ“</span> You're on the list!
+              <span>✓</span> You're on the list!
             </div>
           ) : (
             <div className={`flex ${isMobile ? 'flex-col' : ''} gap-2`}>
@@ -1955,7 +1955,7 @@ function NewsletterSection({ newsletter, primaryColor, dark = false, elegant = f
   );
 }
 
-// â”€â”€ Buyer Auth Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Buyer Auth Modal ──────────────────────────────────────────────────────────
 
 function BuyerAuthModal({ primaryColor, onClose, onSuccess, onLogout, buyerEmail }: {
   primaryColor: string;
@@ -2082,7 +2082,7 @@ function BuyerAuthModal({ primaryColor, onClose, onSuccess, onLogout, buyerEmail
             className="w-full py-2.5 rounded-xl text-sm font-semibold transition-opacity disabled:opacity-60"
             style={{ background: primaryColor, color: btnText }}
           >
-            {loading ? 'Please waitâ€¦' : tab === 'login' ? 'Sign In' : 'Create Account'}
+            {loading ? 'Please wait…' : tab === 'login' ? 'Sign In' : 'Create Account'}
           </button>
         </form>
       </div>
@@ -2090,7 +2090,7 @@ function BuyerAuthModal({ primaryColor, onClose, onSuccess, onLogout, buyerEmail
   );
 }
 
-// â”€â”€ Mobile Menu Drawer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Mobile Menu Drawer ────────────────────────────────────────────────────────
 
 function MobileMenuDrawer({ open, onClose, navLinks, primaryColor, storeName, onScrollToProducts }: {
   open: boolean; onClose: () => void; navLinks: string[]; primaryColor: string; storeName: string;
@@ -2103,7 +2103,7 @@ function MobileMenuDrawer({ open, onClose, navLinks, primaryColor, storeName, on
       <div className="absolute left-0 top-0 bottom-0 w-72 bg-white shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <span className="text-sm font-bold text-gray-900">{storeName}</span>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-700 rounded-lg text-lg leading-none">âœ•</button>
+          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-700 rounded-lg text-lg leading-none">✕</button>
         </div>
         <nav className="p-4 space-y-1">
           {navLinks.map((l, i) => (
@@ -2119,7 +2119,7 @@ function MobileMenuDrawer({ open, onClose, navLinks, primaryColor, storeName, on
   );
 }
 
-// â”€â”€ Search Overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Search Overlay ────────────────────────────────────────────────────────────
 
 function SearchOverlay({ open, onClose, products, primaryColor, onProductClick, fmtPrice }: {
   open: boolean; onClose: () => void; products: RichProduct[]; primaryColor: string;
@@ -2139,11 +2139,11 @@ function SearchOverlay({ open, onClose, products, primaryColor, onProductClick, 
         <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
           <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
           <input autoFocus type="text" value={query} onChange={e => setQuery(e.target.value)}
-            placeholder="Search productsâ€¦" className="flex-1 text-sm outline-none bg-transparent" />
-          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-700 text-lg leading-none">âœ•</button>
+            placeholder="Search products…" className="flex-1 text-sm outline-none bg-transparent" />
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-700 text-lg leading-none">✕</button>
         </div>
         <div className="max-h-80 overflow-y-auto">
-          {!query.trim() && <p className="text-center py-8 text-sm text-gray-400">Start typing to search productsâ€¦</p>}
+          {!query.trim() && <p className="text-center py-8 text-sm text-gray-400">Start typing to search products…</p>}
           {query.trim() && results.length === 0 && <p className="text-center py-8 text-sm text-gray-400">No results for &quot;{query}&quot;</p>}
           {results.map(p => (
             <button key={p.id} onClick={() => { onProductClick(p); onClose(); setQuery(''); }}
@@ -2164,7 +2164,7 @@ function SearchOverlay({ open, onClose, products, primaryColor, onProductClick, 
   );
 }
 
-// â”€â”€ My Orders Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── My Orders Page ────────────────────────────────────────────────────────────
 
 function MyOrdersPage({ buyerUserId, primaryColor, storeName, storeId, onBack, fmtPrice, layoutStyle }: {
   buyerUserId: string;
@@ -2201,19 +2201,19 @@ function MyOrdersPage({ buyerUserId, primaryColor, storeName, storeId, onBack, f
             <ArrowLeft className="w-5 h-5" />
           </button>
           <span className="text-sm font-bold" style={{ color: t.textPrimary }}>My Orders</span>
-          <span className="ml-1 text-xs" style={{ color: t.textMuted }}>â€” {storeName}</span>
+          <span className="ml-1 text-xs" style={{ color: t.textMuted }}>— {storeName}</span>
         </div>
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-6 space-y-3">
         {loading ? (
-          <div className="text-center py-16 text-sm" style={{ color: t.textMuted }}>Loading ordersâ€¦</div>
+          <div className="text-center py-16 text-sm" style={{ color: t.textMuted }}>Loading orders…</div>
         ) : orders.length === 0 ? (
           <div className="text-center py-16">
             <Package className="w-10 h-10 mx-auto mb-3" style={{ color: t.divider }} />
             <p className="text-sm font-medium" style={{ color: t.textMuted }}>No orders yet</p>
             <button onClick={onBack} className="mt-4 text-sm font-semibold" style={{ color: t.primary }}>
-              Start Shopping â†’
+              Start Shopping →
             </button>
           </div>
         ) : (
@@ -2257,7 +2257,7 @@ function MyOrdersPage({ buyerUserId, primaryColor, storeName, storeId, onBack, f
   );
 }
 
-// â”€â”€ User profile dropdown (shared across all layouts) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── User profile dropdown (shared across all layouts) ────────────────────────
 
 function UserProfileMenu({ buyerEmail, onUserClick, onWishlistClick, wishlistCount, iconColor, hoverClass }: {
   buyerEmail: string | null;
@@ -2322,7 +2322,7 @@ function UserProfileMenu({ buyerEmail, onUserClick, onWishlistClick, wishlistCou
   );
 }
 
-// â”€â”€ Wishlist page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Wishlist page ──────────────────────────────────────────────────────────────
 
 function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onProductClick, onBack, primaryColor, storeName, fmtPrice, layoutStyle, device }: {
   wishlist: Set<string>;
@@ -2368,7 +2368,7 @@ function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onPro
               <Heart className="w-8 h-8" style={{ color: t.textMuted }} />
             </div>
             <p className="font-semibold mb-1.5" style={{ color: t.textPrimary }}>No items yet</p>
-            <p className="text-sm" style={{ color: t.textMuted }}>Tap the â™¡ on any product to save it here.</p>
+            <p className="text-sm" style={{ color: t.textMuted }}>Tap the ♡ on any product to save it here.</p>
             <button
               onClick={onBack}
               className="mt-6 px-6 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-85"
@@ -2429,8 +2429,8 @@ function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onPro
   );
 }
 
-// â”€â”€ MINIMAL layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Inspired by: COS, Aesop, Muji â€” editorial, clean, whitespace-forward
+// ── MINIMAL layout ────────────────────────────────────────────────────────────
+// Inspired by: COS, Aesop, Muji — editorial, clean, whitespace-forward
 
 function MinimalLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory, sectionHeadings, footerNote } = design;
@@ -2442,7 +2442,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
   const productsRef = useRef<HTMLDivElement>(null);
   const scrollToProducts = () => productsRef.current?.scrollIntoView({ behavior: 'smooth' });
   const displayed = selectedCol === 0 ? products : products.filter((_, i) => i % 2 === selectedCol - 1);
-  const defaultFooterNote = `Â© 2026 ${storeName} Â· All rights reserved`;
+  const defaultFooterNote = `© 2026 ${storeName} · All rights reserved`;
 
   return (
     <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', background: tt.pageBg }}>
@@ -2588,7 +2588,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
                 {p.badge && (
                   <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{ background: primaryColor }}>{p.badge}</span>
                 )}
-                {/* Quick add â€” always visible on mobile, hover on desktop */}
+                {/* Quick add — always visible on mobile, hover on desktop */}
                 <div className={`absolute bottom-0 inset-x-0 p-3 transition-transform duration-200 ${isMobile ? '' : 'translate-y-full group-hover:translate-y-0'}`}>
                   <button
                     onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(_btn)); }}
@@ -2710,12 +2710,12 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
   );
 }
 
-// â”€â”€ BOLD layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Inspired by: Nike, OFF-WHITE, Supreme â€” dark, high-energy, high contrast
+// ── BOLD layout ───────────────────────────────────────────────────────────────
+// Inspired by: Nike, OFF-WHITE, Supreme — dark, high-energy, high contrast
 
 function BoldLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen: _onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory, sectionHeadings, footerNote } = design;
-  const defaultFooterNote = `Â© 2026 ${storeName} Â· All rights reserved`;
+  const defaultFooterNote = `© 2026 ${storeName} · All rights reserved`;
   const isMobile = device === 'mobile';
   const [selectedCol, setSelectedCol] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -2781,7 +2781,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
           </p>
           <div className="flex items-center gap-3 flex-wrap">
             <button onClick={editMode ? undefined : scrollToProducts} className={`${isMobile ? 'px-5 py-3 text-[11px]' : 'px-8 py-4 text-xs'} font-black uppercase tracking-widest rounded-full text-black hover:opacity-90 transition-opacity shadow-xl`} style={{ background: primaryColor }}>
-              <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /> â†’
+              <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /> →
             </button>
             <button onClick={scrollToProducts} className={`${isMobile ? 'px-5 py-3 text-[11px]' : 'px-8 py-4 text-xs'} font-black uppercase tracking-widest rounded-full text-white/70 border border-white/15 hover:bg-white/8 transition-colors`}>
               See All
@@ -2939,12 +2939,12 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
   );
 }
 
-// â”€â”€ ELEGANT layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Inspired by: Net-a-Porter, Jo Malone, Tiffany â€” luxury, refined, warm
+// ── ELEGANT layout ────────────────────────────────────────────────────────────
+// Inspired by: Net-a-Porter, Jo Malone, Tiffany — luxury, refined, warm
 
 function ElegantLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory, sectionHeadings, footerNote } = design;
-  const defaultFooterNote = `Â© 2026 ${storeName} Â· All rights reserved`;
+  const defaultFooterNote = `© 2026 ${storeName} · All rights reserved`;
   const btnText = isDark(primaryColor) ? '#fff' : '#2a2420';
   const isMobile = device === 'mobile';
   const tt = getDefaultTokenTheme(primaryColor);
@@ -2998,7 +2998,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
 
       {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} editMode={editMode} onFieldChange={onFieldChange} />}
 
-      {/* Hero â€” full-bleed image */}
+      {/* Hero — full-bleed image */}
       <section data-editor-section="hero" className="relative overflow-hidden" style={{ height: isMobile ? '56vh' : '82vh' }}>
         <ProductImg src={products[0]?.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0" style={{ background: isMobile ? 'linear-gradient(to bottom, rgba(10,7,4,0.4), rgba(10,7,4,0.7))' : 'linear-gradient(to right, rgba(10,7,4,0.78) 42%, rgba(10,7,4,0.15))' }} />
@@ -3057,7 +3057,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
                 >
                   <Heart className={`w-3.5 h-3.5 transition-colors ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
                 </button>
-                {/* Add to bag â€” always visible on mobile, hover on desktop */}
+                {/* Add to bag — always visible on mobile, hover on desktop */}
                 <div className={`absolute bottom-0 inset-x-0 transition-transform duration-300 ${isMobile ? '' : 'translate-y-full group-hover:translate-y-0'}`}
                   style={{ background: 'rgba(15,10,5,0.88)' }}>
                   <button
@@ -3123,7 +3123,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
                 <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-6`}>
                   {testimonials.map((t, i) => (
                     <div key={i} className="p-7 relative overflow-hidden" style={{ background: tt.surfaceBg, borderLeft: `3px solid ${primaryColor}` }}>
-                      <div className="text-5xl font-black leading-none absolute top-3 right-5 opacity-6" style={{ color: primaryColor }}>â</div>
+                      <div className="text-5xl font-black leading-none absolute top-3 right-5 opacity-6" style={{ color: primaryColor }}>❝</div>
                       <Stars n={t.rating} />
                       <p className="text-sm leading-loose italic mt-4 mb-6" style={{ color: '#4a3d32' }}>
                         "<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"
@@ -3168,12 +3168,12 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
   );
 }
 
-// â”€â”€ MODERN layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Inspired by: Apple Store, Allbirds, Casper â€” clean, airy, contemporary
+// ── MODERN layout ─────────────────────────────────────────────────────────────
+// Inspired by: Apple Store, Allbirds, Casper — clean, airy, contemporary
 
 function ModernLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory, sectionHeadings, footerNote } = design;
-  const defaultFooterNote = `Â© 2026 ${storeName} Â· All rights reserved`;
+  const defaultFooterNote = `© 2026 ${storeName} · All rights reserved`;
   const btnText = isDark(primaryColor) ? '#fff' : '#fff';
   const isMobile = device === 'mobile';
   const tt = getDefaultTokenTheme(primaryColor);
@@ -3227,7 +3227,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
       {isMobile ? (
         <section data-editor-section="hero" className="px-5 py-10" style={{ background: `linear-gradient(160deg, ${alpha(primaryColor, 0.05)} 0%, ${alpha(accentColor, 0.08)} 100%)` }}>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-5" style={{ background: alpha(primaryColor, 0.1), color: primaryColor }}>
-            âœ¦ {tagline}
+            ✦ {tagline}
           </div>
           <h1 className="text-4xl font-bold leading-tight tracking-tight mb-4" style={{ color: tt.textPrimary }}>
             <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
@@ -3258,7 +3258,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
           <div className="max-w-6xl mx-auto px-5 py-14 grid grid-cols-2 gap-0 items-center">
             <div className="py-6 pr-10">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6" style={{ background: alpha(primaryColor, 0.1), color: primaryColor }}>
-                âœ¦ {tagline}
+                ✦ {tagline}
               </div>
               <h1 className="text-5xl font-bold leading-[1.05] tracking-tight mb-5" style={{ color: tt.textPrimary }}>
                 <EditSpan field="heroTitle" value={heroTitle ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
@@ -3451,12 +3451,12 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
   );
 }
 
-// â”€â”€ PLAYFUL layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Inspired by: Glossier, Oatly, Warby Parker â€” fun, colorful, round, youthful
+// ── PLAYFUL layout ────────────────────────────────────────────────────────────
+// Inspired by: Glossier, Oatly, Warby Parker — fun, colorful, round, youthful
 
 function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen: _onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory, sectionHeadings, footerNote } = design;
-  const defaultFooterNote = `Â© 2026 ${storeName} Â· All rights reserved`;
+  const defaultFooterNote = `© 2026 ${storeName} · All rights reserved`;
   const heroTextColor = isDark(primaryColor) ? '#fff' : '#111';
   const isMobile = device === 'mobile';
   const tt = getDefaultTokenTheme(primaryColor);
@@ -3508,7 +3508,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
 
       {promoBar && <PromoBar text={promoBar} primaryColor={primaryColor} editMode={editMode} onFieldChange={onFieldChange} />}
 
-      {/* Hero â€” gradient with wave bottom */}
+      {/* Hero — gradient with wave bottom */}
       <section data-editor-section="hero" className="relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${accentColor} 100%)` }}>
         {/* Dot pattern */}
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, white 1.5px, transparent 1.5px)', backgroundSize: '28px 28px' }} />
@@ -3525,7 +3525,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
             </p>
             <div className={`flex items-center gap-3 flex-wrap ${isMobile ? 'justify-center' : ''}`}>
               <button onClick={editMode ? undefined : scrollToProducts} className="px-7 py-3.5 text-sm font-black rounded-2xl shadow-xl hover:scale-105 transition-transform" style={{ background: tt.surfaceBg, color: primaryColor }}>
-                <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /> ðŸ›ï¸
+                <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /> 🛍️
               </button>
               <button onClick={scrollToProducts} className="px-7 py-3.5 text-sm font-bold rounded-2xl border-2 hover:bg-white/12 transition-colors" style={{ borderColor: `${heroTextColor}40`, color: heroTextColor }}>
                 Browse All
@@ -3649,7 +3649,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
           testimonials: testimonials.length > 0 ? (
             <section key="testimonials" data-editor-section="testimonials" className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-12'}`}>
               <h2 className="text-2xl font-black text-center mb-8" style={{ color: tt.textPrimary }}>
-                <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'Happy Customers ðŸ¤©'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'Happy Customers 🤩'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
               </h2>
               <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
                 {testimonials.map((t, i) => (
@@ -3715,7 +3715,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
   );
 }
 
-// â”€â”€ Fallback layout (template-based stores without AI design) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Fallback layout (template-based stores without AI design) ─────────────────
 
 function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClick, cartCount, onUserClick, buyerEmail, wishlist, onToggleWishlist, onWishlistClick }: {
   store: Store; device: DeviceMode;
@@ -3771,7 +3771,7 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
         <div className="absolute inset-0 flex items-center px-8">
           <div>
             <h1 className={`font-bold text-white mb-4 ${device === 'mobile' ? 'text-2xl' : 'text-4xl'}`}>{store.name || 'Your Store'}<br /><span className="opacity-80">Premium Quality</span></h1>
-            <button className="px-6 py-3 text-sm font-semibold rounded-xl" style={{ background: tt.surfaceBg, color: primaryColor }}>Shop Now â†’</button>
+            <button className="px-6 py-3 text-sm font-semibold rounded-xl" style={{ background: tt.surfaceBg, color: primaryColor }}>Shop Now →</button>
           </div>
         </div>
       </div>
@@ -3809,18 +3809,18 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold" style={{ background: primaryColor }}>{(store.name || 'S')[0]}</div>
             <span className="font-bold text-sm" style={{ color: tt.textSecondary }}>{store.name}</span>
           </div>
-          <p className="text-xs" style={{ color: tt.textMuted }}>Â© 2026 Â· Powered by Storee</p>
+          <p className="text-xs" style={{ color: tt.textMuted }}>© 2026 · Powered by Storee</p>
         </div>
       </div>
     </div>
   );
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// TOKEN LAYOUT â€” Claude-as-Designer: driven entirely by designSystem tokens
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════════════════════════════
+// TOKEN LAYOUT — Claude-as-Designer: driven entirely by designSystem tokens
+// ══════════════════════════════════════════════════════════════════════════════
 
-// â”€â”€ Font pairs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Font pairs ────────────────────────────────────────────────────────────────
 
 const FONT_PAIRS: Record<string, { heading: string; body: string; url: string }> = {
   'playfair-lato': {
@@ -3875,7 +3875,7 @@ const FONT_PAIRS: Record<string, { heading: string; body: string; url: string }>
   },
 };
 
-// â”€â”€ Color schemes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Color schemes ─────────────────────────────────────────────────────────────
 
 type TkColorBase = Omit<CommerceTheme, 'primary' | 'primaryContrast'>;
 
@@ -3927,12 +3927,12 @@ const COLOR_SCHEMES: Record<string, TkColorBase> = {
   },
 };
 
-// â”€â”€ Bucket radii (legacy v1 DesignSystem) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Bucket radii (legacy v1 DesignSystem) ─────────────────────────────────────
 
 const BTN_RADIUS: Record<string, string>     = { pill: '9999px', rounded: '12px', square: '4px' };
 const SURFACE_RADIUS: Record<string, string> = { pill: '20px',   rounded: '16px', square: '6px' };
 
-// â”€â”€ Extended token theme â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Extended token theme ──────────────────────────────────────────────────────
 
 interface TokenTheme extends CommerceTheme {
   headingFont: string;
@@ -3946,14 +3946,14 @@ interface TokenTheme extends CommerceTheme {
   bodyTracking:    string;  // letter-spacing for body text
   // Layout mutation
   compositionStyle: 'grid' | 'staggered' | 'overlapping' | 'asymmetric';
-  // Density â€” how much info is packed per card / per section
+  // Density — how much info is packed per card / per section
   density: 'dense' | 'normal' | 'airy';
   // Animation
   personality?: string;
   motion?: string;
   // Hero background decoration (only when user explicitly requested)
   heroBg?: 'blob' | 'mesh' | 'wave' | 'gradient';
-  // Theme blending â€” ordered list of style archetypes Claude blended
+  // Theme blending — ordered list of style archetypes Claude blended
   styleMix?: string[];
   // Content / copy presentation style
   contentStyle?: 'conversational' | 'formal' | 'playful' | 'editorial' | 'minimal';
@@ -3963,18 +3963,18 @@ interface TokenTheme extends CommerceTheme {
   hoverStyle?: 'lift' | 'glow' | 'scale' | 'none';
 }
 
-// â”€â”€ Phase 3: Motion & Elevation utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Phase 3: Motion & Elevation utilities ─────────────────────────────────────
 
 type MotionLevel    = 'none' | 'subtle' | 'smooth' | 'expressive';
 type ElevationLevel = 'flat' | 'subtle' | 'raised' | 'floating';
 
-// â”€â”€ Animation Archetype â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Animation Archetype ───────────────────────────────────────────────────────
 // Derived from personality slug. Drives scroll-reveal style, glow, parallax.
 type AnimArchetype = 'luxury' | 'tech' | 'fashion' | 'hype' | 'default';
 
 function getAnimArchetype(personality?: string, motion?: string, styleMix?: string[]): AnimArchetype {
   if (motion === 'none') return 'default';
-  // styleMix[0] is the dominant style â€” check it first
+  // styleMix[0] is the dominant style — check it first
   const dominant = styleMix?.[0]?.toLowerCase() ?? personality?.toLowerCase() ?? '';
   if (!dominant) return 'default';
   if (dominant.includes('zara') || dominant.includes('luxury') || dominant.includes('apple') || dominant.includes('notion') || dominant.includes('editorial')) return 'luxury';
@@ -3984,16 +3984,16 @@ function getAnimArchetype(personality?: string, motion?: string, styleMix?: stri
   return 'default';
 }
 
-// â”€â”€ CSS injector (CSS-only effects that Framer doesn't handle) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── CSS injector (CSS-only effects that Framer doesn't handle) ────────────────
 function AnimationInjector() {
   return (
     <style>{`
-      /* Glow ring on CTA buttons â€” CSS ::after pseudo-element */
+      /* Glow ring on CTA buttons — CSS ::after pseudo-element */
       @keyframes sk-glow { 0%,100% { box-shadow:0 0 0 0 var(--sk-glow-color,rgba(99,102,241,0)); } 50% { box-shadow:0 0 18px 4px var(--sk-glow-color,rgba(99,102,241,0.45)); } }
       .sk-glow-btn { position:relative; overflow:visible; }
       .sk-glow-btn::after { content:''; position:absolute; inset:0; border-radius:inherit; animation:sk-glow 2.4s ease-in-out infinite; }
 
-      /* Animated gradient header â€” background-position keyframe */
+      /* Animated gradient header — background-position keyframe */
       @keyframes sk-gradShift { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
       .sk-grad-header { background-size:200% 200%; animation:sk-gradShift 6s ease infinite; }
 
@@ -4004,7 +4004,7 @@ function AnimationInjector() {
   );
 }
 
-// â”€â”€ Haikei-style SVG decorations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Haikei-style SVG decorations ─────────────────────────────────────────────
 // Organic blob paths (viewBox 0 0 200 200, centered at 100,100)
 const BLOB_PATHS = [
   'M44.7,-76.4C58.8,-69.2,71.8,-59.1,79.6,-45.8C87.4,-32.5,90,-16.3,88.5,-1C87,14.4,81.4,28.8,73,41.7C64.6,54.6,53.4,66,40.2,74.5C27,83.1,13.5,88.8,-0.3,89.3C-14.1,89.8,-28.2,85,-40.7,77.6C-53.2,70.2,-64.1,60.1,-71.9,47.8C-79.7,35.4,-84.4,17.7,-84.8,-0.3C-85.1,-18.2,-81.1,-36.3,-72.3,-50.4C-63.5,-64.4,-50,-74.3,-35.8,-81.3C-21.6,-88.3,-10.8,-92.4,2.3,-96.1C15.4,-99.8,30.7,-83.6,44.7,-76.4Z',
@@ -4065,7 +4065,7 @@ function HaikeiWave({
   );
 }
 
-/** Blurred radial gradient spots â€” Haikei "mesh gradient" style background */
+/** Blurred radial gradient spots — Haikei "mesh gradient" style background */
 function HaikeiMesh({ color, pageBg }: { color: string; pageBg: string }) {
   return (
     <div className="absolute inset-0 pointer-events-none select-none" aria-hidden style={{ zIndex: 0 }}>
@@ -4076,7 +4076,7 @@ function HaikeiMesh({ color, pageBg }: { color: string; pageBg: string }) {
   );
 }
 
-// â”€â”€ Framer Motion: per-archetype reveal variants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Framer Motion: per-archetype reveal variants ──────────────────────────────
 const REVEAL_VARIANTS: Record<AnimArchetype, Variants> = {
   luxury: {
     hidden:  { opacity: 0, y: 30 },
@@ -4100,7 +4100,7 @@ const REVEAL_VARIANTS: Record<AnimArchetype, Variants> = {
   },
 };
 
-// Stagger container â€” children animate in sequence
+// Stagger container — children animate in sequence
 const STAGGER_CONTAINER: Variants = {
   hidden:  {},
   visible: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
@@ -4111,7 +4111,7 @@ const STAGGER_CONTAINER_SLOW: Variants = {
   visible: { transition: { staggerChildren: 0.14, delayChildren: 0.1 } },
 };
 
-// â”€â”€ RevealWrapper â€” Framer whileInView scroll-triggered reveal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── RevealWrapper — Framer whileInView scroll-triggered reveal ────────────────
 function RevealWrapper({
   archetype,
   children,
@@ -4139,7 +4139,7 @@ function RevealWrapper({
   );
 }
 
-// â”€â”€ useParallax â€” Framer useScroll + useTransform â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── useParallax — Framer useScroll + useTransform ─────────────────────────────
 function useParallax(strength = 0.12) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollY } = useScroll();
@@ -4153,7 +4153,7 @@ function useParallax(strength = 0.12) {
   return { ref, y };
 }
 
-// â”€â”€ getGlowStyle â€” pulsing glow for CTA buttons (tech / hype) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── getGlowStyle — pulsing glow for CTA buttons (tech / hype) ────────────────
 function getGlowCssVar(primaryColor: string): React.CSSProperties {
   // inject the CSS custom property so the ::after keyframe picks it up
   const r = parseInt(primaryColor.slice(1, 3), 16);
@@ -4252,7 +4252,7 @@ function getContentStyleVars(cs?: ContentStyleLevel): ContentStyleVars {
   }
 }
 
-// â”€â”€ headlineSize â†’ rem multiplier â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── headlineSize → rem multiplier ────────────────────────────────────────────
 type HeadlineSizeLevel = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 
 /**
@@ -4294,7 +4294,7 @@ function heroHeadingStyle(
   return headingStyle(tt, base, { fontSize: `${rem}rem`, ...extraOverrides });
 }
 
-// â”€â”€ Card style â†’ CSS object â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Card style → CSS object ───────────────────────────────────────────────────
 type CardStyleLevel = 'floating' | 'ghost' | 'bordered' | 'filled';
 interface CardStyleVars {
   background: string;
@@ -4326,7 +4326,7 @@ function getCardStyleVars(cardStyle: CardStyleLevel | undefined, tt: TokenTheme)
   }
 }
 
-// â”€â”€ Hover style â†’ Framer Motion whileHover object â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Hover style → Framer Motion whileHover object ────────────────────────────
 type HoverStyleLevel = 'lift' | 'glow' | 'scale' | 'none';
 function getHoverMotion(hoverStyle: HoverStyleLevel | undefined, primaryColor?: string): import('framer-motion').TargetAndTransition {
   switch (hoverStyle) {
@@ -4340,7 +4340,7 @@ function getHoverMotion(hoverStyle: HoverStyleLevel | undefined, primaryColor?: 
   }
 }
 
-// â”€â”€ Known serif heading fonts (for CSS fallback stack) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Known serif heading fonts (for CSS fallback stack) ────────────────────────
 
 const SERIF_FONTS = new Set([
   'Playfair Display', 'Cormorant Garamond', 'DM Serif Display', 'Fraunces',
@@ -4366,7 +4366,7 @@ function buildGoogleFontsUrl(heading: string, body: string): string {
   return `https://fonts.googleapis.com/css2?family=${enc(heading)}:wght@${headWeights}&family=${enc(body)}:wght@300;400;500;600&display=swap`;
 }
 
-// â”€â”€ v2: build theme from raw DesignTokens (Claude-generated values) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── v2: build theme from raw DesignTokens (Claude-generated values) ───────────
 
 function getTokenThemeV2(dt: DesignTokens, primaryColor: string): TokenTheme {
   return {
@@ -4394,7 +4394,7 @@ function getTokenThemeV2(dt: DesignTokens, primaryColor: string): TokenTheme {
     primaryContrast: isDark(primaryColor) ? '#ffffff' : '#000000',
     headingFont:     fontStack(dt.headingFont, 'heading'),
     googleFontsUrl:  buildGoogleFontsUrl(dt.headingFont, dt.bodyFont),
-    // Typography intelligence â€” Claude-specified or sensible defaults
+    // Typography intelligence — Claude-specified or sensible defaults
     headingScale:    dt.headingScale    ?? 1.0,
     headingWeight:   dt.headingWeight   ?? 800,
     headingTracking: dt.headingTracking ?? '-0.02em',
@@ -4419,7 +4419,7 @@ function getTokenThemeV2(dt: DesignTokens, primaryColor: string): TokenTheme {
   };
 }
 
-// â”€â”€ Minimal fallback theme (no tokens, no design system) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Minimal fallback theme (no tokens, no design system) ─────────────────────
 
 function getDefaultTokenTheme(primaryColor: string): TokenTheme {
   const pc = primaryColor || '#10b981';
@@ -4442,7 +4442,7 @@ function getDefaultTokenTheme(primaryColor: string): TokenTheme {
   };
 }
 
-// â”€â”€ v1: build theme from bucket DesignSystem (legacy) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── v1: build theme from bucket DesignSystem (legacy) ────────────────────────
 
 function getTokenThemeV1(ds: DesignSystem, primaryColor: string): TokenTheme {
   const colorBase = COLOR_SCHEMES[ds.colorScheme] ?? COLOR_SCHEMES.light;
@@ -4467,7 +4467,7 @@ function getTokenThemeV1(ds: DesignSystem, primaryColor: string): TokenTheme {
   };
 }
 
-// â”€â”€ Typography Intelligence helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Typography Intelligence helpers ───────────────────────────────────────────
 
 /**
  * Returns a heading style object incorporating all typography tokens.
@@ -4499,13 +4499,13 @@ function bodyStyle(tt: TokenTheme, overrides?: React.CSSProperties): React.CSSPr
   };
 }
 
-// â”€â”€ Font injector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Font injector ─────────────────────────────────────────────────────────────
 
 function TkFontInjector({ url }: { url: string }) {
   return <style>{`@import url('${url}');`}</style>;
 }
 
-// â”€â”€ Hero section props helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Hero section props helpers ────────────────────────────────────────────────
 
 type HeroP = {
   textAlign?:    'left' | 'center' | 'right';
@@ -4533,7 +4533,7 @@ function heroCtaStyle(ctaStyle: HeroP['ctaStyle'] = 'filled', primaryColor: stri
   }
 }
 
-// â”€â”€ Hero: CENTERED â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Hero: CENTERED ────────────────────────────────────────────────────────────
 
 function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
@@ -4550,7 +4550,7 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts, 
   const textAlign = heroProps.textAlign ?? 'center';
   const ctaStyleObj = heroCtaStyle(heroProps.ctaStyle, primaryColor, tt.btnRadius, btnText, getContentStyleVars(tt.contentStyle));
 
-  // Framer stagger container â€” children animate in sequence on mount
+  // Framer stagger container — children animate in sequence on mount
   const heroStagger: Variants = {
     hidden:  {},
     visible: { transition: { staggerChildren: isLuxury ? 0.18 : 0.1, delayChildren: 0.1 } },
@@ -4562,7 +4562,7 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts, 
       {bgImage && (
         <>
           <div className="absolute inset-0 overflow-hidden">
-            {/* Ken-Burns slow zoom for luxury archetype (CSS only â€” scale doesn't need spring) */}
+            {/* Ken-Burns slow zoom for luxury archetype (CSS only — scale doesn't need spring) */}
             <ProductImg src={bgImage} alt=""
               className={`w-full h-full object-cover${isLuxury ? ' sk-ken-burns' : ''}`}
               style={isLuxury ? { transformOrigin: 'center center', animationDuration: '14s' } : undefined} />
@@ -4570,7 +4570,7 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts, 
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.65) 100%)' }} />
         </>
       )}
-      {/* Haikei decorations â€” only when user explicitly requested via heroBg token */}
+      {/* Haikei decorations — only when user explicitly requested via heroBg token */}
       {!bgImage && tt.heroBg === 'blob'     && <><HaikeiBlob color={primaryColor} index={0} size={isMobile ? 280 : 420} opacity={0.10} top="-15%" right="-8%" rotate={25} /><HaikeiBlob color={primaryColor} index={3} size={isMobile ? 220 : 320} opacity={0.07} bottom="-10%" left="-6%" rotate={-15} /></>}
       {!bgImage && tt.heroBg === 'mesh'     && <HaikeiMesh color={primaryColor} pageBg={tt.pageBg} />}
       {!bgImage && tt.heroBg === 'wave'     && <HaikeiWave fill={tt.surfaceBg} variant={1} height={isMobile ? 40 : 56} />}
@@ -4610,7 +4610,7 @@ function TkHeroCentered({ design, tt, primaryColor, device, onScrollToProducts, 
   );
 }
 
-// â”€â”€ Hero: SPLIT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Hero: SPLIT ───────────────────────────────────────────────────────────────
 
 function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmtPrice, heroProps = {}, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
@@ -4635,7 +4635,7 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
 
   return (
     <section className="relative overflow-hidden" style={{ background: tt.pageBg }}>
-      {/* Haikei decorations â€” only when user explicitly requested */}
+      {/* Haikei decorations — only when user explicitly requested */}
       {tt.heroBg === 'blob'     && <><HaikeiBlob color={primaryColor} index={1} size={isMobile ? 260 : 440} opacity={0.09} top={isMobile ? '-10%' : '-15%'} right={isMobile ? '-12%' : '-8%'} rotate={20} /><HaikeiBlob color={primaryColor} index={4} size={isMobile ? 180 : 300} opacity={0.06} bottom="-8%" left="-5%" rotate={-30} /></>}
       {tt.heroBg === 'mesh'     && <HaikeiMesh color={primaryColor} pageBg={tt.pageBg} />}
       {tt.heroBg === 'wave'     && <HaikeiWave fill={tt.surfaceBg} variant={0} height={isMobile ? 36 : 52} />}
@@ -4672,7 +4672,7 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
           </motion.div>
         </motion.div>
         <motion.div className="relative" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, delay: 0.25, ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] }}>
-          {/* Parallax wrapper â€” Framer motion.div with y spring transform */}
+          {/* Parallax wrapper — Framer motion.div with y spring transform */}
           <motion.div
             ref={parallaxRef}
             style={{ aspectRatio: imgAspect, borderRadius: tt.surfaceRadius, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', ...(isLuxury ? { y: parallaxY } : {}) }}
@@ -4706,7 +4706,7 @@ function TkHeroSplit({ design, tt, primaryColor, device, onScrollToProducts, fmt
   );
 }
 
-// â”€â”€ Hero: FULLSCREEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Hero: FULLSCREEN ──────────────────────────────────────────────────────────
 
 function TkHeroFullscreen({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
@@ -4745,7 +4745,7 @@ function TkHeroFullscreen({ design, tt, primaryColor, device, onScrollToProducts
   );
 }
 
-// â”€â”€ Hero: MINIMAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Hero: MINIMAL ─────────────────────────────────────────────────────────────
 
 function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
@@ -4759,7 +4759,7 @@ function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts, h
   const textAlign = heroProps.textAlign ?? 'center';
   return (
     <section className="relative overflow-hidden" style={{ background: tt.pageBg, borderBottom: `1px solid ${tt.divider}` }}>
-      {/* Haikei decorations â€” only when user explicitly requested */}
+      {/* Haikei decorations — only when user explicitly requested */}
       {tt.heroBg === 'blob'     && <><HaikeiBlob color={primaryColor} index={2} size={isMobile ? 200 : 340} opacity={0.08} top="-20%" right="-5%" rotate={10} /><HaikeiBlob color={primaryColor} index={5} size={isMobile ? 160 : 260} opacity={0.06} bottom="-15%" left="-4%" rotate={-20} /></>}
       {tt.heroBg === 'mesh'     && <HaikeiMesh color={primaryColor} pageBg={tt.pageBg} />}
       {tt.heroBg === 'wave'     && <HaikeiWave fill={tt.surfaceBg} variant={0} height={isMobile ? 36 : 52} />}
@@ -4786,7 +4786,7 @@ function TkHeroMinimal({ design, tt, primaryColor, device, onScrollToProducts, h
   );
 }
 
-// â”€â”€ Hero: EDITORIAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Hero: EDITORIAL ───────────────────────────────────────────────────────────
 // Magazine-style: giant background text, product image floats on top, off-grid
 
 function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
@@ -4805,12 +4805,12 @@ function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts,
 
   return (
     <section style={{ background: tt.pageBg, overflow: 'hidden', minHeight: isMobile ? '80vh' : '88vh', position: 'relative' }}>
-      {/* Haikei decorations â€” only when user explicitly requested */}
+      {/* Haikei decorations — only when user explicitly requested */}
       {tt.heroBg === 'blob'     && <HaikeiBlob color={primaryColor} index={0} size={isMobile ? 220 : 380} opacity={0.06} bottom="-10%" right="-6%" rotate={40} />}
       {tt.heroBg === 'mesh'     && <HaikeiMesh color={primaryColor} pageBg={tt.pageBg} />}
       {tt.heroBg === 'wave'     && <HaikeiWave fill={tt.surfaceBg} variant={3} height={isMobile ? 36 : 52} />}
       {tt.heroBg === 'gradient' && <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse 60% 50% at 70% 50%, ${alpha(primaryColor, 0.12)} 0%, transparent 65%)`, zIndex: 0 }} />}
-      {/* Giant ghost word â€” decorative background text */}
+      {/* Giant ghost word — decorative background text */}
       <div aria-hidden className="absolute select-none pointer-events-none"
         style={{
           fontFamily: tt.headingFont,
@@ -4872,7 +4872,7 @@ function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts,
               </button>
             </div>
           </div>
-          {/* Image col â€” off-grid, bleeds to edge */}
+          {/* Image col — off-grid, bleeds to edge */}
           {products[0] && (
             <div className="relative h-full flex items-center">
               <div className="w-full overflow-hidden" style={{ aspectRatio: '3/4', borderRadius: `${tt.surfaceRadius} 0 0 ${tt.surfaceRadius}`, maxHeight: '80vh' }}>
@@ -4898,8 +4898,8 @@ function TkHeroEditorial({ design, tt, primaryColor, device, onScrollToProducts,
   );
 }
 
-// â”€â”€ Hero: VIDEO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Cinematic dark hero â€” simulated video with animated gradient + product image
+// ── Hero: VIDEO ───────────────────────────────────────────────────────────────
+// Cinematic dark hero — simulated video with animated gradient + product image
 
 function TkHeroVideo({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
@@ -4927,7 +4927,7 @@ function TkHeroVideo({ design, tt, primaryColor, device, onScrollToProducts, her
         }
       `}</style>
 
-      {/* Animated background â€” product image with ken-burns effect */}
+      {/* Animated background — product image with ken-burns effect */}
       {products[0] && (
         <div className="absolute inset-0" style={{ animation: 'storee-video-bg 14s ease-in-out infinite' }}>
           <ProductImg src={products[0].image} alt="" className="w-full h-full object-cover" />
@@ -4979,7 +4979,7 @@ function TkHeroVideo({ design, tt, primaryColor, device, onScrollToProducts, her
   );
 }
 
-// â”€â”€ Hero: STACKED â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Hero: STACKED ─────────────────────────────────────────────────────────────
 // Mood-board: 3 product images stacked/rotated, text alongside
 
 function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
@@ -4996,7 +4996,7 @@ function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts, h
 
   return (
     <section className="relative" style={{ background: tt.pageBg, overflow: 'hidden' }}>
-      {/* Haikei decorations â€” only when user explicitly requested */}
+      {/* Haikei decorations — only when user explicitly requested */}
       {tt.heroBg === 'blob'     && <HaikeiBlob color={primaryColor} index={3} size={isMobile ? 240 : 400} opacity={0.09} top={isMobile ? '-5%' : '-10%'} right={isMobile ? '-10%' : '-6%'} rotate={-10} />}
       {tt.heroBg === 'mesh'     && <HaikeiMesh color={primaryColor} pageBg={tt.pageBg} />}
       {tt.heroBg === 'wave'     && <HaikeiWave fill={tt.surfaceBg} variant={2} height={isMobile ? 36 : 50} />}
@@ -5057,7 +5057,7 @@ function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts, h
   );
 }
 
-// â”€â”€ Hero: ASYMMETRICAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Hero: ASYMMETRICAL ────────────────────────────────────────────────────────
 // ZARA/luxury: image bleeds edge-to-edge on left, slim text column on right
 
 function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
@@ -5093,11 +5093,11 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
 
   return (
     <section className="overflow-hidden relative" style={{ height: '92vh', minHeight: '560px', display: 'flex' }}>
-      {/* Haikei decorations â€” only when user explicitly requested */}
+      {/* Haikei decorations — only when user explicitly requested */}
       {tt.heroBg === 'blob'     && <HaikeiBlob color={primaryColor} index={4} size={320} opacity={0.08} bottom="-10%" right="-4%" rotate={15} />}
       {tt.heroBg === 'mesh'     && <HaikeiMesh color={primaryColor} pageBg={tt.pageBg} />}
       {tt.heroBg === 'gradient' && <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse 45% 70% at 85% 50%, ${alpha(primaryColor, 0.10)} 0%, transparent 60%)`, zIndex: 0 }} />}
-      {/* Image â€” takes 62% width, bleeds to left edge */}
+      {/* Image — takes 62% width, bleeds to left edge */}
       <div className="relative overflow-hidden flex-shrink-0" style={{ width: '62%' }}>
         {products[0] && <ProductImg src={products[0].image} alt="" className="w-full h-full object-cover" />}
         {/* Subtle right-edge fade into pageBg */}
@@ -5111,7 +5111,7 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
         )}
       </div>
 
-      {/* Text column â€” slim, vertical centering */}
+      {/* Text column — slim, vertical centering */}
       <div className="flex flex-col justify-center px-12 flex-1" style={{ minWidth: 0 }}>
         {tagline && (
           <p className="text-[9px] uppercase tracking-[0.5em] mb-8" style={{ color: tt.textMuted }}><EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine /></p>
@@ -5134,7 +5134,7 @@ function TkHeroAsymmetrical({ design, tt, primaryColor, device, onScrollToProduc
   );
 }
 
-// â”€â”€ Hero: CINEMATIC â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Hero: CINEMATIC ───────────────────────────────────────────────────────────
 
 function TkHeroCinematic({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
@@ -5154,7 +5154,7 @@ function TkHeroCinematic({ design, tt, primaryColor, device, onScrollToProducts,
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.15) 100%)' }} />
       {/* Optional film grain */}
       <div style={{ position: 'absolute', inset: 0, opacity: 0.03, pointerEvents: 'none', backgroundImage: 'repeating-radial-gradient(circle at 1px 1px, rgba(255,255,255,0.4) 1px, transparent 0)', backgroundSize: '3px 3px' }} />
-      {/* Text â€” bottom-left third */}
+      {/* Text — bottom-left third */}
       <div style={{ position: 'relative', zIndex: 1, padding: isMobile ? '0 24px 48px' : '0 72px 80px', maxWidth: isMobile ? '100%' : '55%' }}>
         <motion.div initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.25, 0.46, 0.45, 0.94] }}>
           {tagline && (
@@ -5166,7 +5166,7 @@ function TkHeroCinematic({ design, tt, primaryColor, device, onScrollToProducts,
           <button onClick={editMode ? undefined : onScrollToProducts}
             style={{ background: 'none', border: 'none', color: '#fff', fontSize: '12px', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', padding: 0 }}>
             <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-            {!editMode && <span style={{ display: 'inline-block', transition: 'transform 0.25s' }}>â†’</span>}
+            {!editMode && <span style={{ display: 'inline-block', transition: 'transform 0.25s' }}>→</span>}
           </button>
         </motion.div>
       </div>
@@ -5174,7 +5174,7 @@ function TkHeroCinematic({ design, tt, primaryColor, device, onScrollToProducts,
   );
 }
 
-// â”€â”€ Hero: CHAT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Hero: CHAT ────────────────────────────────────────────────────────────────
 
 function TkHeroChat({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {} }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
@@ -5189,7 +5189,7 @@ function TkHeroChat({ design, tt, primaryColor, device, onScrollToProducts, hero
   type ChatMsg = { id: number; side: 'store' | 'user'; type: 'text' | 'product' | 'cta'; text?: string; visible: boolean };
   const [messages, setMessages] = useState<ChatMsg[]>([
     { id: 0, side: 'store', type: 'text',    text: heroTitle,                         visible: false },
-    { id: 1, side: 'user',  type: 'text',    text: 'Show me what you have ðŸ‘€',         visible: false },
+    { id: 1, side: 'user',  type: 'text',    text: 'Show me what you have 👀',         visible: false },
     { id: 2, side: 'store', type: 'product', text: product ? product.name : 'Product', visible: false },
     { id: 3, side: 'store', type: 'cta',     text: ctaText,                            visible: false },
   ]);
@@ -5229,7 +5229,7 @@ function TkHeroChat({ design, tt, primaryColor, device, onScrollToProducts, hero
             {msg.type === 'cta' && (
               <button onClick={onScrollToProducts}
                 style={{ padding: '12px 24px', background: pc, color: pcText, borderRadius: '20px', fontSize: '13px', fontWeight: 700, border: 'none', cursor: 'pointer', letterSpacing: '0.04em' }}>
-                {msg.text} â†’
+                {msg.text} →
               </button>
             )}
           </motion.div>
@@ -5239,7 +5239,7 @@ function TkHeroChat({ design, tt, primaryColor, device, onScrollToProducts, hero
   );
 }
 
-// â”€â”€ Hero: FASHION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Hero: FASHION ─────────────────────────────────────────────────────────────
 
 function TkHeroFashion({ design, tt, primaryColor, device, onScrollToProducts, heroProps = {}, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string; device: DeviceMode;
@@ -5298,8 +5298,8 @@ function TkHeroFashion({ design, tt, primaryColor, device, onScrollToProducts, h
   );
 }
 
-// â”€â”€ Layout Mutation: STAGGERED â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Cards offset vertically in alternating rhythm â€” visual flow, not static grid
+// ── Layout Mutation: STAGGERED ────────────────────────────────────────────────
+// Cards offset vertically in alternating rhythm — visual flow, not static grid
 
 function TkGridStaggered({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
@@ -5345,8 +5345,8 @@ function TkGridStaggered({ products, tt, primaryColor, device, onProductClick, o
   );
 }
 
-// â”€â”€ Layout Mutation: OVERLAPPING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Cards overlap each other with z-index depth layers â€” premium layered feel
+// ── Layout Mutation: OVERLAPPING ──────────────────────────────────────────────
+// Cards overlap each other with z-index depth layers — premium layered feel
 
 function TkGridOverlapping({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
@@ -5403,8 +5403,8 @@ function TkGridOverlapping({ products, tt, primaryColor, device, onProductClick,
   );
 }
 
-// â”€â”€ Layout Mutation: ASYMMETRIC â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Unequal column widths â€” 60/40 alternating, editorial rhythm
+// ── Layout Mutation: ASYMMETRIC ───────────────────────────────────────────────
+// Unequal column widths — 60/40 alternating, editorial rhythm
 
 function TkGridAsymmetric({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
@@ -5458,7 +5458,7 @@ function TkGridAsymmetric({ products, tt, primaryColor, device, onProductClick, 
   );
 }
 
-// â”€â”€ Product grid: STANDARD (3-col) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Product grid: STANDARD (3-col) ────────────────────────────────────────────
 
 function TkGridStandard({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
@@ -5531,7 +5531,7 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
   );
 }
 
-// â”€â”€ Product grid: MAGAZINE (first product featured) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Product grid: MAGAZINE (first product featured) ───────────────────────────
 
 function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
@@ -5544,7 +5544,7 @@ function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, on
   if (!featured) return null;
   return (
     <div className={`${isMobile ? 'flex flex-col gap-4' : 'grid grid-cols-3 gap-5'}`}>
-      {/* Featured product â€” spans 2 cols */}
+      {/* Featured product — spans 2 cols */}
       <div
         className="group cursor-pointer relative overflow-hidden"
         style={{ borderRadius: tt.surfaceRadius, ...(isMobile ? { aspectRatio: '4/3' } : { gridColumn: 'span 2', aspectRatio: '16/9' }) }}
@@ -5615,7 +5615,7 @@ function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, on
   );
 }
 
-// â”€â”€ Product grid: LIST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Product grid: LIST ────────────────────────────────────────────────────────
 
 function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
   products: RichProduct[]; tt: TokenTheme; primaryColor: string;
@@ -5679,8 +5679,8 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
   );
 }
 
-// â”€â”€ Product grid: CAROUSEL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Horizontal scroll snap carousel â€” one card at a time on mobile, peek on desktop
+// ── Product grid: CAROUSEL ────────────────────────────────────────────────────
+// Horizontal scroll snap carousel — one card at a time on mobile, peek on desktop
 
 function TkGridCarousel({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
@@ -5734,8 +5734,8 @@ function TkGridCarousel({ products, tt, primaryColor, device, onProductClick, on
   );
 }
 
-// â”€â”€ Product grid: SPOTLIGHT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Featured big card + 4-col mini grid â€” editorial/premium feel
+// ── Product grid: SPOTLIGHT ───────────────────────────────────────────────────
+// Featured big card + 4-col mini grid — editorial/premium feel
 
 function TkGridSpotlight({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
@@ -5804,8 +5804,8 @@ function TkGridSpotlight({ products, tt, primaryColor, device, onProductClick, o
   );
 }
 
-// â”€â”€ SCROLLING BANNER SECTION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Auto-scrolling marquee strip â€” energetic, fashion/lifestyle brand accent
+// ── SCROLLING BANNER SECTION ──────────────────────────────────────────────────
+// Auto-scrolling marquee strip — energetic, fashion/lifestyle brand accent
 
 function ScrollingBannerSection({ design, primaryColor, tt }: { design: StoreDesign; primaryColor: string; tt: TokenTheme }) {
   const pc = primaryColor;
@@ -5838,7 +5838,7 @@ function ScrollingBannerSection({ design, primaryColor, tt }: { design: StoreDes
           <span key={i} className="flex items-center gap-0 flex-shrink-0">
             <span className="text-sm font-bold uppercase tracking-widest px-6 whitespace-nowrap"
               style={{ color: pcText }}>{item}</span>
-            <span style={{ color: pcText, opacity: 0.45, fontSize: '10px' }}>âœ¦</span>
+            <span style={{ color: pcText, opacity: 0.45, fontSize: '10px' }}>✦</span>
           </span>
         ))}
       </div>
@@ -5846,8 +5846,8 @@ function ScrollingBannerSection({ design, primaryColor, tt }: { design: StoreDes
   );
 }
 
-// â”€â”€ INSTAGRAM FEED SECTION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Lifestyle photo grid â€” square images with like/comment counts, profile header
+// ── INSTAGRAM FEED SECTION ────────────────────────────────────────────────────
+// Lifestyle photo grid — square images with like/comment counts, profile header
 
 function InstagramFeedSection({ design, primaryColor, tt, device, onProductClick }: {
   design: StoreDesign; primaryColor: string; tt: TokenTheme; device: string;
@@ -5872,11 +5872,11 @@ function InstagramFeedSection({ design, primaryColor, tt, device, onProductClick
   return (
     <section style={{ background: tt.pageBg, borderTop: `1px solid ${tt.divider}` }}>
       <div className="max-w-6xl mx-auto px-5 py-10">
-        {/* Section header â€” looks like an IG profile strip */}
+        {/* Section header — looks like an IG profile strip */}
         <div className="flex items-center gap-4 mb-6">
           <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-black"
             style={{ background: `linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)`, color: '#fff' }}>
-            {(design.products[0]?.name?.[0] ?? 'âœ¦')}
+            {(design.products[0]?.name?.[0] ?? '✦')}
           </div>
           <div>
             <p className="text-sm font-black" style={{ color: tt.textPrimary }}>@{design.products[0]?.category?.toLowerCase().replace(/\s+/g, '_') ?? 'store'}</p>
@@ -5927,13 +5927,13 @@ function InstagramFeedSection({ design, primaryColor, tt, device, onProductClick
   );
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 // SECTION VARIANTS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 
 type SectionVariants = NonNullable<import('../../../src/lib/claudeApi').DesignTokens['sectionVariants']>;
 
-// â”€â”€ Features variants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Features variants ─────────────────────────────────────────────────────────
 
 function FeaturesSection({ features, tt, primaryColor, device, motion: motionLevel, elevation, sectionPy, variant, columns, editMode, onFieldChange }: {
   features: Array<{ icon: string; title: string; description: string }>;
@@ -6043,7 +6043,7 @@ function FeaturesSection({ features, tt, primaryColor, device, motion: motionLev
   );
 }
 
-// â”€â”€ Testimonials variants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Testimonials variants ─────────────────────────────────────────────────────
 
 function TestimonialsSection({ testimonials, tt, primaryColor, device, sectionPy, variant, editMode, onFieldChange }: {
   testimonials: Array<{ text: string; author: string; role: string; rating: number }>;
@@ -6148,7 +6148,7 @@ function TestimonialsSection({ testimonials, tt, primaryColor, device, sectionPy
   );
 }
 
-// â”€â”€ Stats variants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Stats variants ────────────────────────────────────────────────────────────
 
 function StatsSection({ stats, primaryColor, device, tt, sectionPy, variant }: {
   stats: Array<{ value: string; label: string }>;
@@ -6157,7 +6157,7 @@ function StatsSection({ stats, primaryColor, device, tt, sectionPy, variant }: {
 }) {
   const isMobile = device === 'mobile';
   const pc = primaryColor;
-  const statIcons = ['ðŸ“ˆ', 'â­', 'ðŸšš', 'ðŸŽ¯', 'ðŸ’¬', 'ðŸ†'];
+  const statIcons = ['📈', '⭐', '🚚', '🎯', '💬', '🏆'];
 
   if (variant === 'cards') {
     return (
@@ -6184,7 +6184,7 @@ function StatsSection({ stats, primaryColor, device, tt, sectionPy, variant }: {
   return <StatsRow stats={stats} primaryColor={pc} device={device} />;
 }
 
-// â”€â”€ BrandStory variants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── BrandStory variants ───────────────────────────────────────────────────────
 
 function BrandStorySection({ brandStory, products, tt, primaryColor, device, sectionPy, variant, editMode, onFieldChange }: {
   brandStory: string; products: RichProduct[];
@@ -6216,9 +6216,9 @@ function BrandStorySection({ brandStory, products, tt, primaryColor, device, sec
   }
 
   if (variant === 'timeline') {
-    // Split story into â‰¤3 sentences
+    // Split story into ≤3 sentences
     const sentences = brandStory.match(/[^.!?]+[.!?]+/g)?.slice(0, 3) ?? [brandStory];
-    const stepIcons = ['ðŸŒ±', 'ðŸš€', 'â­'];
+    const stepIcons = ['🌱', '🚀', '⭐'];
     return (
       <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}` }}>
         <div className="max-w-5xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
@@ -6252,7 +6252,7 @@ function BrandStorySection({ brandStory, products, tt, primaryColor, device, sec
   );
 }
 
-// â”€â”€ FAQ variants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── FAQ variants ──────────────────────────────────────────────────────────────
 
 function FaqSection({ faq, tt, primaryColor, device, sectionPy, variant, editMode, onFieldChange }: {
   faq: Array<{ q: string; a: string }>;
@@ -6310,7 +6310,7 @@ function FaqSection({ faq, tt, primaryColor, device, sectionPy, variant, editMod
   );
 }
 
-// â”€â”€ Newsletter variants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Newsletter variants ───────────────────────────────────────────────────────
 
 function NewsletterSectionV2({ newsletter, tt, primaryColor, device, sectionPy, variant, editMode, onFieldChange }: {
   newsletter: { headline: string; subtext: string };
@@ -6328,7 +6328,7 @@ function NewsletterSectionV2({ newsletter, tt, primaryColor, device, sectionPy, 
     <button onClick={() => email && setSubmitted(true)}
       className="px-6 py-3 text-sm font-bold flex-shrink-0 transition-opacity hover:opacity-90"
       style={{ background: pc, color: pcText, borderRadius: tt.btnRadius }}>
-      {submitted ? 'âœ“ Subscribed!' : 'Subscribe'}
+      {submitted ? '✓ Subscribed!' : 'Subscribe'}
     </button>
   );
   const emailInput = (invert: boolean) => (
@@ -6353,7 +6353,7 @@ function NewsletterSectionV2({ newsletter, tt, primaryColor, device, sectionPy, 
           </div>
           <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-2 ${isMobile ? '' : 'min-w-[380px]'}`}>
             {emailInput(isDark(pc))}
-            {submitted ? <div className="px-4 py-3 text-sm font-bold" style={{ color: isDark(pc) ? '#fff' : '#000' }}>âœ“ You're in!</div> : submitBtn}
+            {submitted ? <div className="px-4 py-3 text-sm font-bold" style={{ color: isDark(pc) ? '#fff' : '#000' }}>✓ You're in!</div> : submitBtn}
           </div>
         </div>
       </section>
@@ -6370,7 +6370,7 @@ function NewsletterSectionV2({ newsletter, tt, primaryColor, device, sectionPy, 
           <p className={`text-sm ${isMobile ? 'mb-5' : 'mb-7'} leading-relaxed`} style={{ color: tt.textSecondary }}><EditSpan field="newsletter.subtext" value={newsletter.subtext} editMode={editMode} onFieldChange={onFieldChange} /></p>
           <div className={`flex ${isMobile ? 'flex-col' : ''} gap-2`}>
             {emailInput(false)}
-            {submitted ? <div className="py-3 text-sm font-semibold" style={{ color: pc }}>âœ“ You're on the list!</div> : submitBtn}
+            {submitted ? <div className="py-3 text-sm font-semibold" style={{ color: pc }}>✓ You're on the list!</div> : submitBtn}
           </div>
         </div>
       </div>
@@ -6378,7 +6378,7 @@ function NewsletterSectionV2({ newsletter, tt, primaryColor, device, sectionPy, 
   );
 }
 
-// â”€â”€ EDITORIAL BANNER SECTION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── EDITORIAL BANNER SECTION ─────────────────────────────────────────────────
 
 function EditorialBannerSection({ design, tt, primaryColor, device, variant = 'center', sectionPy }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string;
@@ -6444,7 +6444,7 @@ function EditorialBannerSection({ design, tt, primaryColor, device, variant = 'c
   );
 }
 
-// â”€â”€ COUNTDOWN SECTION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── COUNTDOWN SECTION ─────────────────────────────────────────────────────────
 
 function CountdownSection({ design, tt, primaryColor, device, variant = 'centered', sectionPy }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string;
@@ -6557,7 +6557,7 @@ function CountdownSection({ design, tt, primaryColor, device, variant = 'centere
   );
 }
 
-// â”€â”€ CATEGORY SPOTLIGHT SECTION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── CATEGORY SPOTLIGHT SECTION ────────────────────────────────────────────────
 
 function CategorySpotlightSection({ design, tt, primaryColor, device, variant = 'editorial', sectionPy, onProductClick }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string;
@@ -6670,7 +6670,7 @@ function CategorySpotlightSection({ design, tt, primaryColor, device, variant = 
   );
 }
 
-// â”€â”€ TOKEN LAYOUT â€” main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── TOKEN LAYOUT — main component ─────────────────────────────────────────────
 
 function TokenLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
   // v2: designTokens (raw CSS values from Claude) takes priority over v1 buckets
@@ -6684,7 +6684,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
   const heroStyle   = dt?.heroStyle   ?? ds?.heroLayout   ?? 'split';
   const productGrid = dt?.productGrid ?? ds?.productGrid  ?? 'standard';
 
-  // â”€â”€ Unified sections resolution (new â†’ legacy fallback â†’ default) â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Unified sections resolution (new → legacy fallback → default) ────────
   type SectionEntry = {
     type: string; variant?: string | null;
     props?: Partial<import('../../lib/claudeApi').HeroSectionProps & import('../../lib/claudeApi').FeaturesSectionProps & import('../../lib/claudeApi').ProductsSectionProps>;
@@ -6712,7 +6712,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
   const spacing   = dt?.spacing ?? 'comfortable';
   const sectionPy = getSpacingPx(spacing, 56);
 
-  // Animation archetype â€” drives scroll-reveal style, glow, parallax
+  // Animation archetype — drives scroll-reveal style, glow, parallax
   const animArch  = getAnimArchetype(dt?.personality, dt?.motion);
 
   const isMobile = device === 'mobile';
@@ -6726,7 +6726,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
 
   const displayed = selectedCol === 0 ? products : products.filter((_, i) => i % collections.length === selectedCol % collections.length);
 
-  // â”€â”€ Section renderers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Section renderers ─────────────────────────────────────────────────────
 
   const renderSection = ({ type: section, variant, props: sProps = {} }: SectionEntry): React.ReactNode => {
     // hero variant: prefer inline variant from sections[], fallback to heroStyle token
@@ -6738,7 +6738,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
     const heroProps = sProps as { textAlign?: 'left'|'center'|'right'; imageRatio?: 'portrait'|'square'|'landscape'; ctaStyle?: 'filled'|'outline'|'text'; accentLine?: boolean };
     const featProps = sProps as { columns?: 2|3|4 };
     const prodProps = sProps as { title?: string; label?: string };
-    // Content style vars â€” drives label/button/category text presentation
+    // Content style vars — drives label/button/category text presentation
     const cv = getContentStyleVars(tt.contentStyle);
 
     switch (section) {
@@ -6766,7 +6766,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
         return (
           <div key="collections" style={{ borderTop: `1px solid ${tt.divider}`, borderBottom: `1px solid ${tt.divider}`, background: tt.headerBg }}>
             <div className="max-w-6xl mx-auto px-5 py-3 flex gap-2.5 overflow-x-auto">
-              {[{ name: 'All', emoji: 'âœ¨' }, ...collections].map((c, i) => (
+              {[{ name: 'All', emoji: '✨' }, ...collections].map((c, i) => (
                 <button key={i} onClick={() => setSelectedCol(i)} className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 text-xs font-semibold tracking-wide uppercase transition-all"
                   style={selectedCol === i ? { background: primaryColor, color: isDark(primaryColor) ? '#fff' : '#000', borderRadius: tt.btnRadius } : { background: tt.surfaceBg, color: tt.textSecondary, borderRadius: tt.btnRadius }}>
                   {c.emoji} {c.name}
@@ -6785,7 +6785,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
           <section ref={productsRef} className="max-w-6xl mx-auto px-5" style={{ paddingTop: isMobile ? '2rem' : `${sectionPy}px`, paddingBottom: isMobile ? '2rem' : `${sectionPy}px` }}>
             <div className="flex items-end justify-between mb-7">
               <div>
-                {/* Accent line above heading â€” driven by primaryColor */}
+                {/* Accent line above heading — driven by primaryColor */}
                 <div className="h-0.5 w-8 mb-3 rounded-full" style={{ background: primaryColor, opacity: 0.8 }} />
                 <p className={`${cv.labelSize} font-semibold mb-1.5`} style={{ color: tt.textMuted, textTransform: cv.labelTransform, letterSpacing: cv.labelTracking }}>{prodProps.label ?? 'Curated Selection'}</p>
                 <h2 style={{ ...headingStyle(tt, isMobile ? 1.25 : 1.6), color: tt.textPrimary }}>{prodProps.title ?? 'Featured Products'}</h2>
@@ -6860,7 +6860,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
     }
   };
 
-  // resolvedSections declared above â€” nothing to compute here
+  // resolvedSections declared above — nothing to compute here
 
   // Detect dark/warm palette for FAQ and Newsletter tone
   const isDarkPalette = tt.pageBg.startsWith('#0') || tt.pageBg.startsWith('#1') || parseInt(tt.pageBg.replace('#',''), 16) < 0x333333;
@@ -6875,7 +6875,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
       <AnimationInjector />
       <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
 
-      {/* Sticky wrapper â€” PromoBar + header stack together, no overlap */}
+      {/* Sticky wrapper — PromoBar + header stack together, no overlap */}
       <div className={`sticky top-0 z-40${animArch === 'tech' ? ' sk-grad-header' : ''}`}
         style={{
           background: animArch === 'tech'
@@ -6926,7 +6926,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
       {resolvedSections.map((entry) => {
         const node = renderSection(entry);
         if (!node) return null;
-        // Hero, trust, scrollingBanner â€” skip reveal (above fold or already animated)
+        // Hero, trust, scrollingBanner — skip reveal (above fold or already animated)
         const noReveal = ['hero', 'trust', 'scrollingBanner'].includes(entry.type);
         const content = noReveal || motion === 'none' ? node : (
           <RevealWrapper archetype={animArch} delay={0}>
@@ -6950,7 +6950,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
             <EditSpan field="tagline" value={design.tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </p>
           <p className="text-xs" style={{ color: tt.textMuted }}>
-            <EditSpan field="footerNote" value={design.footerNote ?? `Â© 2026 ${storeName} Â· All rights reserved`} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            <EditSpan field="footerNote" value={design.footerNote ?? `© 2026 ${storeName} · All rights reserved`} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </p>
         </div>
       </footer>
@@ -6958,7 +6958,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
   );
 }
 
-// â”€â”€ APP-LIKE LAYOUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── APP-LIKE LAYOUT ───────────────────────────────────────────────────────────
 // Mobile-app skeleton: story circles, product list rows, fixed bottom nav
 // Personality: WhatsApp-like, Discord-like, Spotify-like
 
@@ -6992,7 +6992,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
 
       {promoBar && <PromoBar text={promoBar} primaryColor={pc} editMode={editMode} onFieldChange={onFieldChange} />}
 
-      {/* â”€â”€ Header â”€â”€ */}
+      {/* ── Header ── */}
       <header style={{ background: pc, position: 'sticky', top: 0, zIndex: 40, height: '56px' }}>
         <div className="flex items-center justify-between px-4 h-full">
           <span className="text-base font-bold text-white truncate max-w-[160px]">{storeName}</span>
@@ -7178,7 +7178,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
   );
 }
 
-// â”€â”€ EDITORIAL LAYOUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── EDITORIAL LAYOUT ──────────────────────────────────────────────────────────
 // Magazine skeleton: asymmetric grid, big typography, minimal UI chrome
 // Personality: Apple-like, Notion-like, editorial fashion
 
@@ -7213,7 +7213,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
 
   // Hero: 3 variants based on heroStyle token
   const renderEditorialHero = () => {
-    // â”€â”€ Split: image right, large text left â”€â”€
+    // ── Split: image right, large text left ──
     if (heroStyle === 'split' || heroStyle === 'asymmetrical') {
       return (
         <section style={{ background: tt.pageBg, overflow: 'hidden' }}>
@@ -7225,7 +7225,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
             paddingTop: isMobile ? '3rem' : '5rem',
             paddingBottom: isMobile ? '3rem' : '5rem',
           }}>
-            {/* Text â€” minWidth:0 prevents text from overflowing grid column */}
+            {/* Text — minWidth:0 prevents text from overflowing grid column */}
             <div style={{ minWidth: 0 }}>
               <p className="text-xs uppercase tracking-[0.3em] mb-5" style={{ color: pc }}>{tagline}</p>
               <h1 style={{ ...headingStyle(tt, isMobile ? 2.2 : 3.6), color: tt.textPrimary, lineHeight: 0.93, marginBottom: '1.25rem', maxWidth: '16ch' }}>
@@ -7243,11 +7243,11 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
                 <button onClick={scrollToProducts}
                   className="text-sm font-medium transition-colors hover:opacity-70"
                   style={{ border: `1.5px solid ${tt.surfaceBorder}`, color: tt.textPrimary, borderRadius: tt.btnRadius, padding: '0.75rem 1.5rem' }}>
-                  Explore â†“
+                  Explore ↓
                 </button>
               </div>
             </div>
-            {/* Image â€” minWidth:0 + maxHeight prevents overflow */}
+            {/* Image — minWidth:0 + maxHeight prevents overflow */}
             {!isMobile && products[0]?.image && (
               <div style={{ minWidth: 0, position: 'relative', maxHeight: '60vh', borderRadius: tt.surfaceRadius, overflow: 'hidden' }}>
                 <ProductImg src={products[0].image} alt={products[0].name ?? ''} className="w-full h-full object-cover" style={{ maxHeight: '60vh' }} />
@@ -7264,7 +7264,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
       );
     }
 
-    // â”€â”€ Minimal / Centered: large text, light/dark bg, no hero image â”€â”€
+    // ── Minimal / Centered: large text, light/dark bg, no hero image ──
     if (heroStyle === 'minimal' || heroStyle === 'centered' || heroStyle === 'stacked') {
       return (
         <section style={{ background: tt.surfaceBg, minHeight: isMobile ? '52vh' : '62vh', display: 'flex', alignItems: 'center' }}>
@@ -7288,7 +7288,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
       );
     }
 
-    // â”€â”€ Default / Editorial: full-bleed image, text at bottom â”€â”€
+    // ── Default / Editorial: full-bleed image, text at bottom ──
     return (
       <section className="relative overflow-x-hidden" style={{ minHeight: isMobile ? '70vh' : '85vh', display: 'flex', alignItems: 'flex-end' }}>
         {products[0]?.image && (
@@ -7319,7 +7319,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
             <button onClick={scrollToProducts}
               className="px-7 py-3.5 text-sm font-semibold text-white border border-white/30 hover:bg-white/10 transition-colors"
               style={{ borderRadius: tt.btnRadius }}>
-              Explore â†“
+              Explore ↓
             </button>
           </div>
         </div>
@@ -7362,17 +7362,17 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
       <TkFontInjector url={tt.googleFontsUrl} />
       <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={pc} storeName={storeName} onScrollToProducts={scrollToProducts} />
 
-      {/* Sticky wrapper â€” keeps PromoBar + header stacked without overlap */}
+      {/* Sticky wrapper — keeps PromoBar + header stacked without overlap */}
       <div className="sticky top-0 z-40">
         {promoBar && <PromoBar text={promoBar} primaryColor={pc} />}
-        {/* â”€â”€ Header â€” minimal, transparent â”€â”€ */}
+        {/* ── Header — minimal, transparent ── */}
         <header className="backdrop-blur-md"
           style={{ background: tt.headerBg + 'e8', borderBottom: `1px solid ${tt.divider}`, height: '52px' }}>
           <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
             {/* Brand */}
             <span className="text-sm font-black tracking-wider uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
 
-            {/* Nav â€” desktop only */}
+            {/* Nav — desktop only */}
             {!isMobile && (
               <nav className="flex gap-8">
                 {navLinks.map(l => (
@@ -7399,7 +7399,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
         </header>
       </div>
 
-      {/* â”€â”€ Hero â€” variant by heroStyle token â”€â”€ */}
+      {/* ── Hero — variant by heroStyle token ── */}
 
       {/* All sections rendered via sectionOrder from designTokens.sections */}
       {(() => {
@@ -7516,7 +7516,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
         return sectionOrder.map(type => sectionMap[type] ?? null);
       })()}
 
-      {/* â”€â”€ Footer â”€â”€ */}
+      {/* ── Footer ── */}
       <footer style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '2rem', paddingBottom: '2rem' }}>
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <span className="text-sm font-black uppercase tracking-widest" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
@@ -7526,7 +7526,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
             <EditSpan field="tagline" value={design.tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </p>
           <p className="text-xs" style={{ color: tt.textMuted }}>
-            <EditSpan field="footerNote" value={design.footerNote ?? `Â© 2026 ${storeName} Â· All rights reserved`} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            <EditSpan field="footerNote" value={design.footerNote ?? `© 2026 ${storeName} · All rights reserved`} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </p>
         </div>
       </footer>
@@ -7534,7 +7534,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
   );
 }
 
-// Editorial product card helper â€” token-aware (cardVars + hoverMotion)
+// Editorial product card helper — token-aware (cardVars + hoverMotion)
 function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart, onToggleWishlist, wishlist, featured = false, cardVars, hoverMotion }: {
   p: RichProduct; tt: TokenTheme; pc: string; fmtPrice: (n: number) => string; featured?: boolean;
   cardVars?: CardStyleVars;
@@ -7566,7 +7566,7 @@ function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart
           style={{ borderRadius: '50%' }}>
           <Heart className={`w-3.5 h-3.5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
         </button>
-        {/* Add to cart â€” slide up on hover */}
+        {/* Add to cart — slide up on hover */}
         <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
           <button
             onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
@@ -7588,7 +7588,7 @@ function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart
   );
 }
 
-// â”€â”€ MASONRY LAYOUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── MASONRY LAYOUT ────────────────────────────────────────────────────────────
 // Pinterest-style columns, varied card heights, image-first
 // Personality: pinterest-like, airbnb-like, art/craft/handmade stores
 
@@ -7630,10 +7630,10 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
       <TkFontInjector url={tt.googleFontsUrl} />
       <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={pc} storeName={storeName} onScrollToProducts={scrollToProducts} />
 
-      {/* Sticky wrapper â€” PromoBar + header stack together, no overlap */}
+      {/* Sticky wrapper — PromoBar + header stack together, no overlap */}
       <div className="sticky top-0 z-40" style={{ background: tt.headerBg + 'f0' }}>
         {promoBar && <PromoBar text={promoBar} primaryColor={pc} editMode={editMode} onFieldChange={onFieldChange} />}
-        {/* â”€â”€ Header â”€â”€ */}
+        {/* ── Header ── */}
         <header className="backdrop-blur-sm"
           style={{ borderBottom: `1px solid ${tt.divider}`, height: '56px' }}>
           <div className="max-w-6xl mx-auto px-5 h-full flex items-center justify-between">
@@ -7669,7 +7669,7 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
       </div>
 
 
-      {/* Reorderable sections â€” order driven by designTokens.sections */}
+      {/* Reorderable sections — order driven by designTokens.sections */}
       {(() => {
         const sectionOrder = (design.designTokens?.sections as Array<{ type: string }> | undefined)
           ?.map(s => s.type)
@@ -7861,7 +7861,7 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
             <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </p>
           <p className="text-xs" style={{ color: tt.textMuted }}>
-            <EditSpan field="footerNote" value={design.footerNote ?? `Â© 2026 ${storeName} Â· All rights reserved`} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            <EditSpan field="footerNote" value={design.footerNote ?? `© 2026 ${storeName} · All rights reserved`} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </p>
         </div>
       </footer>
@@ -7869,7 +7869,7 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
   );
 }
 
-// â”€â”€ FULLSCREEN LAYOUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── FULLSCREEN LAYOUT ─────────────────────────────────────────────────────────
 // Immersive viewport sections, cinematic, one story at a time
 // Personality: zara-like, luxury fashion, high-end brands
 
@@ -7894,7 +7894,7 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
   const pcText = isDark(pc) ? '#ffffff' : '#000000';
   const isDarkBg = isDark(tt.pageBg);
 
-  // Spotlight products â€” up to 5 featured
+  // Spotlight products — up to 5 featured
   const spotlightProducts = products.slice(0, Math.min(5, products.length));
   const restProducts = products.slice(5);
 
@@ -7911,10 +7911,10 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
       <TkFontInjector url={tt.googleFontsUrl} />
       <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={pc} storeName={storeName} onScrollToProducts={() => scrollToSlide(1)} />
 
-      {/* Fixed top bar â€” PromoBar stacked above transparent floating header */}
+      {/* Fixed top bar — PromoBar stacked above transparent floating header */}
       <div className="fixed top-0 left-0 right-0 z-50" style={{ pointerEvents: 'none' }}>
         {promoBar && <div style={{ pointerEvents: 'auto' }}><PromoBar text={promoBar} primaryColor={pc} /></div>}
-        {/* â”€â”€ Floating header (always on top) â”€â”€ */}
+        {/* ── Floating header (always on top) ── */}
         <header className="flex items-center justify-between px-6"
           style={{ height: '56px', background: 'transparent', pointerEvents: 'none' }}>
         <span className="text-sm font-black tracking-[0.2em] uppercase pointer-events-auto"
@@ -7947,7 +7947,7 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
         </header>
       </div>
 
-      {/* â”€â”€ Slide dot nav (right side) â”€â”€ */}
+      {/* ── Slide dot nav (right side) ── */}
       {spotlightProducts.length > 1 && !isMobile && (
         <div className="fixed right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2">
           {spotlightProducts.map((_, i) => (
@@ -8149,7 +8149,7 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
             <EditSpan field="tagline" value={design.tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </p>
           <p className="text-xs" style={{ color: tt.textMuted }}>
-            <EditSpan field="footerNote" value={design.footerNote ?? `Â© 2026 ${storeName} Â· All rights reserved`} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            <EditSpan field="footerNote" value={design.footerNote ?? `© 2026 ${storeName} · All rights reserved`} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </p>
         </div>
       </footer>
@@ -8157,7 +8157,7 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
   );
 }
 
-// â”€â”€ Main export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Main export ───────────────────────────────────────────────────────────────
 
 interface StorePreviewProps {
   store: Store;
@@ -8173,8 +8173,8 @@ interface StorePreviewProps {
   navigateRef?: React.MutableRefObject<((path: string) => void) | null>;
 }
 
-// â”€â”€ Store page routing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Single source of truth for page â†” URL path mapping.
+// ── Store page routing ────────────────────────────────────────────────────────
+// Single source of truth for page ↔ URL path mapping.
 // To add a new store page:
 //   1. Add the StorePage type below (search for "type StorePage")
 //   2. Add the entry here: 'pageName': '/url-path'
@@ -8229,7 +8229,7 @@ export default function StorePreview({ store, device, editMode, previewShell, on
     if (page === 'cart' || page === 'checkout') setShowCartSidebar(false);
   }, [page]);
 
-  // Notify parent of page/path changes â€” uses STORE_PAGE_PATHS as single source of truth
+  // Notify parent of page/path changes — uses STORE_PAGE_PATHS as single source of truth
   useEffect(() => {
     if (!onPageChange) return;
     if (page === 'product' && selectedProduct) {
@@ -8464,24 +8464,24 @@ export default function StorePreview({ store, device, editMode, previewShell, on
   const waNumber = paymentSettings?.confirmationWhatsapp;
 
   // All overlays (CartSidebar, CartToast, modals, WhatsApp) are rendered as
-  // SIBLINGS to data-preview-root â€” not children. This is critical:
+  // SIBLINGS to data-preview-root — not children. This is critical:
   // data-preview-root has overflow:hidden which would clip position:fixed
   // descendants even when those are contained by a transformed ancestor.
   // By placing overlays outside data-preview-root they are only clipped by
   // the scroll-container (canvas previewRef / preview scrollContainerRef),
-  // which has transform:translateZ(0) â€” making fixed elements sticky to the
+  // which has transform:translateZ(0) — making fixed elements sticky to the
   // frame rather than the real viewport.
   return (
     <StoreFlagsCtx.Provider value={storeFlags}>
     <>
-      {/* Feature flag CSS â€” hide elements by data attribute when feature disabled */}
+      {/* Feature flag CSS — hide elements by data attribute when feature disabled */}
       {!storeFlags.showWishlist && (
         <style>{`[data-preview-root] [data-wishlist-btn]{display:none!important}[data-preview-root] [data-wishlist-nav]{display:none!important}`}</style>
       )}
       {!storeFlags.showReviews && (
         <style>{`[data-preview-root] [data-reviews-section]{display:none!important}`}</style>
       )}
-      {/* â”€â”€ Store content â€” overflow:hidden clips layout overflow & fly dots â”€â”€ */}
+      {/* ── Store content — overflow:hidden clips layout overflow & fly dots ── */}
       <div
         ref={previewContainerRef}
         data-preview-root="1"
@@ -8495,13 +8495,13 @@ export default function StorePreview({ store, device, editMode, previewShell, on
       >
         {content}
 
-        {/* Cart fly dots â€” must stay inside overflow:hidden so they are clipped */}
+        {/* Cart fly dots — must stay inside overflow:hidden so they are clipped */}
         {flyItems.map(item => (
           <FlyingDot key={item.id} item={item} primaryColor={primaryColor} containerEl={previewContainerRef.current} />
         ))}
       </div>
 
-      {/* â”€â”€ Overlays â€” siblings to data-preview-root, not clipped by its overflow â”€â”€ */}
+      {/* ── Overlays — siblings to data-preview-root, not clipped by its overflow ── */}
 
       {/* Cart Sidebar */}
       <AnimatePresence>
@@ -8523,7 +8523,7 @@ export default function StorePreview({ store, device, editMode, previewShell, on
         )}
       </AnimatePresence>
 
-      {/* Cart toast â€” sticky bottom-right of frame (canvas/preview) or viewport (live) */}
+      {/* Cart toast — sticky bottom-right of frame (canvas/preview) or viewport (live) */}
       {cartToast && (
         <CartToast
           item={cartToast}
