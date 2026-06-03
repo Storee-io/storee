@@ -8,7 +8,7 @@ import {
   Check, Save, Globe, ArrowLeft, Sparkles, Mail,
   BookOpen, Megaphone, Layers, Plus, Trash2,
   Star, HelpCircle, Type, Eye, Lock,
-  Edit2, GripVertical, MousePointer, Layout,
+  Edit2, GripVertical, MousePointer, MousePointerClick, Layout, Pencil,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from '../preview/StorePreview';
@@ -41,6 +41,11 @@ const DEFAULT_SECTION_ORDER = ['hero', 'trust', 'collections', 'products', 'feat
 // Legacy layouts (no designTokens) only support reordering these sections via design.sectionOrder.
 // hero/trust/collections/products are hardcoded at the top of each legacy layout.
 const LEGACY_REORDERABLE_SECTIONS = new Set(['features', 'testimonials', 'brandStory', 'stats', 'faq', 'newsletter']);
+
+// Sections that specific layout types don't render at all — hide them from the editor panel.
+const LAYOUT_TYPE_UNSUPPORTED: Record<string, Set<string>> = {
+  'app-like': new Set(['hero', 'stats', 'faq', 'newsletter']),
+};
 
 const FIELD_LABELS: Record<string, string> = {
   heroTitle:          'Headline',
@@ -157,7 +162,8 @@ interface SectionItem {
 function sectionHasContent(type: string, design: StoreDesign | undefined): boolean {
   if (!design) return false;
   switch (type) {
-    case 'hero':         return true;
+    // Legacy layouts always render hero hardcoded; token layouts only render if data exists.
+    case 'hero':         return (!design.designTokens && !design.designSystem) || !!design.heroTitle || !!design.heroSubtitle;
     case 'trust':        return (design.trustBadges?.length ?? 0) > 0;
     case 'collections':  return (design.collections?.length ?? 0) > 0;
     case 'products':     return (design.products?.length ?? 0) > 0;
@@ -187,8 +193,11 @@ function deriveInitialSections(design: StoreDesign | undefined): SectionItem[] {
   // Only include section types the editor knows about (have SECTION_META entries).
   // Unknown types (e.g. scrollingBanner, editorialBanner) are invisible in the sidebar
   // and cause Move Up/Down and drag to appear broken (swapping with invisible items).
+  const layoutType = dt?.layoutType as string | undefined ?? '';
+  const unsupported = LAYOUT_TYPE_UNSUPPORTED[layoutType] ?? new Set<string>();
   return order
     .filter(type => type in SECTION_META)
+    .filter(type => !unsupported.has(type))
     .map(type => ({ type, hasContent: sectionHasContent(type, design) }));
 }
 
@@ -543,25 +552,15 @@ export default function EditorShell({ store, from }: Props) {
             ))}
           </div>
 
-          {/* Edit / Preview toggle */}
-          <div className="flex items-center bg-slate-100 rounded-xl h-8 px-[3px] gap-0.5">
-            <Tip label="Preview mode">
-              <button
-                onClick={() => setEditMode(false)}
-                className={`flex items-center gap-1.5 px-1.5 py-[3px] rounded-lg text-sm font-medium transition-all ${!editMode ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
-              >
-                <Eye className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Preview</span>
-              </button>
-            </Tip>
-            <Tip label="Click text to edit inline">
-              <button
-                onClick={() => setEditMode(true)}
-                className={`flex items-center gap-1.5 px-1.5 py-[3px] rounded-lg text-sm font-medium transition-all ${editMode ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-              >
-                <Edit2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Edit</span>
-              </button>
-            </Tip>
-          </div>
+          {/* Edit toggle */}
+          <Tip label={editMode ? 'Exit edit mode' : 'Click text to edit inline'}>
+            <button
+              onClick={() => setEditMode(v => !v)}
+              className={`flex items-center gap-1.5 px-3 h-8 rounded-xl text-sm font-medium transition-all ${editMode ? 'bg-blue-100 text-blue-600' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+            >
+              <MousePointerClick className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Edit</span>
+            </button>
+          </Tip>
         </div>
 
         {/* Right â€" live link + save */}
@@ -636,7 +635,7 @@ export default function EditorShell({ store, from }: Props) {
                 layoutScroll
               >
                 <div className="px-4 pt-4 pb-2">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Drag or use â†'â†" to reorder</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Drag or use ↑↓ to reorder</p>
                 </div>
                 <Reorder.Group
                   axis="y"
@@ -649,6 +648,7 @@ export default function EditorShell({ store, from }: Props) {
                   {sectionItems.map((item, idx) => {
                     const meta = SECTION_META[item.type];
                     if (!meta) return null;
+                    if (!item.hasContent) return null;
                     const Icon = meta.icon;
                     const moveUp = () => setSectionItems(prev => {
                       if (idx === 0) return prev;

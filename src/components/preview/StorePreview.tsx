@@ -7139,44 +7139,42 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
             ) : null,
           };
 
-          return sectionOrder.map(type => sectionMap[type] ?? null);
+          return [
+            ...sectionOrder.map(type => sectionMap[type] ?? null),
+            <div key="footer" className="py-4 text-center">
+              <p className="text-[10px]" style={{ color: tt.textMuted }}>
+                <EditSpan field="footerNote" value={design.footerNote ?? `© 2026 ${storeName} · All rights reserved`} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              </p>
+            </div>,
+            <nav key="bottom-nav" className="fixed bottom-0 left-0 right-0 z-50 flex items-center" style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, height: '60px' }}>
+              {[
+                { id: 'home',    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>, label: 'Home' },
+                { id: 'catalog', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><rect x={3} y={3} width={7} height={7}/><rect x={14} y={3} width={7} height={7}/><rect x={14} y={14} width={7} height={7}/><rect x={3} y={14} width={7} height={7}/></svg>, label: 'Catalog' },
+                { id: 'cart',    icon: <ShoppingCart className="w-5 h-5" />, label: 'Cart', badge: cartCount },
+                { id: 'profile', icon: <User className="w-5 h-5" />, label: 'Profile' },
+              ].map(item => (
+                <button key={item.id} onClick={() => {
+                  if (item.id === 'cart') onCartClick();
+                  else if (item.id === 'profile') onUserClick();
+                  else if (item.id === 'home') setActivePage('home');
+                  else setActivePage('catalog');
+                }}
+                  className="flex-1 flex flex-col items-center justify-center gap-1 h-full transition-colors"
+                  style={{ color: activePage === item.id || (item.id === 'cart' && cartCount > 0) ? pc : tt.textMuted }}>
+                  <div className="relative">
+                    {item.icon}
+                    {(item.badge ?? 0) > 0 && (
+                      <span className="absolute -top-1 -right-1 w-3.5 h-3.5 text-[8px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: pc }}>{item.badge}</span>
+                    )}
+                  </div>
+                  <span className="text-[9px] font-semibold">{item.label}</span>
+                </button>
+              ))}
+            </nav>
+          ];
         })()}
 
-        <div className="py-4 text-center">
-          <p className="text-[10px]" style={{ color: tt.textMuted }}>
-            <EditSpan field="footerNote" value={design.footerNote ?? `Â© 2026 ${storeName} Â· All rights reserved`} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-          </p>
-        </div>
       </div>
-
-      {/* â”€â”€ Fixed bottom navigation â”€â”€ */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center"
-        style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, height: '60px' }}>
-        {[
-          { id: 'home',    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>, label: 'Home' },
-          { id: 'catalog', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><rect x={3} y={3} width={7} height={7}/><rect x={14} y={3} width={7} height={7}/><rect x={14} y={14} width={7} height={7}/><rect x={3} y={14} width={7} height={7}/></svg>, label: 'Catalog' },
-          { id: 'cart',    icon: <ShoppingCart className="w-5 h-5" />, label: 'Cart', badge: cartCount },
-          { id: 'profile', icon: <User className="w-5 h-5" />, label: 'Profile' },
-        ].map(item => (
-          <button key={item.id} onClick={() => {
-            if (item.id === 'cart') onCartClick();
-            else if (item.id === 'profile') onUserClick();
-            else if (item.id === 'home') setActivePage('home');
-            else setActivePage('catalog');
-          }}
-            className="flex-1 flex flex-col items-center justify-center gap-1 h-full transition-colors"
-            style={{ color: activePage === item.id || (item.id === 'cart' && cartCount > 0) ? pc : tt.textMuted }}>
-            <div className="relative">
-              {item.icon}
-              {(item.badge ?? 0) > 0 && (
-                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 text-[8px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: pc }}>{item.badge}</span>
-              )}
-            </div>
-            <span className="text-[9px] font-semibold">{item.label}</span>
-          </button>
-        ))}
-      </nav>
-    </div>
   );
 }
 
