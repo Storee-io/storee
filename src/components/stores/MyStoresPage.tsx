@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Store, Globe, Trash2, Plus, TrendingUp, Package,
   AlertTriangle, Rocket, ArrowLeft, Settings, ShoppingBag,
-  Eye, RotateCcw, CloudOff, MoreHorizontal, PenLine,
+  Eye, RotateCcw, CloudOff, MoreHorizontal, PenLine, LayoutDashboard,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useStore } from '@/src/context/StoreContext';
@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import PublishModal from '@/src/components/preview/PublishModal';
 import UnpublishModal from '@/src/components/preview/UnpublishModal';
 import type { Store as StoreType } from '@/src/context/StoreContext';
+import { toast } from 'sonner';
 
 const DEMO_IDS = new Set(['store-1', 'store-2']);
 
@@ -53,13 +54,25 @@ export default function MyStoresPage() {
       publishedDomain: publishStore.publishedDomain ?? subdomain.replace('.storee.io', ''),
     });
     setPublishStore(null);
+    toast.success('Store published', { description: `Your store is now live at ${subdomain}` });
   };
 
-  const handleUnpublishConfirm = () => {
-    if (!unpublishStore) return;
-    setActiveStore(unpublishStore);
-    updateActiveStore({ status: 'Draft' });
-    setUnpublishStore(null);
+  const handleUnpublishConfirm = async () => {
+    if (!unpublishStore?.domain) return;
+    const subdomain = unpublishStore.domain.replace('.storee.io', '');
+    try {
+      await fetch('/api/publish-store', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subdomain }),
+      });
+      setActiveStore(unpublishStore);
+      updateActiveStore({ status: 'Draft' });
+      setUnpublishStore(null);
+      toast.success('Store unpublished', { description: 'Your store is no longer publicly accessible.' });
+    } catch (error) {
+      toast.error('Failed to unpublish', { description: 'Please try again.' });
+    }
   };
 
   const handleDelete = async (storeId: string) => {
@@ -256,60 +269,58 @@ export default function MyStoresPage() {
 
                       {/* ── Actions ── */}
                       <div className="mt-auto pt-3 border-t border-slate-100 space-y-2">
-                        {/* Row 1: Editor (primary) + Preview */}
+                        {/* Row 1: Dashboard (Main CTA) */}
+                        <button
+                          onClick={() => handleManage(store.id)}
+                          className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-white rounded-xl hover:opacity-90 transition-opacity"
+                          style={{ background: color }}
+                        >
+                          <LayoutDashboard className="w-4 h-4" />
+                          Dashboard
+                        </button>
+
+                        {/* Row 2: Editor + Preview + Publish/Republish/Unpublish */}
                         <div className="flex gap-2">
                           <Link
                             href={`/editor/${store.id}?from=/stores`}
                             onClick={() => setActiveStore(store)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-white rounded-xl hover:opacity-90 transition-opacity shadow-sm"
-                            style={{ background: color }}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors"
                           >
                             <PenLine className="w-3.5 h-3.5" />
-                            Editor
+                            <span className="hidden sm:inline">Editor</span>
                           </Link>
                           <Link
                             href={`/preview/${store.id}?from=/stores`}
                             onClick={() => setActiveStore(store)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors"
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors"
                           >
                             <Eye className="w-3.5 h-3.5" />
-                            <span className="text-xs">Preview</span>
+                            <span className="hidden sm:inline">Preview</span>
                           </Link>
-                        </div>
-
-                        {/* Row 2: Manage (dashboard) + Publish/Republish/Unpublish */}
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleManage(store.id)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-slate-500 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors"
-                          >
-                            <Settings className="w-3.5 h-3.5" />
-                            Dashboard
-                          </button>
 
                           {isPublished ? (
                             <button
                               onClick={() => setUnpublishStore(store)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-slate-500 border border-slate-200 hover:border-red-200 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-red-600 border border-red-600 hover:border-red-700 hover:bg-red-50 rounded-xl transition-colors"
                             >
                               <CloudOff className="w-3.5 h-3.5" />
-                              Unpublish
+                              <span className="hidden sm:inline">Unpublish</span>
                             </button>
                           ) : store.publishedDomain ? (
                             <button
                               onClick={() => openPublish(store)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-slate-500 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-teal-600 border border-teal-600 hover:border-teal-700 hover:bg-teal-50 rounded-xl transition-colors"
                             >
                               <RotateCcw className="w-3.5 h-3.5" />
-                              Republish
+                              <span className="hidden sm:inline">Republish</span>
                             </button>
                           ) : (
                             <button
                               onClick={() => openPublish(store)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-slate-500 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-teal-600 border border-teal-600 hover:border-teal-700 hover:bg-teal-50 rounded-xl transition-colors"
                             >
                               <Rocket className="w-3.5 h-3.5" />
-                              Publish
+                              <span className="hidden sm:inline">Publish</span>
                             </button>
                           )}
                         </div>

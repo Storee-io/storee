@@ -9,10 +9,12 @@ import {
   BookOpen, Megaphone, Layers, Plus, Trash2,
   Star, HelpCircle, Type, Eye, Lock,
   Edit2, GripVertical, MousePointer, MousePointerClick, Layout, Pencil,
+  CloudOff, RotateCcw,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from '../preview/StorePreview';
 import PublishModal from '../preview/PublishModal';
+import UnpublishModal from '../preview/UnpublishModal';
 import type { Store } from '../../context/StoreContext';
 import type { StoreDesign } from '../../lib/claudeApi';
 import { toast } from 'sonner';
@@ -244,6 +246,7 @@ export default function EditorShell({ store, from }: Props) {
   const [sidebarTab, setSidebarTab] = useState<'sections' | 'properties'>('sections');
   const [draggingType, setDraggingType] = useState<string | null>(null);
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [showUnpublishModal, setShowUnpublishModal] = useState(false);
   const [canvasPage, setCanvasPage] = useState<string>('/');
   const canvasNavigateRef = useRef<((path: string) => void) | null>(null);
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -558,7 +561,25 @@ export default function EditorShell({ store, from }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [updateActiveStore, liveContextStore.publishedDomain]);
 
+  const handleUnpublish = async () => {
+    if (!liveContextStore?.domain) return;
+    const subdomain = liveContextStore.domain.replace('.storee.io', '');
+    try {
+      await fetch('/api/publish-store', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subdomain }),
+      });
+      updateActiveStore({ status: 'Draft' });
+      setShowUnpublishModal(false);
+      toast.success('Store unpublished', { description: 'Your store is no longer publicly accessible.' });
+    } catch (error) {
+      toast.error('Failed to unpublish', { description: 'Please try again.' });
+    }
+  };
+
   const isPublished = liveContextStore.status === 'Published';
+  const hasPublishedBefore = !!liveContextStore.publishedDomain;
   const storefrontUrl = liveContextStore.publishedDomain
     ? `https://${liveContextStore.publishedDomain}.storee.io`
     : null;
@@ -658,14 +679,38 @@ export default function EditorShell({ store, from }: Props) {
             <span className="hidden sm:inline">Preview</span>
           </button>
 
-          {/* Publish */}
-          <button
-            onClick={() => setShowPublishModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 gradient-bg text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all shadow-md"
-          >
-            <Rocket className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden sm:inline">{isPublished ? 'Published' : 'Publish'}</span>
-          </button>
+          {/* Publish / Republish / Unpublish — keeps label as primary CTA */}
+          {isPublished ? (
+            <Tip label="Take store offline">
+              <button
+                onClick={() => setShowUnpublishModal(true)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-red-50 text-red-600 border border-red-200 text-sm font-medium rounded-xl hover:bg-red-100 transition-all"
+              >
+                <CloudOff className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Unpublish</span>
+              </button>
+            </Tip>
+          ) : hasPublishedBefore ? (
+            <Tip label="Re-publish your store">
+              <button
+                onClick={() => setShowPublishModal(true)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 gradient-bg text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all shadow-md"
+              >
+                <RotateCcw className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Republish</span>
+              </button>
+            </Tip>
+          ) : (
+            <Tip label="Make your store live">
+              <button
+                onClick={() => setShowPublishModal(true)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 gradient-bg text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all shadow-md"
+              >
+                <Rocket className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Publish</span>
+              </button>
+            </Tip>
+          )}
         </div>
       </div>
 
@@ -1042,9 +1087,17 @@ export default function EditorShell({ store, from }: Props) {
             store={liveContextStore}
             onPublish={handlePublishComplete}
             onClose={() => setShowPublishModal(false)}
-            {...(isPublished && liveContextStore.publishedDomain
+            {...((isPublished || hasPublishedBefore) && liveContextStore.publishedDomain
               ? { fixedSubdomain: liveContextStore.publishedDomain }
               : {})}
+          />
+        )}
+
+        {showUnpublishModal && (
+          <UnpublishModal
+            store={liveContextStore}
+            onConfirm={handleUnpublish}
+            onClose={() => setShowUnpublishModal(false)}
           />
         )}
       </AnimatePresence>

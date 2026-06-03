@@ -174,7 +174,10 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                     </div>
                     <span className="text-sm font-medium truncate flex-1">{store.name}</span>
                     {store.status === 'Published' && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-600 flex-shrink-0">LIVE</span>
+                      <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 flex-shrink-0">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                        Live
+                      </span>
                     )}
                   </button>
                 ))

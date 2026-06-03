@@ -36,7 +36,7 @@ function slugify(text: string): string {
 }
 
 function isValidSubdomain(value: string): boolean {
-  return /^[a-z0-9]([a-z0-9-]{1,48}[a-z0-9])?$/.test(value);
+  return /^[a-z0-9][a-z0-9-]{3,48}[a-z0-9]$/.test(value);
 }
 
 function getFormatError(value: string): string {
@@ -45,8 +45,8 @@ function getFormatError(value: string): string {
     return 'Only lowercase letters (a–z), numbers (0–9), and hyphens (-) are allowed.';
   if (/^-|-$/.test(value))
     return 'Cannot start or end with a hyphen.';
-  if (value.length < 3)
-    return 'Must be at least 3 characters.';
+  if (value.length < 5)
+    return 'Must be at least 5 characters.';
   if (value.length > 50)
     return 'Cannot exceed 50 characters.';
   return '';

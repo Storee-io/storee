@@ -3,10 +3,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, Bell, Eye, Copy, Settings, HelpCircle, LogOut, ExternalLink, Check, EyeOff, Loader2, PenLine } from 'lucide-react';
+import { Menu, Bell, Eye, Copy, Settings, HelpCircle, LogOut, ExternalLink, Check, EyeOff, Loader2, PenLine, Rocket, RotateCcw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
 import { useNotifications } from '../../hooks/useNotifications';
+import PublishModal from '../preview/PublishModal';
+import UnpublishModal from '../preview/UnpublishModal';
+import { toast } from 'sonner';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,6 +46,8 @@ function execCommandCopy(text: string) {
 export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const [copied, setCopied] = useState(false);
   const [unpublishing, setUnpublishing] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [showUnpublishModal, setShowUnpublishModal] = useState(false);
   const { user, logout } = useAuth();
   const { activeStore, updateActiveStore } = useStore();
   const router = useRouter();
@@ -58,9 +63,21 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         body: JSON.stringify({ subdomain }),
       });
       updateActiveStore({ status: 'Draft' });
+      setShowUnpublishModal(false);
+      toast.success('Store unpublished', { description: 'Your store is no longer publicly accessible.' });
     } finally {
       setUnpublishing(false);
     }
+  };
+
+  const handlePublishComplete = (subdomain: string) => {
+    updateActiveStore({
+      status: 'Published',
+      domain: subdomain,
+      publishedDomain: activeStore?.publishedDomain ?? subdomain.replace('.storee.io', ''),
+    });
+    setShowPublishModal(false);
+    toast.success('Store published', { description: `Your store is now live at ${subdomain}` });
   };
 
   const copyLink = () => {
@@ -98,7 +115,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
                 <p className="text-xs text-slate-400 truncate mt-0.5">{activeStore.domain}</p>
               </div>
               <DropdownMenuItem
-                onClick={handleUnpublish}
+                onClick={() => setShowUnpublishModal(true)}
                 className="flex items-center gap-2.5 px-3 py-2 text-sm text-amber-600 hover:bg-amber-50 cursor-pointer"
               >
                 <EyeOff className="w-4 h-4" />
@@ -107,10 +124,35 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-500">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-            Draft
-          </span>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-500 hover:bg-amber-100 transition-colors cursor-pointer">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+              Draft
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-52">
+              <div className="px-3 py-2 border-b border-slate-100">
+                <p className="text-xs text-slate-500 font-medium">Store is in draft</p>
+                <p className="text-xs text-slate-400 mt-0.5">Not yet published</p>
+              </div>
+              {activeStore?.publishedDomain ? (
+                <DropdownMenuItem
+                  onClick={() => setShowPublishModal(true)}
+                  className="flex items-center gap-2.5 px-3 py-2 text-sm text-teal-600 hover:bg-teal-50 cursor-pointer"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Republish Store
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  onClick={() => setShowPublishModal(true)}
+                  className="flex items-center gap-2.5 px-3 py-2 text-sm text-teal-600 hover:bg-teal-50 cursor-pointer"
+                >
+                  <Rocket className="w-4 h-4" />
+                  Publish Store
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
         </div>
       </div>
@@ -145,22 +187,24 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           </div>
         )}
 
-        {/* Preview button */}
-        <Link
-          href={activeStore ? `/preview/${activeStore.id}?from=/dashboard` : '/preview?from=/dashboard'}
-          className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-all"
-        >
-          <Eye className="w-4 h-4" />
-          Preview
-        </Link>
-
         {/* Editor button */}
         <Link
           href={activeStore ? `/editor/${activeStore.id}?from=/dashboard` : '/editor'}
-          className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-all"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 sm:px-3.5 sm:py-1.5 p-2 sm:p-0 text-sm font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-all"
+          title="Editor"
         >
           <PenLine className="w-4 h-4" />
-          Editor
+          <span className="hidden sm:inline">Editor</span>
+        </Link>
+
+        {/* Preview button */}
+        <Link
+          href={activeStore ? `/preview/${activeStore.id}?from=/dashboard` : '/preview?from=/dashboard'}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 sm:px-3.5 sm:py-1.5 p-2 sm:p-0 text-sm font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-all"
+          title="Preview"
+        >
+          <Eye className="w-4 h-4" />
+          <span className="hidden sm:inline">Preview</span>
         </Link>
 
         {/* Divider */}
@@ -263,6 +307,27 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Publish Modal */}
+      {showPublishModal && (
+        <PublishModal
+          store={activeStore!}
+          onPublish={handlePublishComplete}
+          onClose={() => setShowPublishModal(false)}
+          {...(activeStore?.publishedDomain
+            ? { fixedSubdomain: activeStore.publishedDomain }
+            : {})}
+        />
+      )}
+
+      {/* Unpublish Modal */}
+      {showUnpublishModal && (
+        <UnpublishModal
+          store={activeStore!}
+          onConfirm={handleUnpublish}
+          onClose={() => setShowUnpublishModal(false)}
+        />
+      )}
     </header>
   );
 }

@@ -7897,7 +7897,9 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
   const isMobile = device === 'mobile';
   const [activeSlide, setActiveSlide] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [selectedCol, setSelectedCol] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const productsRef = useRef<HTMLDivElement>(null);
 
   const pc = primaryColor || '#ffffff';
   const pcText = isDark(pc) ? '#ffffff' : '#000000';

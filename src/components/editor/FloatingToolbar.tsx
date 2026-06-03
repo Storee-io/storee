@@ -137,23 +137,85 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
   useEffect(() => { if (!editMode) setPos(null); }, [editMode]);
 
   const exec = useCallback((cmd: string, value?: string) => {
-    document.execCommand(cmd, false, value);
+    try {
+      restoreRange();
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount) return;
+
+      const range = sel.getRangeAt(0);
+      const container = range.commonAncestorContainer;
+      const el = container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
+      const editorField = el?.closest('[data-editor-field]') as HTMLElement;
+
+      if (!editorField) return;
+
+      // Ensure field has focus and selection is restored
+      editorField.focus();
+
+      // Restore selection again after focus
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      // Execute command
+      const success = document.execCommand(cmd, false, value);
+      console.log(`execCommand(${cmd}, ${value}):`, success);
+    } catch (err) {
+      console.error(`Error in exec(${cmd}):`, err);
+    }
     setTimeout(refresh, 0);
-  }, [refresh]);
+  }, [refresh, restoreRange]);
 
   const handleFontSize = useCallback((size: number) => {
     restoreRange();
-    // execCommand fontSize only accepts 1–7; use a workaround via font[size=7] → span
-    document.execCommand('fontSize', false, '7');
-    const container = containerRef.current;
-    container?.querySelectorAll('font[size="7"]').forEach(el => {
-      const span = document.createElement('span');
-      span.style.fontSize = `${size}px`;
-      span.innerHTML = (el as HTMLElement).innerHTML;
-      el.parentNode?.replaceChild(span, el);
-    });
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) {
+      console.log('No selection for font size');
+      return;
+    }
+
+    const range = sel.getRangeAt(0);
+    const container = range.commonAncestorContainer;
+    const el = container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
+    const editorField = el?.closest('[data-editor-field]') as HTMLElement;
+
+    if (!editorField) {
+      console.log('No editor field found');
+      return;
+    }
+
+    try {
+      // Focus field first
+      editorField.focus();
+      console.log('Field focused');
+
+      // Restore selection after focus
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      // Use execCommand with fontSize 1-7 then replace
+      console.log('Applying font size:', size);
+      document.execCommand('fontSize', false, '7');
+      console.log('execCommand fontSize returned');
+
+      // Find all font[size="7"] and replace with span
+      const containerEl = editorField;
+      const fontEls = containerEl.querySelectorAll('font[size="7"]');
+      console.log('Found font elements:', fontEls.length);
+
+      fontEls.forEach((fontEl) => {
+        const span = document.createElement('span');
+        span.style.fontSize = `${size}px`;
+        span.innerHTML = (fontEl as HTMLElement).innerHTML;
+        fontEl.parentNode?.replaceChild(span, fontEl);
+      });
+
+      console.log('Font size applied:', size);
+    } catch (err) {
+      console.error('Font size error:', err);
+    }
+
     setTimeout(refresh, 0);
-  }, [restoreRange, containerRef, refresh]);
+  }, [restoreRange, refresh]);
 
   const handleFontFamily = useCallback((family: string) => {
     restoreRange();
@@ -163,17 +225,59 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
   const handleLineHeight = useCallback((lh: string) => {
     restoreRange();
     const sel = window.getSelection();
-    if (!sel || !sel.rangeCount) return;
+    if (!sel || !sel.rangeCount) {
+      console.log('No selection for line height');
+      return;
+    }
+
     const range = sel.getRangeAt(0);
-    const span = document.createElement('span');
-    span.style.lineHeight = lh;
-    try { range.surroundContents(span); } catch { /* selection crosses elements */ }
+    const container = range.commonAncestorContainer;
+    const el = container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
+    const editorField = el?.closest('[data-editor-field]') as HTMLElement;
+
+    if (!editorField) {
+      console.log('No editor field found for line height');
+      return;
+    }
+
+    try {
+      // Focus field first
+      editorField.focus();
+      console.log('Field focused for line height');
+
+      // Restore selection after focus
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      const span = document.createElement('span');
+      span.style.lineHeight = lh;
+      console.log('Created span with lineHeight:', lh);
+
+      try {
+        console.log('Trying surroundContents...');
+        range.surroundContents(span);
+        console.log('surroundContents succeeded');
+      } catch (e) {
+        console.log('surroundContents failed, trying extractContents fallback...');
+        // If surroundContents fails (e.g., selection crosses elements), use insertNode
+        const contents = range.extractContents();
+        span.appendChild(contents);
+        range.insertNode(span);
+        console.log('extractContents fallback succeeded');
+      }
+      console.log('Line height applied:', lh);
+    } catch (err) {
+      console.error('Line height error:', err);
+    }
+
     setTimeout(refresh, 0);
   }, [restoreRange, refresh]);
 
   const handleTextStyle = useCallback((tag: string) => {
     restoreRange();
-    exec('formatBlock', `<${tag}>`);
+    if (tag) {
+      exec('formatBlock', `<${tag}>`);
+    }
   }, [restoreRange, exec]);
 
   const handleLink = useCallback(() => {
@@ -183,13 +287,48 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
   }, [saveRange]);
 
   const applyLink = useCallback(() => {
-    restoreRange();
-    const url = linkUrl.trim();
-    if (url) {
-      exec('createLink', url.startsWith('http') ? url : `https://${url}`);
+    try {
+      restoreRange();
+      const url = linkUrl.trim();
+      if (!url) {
+        setShowLink(false);
+        return;
+      }
+
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount) {
+        setShowLink(false);
+        return;
+      }
+
+      const range = sel.getRangeAt(0);
+      const container = range.commonAncestorContainer;
+      const el = container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
+      const editorField = el?.closest('[data-editor-field]') as HTMLElement;
+
+      if (!editorField) {
+        setShowLink(false);
+        return;
+      }
+
+      // Focus the field
+      editorField.focus();
+
+      // Restore selection after focus
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      // Create link
+      const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+      document.execCommand('createLink', false, fullUrl);
+      console.log('Link created:', fullUrl);
+    } catch (err) {
+      console.error('Error creating link:', err);
+    } finally {
+      setShowLink(false);
+      setTimeout(refresh, 0);
     }
-    setShowLink(false);
-  }, [restoreRange, linkUrl, exec]);
+  }, [restoreRange, linkUrl, refresh]);
 
   if (!pos) return null;
 
@@ -245,7 +384,11 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         title="Text style"
         defaultValue="p"
         onMouseDown={saveRange}
-        onChange={e => handleTextStyle(e.target.value)}
+        onChange={e => {
+          handleTextStyle(e.target.value);
+          // Reset to allow re-selecting same value
+          (e.target as HTMLSelectElement).value = 'p';
+        }}
         className={selectCls + ' max-w-[76px]'}
       >
         {TEXT_STYLES.map(s => (
@@ -296,7 +439,11 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         title="Font family"
         defaultValue=""
         onMouseDown={saveRange}
-        onChange={e => handleFontFamily(e.target.value)}
+        onChange={e => {
+          handleFontFamily(e.target.value);
+          // Reset to allow re-selecting same value
+          (e.target as HTMLSelectElement).value = '';
+        }}
         className={selectCls + ' max-w-[72px]'}
       >
         {FONT_FAMILIES.map(f => (
@@ -309,7 +456,11 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         title="Font size"
         defaultValue="16"
         onMouseDown={saveRange}
-        onChange={e => handleFontSize(Number(e.target.value))}
+        onChange={e => {
+          handleFontSize(Number(e.target.value));
+          // Reset to allow re-selecting same value
+          (e.target as HTMLSelectElement).value = '16';
+        }}
         className={selectCls + ' w-[46px]'}
       >
         {FONT_SIZES.map(s => (
@@ -324,7 +475,7 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         <button
           key={cmd}
           title={label}
-          onMouseDown={e => { e.preventDefault(); exec(cmd); }}
+          onMouseDown={e => { e.preventDefault(); saveRange(); setTimeout(() => exec(cmd), 0); }}
           className={active(fmt[cmd])}
         >
           <Icon className="w-3.5 h-3.5" />
@@ -338,7 +489,7 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         <button
           key={cmd}
           title={label}
-          onMouseDown={e => { e.preventDefault(); exec(cmd); }}
+          onMouseDown={e => { e.preventDefault(); saveRange(); setTimeout(() => exec(cmd), 0); }}
           className={plain}
         >
           <Icon className="w-3.5 h-3.5" />
@@ -348,15 +499,15 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       <Divider />
 
       {/* Lists */}
-      <button title="Bullet list" onMouseDown={e => { e.preventDefault(); exec('insertUnorderedList'); }} className={plain}>
+      <button title="Bullet list" onMouseDown={e => { e.preventDefault(); saveRange(); setTimeout(() => exec('insertUnorderedList'), 0); }} className={plain}>
         <List className="w-3.5 h-3.5" />
       </button>
-      <button title="Numbered list" onMouseDown={e => { e.preventDefault(); exec('insertOrderedList'); }} className={plain}>
+      <button title="Numbered list" onMouseDown={e => { e.preventDefault(); saveRange(); setTimeout(() => exec('insertOrderedList'), 0); }} className={plain}>
         <ListOrdered className="w-3.5 h-3.5" />
       </button>
 
       {/* Link */}
-      <button title="Insert link (Ctrl+K)" onMouseDown={e => { e.preventDefault(); handleLink(); }} className={plain}>
+      <button title="Insert link (Ctrl+K)" onMouseDown={e => { e.preventDefault(); saveRange(); handleLink(); }} className={plain}>
         <Link className="w-3.5 h-3.5" />
       </button>
 
@@ -367,7 +518,11 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         title="Line height"
         defaultValue="1.5"
         onMouseDown={saveRange}
-        onChange={e => handleLineHeight(e.target.value)}
+        onChange={e => {
+          handleLineHeight(e.target.value);
+          // Reset to allow re-selecting same value
+          (e.target as HTMLSelectElement).value = '1.5';
+        }}
         className={selectCls + ' w-[48px]'}
       >
         {LINE_HEIGHTS.map(l => (
@@ -380,7 +535,7 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       {/* Clear formatting */}
       <button
         title="Clear formatting"
-        onMouseDown={e => { e.preventDefault(); exec('removeFormat'); }}
+        onMouseDown={e => { e.preventDefault(); saveRange(); setTimeout(() => exec('removeFormat'), 0); }}
         className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-all"
       >
         <Eraser className="w-3.5 h-3.5" />
