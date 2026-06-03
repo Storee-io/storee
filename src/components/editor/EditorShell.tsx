@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import {
   Monitor, Tablet, Smartphone, ChevronDown, ChevronRight, ChevronUp,
-  Check, Save, Globe, ArrowLeft, Sparkles, Mail,
+  Check, Rocket, ArrowLeft, Sparkles, Mail,
   BookOpen, Megaphone, Layers, Plus, Trash2,
   Star, HelpCircle, Type, Eye, Lock,
   Edit2, GripVertical, MousePointer, MousePointerClick, Layout, Pencil,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from '../preview/StorePreview';
+import PublishModal from '../preview/PublishModal';
 import type { Store } from '../../context/StoreContext';
 import type { StoreDesign } from '../../lib/claudeApi';
 import { toast } from 'sonner';
@@ -242,6 +243,7 @@ export default function EditorShell({ store, from }: Props) {
   const [editMode, setEditMode] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<'sections' | 'properties'>('sections');
   const [draggingType, setDraggingType] = useState<string | null>(null);
+  const [showPublishModal, setShowPublishModal] = useState(false);
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialMountRef = useRef(true);
   const persistStoreRef = useRef<(() => Promise<void>) | null>(null);
@@ -527,6 +529,16 @@ export default function EditorShell({ store, from }: Props) {
       promoBar, accentColor, brandStory, features, testimonials, faq, newsletter,
       navLinks, trustBadges, stats, sectionHeadings, footerNote, sectionItems]);
 
+  const handlePublishComplete = useCallback((subdomain: string) => {
+    updateActiveStore({
+      status: 'Published',
+      domain: subdomain,
+      publishedDomain: liveContextStore.publishedDomain ?? subdomain.replace('.storee.io', ''),
+    });
+    setShowPublishModal(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [updateActiveStore, liveContextStore.publishedDomain]);
+
   const isPublished = liveContextStore.status === 'Published';
   const storefrontUrl = liveContextStore.publishedDomain
     ? `https://${liveContextStore.publishedDomain}.storee.io`
@@ -595,43 +607,37 @@ export default function EditorShell({ store, from }: Props) {
           </Tip>
         </div>
 
-        {/* Right â€" live link + save */}
-        <div className="flex items-center gap-1 flex-1 justify-end">
-          {storefrontUrl && (
-            <Tip label="View live store">
-              <a
-                href={storefrontUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => toast('Opening live storeâ€¦', { duration: 1200 })}
-                className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                <Globe className="w-4 h-4" />
-              </a>
-            </Tip>
-          )}
+        {/* Right — autosave status + Preview + Publish */}
+        <div className="flex items-center gap-2 flex-1 justify-end">
           {/* Autosave status indicator */}
-          <span className="hidden sm:inline text-xs text-slate-400 transition-all">
+          <span className="hidden sm:inline text-xs transition-all">
             {isSaving
-              ? 'Saving…'
+              ? <span className="text-slate-400">Saving…</span>
               : saved && !isDirty
               ? <span className="text-emerald-500 flex items-center gap-1"><Check className="w-3 h-3" />Saved</span>
               : isDirty
-              ? 'Unsaved…'
+              ? <span className="text-slate-400">Unsaved…</span>
               : null
             }
           </span>
 
-          <Tip label="Save & return to preview">
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 gradient-bg text-white text-sm font-medium rounded-xl hover:opacity-90 disabled:opacity-60 transition-all shadow-md"
-            >
-              <Save className="w-4 h-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Save</span>
-            </button>
-          </Tip>
+          {/* Preview */}
+          <button
+            onClick={() => router.push(`/preview/${liveContextStore.id}`)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors"
+          >
+            <Eye className="w-4 h-4 flex-shrink-0" />
+            <span className="hidden sm:inline">Preview</span>
+          </button>
+
+          {/* Publish */}
+          <button
+            onClick={() => setShowPublishModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 gradient-bg text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all shadow-md"
+          >
+            <Rocket className="w-4 h-4 flex-shrink-0" />
+            <span className="hidden sm:inline">{isPublished ? 'Published' : 'Publish'}</span>
+          </button>
         </div>
       </div>
 
@@ -882,7 +888,7 @@ export default function EditorShell({ store, from }: Props) {
           {/* Bottom hint */}
           {isPublished && (
             <div className="px-5 py-3 border-t border-slate-100 flex-shrink-0">
-              <p className="text-[10px] text-slate-400 text-center">Save syncs changes to your live store</p>
+              <p className="text-[10px] text-slate-400 text-center">Changes autosave and sync to your live store</p>
             </div>
           )}
         </aside>
@@ -930,6 +936,20 @@ export default function EditorShell({ store, from }: Props) {
         </main>
 
       </div>
+
+      {/* Publish Modal */}
+      <AnimatePresence>
+        {showPublishModal && (
+          <PublishModal
+            store={liveContextStore}
+            onPublish={handlePublishComplete}
+            onClose={() => setShowPublishModal(false)}
+            {...(isPublished && liveContextStore.publishedDomain
+              ? { fixedSubdomain: liveContextStore.publishedDomain }
+              : {})}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
