@@ -430,6 +430,23 @@ export default function EditorShell({ store, from }: Props) {
 
   const previewRef = useRef<HTMLDivElement>(null);
 
+  // ── Edit hint (shown when user tries to interact without edit mode) ──────────
+  const [showEditHint, setShowEditHint] = useState(false);
+  const editBtnRef = useRef<HTMLButtonElement>(null);
+  const editHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragOriginRef = useRef<{ x: number; y: number } | null>(null);
+
+  const triggerEditHint = useCallback(() => {
+    if (editMode) return;
+    setShowEditHint(true);
+    if (editHintTimerRef.current) clearTimeout(editHintTimerRef.current);
+    editHintTimerRef.current = setTimeout(() => setShowEditHint(false), 3500);
+  }, [editMode]);
+
+  useEffect(() => () => {
+    if (editHintTimerRef.current) clearTimeout(editHintTimerRef.current);
+  }, []);
+
   const scrollToSection = useCallback((sectionType: string) => {
     const el = previewRef.current?.querySelector(`[data-editor-section="${sectionType}"]`);
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -580,7 +597,8 @@ export default function EditorShell({ store, from }: Props) {
           <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
           <Tip label={editMode ? 'Exit edit mode' : 'Click text to edit inline'}>
             <button
-              onClick={() => setEditMode(v => !v)}
+              ref={editBtnRef}
+              onClick={() => { setEditMode(v => !v); setShowEditHint(false); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl transition-all ${editMode ? 'bg-blue-100 text-blue-600' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
             >
               <MousePointerClick className="w-3.5 h-3.5" />
@@ -898,8 +916,43 @@ export default function EditorShell({ store, from }: Props) {
         {/* â"€â"€ Preview area â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
         <main className="flex-1 overflow-hidden bg-slate-100 flex justify-center">
 
-          {/* Floating text-format toolbar â€" fixed position, escapes overflow */}
+          {/* Floating text-format toolbar — fixed position, escapes overflow */}
           <FloatingToolbar editMode={editMode} containerRef={previewRef} />
+
+          {/* Edit hint callout — shown when user tries to interact without edit mode */}
+          <AnimatePresence>
+            {showEditHint && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+                className="fixed z-[9998] pointer-events-none"
+                style={(() => {
+                  const btn = editBtnRef.current;
+                  if (!btn) return { top: 56, left: 220 };
+                  const r = btn.getBoundingClientRect();
+                  return { top: r.bottom + 8, left: r.left + r.width / 2 };
+                })()}
+              >
+                <div className="flex flex-col items-center">
+                  <div className="w-3 h-2 overflow-hidden">
+                    <div className="w-3 h-3 bg-slate-800 rotate-45 translate-y-1.5 mx-auto" />
+                  </div>
+                  <div className="bg-slate-800 text-white text-xs font-medium px-3.5 py-2.5 rounded-xl shadow-lg flex items-center gap-2 whitespace-nowrap pointer-events-auto">
+                    <MousePointerClick className="w-3.5 h-3.5 text-blue-300 flex-shrink-0" />
+                    <span>Aktifkan <strong className="text-blue-300">Edit</strong> untuk mengedit konten</span>
+                    <button
+                      onClick={() => { setEditMode(true); setShowEditHint(false); }}
+                      className="ml-1 px-2 py-0.5 bg-blue-500 hover:bg-blue-400 text-white text-[11px] font-semibold rounded-lg transition-colors"
+                    >
+                      Aktifkan
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
 
           {/*
@@ -923,14 +976,23 @@ export default function EditorShell({ store, from }: Props) {
               position: 'relative',
             }}
           >
-            {/* Scroll container â€" no transform so fixed children don't scroll with it */}
+            {/* Scroll container — no transform so fixed children don't scroll with it */}
             <div
               ref={previewRef}
-              style={{
-                overflowY: 'auto',
-                overflowX: 'hidden',
-                height: '100%',
+              style={{ overflowY: 'auto', overflowX: 'hidden', height: '100%' }}
+              onDoubleClick={() => triggerEditHint()}
+              onMouseDown={e => { dragOriginRef.current = { x: e.clientX, y: e.clientY }; }}
+              onMouseMove={e => {
+                if (!dragOriginRef.current) return;
+                const dx = e.clientX - dragOriginRef.current.x;
+                const dy = e.clientY - dragOriginRef.current.y;
+                if (Math.sqrt(dx * dx + dy * dy) > 6) {
+                  dragOriginRef.current = null;
+                  triggerEditHint();
+                }
               }}
+              onMouseUp={() => { dragOriginRef.current = null; }}
+              onMouseLeave={() => { dragOriginRef.current = null; }}
             >
               <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} />
             </div>
