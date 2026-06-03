@@ -6995,7 +6995,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
       {/* ── Header ── */}
       <header style={{ background: pc, position: 'sticky', top: 0, zIndex: 40, height: '56px' }}>
         <div className="flex items-center justify-between px-4 h-full">
-          <span className="text-base font-bold text-white truncate max-w-[160px]">{storeName}</span>
+          <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine className="text-base font-bold text-white truncate max-w-[160px]" />
           <div className="flex items-center gap-1">
             <button data-wishlist-nav="" onClick={onWishlistClick} className="relative p-2 text-white/70 hover:text-white">
               <Heart className="w-5 h-5" />
