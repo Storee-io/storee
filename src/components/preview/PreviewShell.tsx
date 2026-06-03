@@ -358,7 +358,7 @@ export default function PreviewShell({ store, from = null }: Props) {
         </div>
 
         {/* Right — action buttons (Edit + Publish) */}
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex items-center gap-1 flex-1 justify-end">
           {/* Edit */}
           <button
             onClick={() => router.push(`/editor/${liveStore.id}?from=${encodeURIComponent(`/preview/${liveStore.id}`)}`)}
