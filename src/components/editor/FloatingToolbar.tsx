@@ -377,7 +377,7 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       ref={toolbarRef}
       onMouseDown={e => e.preventDefault()}
       style={baseStyle}
-      className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-xl shadow-xl px-1.5 py-1 select-none overflow-hidden"
+      className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-xl shadow-xl px-1.5 py-1 select-none"
     >
       {/* Text style */}
       <select
