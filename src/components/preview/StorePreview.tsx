@@ -911,6 +911,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
 }) {
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
   const isMobile = device === 'mobile';
+  const isTablet = device === 'tablet';
   const t = getCommerceTheme(primaryColor, layoutStyle);
   const { uiT } = useStoreFlags();
 
@@ -929,7 +930,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
           <button onClick={onBack} className="px-6 py-2.5 text-sm font-semibold" style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}>{uiT.startShopping}</button>
         </div>
       ) : (
-        <div className={`max-w-4xl mx-auto px-4 py-6 ${isMobile ? 'flex flex-col gap-4' : 'grid grid-cols-[1fr_320px] gap-8 items-start'}`}>
+        <div className={`max-w-4xl mx-auto px-4 py-6 ${(isMobile || isTablet) ? 'flex flex-col gap-4' : 'grid grid-cols-[1fr_320px] gap-8 items-start'}`}>
 
           {/* Left: items */}
           <div className="space-y-4">
@@ -1340,6 +1341,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const discount = promoApplied ? Math.round(subtotal * 0.1) : 0;
   const total = subtotal + shippingCost - discount;
   const isMobile = device === 'mobile';
+  const isTablet = device === 'tablet';
   const selectedPayment = paymentMethods.find(m => m.id === selectedPayId);
   const t = getCommerceTheme(primaryColor, layoutStyle);
   const inpStyle: CSSProperties = { background: t.inputBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties;
@@ -1354,7 +1356,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         </button>
       </header>
 
-      <div className={`max-w-4xl mx-auto px-4 py-6 ${isMobile ? 'flex flex-col gap-4' : 'grid grid-cols-[1fr_300px] gap-8 items-start'}`}>
+      <div className={`max-w-4xl mx-auto px-4 py-6 ${(isMobile || isTablet) ? 'flex flex-col gap-4' : 'grid grid-cols-[1fr_300px] gap-8 items-start'}`}>
 
         {/* Left: form sections */}
         <div className="space-y-4">
