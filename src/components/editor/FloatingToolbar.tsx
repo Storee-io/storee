@@ -168,48 +168,32 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
   const handleFontSize = useCallback((size: number) => {
     restoreRange();
     const sel = window.getSelection();
-    if (!sel || !sel.rangeCount) {
-      console.log('No selection for font size');
-      return;
-    }
+    if (!sel || !sel.rangeCount) return;
 
     const range = sel.getRangeAt(0);
     const container = range.commonAncestorContainer;
     const el = container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
     const editorField = el?.closest('[data-editor-field]') as HTMLElement;
 
-    if (!editorField) {
-      console.log('No editor field found');
-      return;
-    }
+    if (!editorField) return;
 
     try {
-      // Focus field first
       editorField.focus();
-      console.log('Field focused');
-
-      // Restore selection after focus
       sel.removeAllRanges();
       sel.addRange(range);
 
-      // Use execCommand with fontSize 1-7 then replace
-      console.log('Applying font size:', size);
-      document.execCommand('fontSize', false, '7');
-      console.log('execCommand fontSize returned');
+      // Wrap selected text in span with fontSize style
+      const span = document.createElement('span');
+      span.style.fontSize = `${size}px`;
 
-      // Find all font[size="7"] and replace with span
-      const containerEl = editorField;
-      const fontEls = containerEl.querySelectorAll('font[size="7"]');
-      console.log('Found font elements:', fontEls.length);
-
-      fontEls.forEach((fontEl) => {
-        const span = document.createElement('span');
-        span.style.fontSize = `${size}px`;
-        span.innerHTML = (fontEl as HTMLElement).innerHTML;
-        fontEl.parentNode?.replaceChild(span, fontEl);
-      });
-
-      console.log('Font size applied:', size);
+      try {
+        range.surroundContents(span);
+      } catch {
+        // If surroundContents fails (e.g., selection crosses elements), use insertNode
+        const contents = range.extractContents();
+        span.appendChild(contents);
+        range.insertNode(span);
+      }
     } catch (err) {
       console.error('Font size error:', err);
     }
