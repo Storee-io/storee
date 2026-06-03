@@ -55,15 +55,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Restore existing session or sign in anonymously
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        setUser(supabaseUserToLocal(session.user));
-      } else {
-        // No session — sign in anonymously so stores can be persisted
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUser(supabaseUserToLocal(session.user));
+        } else {
+          // No session — sign in anonymously so stores can be persisted
+          await signInAnonymouslySafe();
+        }
+      } catch {
+        // Network error restoring session (e.g. Supabase unreachable, stale
+        // refresh token) — clear stale token and fall back to anonymous.
+        try { await supabase.auth.signOut({ scope: 'local' }); } catch { /* ignore */ }
         await signInAnonymouslySafe();
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    });
+    })();
 
     // Listen for sign-in / sign-out / token-refresh events
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

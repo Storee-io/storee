@@ -11,6 +11,7 @@ export const supabase = createClient(url, anonKey, {
     // Sessions are still read on mount via getSession().
     autoRefreshToken: false,
     persistSession: true,
+    detectSessionInUrl: false,
   },
 });
 
