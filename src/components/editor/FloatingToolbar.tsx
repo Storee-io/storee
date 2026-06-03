@@ -107,20 +107,61 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       return;
     }
 
-    // Check the element's inline font-size style first
-    const inlineStyle = (el as HTMLElement).style?.fontSize;
-    if (inlineStyle) {
-      const match = inlineStyle.match(/(\d+)/);
-      if (match) {
-        const size = match[1];
-        if (FONT_SIZES.includes(Number(size))) {
-          setCurrentFontSize(size);
-          return;
+    // Collect all unique font sizes from the selection
+    const fontSizes = new Set<string>();
+
+    // Check the current element first
+    if (el.nodeType === Node.ELEMENT_NODE) {
+      const inlineStyle = (el as HTMLElement).style?.fontSize;
+      if (inlineStyle) {
+        const match = inlineStyle.match(/(\d+)/);
+        if (match) {
+          fontSizes.add(match[1]);
         }
       }
     }
 
-    // Fall back to computed font size
+    // Check all child elements of the selected element for font sizes
+    const collectFontSizes = (parent: Node) => {
+      for (let i = 0; i < parent.childNodes.length; i++) {
+        const child = parent.childNodes[i];
+
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          const childEl = child as HTMLElement;
+          const inlineStyle = childEl.style?.fontSize;
+
+          if (inlineStyle) {
+            const match = inlineStyle.match(/(\d+)/);
+            if (match) {
+              fontSizes.add(match[1]);
+            }
+          }
+
+          // Recursively check children
+          collectFontSizes(child);
+        }
+      }
+    };
+
+    collectFontSizes(el);
+
+    // If we found font sizes
+    if (fontSizes.size > 0) {
+      if (fontSizes.size === 1) {
+        // Single font size - show it
+        const size = Array.from(fontSizes)[0];
+        if (FONT_SIZES.includes(Number(size))) {
+          setCurrentFontSize(size);
+          return;
+        }
+      } else {
+        // Multiple different font sizes - show empty/mixed indicator
+        setCurrentFontSize('');
+        return;
+      }
+    }
+
+    // No inline styles found, use computed font size
     const computedStyle = window.getComputedStyle(el as HTMLElement);
     const fontSize = computedStyle.fontSize;
 
@@ -131,6 +172,9 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       // Only update if it's in our FONT_SIZES array
       if (FONT_SIZES.includes(Number(size))) {
         setCurrentFontSize(size);
+      } else {
+        // Computed size not in our list, show default
+        setCurrentFontSize('16');
       }
     }
   }, []);
@@ -506,11 +550,14 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         onMouseDown={e => saveRange()}
         onChange={e => {
           console.log('Font size changed to:', e.target.value);
-          handleFontSize(Number(e.target.value));
+          if (e.target.value) {
+            handleFontSize(Number(e.target.value));
+          }
           // Let updateCurrentFontSize handle the state update via refresh
         }}
         className={selectCls + ' w-[46px]'}
       >
+        <option value="">---</option>
         {FONT_SIZES.map(s => (
           <option key={s} value={String(s)}>{s}</option>
         ))}
