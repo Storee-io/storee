@@ -435,6 +435,15 @@ export default function EditorShell({ store, from }: Props) {
 
   const previewRef = useRef<HTMLDivElement>(null);
 
+  // Sidebar resize
+  const SIDEBAR_MIN = 200;
+  const SIDEBAR_MAX = 480;
+  const [sidebarWidth, setSidebarWidth] = useState(288);
+  const isResizingSidebar = useRef(false);
+  const resizeStartX = useRef(0);
+  const resizeStartW = useRef(0);
+
+
   // ── Edit hint (shown when user tries to interact without edit mode) ──────────
   const [showEditHint, setShowEditHint] = useState(false);
   const editBtnRef = useRef<HTMLButtonElement>(null);
@@ -450,6 +459,28 @@ export default function EditorShell({ store, from }: Props) {
 
   useEffect(() => () => {
     if (editHintTimerRef.current) clearTimeout(editHintTimerRef.current);
+  }, []);
+
+  // Sidebar resize mouse handlers
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!isResizingSidebar.current) return;
+      const delta = e.clientX - resizeStartX.current;
+      const newW = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, resizeStartW.current + delta));
+      setSidebarWidth(newW);
+    };
+    const onUp = () => {
+      if (!isResizingSidebar.current) return;
+      isResizingSidebar.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
   }, []);
 
   const scrollToSection = useCallback((sectionType: string) => {
@@ -730,8 +761,11 @@ export default function EditorShell({ store, from }: Props) {
       {/* â"€â"€ Body â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* â"€â"€ Left sidebar â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
-        <aside className="w-72 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden" style={{ isolation: 'isolate' }}>
+        {/* ── Left sidebar ──────────────────────────────────────────────── */}
+        <aside
+          className="flex-shrink-0 bg-white flex flex-col overflow-hidden"
+          style={{ width: sidebarWidth, isolation: 'isolate' }}
+        >
 
           {/* Sidebar tab switcher */}
           <div className="flex border-b border-slate-100 flex-shrink-0">
@@ -1005,7 +1039,29 @@ export default function EditorShell({ store, from }: Props) {
           )}
         </aside>
 
-        {/* â"€â"€ Preview area â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
+        {/* ── Sidebar resize handle ──────────────────────────────────────── */}
+        <div
+          className="flex-shrink-0 w-1 relative group cursor-col-resize bg-slate-200 hover:bg-emerald-400 transition-colors duration-150"
+          onMouseDown={e => {
+            e.preventDefault();
+            isResizingSidebar.current = true;
+            resizeStartX.current = e.clientX;
+            resizeStartW.current = sidebarWidth;
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+          }}
+        >
+          {/* Wider invisible hit area */}
+          <div className="absolute inset-y-0 -left-1.5 -right-1.5" />
+          {/* Drag dots indicator */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            {[0,1,2].map(i => (
+              <div key={i} className="w-0.5 h-0.5 rounded-full bg-white" />
+            ))}
+          </div>
+        </div>
+
+        {/* ── Preview area ──────────────────────────────────────────────── */}
         <main className="flex-1 overflow-hidden bg-slate-100 flex justify-center">
 
           {/* Floating text-format toolbar — fixed position, escapes overflow */}
