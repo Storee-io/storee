@@ -767,7 +767,7 @@ export default function EditorShell({ store, from }: Props) {
           style={{
             width: sidebarWidth,
             isolation: 'isolate',
-            boxShadow: '4px 0 12px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)'
+            boxShadow: '1px 0 2px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.05)'
           }}
         >
 
