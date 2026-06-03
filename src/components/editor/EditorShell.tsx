@@ -1041,7 +1041,7 @@ export default function EditorShell({ store, from }: Props) {
 
         {/* ── Sidebar resize handle ──────────────────────────────────────── */}
         <div
-          className="flex-shrink-0 w-1 relative group cursor-col-resize bg-slate-200 hover:bg-emerald-400 transition-colors duration-150"
+          className="flex-shrink-0 w-0.5 relative group cursor-col-resize bg-slate-300 hover:bg-emerald-400 transition-colors duration-150"
           onMouseDown={e => {
             e.preventDefault();
             isResizingSidebar.current = true;
@@ -1052,7 +1052,7 @@ export default function EditorShell({ store, from }: Props) {
           }}
         >
           {/* Wider invisible hit area */}
-          <div className="absolute inset-y-0 -left-1.5 -right-1.5" />
+          <div className="absolute inset-y-0 -left-2 -right-2" />
           {/* Drag dots indicator */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
             {[0,1,2].map(i => (
