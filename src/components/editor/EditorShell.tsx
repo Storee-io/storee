@@ -238,9 +238,13 @@ export default function EditorShell({ store, from }: Props) {
   const [openSection, setOpenSection] = useState<string>('hero');
   const [saved, setSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<'sections' | 'properties'>('sections');
   const [draggingType, setDraggingType] = useState<string | null>(null);
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isInitialMountRef = useRef(true);
+  const persistStoreRef = useRef<(() => Promise<void>) | null>(null);
 
   // Live store from context
   const liveContextStore = activeStore?.id === store.id ? activeStore : store;
@@ -433,9 +437,11 @@ export default function EditorShell({ store, from }: Props) {
 
   const toggle = (key: string) => setOpenSection(s => s === key ? '' : key);
 
-  const handleSave = useCallback(async () => {
+  // â"€â"€ Core save (no toast, no navigate) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+  const persistStore = useCallback(async () => {
     if (isSaving) return;
     setIsSaving(true);
+    setIsDirty(false);
 
     const newDesign: StoreDesign = {
       ...(liveContextStore.design as StoreDesign),
@@ -452,7 +458,6 @@ export default function EditorShell({ store, from }: Props) {
       sectionHeadings,
       footerNote: footerNote || undefined,
       sectionOrder: effectiveSectionOrder,
-      // Persist reordered sections
       ...(liveContextStore.design?.designTokens ? {
         designTokens: buildReorderedDesignTokens(),
       } : {}),
@@ -477,23 +482,50 @@ export default function EditorShell({ store, from }: Props) {
             mood: liveContextStore.mood,
             audience: liveContextStore.audience,
           }),
-        }).catch(() => toast.error('Failed to sync live store', { description: 'Changes saved locally but could not update the live store.' }));
+        }).catch(() => {});
       }
     }
 
     setIsSaving(false);
     setSaved(true);
-    toast.success('Changes saved!', {
-      description: liveContextStore.status === 'Published' ? 'Live store has been updated.' : 'Returning to previewâ€¦',
-    });
-
-    const previewUrl = `/preview/${liveContextStore.id}`;
-    setTimeout(() => router.push(previewUrl), 900);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveContextStore, storeName, primaryColor, tagline, heroTitle, heroSubtitle, ctaText,
       promoBar, accentColor, brandStory, features, testimonials, faq, newsletter,
       navLinks, trustBadges, stats, sectionHeadings, footerNote,
-      sectionItems, updateActiveStore, isSaving, router]);
+      sectionItems, updateActiveStore, isSaving]);
+
+  // Keep ref in sync so autosave always calls the latest version
+  persistStoreRef.current = persistStore;
+
+  // â"€â"€ Manual save (persist + toast + navigate back to preview) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+  const handleSave = useCallback(async () => {
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    await persistStore();
+    toast.success('Changes saved!', {
+      description: liveContextStore.status === 'Published' ? 'Live store has been updated.' : 'Returning to preview…',
+    });
+    const previewUrl = `/preview/${liveContextStore.id}`;
+    setTimeout(() => router.push(previewUrl), 900);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [persistStore, liveContextStore.id, liveContextStore.status, router]);
+
+  // â"€â"€ Autosave: debounce 2.5s on any design change â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+  useEffect(() => {
+    // Skip the very first render (initial state from store data)
+    if (isInitialMountRef.current) { isInitialMountRef.current = false; return; }
+
+    setIsDirty(true);
+    setSaved(false);
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    autosaveTimerRef.current = setTimeout(() => {
+      persistStoreRef.current?.();
+    }, 2500);
+
+    return () => { if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeName, primaryColor, tagline, heroTitle, heroSubtitle, ctaText,
+      promoBar, accentColor, brandStory, features, testimonials, faq, newsletter,
+      navLinks, trustBadges, stats, sectionHeadings, footerNote, sectionItems]);
 
   const isPublished = liveContextStore.status === 'Published';
   const storefrontUrl = liveContextStore.publishedDomain
@@ -578,18 +610,26 @@ export default function EditorShell({ store, from }: Props) {
               </a>
             </Tip>
           )}
+          {/* Autosave status indicator */}
+          <span className="hidden sm:inline text-xs text-slate-400 transition-all">
+            {isSaving
+              ? 'Saving…'
+              : saved && !isDirty
+              ? <span className="text-emerald-500 flex items-center gap-1"><Check className="w-3 h-3" />Saved</span>
+              : isDirty
+              ? 'Unsaved…'
+              : null
+            }
+          </span>
+
           <Tip label="Save & return to preview">
             <button
               onClick={handleSave}
               disabled={isSaving}
               className="flex items-center gap-1.5 px-3.5 py-1.5 gradient-bg text-white text-sm font-medium rounded-xl hover:opacity-90 disabled:opacity-60 transition-all shadow-md"
             >
-              {saved
-                ? <><Check className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Saved</span></>
-                : isSaving
-                ? <><Save className="w-4 h-4 flex-shrink-0 animate-pulse" /><span className="hidden sm:inline">Savingâ€¦</span></>
-                : <><Save className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Save</span></>
-              }
+              <Save className="w-4 h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Save</span>
             </button>
           </Tip>
         </div>
