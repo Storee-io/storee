@@ -222,7 +222,10 @@ function EditSpan({
       onFocus={e => e.currentTarget.setAttribute('data-ce', '1')}
       onBlur={e => {
         e.currentTarget.removeAttribute('data-ce');
-        onFieldChange?.(field, e.currentTarget.textContent ?? '');
+        // Preserve formatting by sending the full HTML content, not just plain text
+        const htmlContent = e.currentTarget.innerHTML;
+        const textContent = e.currentTarget.textContent ?? '';
+        onFieldChange?.(field, htmlContent || textContent);
       }}
       onKeyDown={singleLine ? (e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }) : undefined}
       onClick={e => e.stopPropagation()}

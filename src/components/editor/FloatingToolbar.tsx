@@ -66,6 +66,7 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
   const [fmt, setFmt] = useState<Record<FmtKey, boolean>>({
     bold: false, italic: false, underline: false, strikeThrough: false,
   });
+  const [currentFontSize, setCurrentFontSize] = useState('16');
   const [showLink, setShowLink] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -86,6 +87,52 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
     const sel = window.getSelection();
     sel?.removeAllRanges();
     sel?.addRange(range);
+  }, []);
+
+  const updateCurrentFontSize = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) {
+      setCurrentFontSize('16');
+      return;
+    }
+
+    const range = sel.getRangeAt(0);
+    const node = range.commonAncestorContainer;
+
+    // Get the element - could be the container itself or the parent of a text node
+    let el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+
+    if (!el) {
+      setCurrentFontSize('16');
+      return;
+    }
+
+    // Check the element's inline font-size style first
+    const inlineStyle = (el as HTMLElement).style?.fontSize;
+    if (inlineStyle) {
+      const match = inlineStyle.match(/(\d+)/);
+      if (match) {
+        const size = match[1];
+        if (FONT_SIZES.includes(Number(size))) {
+          setCurrentFontSize(size);
+          return;
+        }
+      }
+    }
+
+    // Fall back to computed font size
+    const computedStyle = window.getComputedStyle(el as HTMLElement);
+    const fontSize = computedStyle.fontSize;
+
+    // Extract the number from "24px"
+    const sizeMatch = fontSize.match(/(\d+)/);
+    if (sizeMatch) {
+      const size = sizeMatch[1];
+      // Only update if it's in our FONT_SIZES array
+      if (FONT_SIZES.includes(Number(size))) {
+        setCurrentFontSize(size);
+      }
+    }
   }, []);
 
   const refresh = useCallback(() => {
@@ -127,7 +174,9 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       underline:     document.queryCommandState('underline'),
       strikeThrough: document.queryCommandState('strikeThrough'),
     });
-  }, [editMode, containerRef]);
+
+    updateCurrentFontSize();
+  }, [editMode, containerRef, updateCurrentFontSize]);
 
   useEffect(() => {
     document.addEventListener('selectionchange', refresh);
@@ -453,13 +502,12 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       {/* Font size */}
       <select
         title="Font size"
-        defaultValue="16"
+        value={currentFontSize}
         onMouseDown={e => saveRange()}
         onChange={e => {
           console.log('Font size changed to:', e.target.value);
           handleFontSize(Number(e.target.value));
-          // Reset to allow re-selecting same value
-          (e.target as HTMLSelectElement).value = '16';
+          // Let updateCurrentFontSize handle the state update via refresh
         }}
         className={selectCls + ' w-[46px]'}
       >
