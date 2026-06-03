@@ -8,7 +8,7 @@ import {
   Check, Rocket, ArrowLeft, Sparkles, Mail,
   BookOpen, Megaphone, Layers, Plus, Trash2,
   Star, HelpCircle, Type, Eye, Lock,
-  Edit2, GripVertical, MousePointer, Layout, Pencil,
+  Edit2, GripVertical, MousePointer, MousePointerClick, Layout, Pencil,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from '../preview/StorePreview';
@@ -575,6 +575,18 @@ export default function EditorShell({ store, from }: Props) {
             ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 flex-shrink-0">LIVE</span>
             : <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 flex-shrink-0">DRAFT</span>
           }
+
+          {/* Edit toggle */}
+          <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
+          <Tip label={editMode ? 'Exit edit mode' : 'Click text to edit inline'}>
+            <button
+              onClick={() => setEditMode(v => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl transition-all ${editMode ? 'bg-blue-100 text-blue-600' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+            >
+              <MousePointerClick className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Edit</span>
+            </button>
+          </Tip>
         </div>
 
         {/* Center — device switcher (truly centered) */}
