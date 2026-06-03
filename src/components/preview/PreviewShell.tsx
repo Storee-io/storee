@@ -367,7 +367,7 @@ export default function PreviewShell({ store, from = null }: Props) {
             className="flex items-center gap-1.5 px-3.5 py-1.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors"
           >
             <PencilLine className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Edit</span>
+            <span className="hidden sm:inline">Editor</span>
           </button>
 
           {/* Publish / Republish / Unpublish — keeps label as primary CTA */}
