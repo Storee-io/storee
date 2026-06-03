@@ -763,7 +763,7 @@ export default function EditorShell({ store, from }: Props) {
 
         {/* ── Left sidebar ──────────────────────────────────────────────── */}
         <aside
-          className="flex-shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden"
+          className="flex-shrink-0 bg-white flex flex-col overflow-hidden"
           style={{ width: sidebarWidth, isolation: 'isolate' }}
         >
 
