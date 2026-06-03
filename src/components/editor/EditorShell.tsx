@@ -1046,7 +1046,7 @@ export default function EditorShell({ store, from }: Props) {
           }`}
           style={{
             width: isResizingSidebar ? '3px' : '1px',
-            boxShadow: isResizingSidebar ? 'none' : '2px 0 3px rgba(0, 0, 0, 0.08)'
+            boxShadow: isResizingSidebar ? 'none' : '3px 0 8px rgba(0, 0, 0, 0.15)'
           }}
           onMouseDown={e => {
             e.preventDefault();
