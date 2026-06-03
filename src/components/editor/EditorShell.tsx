@@ -244,8 +244,6 @@ export default function EditorShell({ store, from }: Props) {
   const [sidebarTab, setSidebarTab] = useState<'sections' | 'properties'>('sections');
   const [draggingType, setDraggingType] = useState<string | null>(null);
   const [showPublishModal, setShowPublishModal] = useState(false);
-  const [canvasPage, setCanvasPage] = useState<string>('/');
-  const canvasNavigateRef = useRef<((path: string) => void) | null>(null);
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialMountRef = useRef(true);
   const persistStoreRef = useRef<(() => Promise<void>) | null>(null);
@@ -978,28 +976,6 @@ export default function EditorShell({ store, from }: Props) {
               position: 'relative',
             }}
           >
-            {/* Non-home page banner */}
-            {canvasPage !== '/' && (
-              <div className="flex items-center justify-between px-4 py-2 bg-amber-50 border-b border-amber-200 flex-shrink-0" style={{ zIndex: 50 }}>
-                <span className="text-xs text-amber-700 font-medium">
-                  Previewing <span className="font-bold">
-                    {canvasPage.startsWith('/product') ? 'Product Page'
-                      : canvasPage === '/cart' ? 'Cart'
-                      : canvasPage === '/checkout' ? 'Checkout'
-                      : canvasPage === '/wishlist' ? 'Wishlist'
-                      : canvasPage === '/my-orders' ? 'My Orders'
-                      : canvasPage}
-                  </span> — edits apply to Home
-                </span>
-                <button
-                  onClick={() => { canvasNavigateRef.current?.('/'); setCanvasPage('/'); }}
-                  className="text-xs font-semibold text-amber-700 hover:text-amber-900 px-2 py-0.5 rounded-lg hover:bg-amber-100 transition-colors"
-                >
-                  ← Back to Home
-                </button>
-              </div>
-            )}
-
             {/* Scroll container — no transform so fixed children don't scroll with it */}
             <div
               ref={previewRef}
@@ -1018,7 +994,7 @@ export default function EditorShell({ store, from }: Props) {
               onMouseUp={() => { dragOriginRef.current = null; }}
               onMouseLeave={() => { dragOriginRef.current = null; }}
             >
-              <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} onPageChange={setCanvasPage} navigateRef={canvasNavigateRef} />
+              <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} />
             </div>
           </div>
         </main>
