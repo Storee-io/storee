@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Globe, Rocket, Check, ExternalLink, ArrowLeft, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { X, Globe, Rocket, Check, ExternalLink, LayoutDashboard, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import type { Store } from '@/src/context/StoreContext';
 import { findAvailableSubdomain } from '@/src/lib/subdomainGenerator';
 
@@ -52,6 +53,7 @@ function getFormatError(value: string): string {
 }
 
 export default function PublishModal({ store, onPublish, onClose, fixedSubdomain }: PublishModalProps) {
+  const router = useRouter();
   const defaultSub = fixedSubdomain ?? slugify(store.domain.replace(`.${BASE_DOMAIN}`, '') || store.name);
   const [subdomain, setSubdomain] = useState(defaultSub);
   const [step, setStep] = useState<Step>(fixedSubdomain ? 'processing' : 'form');
@@ -491,21 +493,22 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
               </div>
 
               <div className="flex gap-3">
-                <button
-                  onClick={onClose}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                </button>
                 <a
                   href={`https://${publishedUrl}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow-md"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors"
                 >
                   Open Store
                   <ExternalLink className="w-4 h-4" />
                 </a>
+                <button
+                  onClick={() => { onClose(); router.push('/dashboard'); }}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow-md"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  View Dashboard
+                </button>
               </div>
             </motion.div>
           )}
