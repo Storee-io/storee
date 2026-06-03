@@ -329,9 +329,10 @@ export default function PreviewShell({ store, from = null }: Props) {
             <button
               onClick={openRegenModal}
               disabled={isRegenerating}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors disabled:opacity-40 flex-shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40"
             >
               <RefreshCw className={`w-3.5 h-3.5 flex-shrink-0 ${isRegenerating ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Regenerate</span>
             </button>
           </Tip>
         </div>
