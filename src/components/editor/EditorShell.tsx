@@ -1129,7 +1129,6 @@ export default function EditorShell({ store, from }: Props) {
                 device === 'tablet' ? '3 / 4' :
                 undefined,
               width: device === 'desktop' ? '100%' : undefined,
-              minWidth: device === 'desktop' ? 960 : undefined,
               transform: 'translateZ(0)',   // â† contains fixed overlays to this frame
               position: 'relative',
             }}
