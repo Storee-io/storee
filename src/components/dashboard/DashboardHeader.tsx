@@ -103,13 +103,14 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         <h1 className="font-semibold text-slate-900 text-sm sm:text-base truncate">{activeStore?.name || 'Dashboard'}</h1>
 
         {activeStore?.status === 'Published' ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer">
-              {unpublishing
-                ? <Loader2 className="w-3 h-3 animate-spin" />
-                : <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />}
-              {unpublishing ? 'Unpublishing…' : 'Live'}
-            </DropdownMenuTrigger>
+          <Tip label="Store is live and published">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer">
+                {unpublishing
+                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                  : <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />}
+                {unpublishing ? 'Unpublishing…' : 'Live'}
+              </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-52">
               <div className="px-3 py-2 border-b border-slate-100">
                 <p className="text-xs text-slate-500 font-medium">Store is live</p>
@@ -123,13 +124,15 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
                 Unpublish Store
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+            </DropdownMenu>
+          </Tip>
         ) : (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-500 hover:bg-amber-100 transition-colors cursor-pointer">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-              Draft
-            </DropdownMenuTrigger>
+          <Tip label="Store is in draft, not published yet">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-500 hover:bg-amber-100 transition-colors cursor-pointer">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                Draft
+              </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-52">
               <div className="px-3 py-2 border-b border-slate-100">
                 <p className="text-xs text-slate-500 font-medium">Store is in draft</p>
@@ -153,7 +156,8 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
-          </DropdownMenu>
+            </DropdownMenu>
+          </Tip>
         )}
         </div>
       </div>
@@ -164,17 +168,19 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         {/* Domain pill — only visible when store is Published */}
         {activeStore?.status === 'Published' && activeStore.domain && (
           <div className="hidden md:flex items-center bg-slate-50 border border-slate-200 rounded-full overflow-hidden hover:border-slate-300 transition-colors">
-            <a
-              href={`https://${activeStore.domain}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 hover:bg-slate-100 transition-colors"
-            >
-              <span className="text-xs text-slate-600 truncate max-w-[140px]">
-                {activeStore.domain}
-              </span>
-              <ExternalLink className="w-3 h-3 text-slate-400 flex-shrink-0" />
-            </a>
+            <Tip label="Open live store">
+              <a
+                href={`https://${activeStore.domain}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 hover:bg-slate-100 transition-colors"
+              >
+                <span className="text-xs text-slate-600 truncate max-w-[140px]">
+                  {activeStore.domain}
+                </span>
+                <ExternalLink className="w-3 h-3 text-slate-400 flex-shrink-0" />
+              </a>
+            </Tip>
             <div className="w-px h-4 bg-slate-200 flex-shrink-0" />
             <Tip label={copied ? 'Copied!' : 'Copy link'}>
               <button
