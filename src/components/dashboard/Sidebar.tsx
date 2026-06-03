@@ -137,8 +137,8 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           )}
         </button>
 
-        {storeMenuOpen && (
-          isCollapsed ? (
+        {storeMenuOpen &&
+          (isCollapsed ? (
             // When sidebar is collapsed, show menu without animation
             <div className="mt-2 overflow-hidden">
               <div
@@ -269,8 +269,8 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                 </div>
               </motion.div>
             </AnimatePresence>
-          )
-        )}
+          ))
+        }
       </div>
 
       {/* Nav */}
