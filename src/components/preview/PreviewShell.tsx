@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Monitor, Tablet, Smartphone, Globe, Rocket, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw, Check, ChevronDown, PencilLine } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, Globe, Rocket, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw, Check, ChevronDown, PencilLine, LayoutDashboard } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from './StorePreview';
 import PublishModal from './PublishModal';
@@ -408,6 +408,19 @@ export default function PreviewShell({ store, from = null }: Props) {
               </button>
             </Tip>
           )}
+
+          {/* Divider */}
+          <div className="w-px h-5 bg-slate-200 mx-0.5 flex-shrink-0" />
+
+          {/* Dashboard */}
+          <Tip label="Go to Dashboard">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+            </button>
+          </Tip>
         </div>
       </div>
 

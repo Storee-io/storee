@@ -9,7 +9,7 @@ import {
   BookOpen, Megaphone, Layers, Plus, Trash2,
   Star, HelpCircle, Type, Eye, Lock,
   Edit2, GripVertical, MousePointer, MousePointerClick, Layout, Pencil,
-  CloudOff, RotateCcw,
+  CloudOff, RotateCcw, LayoutDashboard,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from '../preview/StorePreview';
@@ -711,6 +711,19 @@ export default function EditorShell({ store, from }: Props) {
               </button>
             </Tip>
           )}
+
+          {/* Divider */}
+          <div className="w-px h-5 bg-slate-200 mx-0.5 flex-shrink-0" />
+
+          {/* Dashboard */}
+          <Tip label="Go to Dashboard">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+            </button>
+          </Tip>
         </div>
       </div>
 
