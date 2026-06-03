@@ -1850,7 +1850,7 @@ function TrustBadgesRow({ badges, primaryColor, dark = false, device, editMode, 
   );
 }
 
-function FAQSection({ faq, primaryColor, device, dark = false, elegant = false, editMode, onFieldChange }: {
+function FAQSection({ faq, primaryColor, device, dark = false, elegant = false, editMode, onFieldChange, sectionHeadings }: {
   faq: Array<{ q: string; a: string }>;
   primaryColor: string;
   device: DeviceMode;
@@ -1858,6 +1858,7 @@ function FAQSection({ faq, primaryColor, device, dark = false, elegant = false, 
   elegant?: boolean;
   editMode?: boolean;
   onFieldChange?: (f: string, v: string) => void;
+  sectionHeadings?: { faq?: string; [key: string]: string | undefined };
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const isMobileInFaq = device === 'mobile';
@@ -1870,11 +1871,15 @@ function FAQSection({ faq, primaryColor, device, dark = false, elegant = false, 
           {elegant ? (
             <>
               <p className="text-[10px] tracking-[0.35em] mb-3" style={{ color: primaryColor }}>QUESTIONS</p>
-              <h2 className="text-xl font-bold tracking-wide" style={{ color: '#2a2420' }}>Frequently Asked</h2>
+              <h2 className="text-xl font-bold tracking-wide" style={{ color: '#2a2420' }}>
+                <EditSpan field="sectionHeadings.faq" value={sectionHeadings?.faq ?? 'Frequently Asked'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              </h2>
               <div className="w-12 h-px mx-auto mt-4" style={{ background: primaryColor }} />
             </>
           ) : (
-            <h2 className="text-2xl font-bold" style={{ color: dark ? '#fff' : tt.textPrimary }}>Frequently Asked Questions</h2>
+            <h2 className="text-2xl font-bold" style={{ color: dark ? '#fff' : tt.textPrimary }}>
+              <EditSpan field="sectionHeadings.faq" value={sectionHeadings?.faq ?? 'Frequently Asked Questions'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            </h2>
           )}
         </div>
         <div className="space-y-2">
@@ -2574,7 +2579,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
         <div className="flex items-end justify-between mb-8">
           <div>
             <p className="text-[10px] uppercase tracking-[0.22em] mb-1.5" style={{ color: tt.textMuted }}>Curated Selection</p>
-            <h2 className="text-xl font-black tracking-tight" style={{ color: tt.textPrimary }}>Featured Products</h2>
+            <h2 className="text-xl font-black tracking-tight" style={{ color: tt.textPrimary }}><EditSpan field="sectionHeadings.products" value={sectionHeadings?.products ?? 'Featured Products'} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h2>
           </div>
           <button onClick={scrollToProducts} className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 hover:gap-2.5 transition-all" style={{ color: primaryColor }}>
             View All <ArrowRight className="w-3.5 h-3.5" />
@@ -2686,7 +2691,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
             </section>
           ) : null,
           stats: stats?.length ? <StatsRow key="stats" stats={stats} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
-          faq: faq?.length ? <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+          faq: faq?.length ? <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} sectionHeadings={sectionHeadings} /> : null,
           newsletter: newsletter ? <NewsletterSection key="newsletter" newsletter={newsletter} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
         };
         return sectionOrder.map(type => sectionMap[type] ?? null);
@@ -2915,7 +2920,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
             </section>
           ) : null,
           stats: stats?.length ? <StatsRow key="stats" stats={stats} primaryColor={primaryColor} dark={true} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
-          faq: faq?.length ? <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} dark={true} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+          faq: faq?.length ? <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} dark={true} editMode={editMode} onFieldChange={onFieldChange} sectionHeadings={sectionHeadings} /> : null,
           newsletter: newsletter ? <NewsletterSection key="newsletter" newsletter={newsletter} primaryColor={primaryColor} dark={true} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
         };
         return sectionOrder.map(type => sectionMap[type] ?? null);
@@ -3143,7 +3148,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
             </section>
           ) : null,
           stats: stats?.length ? <StatsRow key="stats" stats={stats} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
-          faq: faq?.length ? <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} elegant={true} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+          faq: faq?.length ? <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} elegant={true} editMode={editMode} onFieldChange={onFieldChange} sectionHeadings={sectionHeadings} /> : null,
           newsletter: newsletter ? <NewsletterSection key="newsletter" newsletter={newsletter} primaryColor={primaryColor} elegant={true} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
         };
         return sectionOrder.map(type => sectionMap[type] ?? null);
@@ -3316,7 +3321,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
       <section ref={productsRef} className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`} style={{ borderTop: `1px solid ${tt.divider}` }}>
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight" style={{ color: tt.textPrimary }}>Featured Products</h2>
+            <h2 className="text-2xl font-bold tracking-tight" style={{ color: tt.textPrimary }}><EditSpan field="sectionHeadings.products" value={sectionHeadings?.products ?? 'Featured Products'} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h2>
             <p className="text-sm mt-1" style={{ color: tt.textMuted }}>{tagline}</p>
           </div>
           <button onClick={scrollToProducts} className="text-sm font-semibold flex items-center gap-1.5 hover:gap-2.5 transition-all" style={{ color: primaryColor }}>
@@ -3422,7 +3427,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
             </section>
           ) : null,
           stats: stats?.length ? <StatsRow key="stats" stats={stats} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
-          faq: faq?.length ? <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+          faq: faq?.length ? <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} sectionHeadings={sectionHeadings} /> : null,
           newsletter: newsletter ? <NewsletterSection key="newsletter" newsletter={newsletter} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
         };
         return sectionOrder.map(type => sectionMap[type] ?? null);
@@ -3685,7 +3690,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
             </section>
           ) : null,
           stats: stats?.length ? <StatsRow key="stats" stats={stats} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
-          faq: faq?.length ? <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
+          faq: faq?.length ? <FAQSection key="faq" faq={faq} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} sectionHeadings={sectionHeadings} /> : null,
           newsletter: newsletter ? <NewsletterSection key="newsletter" newsletter={newsletter} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} /> : null,
         };
         return sectionOrder.map(type => sectionMap[type] ?? null);
@@ -6254,11 +6259,12 @@ function BrandStorySection({ brandStory, products, tt, primaryColor, device, sec
 
 // ── FAQ variants ──────────────────────────────────────────────────────────────
 
-function FaqSection({ faq, tt, primaryColor, device, sectionPy, variant, editMode, onFieldChange }: {
+function FaqSection({ faq, tt, primaryColor, device, sectionPy, variant, editMode, onFieldChange, sectionHeadings }: {
   faq: Array<{ q: string; a: string }>;
   tt: TokenTheme; primaryColor: string; device: DeviceMode; sectionPy: number;
   variant: SectionVariants['faq'];
   editMode?: boolean; onFieldChange?: (f: string, v: string) => void;
+  sectionHeadings?: { faq?: string; [key: string]: string | undefined };
 }) {
   const isMobile = device === 'mobile';
   const pc = primaryColor;
@@ -6269,7 +6275,7 @@ function FaqSection({ faq, tt, primaryColor, device, sectionPy, variant, editMod
       <section style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}` }}>
         <div className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
           <p className="text-[10px] uppercase tracking-[0.3em] text-center mb-2" style={{ color: tt.textMuted }}>FAQ</p>
-          <h2 className="text-center mb-9" style={{ ...headingStyle(tt, 1.25), color: tt.textPrimary }}>Common Questions</h2>
+          <h2 className="text-center mb-9" style={{ ...headingStyle(tt, 1.25), color: tt.textPrimary }}><EditSpan field="sectionHeadings.faq" value={sectionHeadings?.faq ?? 'Common Questions'} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h2>
           <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
             {faq.map((item, i) => (
               <div key={i} className="p-5" style={{ background: tt.pageBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius, borderLeft: `3px solid ${pc}` }}>
@@ -6288,7 +6294,7 @@ function FaqSection({ faq, tt, primaryColor, device, sectionPy, variant, editMod
     <section style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
       <div className="max-w-3xl mx-auto px-5">
         <p className="text-[10px] uppercase tracking-[0.3em] text-center mb-2" style={{ color: tt.textMuted }}>FAQ</p>
-        <h2 className="text-center mb-9" style={{ ...headingStyle(tt, 1.25), color: tt.textPrimary }}>Frequently Asked</h2>
+        <h2 className="text-center mb-9" style={{ ...headingStyle(tt, 1.25), color: tt.textPrimary }}><EditSpan field="sectionHeadings.faq" value={sectionHeadings?.faq ?? 'Frequently Asked'} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h2>
         <div className="space-y-2">
           {faq.map((item, i) => (
             <div key={i} className="overflow-hidden cursor-pointer"
@@ -6722,7 +6728,8 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
   const scrollToProducts = () => productsRef.current?.scrollIntoView({ behavior: 'smooth' });
 
   const { navLinks = [], products = [], collections = [], features = [], testimonials = [],
-          tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory } = design;
+          tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory,
+          sectionHeadings } = design;
 
   const displayed = selectedCol === 0 ? products : products.filter((_, i) => i % collections.length === selectedCol % collections.length);
 
@@ -6834,7 +6841,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
 
       case 'faq':
         if (!faq.length) return null;
-        return <FaqSection key="faq" faq={faq} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={variant as SectionVariants['faq']} editMode={editMode} onFieldChange={onFieldChange} />;
+        return <FaqSection key="faq" faq={faq} tt={tt} primaryColor={primaryColor} device={device} sectionPy={sectionPy} variant={variant as SectionVariants['faq']} editMode={editMode} onFieldChange={onFieldChange} sectionHeadings={sectionHeadings} />;
 
       case 'newsletter':
         if (!newsletter) return null;
@@ -7187,7 +7194,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
   const tt: TokenTheme = dt ? getTokenThemeV2(dt, primaryColor) : getDefaultTokenTheme(primaryColor);
 
   const { products = [], collections = [], features = [], testimonials = [],
-          tagline, promoBar, trustBadges = [], brandStory, heroTitle, heroSubtitle, ctaText, navLinks = [], faq = [], stats = [], newsletter } = design;
+          tagline, promoBar, trustBadges = [], brandStory, heroTitle, heroSubtitle, ctaText, navLinks = [], faq = [], stats = [], newsletter, sectionHeadings } = design;
 
   const isMobile = device === 'mobile';
   const [selectedCol, setSelectedCol] = useState(0);
@@ -7502,7 +7509,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
 
           faq: faq && faq.length > 0 ? (
             <div key="faq" data-editor-section="faq">
-              <FAQSection faq={faq} primaryColor={pc} device={device} dark={isDarkPalette} editMode={editMode} onFieldChange={onFieldChange} />
+              <FAQSection faq={faq} primaryColor={pc} device={device} dark={isDarkPalette} editMode={editMode} onFieldChange={onFieldChange} sectionHeadings={sectionHeadings} />
             </div>
           ) : null,
 
@@ -7841,7 +7848,7 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
           ) : null,
 
           faq: faq && faq.length > 0 ? (
-            <FAQSection key="faq" faq={faq} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />
+            <FAQSection key="faq" faq={faq} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} sectionHeadings={sectionHeadings} />
           ) : null,
 
           newsletter: newsletter ? (
@@ -7883,7 +7890,7 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
 
   const { products = [], collections = [], features = [], testimonials = [],
           tagline, promoBar, brandStory, heroTitle, heroSubtitle, ctaText,
-          navLinks = [], faq = [], stats = [], newsletter, trustBadges = [] } = design;
+          navLinks = [], faq = [], stats = [], newsletter, trustBadges = [], sectionHeadings } = design;
 
   const isMobile = device === 'mobile';
   const [activeSlide, setActiveSlide] = useState(0);
@@ -8126,7 +8133,7 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
 
           faq: faq && faq.length > 0 ? (
             <div key="faq" data-editor-section="faq">
-              <FAQSection faq={faq} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} />
+              <FAQSection faq={faq} primaryColor={pc} device={device} editMode={editMode} onFieldChange={onFieldChange} sectionHeadings={sectionHeadings} />
             </div>
           ) : null,
 
