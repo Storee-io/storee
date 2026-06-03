@@ -764,7 +764,11 @@ export default function EditorShell({ store, from }: Props) {
         {/* ── Left sidebar ──────────────────────────────────────────────── */}
         <aside
           className="flex-shrink-0 bg-white flex flex-col overflow-hidden"
-          style={{ width: sidebarWidth, isolation: 'isolate' }}
+          style={{
+            width: sidebarWidth,
+            isolation: 'isolate',
+            boxShadow: '4px 0 12px rgba(0, 0, 0, 0.12)'
+          }}
         >
 
           {/* Sidebar tab switcher */}
