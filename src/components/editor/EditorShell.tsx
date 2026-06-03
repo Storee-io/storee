@@ -563,7 +563,7 @@ export default function EditorShell({ store, from }: Props) {
   const backHref = from ?? `/preview/${liveContextStore.id}`;
 
   return (
-    <div className="flex flex-col h-screen bg-white overflow-hidden">
+    <div className="flex flex-col h-screen bg-white overflow-hidden font-sans" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', colorScheme: 'light' }}>
 
       {/* Force touch-action:none on Reorder items so Framer Motion drag works inside
           an overflow-y:auto scroll container. FM sets pan-x internally via inline style
@@ -574,7 +574,7 @@ export default function EditorShell({ store, from }: Props) {
       <EditModeCss active={editMode} />
 
       {/* â"€â"€ Top bar â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
-      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 h-12 flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 h-12 flex items-center gap-3 flex-shrink-0 shadow-sm z-10" style={{ isolation: 'isolate' }}>
 
         {/* Left â€" back + store name */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -665,7 +665,7 @@ export default function EditorShell({ store, from }: Props) {
       <div className="flex flex-1 overflow-hidden">
 
         {/* â"€â"€ Left sidebar â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
-        <aside className="w-72 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden">
+        <aside className="w-72 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden" style={{ isolation: 'isolate' }}>
 
           {/* Sidebar tab switcher */}
           <div className="flex border-b border-slate-100 flex-shrink-0">
