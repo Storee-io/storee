@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw, PenLine, Check, ChevronDown } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, Globe, Rocket, LayoutDashboard, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw, Check, ChevronDown, PencilLine } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from './StorePreview';
 import PublishModal from './PublishModal';
@@ -46,10 +46,7 @@ export default function PreviewShell({ store, from = null }: Props) {
   const [showRegenModal, setShowRegenModal] = useState(false);
   const [regenBoxValue, setRegenBoxValue] = useState<PromptBoxValue | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
-  const [fabHidden, setFabHidden] = useState(false);
   const stepTimerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const lastScrollY = useRef(0);
-  const scrollStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // ── Address bar dropdown ──────────────────────────────────────────────────────
@@ -103,21 +100,6 @@ export default function PreviewShell({ store, from = null }: Props) {
     ro.observe(el);
     return () => ro.disconnect();
   }, [device]);
-
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const currentY = e.currentTarget.scrollTop;
-    const isScrollingDown = currentY > lastScrollY.current;
-    lastScrollY.current = currentY;
-    setFabHidden(isScrollingDown);
-
-    // Reappear after scroll stops
-    if (scrollStopTimer.current) clearTimeout(scrollStopTimer.current);
-    scrollStopTimer.current = setTimeout(() => setFabHidden(false), 300);
-  }, []);
-
-  useEffect(() => () => {
-    if (scrollStopTimer.current) clearTimeout(scrollStopTimer.current);
-  }, []);
 
   const { updateActiveStore, addStore, stores, setActiveStore, setGeneratedStore, setGenerationState, activeStore } = useStore();
   const router = useRouter();
@@ -397,6 +379,15 @@ export default function PreviewShell({ store, from = null }: Props) {
             </button>
           </Tip>
 
+          {/* Edit */}
+          <button
+            onClick={() => router.push(`/editor/${liveStore.id}?from=${encodeURIComponent(`/preview/${liveStore.id}`)}`)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors"
+          >
+            <PencilLine className="w-4 h-4 flex-shrink-0" />
+            <span className="hidden sm:inline">Edit</span>
+          </button>
+
           {/* Publish / Republish / Unpublish — keeps label as primary CTA */}
           {isPublished ? (
             <Tip label="Take store offline">
@@ -519,7 +510,6 @@ export default function PreviewShell({ store, from = null }: Props) {
             {/* Scroll div — no transform; scrolls store content independently */}
             <div
               ref={scrollContainerRef}
-              onScroll={handleScroll}
               style={{ overflowY: 'auto', height: '100%' }}
             >
               <StorePreview store={liveStore} device={device} previewShell onPageChange={setCurrentPath} navigateRef={navigateRef} />
@@ -528,29 +518,6 @@ export default function PreviewShell({ store, from = null }: Props) {
 
         </motion.div>
         </div>{/* /canvasRef inner div */}
-      </div>
-
-      {/* Floating Edit FAB — fixed to escape overflow-auto clipping */}
-      <div
-        className="fixed bottom-8 right-6 z-30 transition-transform duration-150 ease-in-out"
-        style={{ transform: fabHidden ? 'translateY(calc(100% + 6rem))' : 'translateY(0)' }}
-      >
-        {/* Sound-wave ripple rings */}
-        <span className="absolute inset-0 rounded-full bg-emerald-400 opacity-30 animate-ping" style={{ animationDuration: '1.8s', animationDelay: '0s' }} />
-        <span className="absolute inset-0 rounded-full bg-emerald-400 opacity-20 animate-ping" style={{ animationDuration: '1.8s', animationDelay: '0.5s' }} />
-        <span className="absolute inset-0 rounded-full bg-emerald-400 opacity-10 animate-ping" style={{ animationDuration: '1.8s', animationDelay: '1s' }} />
-
-        <Tip label="Edit in Editor" side="top">
-          <button
-            onClick={() => {
-              toast('Opening editor…', { duration: 1200 });
-              router.push(`/editor/${liveStore.id}?from=${encodeURIComponent(`/preview/${liveStore.id}`)}`);
-            }}
-            className="relative w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200"
-          >
-            <PenLine className="w-5 h-5 text-slate-500" />
-          </button>
-        </Tip>
       </div>
 
       {/* Regenerate Modal */}
