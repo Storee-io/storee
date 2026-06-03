@@ -2567,7 +2567,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
           ))}
         </div>
       </div>
-      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} device={device} />}
+      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
 
       {/* Products */}
       <section ref={productsRef} className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
@@ -2801,7 +2801,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
           ))}
         </div>
       </section>
-      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} dark={true} device={device} />}
+      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} dark={true} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
 
       {/* Products */}
       <section ref={productsRef} className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
@@ -3031,7 +3031,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
           ))}
         </div>
       </section>
-      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} device={device} />}
+      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
 
       {/* Products */}
       <section ref={productsRef} className={`max-w-6xl mx-auto px-6 ${isMobile ? 'py-8' : 'py-16'}`}>
@@ -3310,7 +3310,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
         </section>
       )}
 
-      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} device={device} />}
+      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
 
       {/* Products */}
       <section ref={productsRef} className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`} style={{ borderTop: `1px solid ${tt.divider}` }}>
@@ -3570,7 +3570,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
           ))}
         </div>
       </section>
-      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} device={device} />}
+      {trustBadges && <TrustBadgesRow badges={trustBadges} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />}
 
       {/* Products */}
       <section ref={productsRef} className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-12'}`}>
@@ -6759,7 +6759,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
 
       case 'trust':
         if (!trustBadges.length) return null;
-        return <TrustBadgesRow key="trust" badges={trustBadges} primaryColor={primaryColor} device={device} />;
+        return <TrustBadgesRow key="trust" badges={trustBadges} primaryColor={primaryColor} device={device} editMode={editMode} onFieldChange={onFieldChange} />;
 
       case 'collections':
         if (!collections.length) return null;
