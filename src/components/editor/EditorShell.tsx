@@ -864,7 +864,7 @@ export default function EditorShell({ store, from }: Props) {
                         key={item.type}
                         value={item}
                         as="div"
-                        layout="position"
+                        layout={isResizingSidebar ? false : 'position'}
                         dragListener={!isLocked}
                         onDragStart={isLocked ? undefined : () => setDraggingType(item.type)}
                         onDragEnd={isLocked ? undefined : () => setDraggingType(null)}
