@@ -88,7 +88,7 @@ export default function PreviewShell({ store, from = null }: Props) {
       const ratio =
         device === 'mobile' ? 9 / 16 :
         device === 'tablet' ? 3 / 4 :
-        16 / 10; // desktop
+        19 / 10; // desktop
       // Height follows canvas area; clamp width if it exceeds available width
       let h = availH;
       let w = h * ratio;
