@@ -206,8 +206,14 @@ function EditSpan({
     <span
       ref={(el) => {
         // Sync value to DOM only when not actively being edited
+        // Preserve inline formatting (spans with styles) by not overwriting when they exist
         if (el && !el.hasAttribute('data-ce')) {
-          if (el.textContent !== value) el.textContent = value;
+          if (el.textContent !== value) {
+            // Only overwrite textContent if there are no child elements (no inline formatting)
+            if (el.children.length === 0) {
+              el.textContent = value;
+            }
+          }
         }
       }}
       contentEditable

@@ -166,18 +166,26 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
   }, [refresh, restoreRange]);
 
   const handleFontSize = useCallback((size: number) => {
+    console.log('handleFontSize called with size:', size);
     restoreRange();
     const sel = window.getSelection();
-    if (!sel || !sel.rangeCount) return;
+    if (!sel || !sel.rangeCount) {
+      console.log('No selection');
+      return;
+    }
 
     const range = sel.getRangeAt(0);
     const container = range.commonAncestorContainer;
     const el = container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
     const editorField = el?.closest('[data-editor-field]') as HTMLElement;
 
-    if (!editorField) return;
+    if (!editorField) {
+      console.log('No editor field');
+      return;
+    }
 
     try {
+      console.log('Wrapping text with span, fontSize:', size);
       editorField.focus();
       sel.removeAllRanges();
       sel.addRange(range);
@@ -188,11 +196,14 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
 
       try {
         range.surroundContents(span);
+        console.log('surroundContents succeeded');
       } catch {
         // If surroundContents fails (e.g., selection crosses elements), use insertNode
+        console.log('surroundContents failed, using extractContents fallback');
         const contents = range.extractContents();
         span.appendChild(contents);
         range.insertNode(span);
+        console.log('insertNode succeeded');
       }
     } catch (err) {
       console.error('Font size error:', err);
@@ -426,6 +437,7 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       <select
         title="Font family"
         defaultValue=""
+        onMouseDown={e => saveRange()}
         onChange={e => {
           handleFontFamily(e.target.value);
           // Reset to allow re-selecting same value
@@ -442,7 +454,9 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       <select
         title="Font size"
         defaultValue="16"
+        onMouseDown={e => saveRange()}
         onChange={e => {
+          console.log('Font size changed to:', e.target.value);
           handleFontSize(Number(e.target.value));
           // Reset to allow re-selecting same value
           (e.target as HTMLSelectElement).value = '16';
@@ -450,7 +464,7 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         className={selectCls + ' w-[46px]'}
       >
         {FONT_SIZES.map(s => (
-          <option key={s} value={s}>{s}</option>
+          <option key={s} value={String(s)}>{s}</option>
         ))}
       </select>
 
@@ -503,6 +517,7 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       <select
         title="Line height"
         defaultValue="1.5"
+        onMouseDown={e => saveRange()}
         onChange={e => {
           handleLineHeight(e.target.value);
           // Reset to allow re-selecting same value
