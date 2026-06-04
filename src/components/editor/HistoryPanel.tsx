@@ -148,7 +148,7 @@ export default function HistoryPanel({ snapshots, currentIndex, onRevert, onClos
       {/* Footer hint */}
       <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50">
         <p className="text-[10px] text-slate-400 text-center">
-          Versions auto-saved every 2.5s · Max 50 versions
+          Versions auto-saved every 10s · Max 50 versions
         </p>
       </div>
     </motion.div>

@@ -722,7 +722,7 @@ export default function EditorShell({ store, from }: Props) {
         sectionOrder: sectionItems.map(i => i.type),
       } as StoreDesign;
       pushSnapshot(currentDesign, storeName, primaryColor);
-    }, 2500);
+    }, 10000);
 
     return () => { if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
