@@ -9,9 +9,10 @@ import {
   BookOpen, Megaphone, Layers, Plus, Trash2,
   Star, HelpCircle, Type, Eye, Lock,
   Edit2, GripVertical, MousePointer, MousePointerClick, Layout, Pencil,
-  CloudOff, RotateCcw, LayoutDashboard, Undo2, Redo2,
+  CloudOff, RotateCcw, LayoutDashboard, Undo2, Redo2, History,
 } from 'lucide-react';
 import { useHistory } from '../../hooks/useHistory';
+import HistoryPanel from './HistoryPanel';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from '../preview/StorePreview';
 import PublishModal from '../preview/PublishModal';
@@ -283,13 +284,20 @@ export default function EditorShell({ store, from }: Props) {
   // Section order for drag reorder
   const [sectionItems, setSectionItems] = useState<SectionItem[]>(() => deriveInitialSections(d));
 
+  // History panel open state
+  const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+  const historyBtnRef = useRef<HTMLButtonElement>(null);
+
   // History (undo/redo)
   const {
     canUndo,
     canRedo,
     currentSnapshot,
+    snapshots: historySnapshots,
+    currentIndex: historyCurrentIndex,
     undo: historyUndo,
     redo: historyRedo,
+    goToVersion: historyGoToVersion,
     pushSnapshot,
   } = useHistory(
     {
@@ -806,7 +814,7 @@ export default function EditorShell({ store, from }: Props) {
             </button>
           </Tip>
 
-          {/* Undo/Redo buttons */}
+          {/* Undo/Redo + History buttons */}
           <div className="flex items-center gap-0.5 ml-1">
             <Tip label="Undo (Ctrl+Z)">
               <button
@@ -825,6 +833,27 @@ export default function EditorShell({ store, from }: Props) {
               >
                 <Redo2 className="w-3.5 h-3.5" />
               </button>
+            </Tip>
+            <Tip label="Version history">
+              <div className="relative">
+                <button
+                  ref={historyBtnRef}
+                  onClick={() => setShowHistoryPanel(v => !v)}
+                  className={`p-1.5 rounded-lg transition-all ${showHistoryPanel ? 'bg-slate-100 text-slate-700' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
+                >
+                  <History className="w-3.5 h-3.5" />
+                </button>
+                <AnimatePresence>
+                  {showHistoryPanel && (
+                    <HistoryPanel
+                      snapshots={historySnapshots}
+                      currentIndex={historyCurrentIndex}
+                      onRevert={(idx) => { historyGoToVersion(idx); setShowHistoryPanel(false); }}
+                      onClose={() => setShowHistoryPanel(false)}
+                    />
+                  )}
+                </AnimatePresence>
+              </div>
             </Tip>
           </div>
         </div>
