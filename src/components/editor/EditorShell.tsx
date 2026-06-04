@@ -217,10 +217,6 @@ function EditModeCss({ active }: { active: boolean }) {
         line-height: 1 !important;
         vertical-align: middle;
       }
-      /* Normalize existing font-size spans to prevent shrinking parent height */
-      [data-editor-field] span[style*="font-size"] {
-        line-height: 1 !important;
-      }
       [data-editor-field]:hover {
         box-shadow: inset 0 0 0 2px #10b981 !important;
       }
