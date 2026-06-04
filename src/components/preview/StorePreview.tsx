@@ -201,7 +201,20 @@ function EditSpan({
   style?: React.CSSProperties;
   singleLine?: boolean;
 }) {
-  if (!editMode) return <>{value}</>;
+  if (!editMode) {
+    // If value contains HTML (formatting spans), render it as HTML
+    // Otherwise render as plain text
+    const isHtml = /<[a-z]/i.test(value);
+    return isHtml ? (
+      <span
+        className={className}
+        style={style}
+        dangerouslySetInnerHTML={{ __html: value }}
+      />
+    ) : (
+      <span className={className} style={style}>{value}</span>
+    );
+  }
   return (
     <span
       ref={(el) => {
