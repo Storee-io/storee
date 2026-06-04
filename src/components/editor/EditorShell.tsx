@@ -309,9 +309,11 @@ export default function EditorShell({ store, from }: Props) {
       sectionHeadings,
       footerNote,
       tagline,
+      sectionOrder: sectionItems.map(i => i.type),
     } as StoreDesign,
     store.id,
-    storeName
+    storeName,
+    primaryColor
   );
 
   // Restore state when undo/redo changes currentSnapshot
@@ -319,31 +321,25 @@ export default function EditorShell({ store, from }: Props) {
     if (!currentSnapshot) return;
 
     const design = currentSnapshot.design;
-    const prevSnapshot = currentSnapshot.metadata.source === 'user_action' ? null : currentSnapshot;
 
-    // Only restore if we're not at the latest state (i.e., we undid something)
-    // Check if current state matches snapshot
+    // Check if design fields changed
     const currentDesign = {
-      heroTitle,
-      heroSubtitle,
-      ctaText,
-      promoBar,
-      accentColor,
-      brandStory,
-      features,
-      testimonials,
-      faq,
-      newsletter,
-      navLinks,
-      trustBadges,
-      stats,
-      sectionHeadings,
-      footerNote,
-      tagline,
+      heroTitle, heroSubtitle, ctaText, promoBar, accentColor, brandStory,
+      features, testimonials, faq, newsletter, navLinks, trustBadges,
+      stats, sectionHeadings, footerNote, tagline,
+      sectionOrder: sectionItems.map(i => i.type),
+    };
+    const snapshotDesign = {
+      heroTitle: design.heroTitle, heroSubtitle: design.heroSubtitle,
+      ctaText: design.ctaText, promoBar: design.promoBar, accentColor: design.accentColor,
+      brandStory: design.brandStory, features: design.features, testimonials: design.testimonials,
+      faq: design.faq, newsletter: design.newsletter, navLinks: design.navLinks,
+      trustBadges: design.trustBadges, stats: design.stats, sectionHeadings: design.sectionHeadings,
+      footerNote: design.footerNote, tagline: design.tagline, sectionOrder: design.sectionOrder,
     };
 
-    if (JSON.stringify(currentDesign) !== JSON.stringify(design)) {
-      // Restore from snapshot
+    if (JSON.stringify(currentDesign) !== JSON.stringify(snapshotDesign)) {
+      // Restore all design fields
       setHeroTitle(design.heroTitle ?? '');
       setHeroSubtitle(design.heroSubtitle ?? '');
       setCtaText(design.ctaText ?? '');
@@ -360,7 +356,30 @@ export default function EditorShell({ store, from }: Props) {
       setSectionHeadings(design.sectionHeadings ?? {});
       setFooterNote(design.footerNote ?? '');
       setTagline(design.tagline ?? '');
+
+      // Restore section order
+      if (design.sectionOrder?.length) {
+        setSectionItems(prev => {
+          const itemMap = Object.fromEntries(prev.map(item => [item.type, item]));
+          const ordered = design.sectionOrder!
+            .filter((type: string) => itemMap[type])
+            .map((type: string) => itemMap[type]);
+          const missing = prev.filter(item => !design.sectionOrder!.includes(item.type));
+          return [...ordered, ...missing];
+        });
+      }
     }
+
+    // Restore store name
+    if (currentSnapshot.storeName !== undefined && currentSnapshot.storeName !== storeName) {
+      setStoreName(currentSnapshot.storeName);
+    }
+
+    // Restore primary color
+    if (currentSnapshot.primaryColor !== undefined && currentSnapshot.primaryColor !== primaryColor) {
+      setPrimaryColor(currentSnapshot.primaryColor);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSnapshot]);
 
   // Keyboard shortcuts for undo/redo
@@ -692,8 +711,9 @@ export default function EditorShell({ store, from }: Props) {
         sectionHeadings,
         footerNote,
         tagline,
+        sectionOrder: sectionItems.map(i => i.type),
       } as StoreDesign;
-      pushSnapshot(currentDesign, storeName);
+      pushSnapshot(currentDesign, storeName, primaryColor);
     }, 2500);
 
     return () => { if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current); };

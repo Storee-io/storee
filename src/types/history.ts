@@ -1,4 +1,4 @@
-import type { StoreDesign } from './index';
+import type { StoreDesign } from '../lib/claudeApi';
 
 export interface HistoryMetadata {
   timestamp: number;
@@ -12,6 +12,7 @@ export interface HistorySnapshot {
   storeId: string;
   design: StoreDesign;
   storeName?: string;
+  primaryColor?: string;
   metadata: HistoryMetadata;
 }
 
@@ -27,7 +28,7 @@ export interface UseHistoryReturn {
   currentSnapshot: HistorySnapshot | null;
   canUndo: boolean;
   canRedo: boolean;
-  pushSnapshot: (design: StoreDesign, storeName?: string, label?: string) => void;
+  pushSnapshot: (design: StoreDesign, storeName?: string, primaryColor?: string, label?: string) => void;
   undo: () => void;
   redo: () => void;
   goToVersion: (index: number) => void;

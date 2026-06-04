@@ -1,15 +1,16 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import type { StoreDesign } from '@/lib/claudeApi';
-import type { HistorySnapshot, HistoryState, UseHistoryReturn } from '@/types/history';
+import type { StoreDesign } from '../lib/claudeApi';
+import type { HistorySnapshot, HistoryState, UseHistoryReturn } from '../types/history';
 
 const MAX_SNAPSHOTS = 50;
 
 export function useHistory(
   initialDesign: StoreDesign,
   storeId: string,
-  initialStoreName?: string
+  initialStoreName?: string,
+  initialPrimaryColor?: string
 ): UseHistoryReturn {
   const [history, setHistory] = useState<HistoryState>({
     snapshots: [
@@ -17,6 +18,7 @@ export function useHistory(
         storeId,
         design: initialDesign,
         storeName: initialStoreName,
+        primaryColor: initialPrimaryColor,
         metadata: {
           timestamp: Date.now(),
           label: 'Initial state',
@@ -29,7 +31,7 @@ export function useHistory(
   });
 
   const pushSnapshot = useCallback(
-    (design: StoreDesign, storeName?: string, label?: string) => {
+    (design: StoreDesign, storeName?: string, primaryColor?: string, label?: string) => {
       setHistory((prev) => {
         // Don't create duplicate consecutive snapshots
         if (prev.currentIndex < prev.snapshots.length - 1) {
@@ -39,18 +41,23 @@ export function useHistory(
 
         const lastSnapshot = prev.snapshots[prev.snapshots.length - 1];
 
-        // Check if design actually changed
-        if (JSON.stringify(lastSnapshot.design) === JSON.stringify(design)) {
+        // Check if design, storeName, or primaryColor actually changed
+        const designChanged = JSON.stringify(lastSnapshot.design) !== JSON.stringify(design);
+        const storeNameChanged = storeName !== undefined && storeName !== lastSnapshot.storeName;
+        const primaryColorChanged = primaryColor !== undefined && primaryColor !== lastSnapshot.primaryColor;
+
+        if (!designChanged && !storeNameChanged && !primaryColorChanged) {
           return prev;
         }
 
         const newSnapshot: HistorySnapshot = {
           storeId,
           design,
-          storeName: storeName || prev.snapshots[prev.currentIndex]?.storeName,
+          storeName: storeName ?? prev.snapshots[prev.currentIndex]?.storeName,
+          primaryColor: primaryColor ?? prev.snapshots[prev.currentIndex]?.primaryColor,
           metadata: {
             timestamp: Date.now(),
-            label: label || detectChanges(lastSnapshot.design, design),
+            label: label || detectChanges(lastSnapshot, { design, storeName, primaryColor }),
             source: 'autosave',
           },
         };
@@ -118,24 +125,46 @@ export function useHistory(
 }
 
 /**
- * Auto-detect what changed between two design objects
+ * Auto-detect what changed between two snapshots
  */
-function detectChanges(prev: StoreDesign, curr: StoreDesign): string {
+function detectChanges(
+  prev: HistorySnapshot,
+  curr: { design: StoreDesign; storeName?: string; primaryColor?: string }
+): string {
   const changes: string[] = [];
+  const pd = prev.design;
+  const cd = curr.design;
 
-  if (prev.heroTitle !== curr.heroTitle) changes.push('Headline');
-  if (prev.heroSubtitle !== curr.heroSubtitle) changes.push('Subheadline');
-  if (prev.accentColor !== curr.accentColor) changes.push('Color');
-  if (prev.tagline !== curr.tagline) changes.push('Tagline');
-  if (prev.brandStory !== curr.brandStory) changes.push('Brand story');
-  if (prev.footerNote !== curr.footerNote) changes.push('Footer');
+  if (prev.storeName !== curr.storeName) changes.push('Store name');
+  if (prev.primaryColor !== curr.primaryColor) changes.push('Primary color');
+
+  if (pd.heroTitle !== cd.heroTitle) changes.push('Headline');
+  if (pd.heroSubtitle !== cd.heroSubtitle) changes.push('Subheadline');
+  if (pd.ctaText !== cd.ctaText) changes.push('CTA button');
+  if (pd.accentColor !== cd.accentColor) changes.push('Accent color');
+  if (pd.tagline !== cd.tagline) changes.push('Tagline');
+  if (pd.brandStory !== cd.brandStory) changes.push('Brand story');
+  if (pd.footerNote !== cd.footerNote) changes.push('Footer');
+  if (pd.promoBar !== cd.promoBar) changes.push('Promo bar');
+
+  // Section order
+  if (JSON.stringify(pd.sectionOrder) !== JSON.stringify(cd.sectionOrder)) changes.push('Section order');
 
   // Array length changes
-  if (prev.features?.length !== curr.features?.length) changes.push('Features');
-  if (prev.testimonials?.length !== curr.testimonials?.length) changes.push('Testimonials');
-  if (prev.faq?.length !== curr.faq?.length) changes.push('FAQ');
-  if (prev.trustBadges?.length !== curr.trustBadges?.length) changes.push('Trust badges');
-  if (prev.stats?.length !== curr.stats?.length) changes.push('Stats');
+  if (pd.features?.length !== cd.features?.length) changes.push('Features');
+  if (pd.testimonials?.length !== cd.testimonials?.length) changes.push('Testimonials');
+  if (pd.faq?.length !== cd.faq?.length) changes.push('FAQ');
+  if (pd.trustBadges?.length !== cd.trustBadges?.length) changes.push('Trust badges');
+  if (pd.stats?.length !== cd.stats?.length) changes.push('Stats');
 
-  return changes.length > 0 ? `${changes.join(', ')} changed` : 'Updated';
+  // Array content changes (when length same)
+  if (pd.features?.length === cd.features?.length && JSON.stringify(pd.features) !== JSON.stringify(cd.features)) changes.push('Features');
+  if (pd.testimonials?.length === cd.testimonials?.length && JSON.stringify(pd.testimonials) !== JSON.stringify(cd.testimonials)) changes.push('Testimonials');
+  if (pd.faq?.length === cd.faq?.length && JSON.stringify(pd.faq) !== JSON.stringify(cd.faq)) changes.push('FAQ');
+  if (pd.trustBadges?.length === cd.trustBadges?.length && JSON.stringify(pd.trustBadges) !== JSON.stringify(cd.trustBadges)) changes.push('Trust badges');
+  if (pd.stats?.length === cd.stats?.length && JSON.stringify(pd.stats) !== JSON.stringify(cd.stats)) changes.push('Stats');
+
+  // Deduplicate
+  const unique = Array.from(new Set(changes));
+  return unique.length > 0 ? `${unique.join(', ')} changed` : 'Updated';
 }
