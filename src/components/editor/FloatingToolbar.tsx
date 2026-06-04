@@ -62,7 +62,7 @@ function Divider() {
 }
 
 export function FloatingToolbar({ editMode, containerRef }: Props) {
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; below: boolean } | null>(null);
   const [fmt, setFmt] = useState<Record<FmtKey, boolean>>({
     bold: false, italic: false, underline: false, strikeThrough: false,
   });
@@ -207,9 +207,14 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
     const gap = 28;
     const centerX = r.left + r.width / 2;
 
+    // If there's not enough room above, flip toolbar to below the selection
+    const spaceAbove = r.top;
+    const below = spaceAbove < toolbarH + gap + 16;
+
     setPos({
-      top: Math.max(8, r.top - toolbarH - gap),
+      top: below ? r.bottom + gap : r.top - toolbarH - gap,
       left: Math.min(Math.max(centerX, 240), window.innerWidth - 240),
+      below,
     });
 
     setFmt({
@@ -446,6 +451,21 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
     zIndex: 9999,
   };
 
+  // Small arrow pointing toward the selected text
+  const arrowStyle: React.CSSProperties = {
+    position: 'absolute',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: 0,
+    height: 0,
+    borderLeft: '5px solid transparent',
+    borderRight: '5px solid transparent',
+    ...(pos.below
+      ? { top: -5, borderBottom: '5px solid #e2e8f0' }   // arrow up (toolbar is below text)
+      : { bottom: -5, borderTop: '5px solid #e2e8f0' }   // arrow down (toolbar is above text)
+    ),
+  };
+
   // Link input mode
   if (showLink) {
     return (
@@ -453,8 +473,9 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         ref={toolbarRef}
         onMouseDown={e => e.preventDefault()}
         style={baseStyle}
-        className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl shadow-lg px-2.5 py-1.5 select-none"
+        className="relative flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl shadow-lg px-2.5 py-1.5 select-none"
       >
+        <div style={arrowStyle} />
         <Link className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
         <input
           autoFocus
@@ -483,8 +504,9 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         }
       }}
       style={baseStyle}
-      className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-xl shadow-lg px-1.5 py-1 select-none"
+      className="relative flex items-center gap-0.5 bg-white border border-slate-200 rounded-xl shadow-lg px-1.5 py-1 select-none"
     >
+      <div style={arrowStyle} />
       {/* Text style */}
       <select
         title="Text style"
