@@ -202,18 +202,31 @@ function EditSpan({
   singleLine?: boolean;
 }) {
   if (!editMode) {
-    // If value contains HTML (formatting spans), render it as HTML
-    // Otherwise render as plain text
     const isHtml = /<[a-z]/i.test(value);
-    return isHtml ? (
-      <span
-        className={className}
-        style={style}
-        dangerouslySetInnerHTML={{ __html: value }}
-      />
-    ) : (
-      <span className={className} style={style}>{value}</span>
-    );
+    if (isHtml) {
+      // HTML with formatting spans — render as HTML
+      return (
+        <span
+          className={className}
+          style={style}
+          dangerouslySetInnerHTML={{ __html: value }}
+        />
+      );
+    } else {
+      // Plain text — decode any stale HTML entities (&amp;amp; → &)
+      const decoded = (() => {
+        const tmp = document.createElement('span');
+        let prev = value;
+        for (let i = 0; i < 5; i++) {
+          tmp.innerHTML = prev;
+          const next = tmp.textContent ?? prev;
+          if (next === prev) break;
+          prev = next;
+        }
+        return prev;
+      })();
+      return <span className={className} style={style}>{decoded}</span>;
+    }
   }
   return (
     <span
