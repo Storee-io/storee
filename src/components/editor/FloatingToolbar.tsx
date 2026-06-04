@@ -489,7 +489,6 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
     return (
       <div
         ref={toolbarRef}
-        onMouseDown={e => e.preventDefault()}
         style={baseStyle}
         className="relative flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl shadow-lg px-2.5 py-1.5 select-none"
       >
@@ -500,14 +499,32 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
           value={linkUrl}
           onChange={e => setLinkUrl(e.target.value)}
           onKeyDown={e => {
-            if (e.key === 'Enter') applyLink();
-            if (e.key === 'Escape') cancelLink();
+            if (e.key === 'Enter') {
+              applyLink();
+              e.preventDefault();
+            }
+            if (e.key === 'Escape') {
+              cancelLink();
+              e.preventDefault();
+            }
           }}
           placeholder="https://..."
           className="text-sm outline-none border-none w-48 text-slate-700 placeholder:text-slate-300"
         />
-        <button onClick={applyLink} className="text-xs text-emerald-600 font-semibold hover:text-emerald-700 px-1">Apply</button>
-        <button onClick={cancelLink} className="text-xs text-slate-400 hover:text-slate-600 px-1">Cancel</button>
+        <button
+          onMouseDown={e => e.preventDefault()}
+          onClick={applyLink}
+          className="text-xs text-emerald-600 font-semibold hover:text-emerald-700 px-1"
+        >
+          Apply
+        </button>
+        <button
+          onMouseDown={e => e.preventDefault()}
+          onClick={cancelLink}
+          className="text-xs text-slate-400 hover:text-slate-600 px-1"
+        >
+          Cancel
+        </button>
       </div>
     );
   }
