@@ -207,12 +207,25 @@ function EditSpan({
       ref={(el) => {
         // Sync value to DOM only when not actively being edited
         if (el && !el.hasAttribute('data-ce')) {
-          // If value contains HTML tags, render as innerHTML; otherwise as plain text
           const isHtml = /<[a-z]/i.test(value);
           if (isHtml) {
+            // HTML value (has formatting spans) — render via innerHTML
             if (el.innerHTML !== value) el.innerHTML = value;
-          } else if (el.textContent !== value) {
-            el.textContent = value;
+          } else {
+            // Plain text — fully decode any stale HTML entities (&amp;amp; → &amp; → &)
+            // by iterating through a temporary element until the value stabilises.
+            const decoded = (() => {
+              const tmp = document.createElement('span');
+              let prev = value;
+              for (let i = 0; i < 5; i++) {
+                tmp.innerHTML = prev;
+                const next = tmp.textContent ?? prev;
+                if (next === prev) break;
+                prev = next;
+              }
+              return prev;
+            })();
+            if (el.textContent !== decoded) el.textContent = decoded;
           }
         }
       }}
@@ -222,8 +235,11 @@ function EditSpan({
       onFocus={e => e.currentTarget.setAttribute('data-ce', '1')}
       onBlur={e => {
         e.currentTarget.removeAttribute('data-ce');
-        // Save innerHTML to preserve inline formatting (font size, etc.)
-        onFieldChange?.(field, e.currentTarget.innerHTML || e.currentTarget.textContent || '');
+        const el = e.currentTarget;
+        // If the field has inline formatting (font-size spans etc.), preserve as HTML.
+        // Otherwise save plain text to avoid accumulating HTML-entity escaping.
+        const hasFormatting = el.querySelector('[style]') !== null;
+        onFieldChange?.(field, hasFormatting ? el.innerHTML : (el.textContent ?? ''));
       }}
       onKeyDown={singleLine ? (e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }) : undefined}
       onClick={e => e.stopPropagation()}

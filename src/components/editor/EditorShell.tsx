@@ -214,6 +214,8 @@ function EditModeCss({ active }: { active: boolean }) {
         cursor: text !important;
         border-radius: 2px;
         transition: box-shadow 0.12s ease;
+        line-height: 1 !important;
+        vertical-align: middle;
       }
       [data-editor-field]:hover {
         box-shadow: inset 0 0 0 2px #10b981 !important;
