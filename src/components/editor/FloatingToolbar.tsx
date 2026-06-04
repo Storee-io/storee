@@ -304,6 +304,7 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       // Wrap selected text in a span with the desired font size
       const span = document.createElement('span');
       span.style.fontSize = `${size}px`;
+      span.style.lineHeight = '1'; // Ensure line-height doesn't shrink parent element
 
       try {
         range.surroundContents(span);
