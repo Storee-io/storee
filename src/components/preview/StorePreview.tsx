@@ -203,12 +203,15 @@ function EditSpan({
 }) {
   if (!editMode) {
     const isHtml = /<[a-z]/i.test(value);
+    // Apply consistent line-height, vertical-align, and display styling in view mode to match edit mode
+    const viewStyle = { ...style, lineHeight: 1, verticalAlign: 'middle' as const, display: 'inline' as const };
+
     if (isHtml) {
       // HTML with formatting spans — render as HTML
       return (
         <span
           className={className}
-          style={style}
+          style={viewStyle}
           dangerouslySetInnerHTML={{ __html: value }}
         />
       );
@@ -225,7 +228,7 @@ function EditSpan({
         }
         return prev;
       })();
-      return <span className={className} style={style}>{decoded}</span>;
+      return <span className={className} style={viewStyle}>{decoded}</span>;
     }
   }
   return (
