@@ -204,7 +204,7 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
 
     const r = range.getBoundingClientRect();
     const toolbarH = 44;
-    const gap = 16;
+    const gap = 28;
     const centerX = r.left + r.width / 2;
 
     setPos({
@@ -453,7 +453,7 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         ref={toolbarRef}
         onMouseDown={e => e.preventDefault()}
         style={baseStyle}
-        className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl shadow-sm px-2.5 py-1.5 select-none"
+        className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl shadow-lg px-2.5 py-1.5 select-none"
       >
         <Link className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
         <input
@@ -483,7 +483,7 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         }
       }}
       style={baseStyle}
-      className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-xl shadow-sm px-1.5 py-1 select-none"
+      className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-xl shadow-lg px-1.5 py-1 select-none"
     >
       {/* Text style */}
       <select
