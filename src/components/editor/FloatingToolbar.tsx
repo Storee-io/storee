@@ -393,18 +393,35 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
     setShowLink(true);
   }, [saveRange]);
 
+  // Cancel link input and restore focus + selection to editor field
+  const cancelLink = useCallback(() => {
+    setShowLink(false);
+    const range = savedRangeRef.current;
+    if (range) {
+      const container = range.commonAncestorContainer;
+      const el = container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
+      const editorField = el?.closest('[data-editor-field]') as HTMLElement | null;
+      if (editorField) {
+        editorField.focus();
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+    }
+  }, []);
+
   const applyLink = useCallback(() => {
     try {
       restoreRange();
       const url = linkUrl.trim();
       if (!url) {
-        setShowLink(false);
+        cancelLink();
         return;
       }
 
       const sel = window.getSelection();
       if (!sel || !sel.rangeCount) {
-        setShowLink(false);
+        cancelLink();
         return;
       }
 
@@ -414,28 +431,28 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       const editorField = el?.closest('[data-editor-field]') as HTMLElement;
 
       if (!editorField) {
-        setShowLink(false);
+        cancelLink();
         return;
       }
 
-      // Focus the field
+      // Focus the field and restore selection
       editorField.focus();
-
-      // Restore selection after focus
       sel.removeAllRanges();
       sel.addRange(range);
 
       // Create link
       const fullUrl = url.startsWith('http') ? url : `https://${url}`;
       document.execCommand('createLink', false, fullUrl);
-      console.log('Link created:', fullUrl);
+
+      // Keep focus on editor after applying
+      editorField.focus();
     } catch (err) {
       console.error('Error creating link:', err);
     } finally {
       setShowLink(false);
       setTimeout(refresh, 0);
     }
-  }, [restoreRange, linkUrl, refresh]);
+  }, [restoreRange, linkUrl, refresh, cancelLink]);
 
   if (!pos) return null;
 
@@ -484,13 +501,13 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
           onChange={e => setLinkUrl(e.target.value)}
           onKeyDown={e => {
             if (e.key === 'Enter') applyLink();
-            if (e.key === 'Escape') setShowLink(false);
+            if (e.key === 'Escape') cancelLink();
           }}
           placeholder="https://..."
           className="text-sm outline-none border-none w-48 text-slate-700 placeholder:text-slate-300"
         />
         <button onClick={applyLink} className="text-xs text-emerald-600 font-semibold hover:text-emerald-700 px-1">Apply</button>
-        <button onClick={() => setShowLink(false)} className="text-xs text-slate-400 hover:text-slate-600 px-1">Cancel</button>
+        <button onClick={cancelLink} className="text-xs text-slate-400 hover:text-slate-600 px-1">Cancel</button>
       </div>
     );
   }
