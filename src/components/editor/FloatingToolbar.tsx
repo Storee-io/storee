@@ -277,27 +277,40 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       return;
     }
 
+    // Flatten any existing font-size spans inside a node (remove nesting)
+    const flattenFontSizeSpans = (node: HTMLElement) => {
+      const inner = Array.from(node.querySelectorAll('span[style*="font-size"]'));
+      // Process deepest first so parent removals don't affect children
+      for (let i = inner.length - 1; i >= 0; i--) {
+        const s = inner[i];
+        if (!node.contains(s)) continue;
+        const parent = s.parentNode;
+        if (!parent) continue;
+        while (s.firstChild) parent.insertBefore(s.firstChild, s);
+        parent.removeChild(s);
+      }
+    };
+
     try {
-      console.log('Wrapping text with span, fontSize:', size);
       editorField.focus();
       sel.removeAllRanges();
       sel.addRange(range);
 
-      // Wrap selected text in span with fontSize style
+      // Wrap selected text in a span with the desired font size
       const span = document.createElement('span');
       span.style.fontSize = `${size}px`;
 
       try {
         range.surroundContents(span);
-        console.log('surroundContents succeeded');
       } catch {
-        // If surroundContents fails (e.g., selection crosses elements), use insertNode
-        console.log('surroundContents failed, using extractContents fallback');
+        // Selection crosses element boundaries — extract and re-insert
         const contents = range.extractContents();
         span.appendChild(contents);
         range.insertNode(span);
-        console.log('insertNode succeeded');
       }
+
+      // Remove any nested font-size spans so we don't end up with stacked wrappers
+      flattenFontSizeSpans(span);
     } catch (err) {
       console.error('Font size error:', err);
     }

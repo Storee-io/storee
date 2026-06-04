@@ -206,13 +206,13 @@ function EditSpan({
     <span
       ref={(el) => {
         // Sync value to DOM only when not actively being edited
-        // Preserve inline formatting (spans with styles) by not overwriting when they exist
         if (el && !el.hasAttribute('data-ce')) {
-          if (el.textContent !== value) {
-            // Only overwrite textContent if there are no child elements (no inline formatting)
-            if (el.children.length === 0) {
-              el.textContent = value;
-            }
+          // If value contains HTML tags, render as innerHTML; otherwise as plain text
+          const isHtml = /<[a-z]/i.test(value);
+          if (isHtml) {
+            if (el.innerHTML !== value) el.innerHTML = value;
+          } else if (el.textContent !== value) {
+            el.textContent = value;
           }
         }
       }}
@@ -222,10 +222,8 @@ function EditSpan({
       onFocus={e => e.currentTarget.setAttribute('data-ce', '1')}
       onBlur={e => {
         e.currentTarget.removeAttribute('data-ce');
-        // Preserve formatting by sending the full HTML content, not just plain text
-        const htmlContent = e.currentTarget.innerHTML;
-        const textContent = e.currentTarget.textContent ?? '';
-        onFieldChange?.(field, htmlContent || textContent);
+        // Save innerHTML to preserve inline formatting (font size, etc.)
+        onFieldChange?.(field, e.currentTarget.innerHTML || e.currentTarget.textContent || '');
       }}
       onKeyDown={singleLine ? (e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }) : undefined}
       onClick={e => e.stopPropagation()}
