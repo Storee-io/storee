@@ -9,8 +9,9 @@ import {
   BookOpen, Megaphone, Layers, Plus, Trash2,
   Star, HelpCircle, Type, Eye, Lock,
   Edit2, GripVertical, MousePointer, MousePointerClick, Layout, Pencil,
-  CloudOff, RotateCcw, LayoutDashboard,
+  CloudOff, RotateCcw, LayoutDashboard, Undo2, Redo2,
 } from 'lucide-react';
+import { useHistory } from '../../hooks/useHistory';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from '../preview/StorePreview';
 import PublishModal from '../preview/PublishModal';
@@ -281,6 +282,103 @@ export default function EditorShell({ store, from }: Props) {
 
   // Section order for drag reorder
   const [sectionItems, setSectionItems] = useState<SectionItem[]>(() => deriveInitialSections(d));
+
+  // History (undo/redo)
+  const {
+    canUndo,
+    canRedo,
+    currentSnapshot,
+    undo: historyUndo,
+    redo: historyRedo,
+    pushSnapshot,
+  } = useHistory(
+    {
+      heroTitle,
+      heroSubtitle,
+      ctaText,
+      promoBar,
+      accentColor,
+      brandStory,
+      features,
+      testimonials,
+      faq,
+      newsletter,
+      navLinks,
+      trustBadges,
+      stats,
+      sectionHeadings,
+      footerNote,
+      tagline,
+    } as StoreDesign,
+    store.id,
+    storeName
+  );
+
+  // Restore state when undo/redo changes currentSnapshot
+  useEffect(() => {
+    if (!currentSnapshot) return;
+
+    const design = currentSnapshot.design;
+    const prevSnapshot = currentSnapshot.metadata.source === 'user_action' ? null : currentSnapshot;
+
+    // Only restore if we're not at the latest state (i.e., we undid something)
+    // Check if current state matches snapshot
+    const currentDesign = {
+      heroTitle,
+      heroSubtitle,
+      ctaText,
+      promoBar,
+      accentColor,
+      brandStory,
+      features,
+      testimonials,
+      faq,
+      newsletter,
+      navLinks,
+      trustBadges,
+      stats,
+      sectionHeadings,
+      footerNote,
+      tagline,
+    };
+
+    if (JSON.stringify(currentDesign) !== JSON.stringify(design)) {
+      // Restore from snapshot
+      setHeroTitle(design.heroTitle ?? '');
+      setHeroSubtitle(design.heroSubtitle ?? '');
+      setCtaText(design.ctaText ?? '');
+      setPromoBar(design.promoBar ?? '');
+      setAccentColor(design.accentColor ?? '#06b6d4');
+      setBrandStory(design.brandStory ?? '');
+      setFeatures(design.features ?? []);
+      setTestimonials(design.testimonials ?? []);
+      setFaq(design.faq ?? []);
+      setNewsletter(design.newsletter ?? { headline: '', subtext: '' });
+      setNavLinks(design.navLinks ?? []);
+      setTrustBadges(design.trustBadges ?? []);
+      setStats(design.stats ?? []);
+      setSectionHeadings(design.sectionHeadings ?? {});
+      setFooterNote(design.footerNote ?? '');
+      setTagline(design.tagline ?? '');
+    }
+  }, [currentSnapshot]);
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (canUndo) historyUndo();
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        if (canRedo) historyRedo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [canUndo, canRedo, historyUndo, historyRedo]);
 
   // Sync from context when store id changes
   useEffect(() => {
@@ -566,7 +664,7 @@ export default function EditorShell({ store, from }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [persistStore, liveContextStore.id, liveContextStore.status, router]);
 
-  // â"€â"€ Autosave: debounce 2.5s on any design change â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+  // â"€â"€ Autosave: debounce 2.5s on any design change + push to history â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   useEffect(() => {
     // Skip the very first render (initial state from store data)
     if (isInitialMountRef.current) { isInitialMountRef.current = false; return; }
@@ -576,13 +674,33 @@ export default function EditorShell({ store, from }: Props) {
     if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
     autosaveTimerRef.current = setTimeout(() => {
       persistStoreRef.current?.();
+      // Push to history after successful save
+      const currentDesign = {
+        heroTitle,
+        heroSubtitle,
+        ctaText,
+        promoBar,
+        accentColor,
+        brandStory,
+        features,
+        testimonials,
+        faq,
+        newsletter,
+        navLinks,
+        trustBadges,
+        stats,
+        sectionHeadings,
+        footerNote,
+        tagline,
+      } as StoreDesign;
+      pushSnapshot(currentDesign, storeName);
     }, 2500);
 
     return () => { if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeName, primaryColor, tagline, heroTitle, heroSubtitle, ctaText,
       promoBar, accentColor, brandStory, features, testimonials, faq, newsletter,
-      navLinks, trustBadges, stats, sectionHeadings, footerNote, sectionItems]);
+      navLinks, trustBadges, stats, sectionHeadings, footerNote, sectionItems, pushSnapshot]);
 
   const handlePublishComplete = useCallback((subdomain: string) => {
     updateActiveStore({
@@ -667,6 +785,28 @@ export default function EditorShell({ store, from }: Props) {
               <span className="hidden sm:inline">Edit</span>
             </button>
           </Tip>
+
+          {/* Undo/Redo buttons */}
+          <div className="flex items-center gap-0.5 ml-1">
+            <Tip label="Undo (Ctrl+Z)">
+              <button
+                onClick={historyUndo}
+                disabled={!canUndo}
+                className="p-1.5 rounded-lg transition-all text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-slate-400"
+              >
+                <Undo2 className="w-3.5 h-3.5" />
+              </button>
+            </Tip>
+            <Tip label="Redo (Ctrl+Shift+Z)">
+              <button
+                onClick={historyRedo}
+                disabled={!canRedo}
+                className="p-1.5 rounded-lg transition-all text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-slate-400"
+              >
+                <Redo2 className="w-3.5 h-3.5" />
+              </button>
+            </Tip>
+          </div>
         </div>
 
         {/* Center — device switcher (truly centered) */}
