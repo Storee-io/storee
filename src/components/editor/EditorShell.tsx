@@ -440,6 +440,10 @@ export default function EditorShell({ store, from }: Props) {
   // â"€â"€ onFieldChange handler (called from canvas contenteditable) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
   const handleFieldPositionChange = useCallback((field: string, offset: { x: number; y: number }) => {
+    // Prevent position updates for now - seems to cause section unmount issues
+    console.log('Field position change:', field, offset);
+    // TODO: Fix unmount issue before enabling this
+    /*
     updateActiveStore(prev => ({
       ...prev,
       design: {
@@ -450,11 +454,10 @@ export default function EditorShell({ store, from }: Props) {
         },
       },
     }));
-    // Debounce snapshot push to avoid re-render issues during drag
-    // Only save to history after a short delay
     setTimeout(() => {
       pushSnapshot(`Field moved: ${field}`, 'text');
     }, 300);
+    */
   }, [updateActiveStore, pushSnapshot]);
 
   const handleFieldChange = useCallback((field: string, value: string) => {
