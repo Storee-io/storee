@@ -451,15 +451,24 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
 
   const applyLink = useCallback(() => {
     try {
+      console.log('[FloatingToolbar] applyLink called with linkUrl:', linkUrl);
       restoreRange();
+      console.log('[FloatingToolbar] restoreRange completed');
+
       const url = linkUrl.trim();
+      console.log('[FloatingToolbar] Trimmed URL:', url);
+
       if (!url) {
+        console.log('[FloatingToolbar] URL is empty, canceling');
         cancelLink();
         return;
       }
 
       const sel = window.getSelection();
+      console.log('[FloatingToolbar] Current selection:', sel?.toString());
+
       if (!sel || !sel.rangeCount) {
+        console.log('[FloatingToolbar] No selection found, canceling');
         cancelLink();
         return;
       }
@@ -469,25 +478,33 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       const el = container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
       const editorField = el?.closest('[data-editor-field]') as HTMLElement;
 
+      console.log('[FloatingToolbar] Found editor field:', !!editorField);
+
       if (!editorField) {
+        console.log('[FloatingToolbar] No editor field found, canceling');
         cancelLink();
         return;
       }
 
       // Focus the field and restore selection
+      console.log('[FloatingToolbar] Focusing editor field');
       editorField.focus();
       sel.removeAllRanges();
       sel.addRange(range);
 
       // Create link
       const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-      document.execCommand('createLink', false, fullUrl);
+      console.log('[FloatingToolbar] Creating link with URL:', fullUrl);
+      const result = document.execCommand('createLink', false, fullUrl);
+      console.log('[FloatingToolbar] execCommand result:', result);
 
       // Keep focus on editor after applying
       editorField.focus();
+      console.log('[FloatingToolbar] Link applied successfully');
     } catch (err) {
-      console.error('Error creating link:', err);
+      console.error('[FloatingToolbar] Error creating link:', err);
     } finally {
+      console.log('[FloatingToolbar] applyLink finally: closing link mode and refreshing');
       setShowLink(false);
       setTimeout(refresh, 0);
     }
@@ -559,7 +576,10 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         />
         <button
           onMouseDown={e => e.preventDefault()}
-          onClick={applyLink}
+          onClick={e => {
+            console.log('[FloatingToolbar] Apply button clicked');
+            applyLink();
+          }}
           className="text-xs text-emerald-600 font-semibold hover:text-emerald-700 px-1"
         >
           Apply
