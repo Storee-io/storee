@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Bold, Italic, Underline, Strikethrough,
   AlignLeft, AlignCenter, AlignRight,
-  List, ListOrdered, Eraser, Link,
+  List, ListOrdered, Eraser, Link, LinkOff,
 } from 'lucide-react';
 
 interface Props {
@@ -70,6 +70,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
   const [currentFontSize, setCurrentFontSize] = useState('16');
   const [showLink, setShowLink] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
+  const [isSelectedTextLink, setIsSelectedTextLink] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const colorInputRef = useRef<HTMLInputElement>(null);
   const bgColorInputRef = useRef<HTMLInputElement>(null);
@@ -89,6 +90,45 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
     const sel = window.getSelection();
     sel?.removeAllRanges();
     sel?.addRange(range);
+  }, []);
+
+  const checkIfSelectedTextIsLink = useCallback((): { isLink: boolean; linkElement: HTMLAnchorElement | null } => {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return { isLink: false, linkElement: null };
+
+    const range = sel.getRangeAt(0);
+    const container = range.commonAncestorContainer;
+    const el = container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
+
+    // Check if element is or is inside an <a> tag
+    const linkElement = el?.closest('a[href]') as HTMLAnchorElement | null;
+    return { isLink: !!linkElement, linkElement };
+  }, []);
+
+  const removeLink = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+
+    const range = sel.getRangeAt(0);
+    const container = range.commonAncestorContainer;
+    const el = container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
+    const linkElement = el?.closest('a[href]') as HTMLAnchorElement | null;
+
+    if (linkElement) {
+      console.log('[FloatingToolbar] Removing link:', linkElement.href);
+      // Replace link element with its text content
+      const textNode = document.createTextNode(linkElement.textContent ?? '');
+      linkElement.parentNode?.replaceChild(textNode, linkElement);
+
+      // Restore selection to the text node
+      sel.removeAllRanges();
+      const newRange = document.createRange();
+      newRange.selectNodeContents(textNode);
+      sel.addRange(newRange);
+
+      setIsSelectedTextLink(false);
+      console.log('[FloatingToolbar] Link removed');
+    }
   }, []);
 
   const updateCurrentFontSize = useCallback(() => {
@@ -232,8 +272,12 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       strikeThrough: document.queryCommandState('strikeThrough'),
     });
 
+    // Check if selected text is a link
+    const { isLink } = checkIfSelectedTextIsLink();
+    setIsSelectedTextLink(isLink);
+
     updateCurrentFontSize();
-  }, [editMode, containerRef, updateCurrentFontSize, showLink]);
+  }, [editMode, containerRef, updateCurrentFontSize, showLink, checkIfSelectedTextIsLink]);
 
   useEffect(() => {
     document.addEventListener('selectionchange', refresh);
@@ -416,16 +460,40 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
 
   const handleLink = useCallback(() => {
     try {
-      console.log('[FloatingToolbar] handleLink called');
-      saveRange();
-      console.log('[FloatingToolbar] saveRange completed, savedRangeRef:', savedRangeRef.current);
-      setLinkUrl('');
-      setShowLink(true);
-      console.log('[FloatingToolbar] setShowLink(true) called');
+      const { isLink } = checkIfSelectedTextIsLink();
+      console.log('[FloatingToolbar] handleLink called, isLink:', isLink);
+
+      if (isLink) {
+        // Remove link if text is already a link
+        console.log('[FloatingToolbar] Selected text is a link, removing it');
+        removeLink();
+        // Trigger blur to save changes
+        const sel = window.getSelection();
+        const range = sel?.getRangeAt(0);
+        if (range) {
+          const container = range.commonAncestorContainer;
+          const el = container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
+          const editorField = el?.closest('[data-editor-field]') as HTMLElement;
+          if (editorField) {
+            setTimeout(() => {
+              editorField.blur();
+              setTimeout(() => editorField.focus(), 0);
+            }, 0);
+          }
+        }
+      } else {
+        // Open link input dialog if text is not a link
+        console.log('[FloatingToolbar] Selected text is not a link, opening dialog');
+        saveRange();
+        console.log('[FloatingToolbar] saveRange completed, savedRangeRef:', savedRangeRef.current);
+        setLinkUrl('');
+        setShowLink(true);
+        console.log('[FloatingToolbar] setShowLink(true) called');
+      }
     } catch (err) {
       console.error('[FloatingToolbar] Error in handleLink:', err);
     }
-  }, [saveRange]);
+  }, [saveRange, checkIfSelectedTextIsLink, removeLink]);
 
   // Cancel link input and restore focus + selection to editor field
   const cancelLink = useCallback(() => {
@@ -755,16 +823,16 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
 
       {/* Link */}
       <button
-        title="Insert link (Ctrl+K)"
+        title={isSelectedTextLink ? "Remove link" : "Insert link (Ctrl+K)"}
         onMouseDown={e => {
-          console.log('[FloatingToolbar] Link button onMouseDown fired, e.target:', e.target);
+          console.log('[FloatingToolbar] Link button onMouseDown fired, isSelectedTextLink:', isSelectedTextLink);
           e.preventDefault();
           e.stopPropagation();
-          console.log('[FloatingToolbar] preventDefault and stopPropagation called');
           const sel = window.getSelection();
-          console.log('[FloatingToolbar] Current selection before saveRange:', sel?.toString());
-          saveRange();
-          console.log('[FloatingToolbar] saveRange completed');
+          console.log('[FloatingToolbar] Current selection before handleLink:', sel?.toString());
+          if (!isSelectedTextLink) {
+            saveRange();
+          }
           handleLink();
         }}
         className={plain}
@@ -772,10 +840,13 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
           // Prevent default mouseup behavior to avoid focus change
           e.preventDefault();
           e.stopPropagation();
-          console.log('[FloatingToolbar] Link button onMouseUp - prevented default');
         }}
       >
-        <Link className="w-3.5 h-3.5" />
+        {isSelectedTextLink ? (
+          <LinkOff className="w-3.5 h-3.5 text-orange-500" />
+        ) : (
+          <Link className="w-3.5 h-3.5" />
+        )}
       </button>
 
       <Divider />
