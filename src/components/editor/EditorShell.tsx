@@ -1266,7 +1266,7 @@ export default function EditorShell({ store, from }: Props) {
         <main className="flex-1 overflow-hidden bg-slate-100 flex justify-center">
 
           {/* Floating text-format toolbar — fixed position, escapes overflow */}
-          <FloatingToolbar editMode={editMode} containerRef={previewRef} />
+          <FloatingToolbar editMode={editMode} containerRef={previewRef} primaryColor={primaryColor} />
 
           {/* Edit hint callout — shown when user tries to interact without edit mode */}
           <AnimatePresence>

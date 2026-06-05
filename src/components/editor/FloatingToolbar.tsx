@@ -10,6 +10,7 @@ import {
 interface Props {
   editMode: boolean;
   containerRef: React.RefObject<HTMLDivElement | null>;
+  primaryColor?: string;
 }
 
 type FmtKey = 'bold' | 'italic' | 'underline' | 'strikeThrough';
@@ -61,7 +62,7 @@ function Divider() {
   return <div className="w-px h-5 bg-slate-200 mx-0.5 flex-shrink-0" />;
 }
 
-export function FloatingToolbar({ editMode, containerRef }: Props) {
+export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b981' }: Props) {
   const [pos, setPos] = useState<{ top: number; left: number; below: boolean } | null>(null);
   const [fmt, setFmt] = useState<Record<FmtKey, boolean>>({
     bold: false, italic: false, underline: false, strikeThrough: false,
@@ -508,10 +509,19 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       const result = document.execCommand('createLink', false, fullUrl);
       console.log('[FloatingToolbar] execCommand("createLink") returned:', result);
 
-      // Check if link was actually created
+      // Check if link was actually created and apply styling
       console.log('[FloatingToolbar] Checking if link was created');
       const linkElements = editorField.querySelectorAll('a[href]');
       console.log('[FloatingToolbar] Found', linkElements.length, 'link elements');
+
+      // Apply primary color and underline styling to newly created links
+      linkElements.forEach(link => {
+        const a = link as HTMLAnchorElement;
+        // Apply primary color and text decoration
+        a.style.color = primaryColor;
+        a.style.textDecoration = 'underline';
+        console.log('[FloatingToolbar] Styled link with color:', primaryColor);
+      });
 
       // Trigger onBlur to save the new content with link to parent
       console.log('[FloatingToolbar] Triggering blur to save content with link');
