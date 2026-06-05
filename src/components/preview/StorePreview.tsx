@@ -223,6 +223,7 @@ function EditSpan({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [potentialDrag, setPotentialDrag] = useState(false);
+  const fieldRef = useRef<HTMLSpanElement>(null);
 
   // Use context if props not provided
   const { fieldOffsets: ctxFieldOffsets, onFieldPositionChange: ctxOnPositionChange } = useFieldPosition();
@@ -239,40 +240,56 @@ function EditSpan({
 
   const handleDragMouseDown = (e: React.MouseEvent) => {
     if (!editMode || e.button !== 0 || !effectiveOnPositionChange) return;
+
+    // Don't allow drag if currently editing text (contenteditable focused)
+    const target = e.currentTarget as HTMLElement;
+    if (target.hasAttribute('data-ce')) return;
+
     setPotentialDrag(true);
     setDragStart({ x: e.clientX, y: e.clientY });
     setDragOffset({ x: 0, y: 0 });
   };
 
-  const handleDragMouseMove = (e: React.MouseEvent) => {
+  // Handle drag movements and end on document level
+  useEffect(() => {
     if (!potentialDrag && !isDragging) return;
 
-    const deltaX = e.clientX - dragStart.x;
-    const deltaY = e.clientY - dragStart.y;
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    const handleDocumentMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - dragStart.x;
+      const deltaY = e.clientY - dragStart.y;
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-    // Only start actual drag if moved beyond threshold
-    if (distance > DRAG_THRESHOLD) {
-      if (!isDragging) {
+      // Only start actual drag if moved beyond threshold
+      if (distance > DRAG_THRESHOLD && !isDragging) {
         setIsDragging(true);
-        e.stopPropagation();
       }
-      setDragOffset({ x: deltaX, y: deltaY });
-    }
-  };
 
-  const handleDragMouseUp = () => {
-    if (isDragging) {
-      setIsDragging(false);
-      // Snap to 8px grid
-      const SNAP_GRID = 8;
-      const snappedX = Math.round((currentOffset.x + dragOffset.x) / SNAP_GRID) * SNAP_GRID;
-      const snappedY = Math.round((currentOffset.y + dragOffset.y) / SNAP_GRID) * SNAP_GRID;
-      effectiveOnPositionChange?.(field, { x: snappedX, y: snappedY });
-      setDragOffset({ x: 0, y: 0 });
-    }
-    setPotentialDrag(false);
-  };
+      if (isDragging || distance > DRAG_THRESHOLD) {
+        setDragOffset({ x: deltaX, y: deltaY });
+      }
+    };
+
+    const handleDocumentMouseUp = () => {
+      if (isDragging) {
+        // Snap to 8px grid
+        const SNAP_GRID = 8;
+        const snappedX = Math.round((currentOffset.x + dragOffset.x) / SNAP_GRID) * SNAP_GRID;
+        const snappedY = Math.round((currentOffset.y + dragOffset.y) / SNAP_GRID) * SNAP_GRID;
+        effectiveOnPositionChange?.(field, { x: snappedX, y: snappedY });
+        setDragOffset({ x: 0, y: 0 });
+        setIsDragging(false);
+      }
+      setPotentialDrag(false);
+    };
+
+    document.addEventListener('mousemove', handleDocumentMouseMove);
+    document.addEventListener('mouseup', handleDocumentMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleDocumentMouseMove);
+      document.removeEventListener('mouseup', handleDocumentMouseUp);
+    };
+  }, [potentialDrag, isDragging, dragStart, dragOffset, currentOffset, effectiveOnPositionChange, field]);
   if (!editMode) {
     const isHtml = /<[a-z]/i.test(value);
     // Apply consistent line-height, vertical-align, and display styling in view mode to match edit mode
@@ -316,6 +333,7 @@ function EditSpan({
   return (
     <span
       ref={(el) => {
+        fieldRef.current = el;
         // Sync value to DOM only when not actively being edited
         if (el && !el.hasAttribute('data-ce')) {
           const isHtml = /<[a-z]/i.test(value);
@@ -355,9 +373,6 @@ function EditSpan({
       onKeyDown={singleLine ? (e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }) : undefined}
       onClick={e => e.stopPropagation()}
       onMouseDown={effectiveOnPositionChange ? handleDragMouseDown : undefined}
-      onMouseMove={effectiveOnPositionChange ? handleDragMouseMove : undefined}
-      onMouseUp={effectiveOnPositionChange ? handleDragMouseUp : undefined}
-      onMouseLeave={effectiveOnPositionChange ? () => setIsDragging(false) : undefined}
       className={className}
       style={{
         outline: 'none',
