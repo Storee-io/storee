@@ -181,6 +181,12 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
   }, []);
 
   const refresh = useCallback(() => {
+    // Don't update pos when link input is active - preserve toolbar position
+    if (showLink) {
+      console.log('[FloatingToolbar] refresh called but showLink is true, skipping pos update');
+      return;
+    }
+
     if (!editMode) { setPos(null); return; }
 
     const sel = window.getSelection();
@@ -226,7 +232,7 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
     });
 
     updateCurrentFontSize();
-  }, [editMode, containerRef, updateCurrentFontSize]);
+  }, [editMode, containerRef, updateCurrentFontSize, showLink]);
 
   useEffect(() => {
     document.addEventListener('selectionchange', refresh);
@@ -408,29 +414,40 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
   }, [restoreRange, exec]);
 
   const handleLink = useCallback(() => {
-    console.log('[FloatingToolbar] handleLink called, setting showLink to true');
-    saveRange();
-    setLinkUrl('');
-    setShowLink(true);
-    console.log('[FloatingToolbar] after setShowLink, current state will be visible in next render');
+    try {
+      console.log('[FloatingToolbar] handleLink called');
+      saveRange();
+      console.log('[FloatingToolbar] saveRange completed, savedRangeRef:', savedRangeRef.current);
+      setLinkUrl('');
+      setShowLink(true);
+      console.log('[FloatingToolbar] setShowLink(true) called');
+    } catch (err) {
+      console.error('[FloatingToolbar] Error in handleLink:', err);
+    }
   }, [saveRange]);
 
   // Cancel link input and restore focus + selection to editor field
   const cancelLink = useCallback(() => {
+    console.log('[FloatingToolbar] cancelLink called');
     setShowLink(false);
     const range = savedRangeRef.current;
+    console.log('[FloatingToolbar] savedRangeRef.current:', range);
     if (range) {
       const container = range.commonAncestorContainer;
       const el = container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
       const editorField = el?.closest('[data-editor-field]') as HTMLElement | null;
       if (editorField) {
+        console.log('[FloatingToolbar] Restoring focus to editor field');
         editorField.focus();
         const sel = window.getSelection();
         sel?.removeAllRanges();
         sel?.addRange(range);
+        console.log('[FloatingToolbar] Selection restored');
+        // Manually trigger refresh after restoring selection
+        setTimeout(() => refresh(), 0);
       }
     }
-  }, []);
+  }, [refresh]);
 
   const applyLink = useCallback(() => {
     try {
@@ -686,13 +703,23 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       <button
         title="Insert link (Ctrl+K)"
         onMouseDown={e => {
-          console.log('[FloatingToolbar] Link button onMouseDown fired');
+          console.log('[FloatingToolbar] Link button onMouseDown fired, e.target:', e.target);
           e.preventDefault();
+          e.stopPropagation();
+          console.log('[FloatingToolbar] preventDefault and stopPropagation called');
+          const sel = window.getSelection();
+          console.log('[FloatingToolbar] Current selection before saveRange:', sel?.toString());
           saveRange();
-          console.log('[FloatingToolbar] About to call handleLink');
+          console.log('[FloatingToolbar] saveRange completed');
           handleLink();
         }}
         className={plain}
+        onMouseUp={e => {
+          // Prevent default mouseup behavior to avoid focus change
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('[FloatingToolbar] Link button onMouseUp - prevented default');
+        }}
       >
         <Link className="w-3.5 h-3.5" />
       </button>
