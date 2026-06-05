@@ -222,7 +222,6 @@ function EditSpan({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Use context if props not provided
   const { fieldOffsets: ctxFieldOffsets, onFieldPositionChange: ctxOnPositionChange } = useFieldPosition();
@@ -290,8 +289,17 @@ function EditSpan({
       return <span className={className} style={viewStyle}>{decoded}</span>;
     }
   }
-  // Wrap with dragging container if position tracking is enabled
-  const innerSpan = (
+  // Apply dragging styles if position tracking enabled
+  const draggingStyles = editMode && effectiveOnPositionChange ? {
+    position: 'relative' as const,
+    transform: `translate(${displayOffset.x}px, ${displayOffset.y}px)`,
+    transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+    outline: isDragging ? '2px dashed rgba(20, 184, 166, 0.5)' : 'none',
+    borderRadius: isDragging ? '6px' : '0px',
+    backgroundColor: isDragging ? 'rgba(20, 184, 166, 0.08)' : 'transparent',
+  } : {};
+
+  return (
     <span
       ref={(el) => {
         // Sync value to DOM only when not actively being edited
@@ -332,6 +340,10 @@ function EditSpan({
       }}
       onKeyDown={singleLine ? (e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }) : undefined}
       onClick={e => e.stopPropagation()}
+      onMouseDown={effectiveOnPositionChange ? handleDragMouseDown : undefined}
+      onMouseMove={effectiveOnPositionChange ? handleDragMouseMove : undefined}
+      onMouseUp={effectiveOnPositionChange ? handleDragMouseUp : undefined}
+      onMouseLeave={effectiveOnPositionChange ? () => setIsDragging(false) : undefined}
       className={className}
       style={{
         outline: 'none',
@@ -340,36 +352,11 @@ function EditSpan({
         padding: '6px 10px',
         minHeight: '1.4em',
         display: 'inline-block',
+        ...draggingStyles,
         ...style
       }}
     />
   );
-
-  // If position tracking enabled, wrap with dragging container
-  if (editMode && effectiveOnPositionChange) {
-    return (
-      <div
-        ref={wrapperRef}
-        onMouseDown={handleDragMouseDown}
-        onMouseMove={handleDragMouseMove}
-        onMouseUp={handleDragMouseUp}
-        onMouseLeave={() => setIsDragging(false)}
-        style={{
-          position: 'relative',
-          display: 'inline-block',
-          transform: `translate(${displayOffset.x}px, ${displayOffset.y}px)`,
-          transition: isDragging ? 'none' : 'transform 0.1s ease-out',
-          outline: isDragging ? '2px dashed rgba(20, 184, 166, 0.5)' : 'none',
-          borderRadius: isDragging ? '6px' : '0px',
-          backgroundColor: isDragging ? 'rgba(20, 184, 166, 0.08)' : 'transparent',
-        }}
-      >
-        {innerSpan}
-      </div>
-    );
-  }
-
-  return innerSpan;
 }
 
 interface CartItem { product: RichProduct; qty: number; }
