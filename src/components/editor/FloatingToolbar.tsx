@@ -542,6 +542,20 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       className="relative flex items-center gap-0.5 bg-white border border-slate-200 rounded-xl shadow-lg px-1.5 py-1 select-none"
     >
       <div style={arrowStyle} />
+      {/* Text style - disabled */}
+      <select
+        title="Text style (not applicable)"
+        disabled
+        defaultValue="p"
+        className={selectCls + ' max-w-[76px] opacity-40 cursor-not-allowed'}
+      >
+        {TEXT_STYLES.map(s => (
+          <option key={s.tag} value={s.tag}>{s.label}</option>
+        ))}
+      </select>
+
+      <Divider />
+
       {/* Text color */}
       <button
         title="Text color"
@@ -651,6 +665,11 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       </button>
       <button title="Numbered list" onMouseDown={e => { e.preventDefault(); saveRange(); setTimeout(() => exec('insertOrderedList'), 0); }} className={plain}>
         <ListOrdered className="w-3.5 h-3.5" />
+      </button>
+
+      {/* Link - disabled */}
+      <button title="Insert link (not applicable)" disabled className="p-1.5 rounded-lg text-slate-400 opacity-40 cursor-not-allowed">
+        <Link className="w-3.5 h-3.5" />
       </button>
 
       <Divider />
