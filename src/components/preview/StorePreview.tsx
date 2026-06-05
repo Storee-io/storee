@@ -287,6 +287,33 @@ function EditSpan({
     onFieldChange?.(field, hasFormatting ? el.innerHTML : (el.textContent ?? ''));
   };
 
+  const handleMouseEnter = () => {
+    if (!isEditing && fieldRef.current) {
+      fieldRef.current.style.cursor = 'pointer';
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (!isEditing && fieldRef.current) {
+      fieldRef.current.style.cursor = 'pointer';
+    }
+  };
+
+  // Force cursor style to override contentEditable default
+  useEffect(() => {
+    if (!fieldRef.current || editMode === undefined) return;
+
+    if (isEditing) {
+      fieldRef.current.style.cursor = 'text';
+    } else if (isSelected && !isDragging) {
+      fieldRef.current.style.cursor = 'grab';
+    } else if (isDragging) {
+      fieldRef.current.style.cursor = 'grabbing';
+    } else {
+      fieldRef.current.style.cursor = 'pointer';
+    }
+  }, [isEditing, isSelected, isDragging, editMode]);
+
   // Handle drag movements and end on document level
   useEffect(() => {
     const handleDocumentMouseMove = (e: MouseEvent) => {
@@ -404,6 +431,8 @@ function EditSpan({
       }}
       onDoubleClick={handleFieldDoubleClick}
       onMouseDown={handleFieldMouseDown}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className={className}
       style={{
         outline: isSelected ? '2px solid rgba(20, 184, 166, 0.5)' : 'none',
