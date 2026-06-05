@@ -376,17 +376,42 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       sel.removeAllRanges();
       sel.addRange(range);
 
-      // Wrap selected text in a span with the desired font size
+      // Extract selected content and wrap in new font-size span
       const span = document.createElement('span');
       span.style.fontSize = `${size}px`;
       span.style.lineHeight = '1'; // Ensure line-height doesn't shrink parent element
 
       try {
+        // Try to wrap existing selection
         range.surroundContents(span);
       } catch {
-        // Selection crosses element boundaries — extract and re-insert
+        // Selection crosses element boundaries — extract content and re-insert
         const contents = range.extractContents();
-        span.appendChild(contents);
+
+        // Clear the span and add only plain text to remove any nested font-size spans
+        span.textContent = contents.textContent || '';
+
+        // Re-add any important nested elements (links, etc) but not font-size spans
+        // by copying non-font-size elements
+        const walker = document.createTreeWalker(
+          contents,
+          NodeFilter.SHOW_ELEMENT,
+          null
+        );
+        let node;
+        const elementsToKeep: Element[] = [];
+        while (node = walker.nextNode()) {
+          if (node instanceof Element && !node.style.fontSize && node.tagName === 'A') {
+            elementsToKeep.push(node.cloneNode(true) as Element);
+          }
+        }
+
+        // If we have elements to keep (like links), rebuild with them
+        if (elementsToKeep.length > 0) {
+          span.innerHTML = '';
+          elementsToKeep.forEach(el => span.appendChild(el));
+        }
+
         range.insertNode(span);
       }
 
