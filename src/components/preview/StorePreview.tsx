@@ -544,7 +544,6 @@ function DraggableList<T>({
           whileDrag={{
             scale: 1.03,
             zIndex: 50,
-            filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.18))',
           }}
           style={{
             cursor: 'grab',
