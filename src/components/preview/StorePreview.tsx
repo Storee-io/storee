@@ -287,17 +287,6 @@ function EditSpan({
     onFieldChange?.(field, hasFormatting ? el.innerHTML : (el.textContent ?? ''));
   };
 
-  const handleMouseEnter = () => {
-    if (!isEditing && fieldRef.current) {
-      fieldRef.current.style.cursor = 'pointer';
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (!isEditing && fieldRef.current) {
-      fieldRef.current.style.cursor = 'pointer';
-    }
-  };
 
   // Ensure content persists and is not lost during re-renders
   useEffect(() => {
@@ -329,18 +318,6 @@ function EditSpan({
     }
   }, [value, isEditing]);
 
-  // Set cursor style for selected/dragging states
-  useEffect(() => {
-    if (!fieldRef.current) return;
-
-    // CSS will handle contentEditable cursor via !important
-    // This only handles selected/drag cursor overrides
-    if (isDragging) {
-      fieldRef.current.style.cursor = 'grabbing !important';
-    } else if (isSelected && !isEditing) {
-      fieldRef.current.style.cursor = 'grab';
-    }
-  }, [isSelected, isDragging, isEditing]);
 
   // Handle drag movements and end on document level
   useEffect(() => {
@@ -459,20 +436,17 @@ function EditSpan({
       }}
       onDoubleClick={handleFieldDoubleClick}
       onMouseDown={handleFieldMouseDown}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       className={className}
       style={{
         outline: isSelected ? '2px solid rgba(20, 184, 166, 0.5)' : 'none',
         outlineOffset: isSelected ? '2px' : '0px',
         whiteSpace: 'inherit',
-        cursor: isDragging ? 'grabbing' : (isSelected && !isEditing ? 'grab' : (isEditing ? 'text' : 'pointer')),
+        cursor: isDragging ? 'grabbing' : (isSelected && !isEditing ? 'grab' : (isEditing ? 'text' : 'default')),
         padding: '6px 10px',
         minHeight: '1.4em',
         display: 'inline-block',
         backgroundColor: isSelected && !isEditing ? 'rgba(20, 184, 166, 0.08)' : 'transparent',
         borderRadius: isSelected && !isEditing ? '6px' : '0px',
-        transition: 'all 0.15s ease-out',
         userSelect: isEditing ? 'text' : 'none',
         ...draggingStyles,
         ...style
