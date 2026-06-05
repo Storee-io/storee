@@ -265,9 +265,9 @@ function EditSpan({
       onBlur={e => {
         e.currentTarget.removeAttribute('data-ce');
         const el = e.currentTarget;
-        // If the field has inline formatting (font-size spans etc.), preserve as HTML.
+        // If the field has inline formatting (font-size spans, links, etc.), preserve as HTML.
         // Otherwise save plain text to avoid accumulating HTML-entity escaping.
-        const hasFormatting = el.querySelector('[style]') !== null;
+        const hasFormatting = el.querySelector('[style]') !== null || el.querySelector('a[href]') !== null;
         onFieldChange?.(field, hasFormatting ? el.innerHTML : (el.textContent ?? ''));
       }}
       onKeyDown={singleLine ? (e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }) : undefined}
