@@ -22,6 +22,7 @@ import type { StoreDesign } from '../../lib/claudeApi';
 import { toast } from 'sonner';
 import { Tip } from '@/components/ui/tip';
 import { FloatingToolbar } from './FloatingToolbar';
+import ElementOverlay from './ElementOverlay';
 
 type Device = 'desktop' | 'tablet' | 'mobile';
 
@@ -1347,7 +1348,7 @@ export default function EditorShell({ store, from }: Props) {
             {/* Scroll container — no transform so fixed children don't scroll with it */}
             <div
               ref={previewRef}
-              style={{ overflowY: 'auto', overflowX: 'hidden', height: '100%' }}
+              style={{ overflowY: 'auto', overflowX: 'hidden', height: '100%', position: 'relative' }}
               onDoubleClick={() => triggerEditHint()}
               onMouseDown={e => { dragOriginRef.current = { x: e.clientX, y: e.clientY }; }}
               onMouseMove={e => {
@@ -1363,6 +1364,7 @@ export default function EditorShell({ store, from }: Props) {
               onMouseLeave={() => { dragOriginRef.current = null; }}
             >
               <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} onFieldPositionChange={handleFieldPositionChange} onArrayReorder={handleArrayReorder} onPageChange={setCanvasPage} navigateRef={canvasNavigateRef} />
+              <ElementOverlay containerRef={previewRef} editMode={editMode} />
             </div>
           </div>
         </main>
