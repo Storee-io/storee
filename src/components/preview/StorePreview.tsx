@@ -24,6 +24,20 @@ import type { StoreDesign, RichProduct, DesignSystem, DesignTokens } from '../..
 import { makePriceFmt } from '../../lib/formatCurrency';
 import { supabase } from '../../lib/supabase';
 
+// ── Field position context for drag-to-move ────────────────────────────────────
+type FieldOffsetMap = Record<string, { x: number; y: number }>;
+
+interface FieldPositionContextType {
+  fieldOffsets?: FieldOffsetMap;
+  onFieldPositionChange?: (field: string, offset: { x: number; y: number }) => void;
+}
+
+const FieldPositionContext = React.createContext<FieldPositionContextType>({});
+
+function useFieldPosition() {
+  return React.useContext(FieldPositionContext);
+}
+
 // ── Clipboard helper (works in non-secure / iframe contexts) ─────────────────
 function safeClipboardWrite(text: string) {
   if (navigator.clipboard) {
@@ -210,14 +224,19 @@ function EditSpan({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const currentOffset = fieldOffset || { x: 0, y: 0 };
+  // Use context if props not provided
+  const { fieldOffsets: ctxFieldOffsets, onFieldPositionChange: ctxOnPositionChange } = useFieldPosition();
+  const effectiveOffset = fieldOffset ?? ctxFieldOffsets?.[field];
+  const effectiveOnPositionChange = onPositionChange ?? ctxOnPositionChange;
+
+  const currentOffset = effectiveOffset || { x: 0, y: 0 };
   const displayOffset = {
     x: currentOffset.x + dragOffset.x,
     y: currentOffset.y + dragOffset.y,
   };
 
   const handleDragMouseDown = (e: React.MouseEvent) => {
-    if (!editMode || e.button !== 0 || !onPositionChange) return;
+    if (!editMode || e.button !== 0 || !effectiveOnPositionChange) return;
     setIsDragging(true);
     setDragStart({ x: e.clientX, y: e.clientY });
     setDragOffset({ x: 0, y: 0 });
@@ -238,7 +257,7 @@ function EditSpan({
     const SNAP_GRID = 8;
     const snappedX = Math.round((currentOffset.x + dragOffset.x) / SNAP_GRID) * SNAP_GRID;
     const snappedY = Math.round((currentOffset.y + dragOffset.y) / SNAP_GRID) * SNAP_GRID;
-    onPositionChange?.(field, { x: snappedX, y: snappedY });
+    effectiveOnPositionChange?.(field, { x: snappedX, y: snappedY });
     setDragOffset({ x: 0, y: 0 });
   };
   if (!editMode) {
@@ -317,7 +336,7 @@ function EditSpan({
       style={{
         outline: 'none',
         whiteSpace: 'inherit',
-        cursor: isDragging ? 'grabbing' : (editMode && onPositionChange ? 'grab' : 'text'),
+        cursor: isDragging ? 'grabbing' : (editMode && effectiveOnPositionChange ? 'grab' : 'text'),
         padding: '6px 10px',
         minHeight: '1.4em',
         display: 'inline-block',
@@ -327,7 +346,7 @@ function EditSpan({
   );
 
   // If position tracking enabled, wrap with dragging container
-  if (editMode && onPositionChange) {
+  if (editMode && effectiveOnPositionChange) {
     return (
       <div
         ref={wrapperRef}
@@ -8339,6 +8358,17 @@ export default function StorePreview({ store, device, editMode, previewShell, on
   const [page, setPage] = useState<StorePage>(() => pathToStorePage(initialPath ?? '/'));
   const [showCartSidebar, setShowCartSidebar] = useState(false);
 
+  // Local field position state initialized from design.fieldOffsets
+  const [fieldOffsets, setFieldOffsets] = useState<FieldOffsetMap>(() =>
+    store.design.fieldOffsets || {}
+  );
+
+  // Callback to update field position (also calls parent callback for persistence)
+  const handleFieldPositionChange = useCallback((field: string, offset: { x: number; y: number }) => {
+    setFieldOffsets(prev => ({ ...prev, [field]: offset }));
+    onFieldPositionChange?.(field, offset);
+  }, [onFieldPositionChange]);
+
   // Expose external navigation via ref (used by PreviewShell address-bar dropdown)
   useEffect(() => {
     if (!navigateRef) return;
@@ -8611,6 +8641,7 @@ export default function StorePreview({ store, device, editMode, previewShell, on
   // which has transform:translateZ(0) — making fixed elements sticky to the
   // frame rather than the real viewport.
   return (
+    <FieldPositionContext.Provider value={{ fieldOffsets, onFieldPositionChange: handleFieldPositionChange }}>
     <StoreFlagsCtx.Provider value={storeFlags}>
     <>
       {/* Feature flag CSS — hide elements by data attribute when feature disabled */}
@@ -8710,6 +8741,7 @@ export default function StorePreview({ store, device, editMode, previewShell, on
       )}
     </>
     </StoreFlagsCtx.Provider>
+    </FieldPositionContext.Provider>
   );
 }
 
