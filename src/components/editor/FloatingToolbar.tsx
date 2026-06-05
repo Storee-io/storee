@@ -73,6 +73,7 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
   const colorInputRef = useRef<HTMLInputElement>(null);
   const bgColorInputRef = useRef<HTMLInputElement>(null);
   const savedRangeRef = useRef<Range | null>(null);
+  const linkInputRef = useRef<HTMLInputElement>(null);
 
   const saveRange = useCallback(() => {
     const sel = window.getSelection();
@@ -234,6 +235,25 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
 
   useEffect(() => { if (!editMode) setPos(null); }, [editMode]);
 
+  // Monitor showLink state changes
+  useEffect(() => {
+    console.log('[FloatingToolbar] showLink state changed to:', showLink);
+  }, [showLink]);
+
+  // Explicitly focus link input when link mode is activated
+  useEffect(() => {
+    if (showLink && linkInputRef.current) {
+      console.log('[FloatingToolbar] useEffect: showLink is true, focusing input');
+      setTimeout(() => {
+        if (linkInputRef.current) {
+          linkInputRef.current.focus();
+          linkInputRef.current.select();
+          console.log('[FloatingToolbar] Link input focused and selected');
+        }
+      }, 0);
+    }
+  }, [showLink]);
+
   const exec = useCallback((cmd: string, value?: string) => {
     try {
       restoreRange();
@@ -388,9 +408,11 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
   }, [restoreRange, exec]);
 
   const handleLink = useCallback(() => {
+    console.log('[FloatingToolbar] handleLink called, setting showLink to true');
     saveRange();
     setLinkUrl('');
     setShowLink(true);
+    console.log('[FloatingToolbar] after setShowLink, current state will be visible in next render');
   }, [saveRange]);
 
   // Cancel link input and restore focus + selection to editor field
@@ -486,6 +508,7 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
 
   // Link input mode
   if (showLink) {
+    console.log('[FloatingToolbar] Rendering link input mode');
     return (
       <div
         ref={toolbarRef}
@@ -496,8 +519,12 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         <Link className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
         <input
           autoFocus
+          ref={linkInputRef}
           value={linkUrl}
-          onChange={e => setLinkUrl(e.target.value)}
+          onChange={e => {
+            console.log('[FloatingToolbar] Input onChange:', e.target.value);
+            setLinkUrl(e.target.value);
+          }}
           onKeyDown={e => {
             if (e.key === 'Enter') {
               applyLink();
@@ -508,8 +535,10 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
               e.preventDefault();
             }
           }}
+          onFocus={() => console.log('[FloatingToolbar] Input focused')}
           placeholder="https://..."
-          className="text-sm outline-none border-none w-48 text-slate-700 placeholder:text-slate-300"
+          className="text-sm outline-none border-none w-48 text-slate-700 placeholder:text-slate-300 bg-transparent"
+          style={{ display: 'block', visibility: 'visible' }}
         />
         <button
           onMouseDown={e => e.preventDefault()}
@@ -654,7 +683,17 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       </button>
 
       {/* Link */}
-      <button title="Insert link (Ctrl+K)" onMouseDown={e => { e.preventDefault(); saveRange(); handleLink(); }} className={plain}>
+      <button
+        title="Insert link (Ctrl+K)"
+        onMouseDown={e => {
+          console.log('[FloatingToolbar] Link button onMouseDown fired');
+          e.preventDefault();
+          saveRange();
+          console.log('[FloatingToolbar] About to call handleLink');
+          handleLink();
+        }}
+        className={plain}
+      >
         <Link className="w-3.5 h-3.5" />
       </button>
 
