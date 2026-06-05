@@ -369,6 +369,10 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
 
     try {
       editorField.focus();
+
+      // First, clean up ALL old font-size spans in the field to prevent alignment issues
+      flattenFontSizeSpans(editorField);
+
       sel.removeAllRanges();
       sel.addRange(range);
 
