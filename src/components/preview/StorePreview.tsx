@@ -221,6 +221,8 @@ function EditSpan({
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSelected, setIsSelected] = useState(false);
   const fieldRef = useRef<HTMLSpanElement>(null);
   const dragStateRef = useRef({ potentialDrag: false, dragStart: { x: 0, y: 0 } });
 
@@ -237,16 +239,52 @@ function EditSpan({
     y: currentOffset.y + dragOffset.y,
   };
 
-  const handleDragMouseDown = (e: React.MouseEvent) => {
-    if (!editMode || e.button !== 0 || !effectiveOnPositionChange) return;
+  const handleFieldMouseDown = (e: React.MouseEvent) => {
+    if (!editMode || e.button !== 0) return;
 
-    // Don't allow drag if currently editing text (contenteditable focused)
+    // Don't allow drag if currently editing text
+    if (isEditing) return;
+
+    // Mark field as selected for drag
+    setIsSelected(true);
+
+    // If position change enabled, start potential drag
+    if (effectiveOnPositionChange) {
+      dragStateRef.current.potentialDrag = true;
+      dragStateRef.current.dragStart = { x: e.clientX, y: e.clientY };
+      setDragOffset({ x: 0, y: 0 });
+    }
+  };
+
+  const handleFieldDoubleClick = (e: React.MouseEvent) => {
+    if (!editMode) return;
+    e.stopPropagation();
+
+    // Enter edit mode on double-click
+    setIsEditing(true);
+    setIsSelected(false);
+
+    // Auto-select word
     const target = e.currentTarget as HTMLElement;
-    if (target.hasAttribute('data-ce')) return;
+    const selection = window.getSelection();
+    if (selection && target) {
+      const range = document.createRange();
+      range.selectNodeContents(target);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  };
 
-    dragStateRef.current.potentialDrag = true;
-    dragStateRef.current.dragStart = { x: e.clientX, y: e.clientY };
-    setDragOffset({ x: 0, y: 0 });
+  const handleFieldBlur = () => {
+    setIsEditing(false);
+    setIsSelected(false);
+
+    const el = fieldRef.current;
+    if (!el) return;
+
+    // Save changes
+    const hasFormatting = el.querySelector('[style]') !== null || el.querySelector('a[href]') !== null;
+    onFieldChange?.(field, hasFormatting ? el.innerHTML : (el.textContent ?? ''));
   };
 
   // Handle drag movements and end on document level
@@ -333,15 +371,14 @@ function EditSpan({
     <span
       ref={(el) => {
         fieldRef.current = el;
-        // Sync value to DOM only when not actively being edited
-        if (el && !el.hasAttribute('data-ce')) {
+        // Sync value to DOM only when not editing
+        if (el && !isEditing) {
           const isHtml = /<[a-z]/i.test(value);
           if (isHtml) {
             // HTML value (has formatting spans) — render via innerHTML
             if (el.innerHTML !== value) el.innerHTML = value;
           } else {
-            // Plain text — fully decode any stale HTML entities (&amp;amp; → &amp; → &)
-            // by iterating through a temporary element until the value stabilises.
+            // Plain text — fully decode any stale HTML entities
             const decoded = (() => {
               const tmp = document.createElement('span');
               let prev = value;
@@ -357,29 +394,28 @@ function EditSpan({
           }
         }
       }}
-      contentEditable
+      contentEditable={isEditing}
       suppressContentEditableWarning
       data-editor-field={field}
-      onFocus={e => e.currentTarget.setAttribute('data-ce', '1')}
-      onBlur={e => {
-        e.currentTarget.removeAttribute('data-ce');
-        const el = e.currentTarget;
-        // If the field has inline formatting (font-size spans, links, etc.), preserve as HTML.
-        // Otherwise save plain text to avoid accumulating HTML-entity escaping.
-        const hasFormatting = el.querySelector('[style]') !== null || el.querySelector('a[href]') !== null;
-        onFieldChange?.(field, hasFormatting ? el.innerHTML : (el.textContent ?? ''));
+      onBlur={handleFieldBlur}
+      onKeyDown={singleLine && isEditing ? (e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }) : undefined}
+      onClick={e => {
+        if (!isEditing) e.stopPropagation();
       }}
-      onKeyDown={singleLine ? (e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }) : undefined}
-      onClick={e => e.stopPropagation()}
-      onMouseDown={effectiveOnPositionChange ? handleDragMouseDown : undefined}
+      onDoubleClick={handleFieldDoubleClick}
+      onMouseDown={handleFieldMouseDown}
       className={className}
       style={{
-        outline: 'none',
+        outline: isSelected ? '2px solid rgba(20, 184, 166, 0.5)' : 'none',
+        outlineOffset: isSelected ? '2px' : '0px',
         whiteSpace: 'inherit',
-        cursor: isDragging ? 'grabbing' : (editMode && effectiveOnPositionChange ? 'grab' : 'text'),
+        cursor: isDragging ? 'grabbing' : (isSelected ? 'grab' : (isEditing ? 'text' : 'pointer')),
         padding: '6px 10px',
         minHeight: '1.4em',
         display: 'inline-block',
+        backgroundColor: isSelected && !isEditing ? 'rgba(20, 184, 166, 0.08)' : 'transparent',
+        borderRadius: isSelected && !isEditing ? '6px' : '0px',
+        transition: 'all 0.15s ease-out',
         ...draggingStyles,
         ...style
       }}
