@@ -653,6 +653,11 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         <ListOrdered className="w-3.5 h-3.5" />
       </button>
 
+      {/* Link */}
+      <button title="Insert link (Ctrl+K)" onMouseDown={e => { e.preventDefault(); saveRange(); handleLink(); }} className={plain}>
+        <Link className="w-3.5 h-3.5" />
+      </button>
+
       <Divider />
 
       {/* Line height */}
