@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform, Reorder } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, Copy, MessageCircle, MapPin, Phone, Mail, ChevronDown, User, LogOut, Package, Eye, EyeOff, Trash2, Plus, X,
   // EmojiIcon pool
@@ -30,6 +30,7 @@ type FieldOffsetMap = Record<string, { x: number; y: number }>;
 interface FieldPositionContextType {
   fieldOffsets?: FieldOffsetMap;
   onFieldPositionChange?: (field: string, offset: { x: number; y: number }) => void;
+  onArrayReorder?: (field: string, newItems: unknown[]) => void;
 }
 
 const FieldPositionContext = React.createContext<FieldPositionContextType>({});
@@ -496,6 +497,62 @@ interface LayoutProps {
   // Canvas editor — optional; only set when CanvasShell is active
   editMode?: boolean;
   onFieldChange?: (field: string, value: string) => void;
+  onArrayReorder?: (field: string, newItems: unknown[]) => void;
+}
+
+// ── Draggable list wrapper for edit mode card reordering ─────────────────────
+function DraggableList<T>({
+  items,
+  field,
+  editMode,
+  className,
+  children,
+}: {
+  items: T[];
+  field: string;
+  editMode?: boolean;
+  className?: string;
+  children: (item: T, index: number) => React.ReactNode;
+}) {
+  const { onArrayReorder } = useFieldPosition();
+  const [localItems, setLocalItems] = useState(items);
+
+  // Sync external items changes when not dragging
+  useEffect(() => { setLocalItems(items); }, [items]);
+
+  if (!editMode || !onArrayReorder) {
+    return <>{items.map((item, i) => children(item, i))}</>;
+  }
+
+  return (
+    <Reorder.Group
+      axis="x"
+      values={localItems}
+      onReorder={(newItems) => {
+        setLocalItems(newItems);
+        onArrayReorder(field, newItems);
+      }}
+      className={className}
+      style={{ listStyle: 'none', padding: 0, margin: 0, display: 'contents' }}
+      as="div"
+    >
+      {localItems.map((item, i) => (
+        <Reorder.Item
+          key={JSON.stringify(item)}
+          value={item}
+          as="div"
+          whileDrag={{
+            scale: 1.03,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+            zIndex: 50,
+          }}
+          style={{ cursor: 'grab' }}
+        >
+          {children(item, i)}
+        </Reorder.Item>
+      ))}
+    </Reorder.Group>
+  );
 }
 
 // ── Cart toast popup ─────────────────────────────────────────────────────────
@@ -2912,27 +2969,29 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
                   <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'What Customers Say'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
                 </h2>
                 <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
-                  {testimonials.map((t, i) => (
-                    <div key={i} className="rounded-3xl p-6 shadow-sm" style={{ background: tt.surfaceBg }}>
-                      <Stars n={t.rating} />
-                      <p className="text-sm leading-relaxed mt-3 mb-5 italic" style={{ color: tt.textSecondary }}>
-                        &ldquo;<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />&rdquo;
-                      </p>
-                      <div className="flex items-center gap-3 pt-3 border-t" style={{ borderColor: tt.divider }}>
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: primaryColor }}>
-                          {t.author[0]}
-                        </div>
-                        <div>
-                          <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>
-                            <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                          </p>
-                          <p className="text-[10px] mt-0.5" style={{ color: tt.textMuted }}>
-                            <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                          </p>
+                  <DraggableList items={testimonials} field="testimonials" editMode={editMode}>
+                    {(t, i) => (
+                      <div className="rounded-3xl p-6 shadow-sm" style={{ background: tt.surfaceBg }}>
+                        <Stars n={t.rating} />
+                        <p className="text-sm leading-relaxed mt-3 mb-5 italic" style={{ color: tt.textSecondary }}>
+                          &ldquo;<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />&rdquo;
+                        </p>
+                        <div className="flex items-center gap-3 pt-3 border-t" style={{ borderColor: tt.divider }}>
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: primaryColor }}>
+                            {t.author[0]}
+                          </div>
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>
+                              <EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                            </p>
+                            <p className="text-[10px] mt-0.5" style={{ color: tt.textMuted }}>
+                              <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )}
+                  </DraggableList>
                 </div>
               </div>
             </section>
@@ -8424,6 +8483,7 @@ interface StorePreviewProps {
   previewShell?: boolean;
   onFieldChange?: (field: string, value: string) => void;
   onFieldPositionChange?: (field: string, offset: { x: number; y: number }) => void;
+  onArrayReorder?: (field: string, newItems: unknown[]) => void;
   onPageChange?: (path: string) => void;
   initialPath?: string;
   /** Ref filled by StorePreview — call navigateRef.current(path) to navigate externally. */
@@ -8453,7 +8513,7 @@ function pathToStorePage(path: string): StorePage {
   return (entry?.[0] as StorePage | undefined) ?? 'home';
 }
 
-export default function StorePreview({ store, device, editMode, previewShell, onFieldChange, onFieldPositionChange, onPageChange, initialPath, navigateRef }: StorePreviewProps) {
+export default function StorePreview({ store, device, editMode, previewShell, onFieldChange, onFieldPositionChange, onArrayReorder, onPageChange, initialPath, navigateRef }: StorePreviewProps) {
   const [page, setPage] = useState<StorePage>(() => pathToStorePage(initialPath ?? '/'));
   const [showCartSidebar, setShowCartSidebar] = useState(false);
 
@@ -8740,7 +8800,7 @@ export default function StorePreview({ store, device, editMode, previewShell, on
   // which has transform:translateZ(0) — making fixed elements sticky to the
   // frame rather than the real viewport.
   return (
-    <FieldPositionContext.Provider value={{ fieldOffsets, onFieldPositionChange: handleFieldPositionChange }}>
+    <FieldPositionContext.Provider value={{ fieldOffsets, onFieldPositionChange: handleFieldPositionChange, onArrayReorder }}>
     <StoreFlagsCtx.Provider value={storeFlags}>
     <>
       {/* Feature flag CSS — hide elements by data attribute when feature disabled */}

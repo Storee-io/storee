@@ -440,25 +440,24 @@ export default function EditorShell({ store, from }: Props) {
   // â"€â"€ onFieldChange handler (called from canvas contenteditable) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
   const handleFieldPositionChange = useCallback((field: string, offset: { x: number; y: number }) => {
-    // Prevent position updates for now - seems to cause section unmount issues
+    // Disabled - drag-to-move causes section unmount issues, needs further investigation
     console.log('Field position change:', field, offset);
-    // TODO: Fix unmount issue before enabling this
-    /*
-    updateActiveStore(prev => ({
-      ...prev,
-      design: {
-        ...prev.design,
-        fieldOffsets: {
-          ...(prev.design.fieldOffsets || {}),
-          [field]: offset,
-        },
-      },
-    }));
-    setTimeout(() => {
-      pushSnapshot(`Field moved: ${field}`, 'text');
-    }, 300);
-    */
   }, [updateActiveStore, pushSnapshot]);
+
+  const handleArrayReorder = useCallback((field: string, newItems: unknown[]) => {
+    if (field === 'testimonials') {
+      setTestimonials(newItems as typeof testimonials);
+    } else if (field === 'features') {
+      setFeatures(newItems as typeof features);
+    } else if (field === 'trustBadges') {
+      setTrustBadges(newItems as typeof trustBadges);
+    } else if (field === 'stats') {
+      setStats(newItems as typeof stats);
+    } else if (field === 'faq') {
+      setFaq(newItems as typeof faq);
+    }
+    // Snapshot is taken by autosave - no explicit push needed here
+  }, [testimonials, features, trustBadges, stats, faq]);
 
   const handleFieldChange = useCallback((field: string, value: string) => {
     if (field === 'heroTitle')           { setHeroTitle(value); return; }
@@ -1363,7 +1362,7 @@ export default function EditorShell({ store, from }: Props) {
               onMouseUp={() => { dragOriginRef.current = null; }}
               onMouseLeave={() => { dragOriginRef.current = null; }}
             >
-              <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} onFieldPositionChange={handleFieldPositionChange} onPageChange={setCanvasPage} navigateRef={canvasNavigateRef} />
+              <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} onFieldPositionChange={handleFieldPositionChange} onArrayReorder={handleArrayReorder} onPageChange={setCanvasPage} navigateRef={canvasNavigateRef} />
             </div>
           </div>
         </main>
