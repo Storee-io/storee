@@ -2943,7 +2943,8 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
           features: features.length > 0 ? (
             <section key="features" data-editor-section="features" className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
               <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-6'}`}>
-                {features.map((f, i) => (
+                <DraggableList items={features} field="features" editMode={editMode}>
+                  {(f, i) => (
                   <div key={i} className="flex items-start gap-4 p-6 rounded-2xl border hover:shadow-md transition-all" style={{ borderColor: tt.divider }}>
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: alpha(primaryColor, 0.1) }}>
                       <EmojiIcon emoji={f.icon} size={20} color={primaryColor} strokeWidth={1.75} />
@@ -2957,7 +2958,8 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
                       </p>
                     </div>
                   </div>
-                ))}
+                  )}
+                </DraggableList>
               </div>
             </section>
           ) : null,
@@ -3168,7 +3170,8 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
           features: features.length > 0 ? (
             <section key="features" data-editor-section="features" className={`border-t border-white/8 ${isMobile ? 'py-8' : 'py-14'}`}>
               <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-8' : 'grid-cols-3 gap-8'}`}>
-                {features.map((f, i) => (
+                <DraggableList items={features} field="features" editMode={editMode}>
+                  {(f, i) => (
                   <div key={i} className="flex items-start gap-5">
                     <div>
                       <div className="h-0.5 w-8 mb-4" style={{ background: primaryColor }} />
@@ -3182,7 +3185,8 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
                       </p>
                     </div>
                   </div>
-                ))}
+                  )}
+                </DraggableList>
               </div>
             </section>
           ) : null,
@@ -3193,7 +3197,8 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
                   <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'The Word'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
                 </h2>
                 <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
-                  {testimonials.map((t, i) => (
+                  <DraggableList items={testimonials} field="testimonials" editMode={editMode}>
+                    {(t, i) => (
                     <div key={i} className="rounded-3xl p-6 backdrop-blur" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
                       <div className="text-3xl font-black mb-4 leading-none" style={{ color: alpha(primaryColor, 0.4) }}>"</div>
                       <Stars n={t.rating} />
@@ -3212,7 +3217,8 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
                         </div>
                       </div>
                     </div>
-                  ))}
+                    )}
+                  </DraggableList>
                 </div>
               </div>
             </section>
@@ -3408,7 +3414,8 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
           features: features.length > 0 ? (
             <section key="features" data-editor-section="features" className={`max-w-6xl mx-auto px-6 ${isMobile ? 'py-8' : 'py-14'}`}>
               <div className={`grid ${isMobile ? 'grid-cols-1 divide-y' : 'grid-cols-3 divide-x'}`} style={{ borderColor: '#e8e3db' }}>
-                {features.map((f, i) => (
+                <DraggableList items={features} field="features" editMode={editMode}>
+                  {(f, i) => (
                   <div key={i} className={`text-center ${isMobile ? 'px-4 py-5' : 'px-8 py-8'}`}>
                     <div className="mb-4"><EmojiIcon emoji={f.icon} size={28} color={primaryColor} strokeWidth={1.5} /></div>
                     <h3 className="text-xs font-bold tracking-[0.2em] mb-2" style={{ color: '#2a2420', fontFamily: 'system-ui' }}>
@@ -3418,7 +3425,8 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
                       <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
                     </p>
                   </div>
-                ))}
+                  )}
+                </DraggableList>
               </div>
             </section>
           ) : null,
@@ -3432,7 +3440,8 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
                   </h2>
                 </div>
                 <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-6`}>
-                  {testimonials.map((t, i) => (
+                  <DraggableList items={testimonials} field="testimonials" editMode={editMode}>
+                    {(t, i) => (
                     <div key={i} className="p-7 relative overflow-hidden" style={{ background: tt.surfaceBg, borderLeft: `3px solid ${primaryColor}` }}>
                       <div className="text-5xl font-black leading-none absolute top-3 right-5 opacity-6" style={{ color: primaryColor }}>❝</div>
                       <Stars n={t.rating} />
@@ -3448,7 +3457,8 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
                         </p>
                       </div>
                     </div>
-                  ))}
+                    )}
+                  </DraggableList>
                 </div>
               </div>
             </section>
@@ -3678,7 +3688,8 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
           features: features.length > 0 ? (
             <section key="features" data-editor-section="features" className={isMobile ? 'py-8' : 'py-14'} style={{ background: `linear-gradient(135deg, ${alpha(primaryColor, 0.04)}, ${alpha(accentColor, 0.06)})` }}>
               <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-5'}`}>
-                {features.map((f, i) => (
+                <DraggableList items={features} field="features" editMode={editMode}>
+                  {(f, i) => (
                   <div key={i} className="bg-white/75 backdrop-blur rounded-3xl p-7 shadow-sm hover:shadow-lg transition-shadow">
                     <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style={{ background: `linear-gradient(135deg, ${alpha(primaryColor, 0.15)}, ${alpha(accentColor, 0.15)})` }}>
                       <EmojiIcon emoji={f.icon} size={24} color={primaryColor} strokeWidth={1.75} />
@@ -3690,7 +3701,8 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
                       <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
                     </p>
                   </div>
-                ))}
+                  )}
+                </DraggableList>
               </div>
             </section>
           ) : null,
@@ -3700,7 +3712,8 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
                 <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'Loved by Customers'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
               </h2>
               <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
-                {testimonials.map((t, i) => (
+                <DraggableList items={testimonials} field="testimonials" editMode={editMode}>
+                  {(t, i) => (
                   <div key={i} className="rounded-3xl p-6 border-l-4" style={{ background: alpha(i === 0 ? primaryColor : accentColor, 0.05), borderLeftColor: i === 0 ? primaryColor : accentColor }}>
                     <Stars n={t.rating} />
                     <p className="text-sm leading-relaxed mt-3 mb-5" style={{ color: tt.textSecondary }}>
@@ -3720,7 +3733,8 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
                       </div>
                     </div>
                   </div>
-                ))}
+                  )}
+                </DraggableList>
               </div>
             </section>
           ) : null,
@@ -3942,7 +3956,8 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
           features: features.length > 0 ? (
             <section key="features" data-editor-section="features" className={isMobile ? 'py-8' : 'py-12'} style={{ background: alpha(primaryColor, 0.04) }}>
               <div className={`max-w-6xl mx-auto px-5 grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-5'}`}>
-                {features.map((f, i) => (
+                <DraggableList items={features} field="features" editMode={editMode}>
+                  {(f, i) => (
                   <div key={i} className="rounded-3xl p-7 text-center hover:scale-102 transition-transform"
                     style={{ background: [alpha(primaryColor, 0.12), alpha(accentColor, 0.12), alpha(primaryColor, 0.07)][i], transition: 'transform 0.2s ease' }}>
                     <div className="mb-4"><EmojiIcon emoji={f.icon} size={36} color={primaryColor} strokeWidth={1.5} /></div>
@@ -3953,7 +3968,8 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
                       <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
                     </p>
                   </div>
-                ))}
+                  )}
+                </DraggableList>
               </div>
             </section>
           ) : null,
@@ -3963,7 +3979,8 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
                 <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'Happy Customers 🤩'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
               </h2>
               <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
-                {testimonials.map((t, i) => (
+                <DraggableList items={testimonials} field="testimonials" editMode={editMode}>
+                  {(t, i) => (
                   <div key={i} className="rounded-3xl p-6 border-2" style={{ borderColor: alpha(i === 0 ? primaryColor : accentColor, 0.25) }}>
                     <Stars n={t.rating} />
                     <p className="text-sm leading-relaxed mt-3 mb-5" style={{ color: tt.textSecondary }}>
@@ -3983,7 +4000,8 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
                       </div>
                     </div>
                   </div>
-                ))}
+                  )}
+                </DraggableList>
               </div>
             </section>
           ) : null,
@@ -6267,7 +6285,8 @@ function FeaturesSection({ features, tt, primaryColor, device, motion: motionLev
     return (
       <section className="max-w-5xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
         <div className="space-y-12">
-          {features.map((f, i) => (
+          <DraggableList items={features} field="features" editMode={editMode}>
+            {(f, i) => (
             <div key={i}
               className={`flex ${isMobile ? 'flex-col gap-5' : i % 2 === 0 ? 'flex-row gap-14' : 'flex-row-reverse gap-14'} items-center`}>
               {/* Big emoji block */}
@@ -6283,7 +6302,8 @@ function FeaturesSection({ features, tt, primaryColor, device, motion: motionLev
                 <p className="text-sm max-w-sm" style={{ ...bodyStyle(tt), color: tt.textSecondary }}><EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} /></p>
               </div>
             </div>
-          ))}
+            )}
+          </DraggableList>
         </div>
       </section>
     );
@@ -6295,7 +6315,8 @@ function FeaturesSection({ features, tt, primaryColor, device, motion: motionLev
     return (
       <section className="max-w-6xl mx-auto px-5" style={{ paddingTop: `${sectionPy}px`, paddingBottom: `${sectionPy}px` }}>
         <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-3 gap-4'}`}>
-          {features.map((f, i) => (
+          <DraggableList items={features} field="features" editMode={editMode}>
+            {(f, i) => (
             <div key={i}
               className={`p-7 ${!isMobile ? bentoSizes[i] ?? 'col-span-1' : ''}`}
               style={{
@@ -6313,7 +6334,8 @@ function FeaturesSection({ features, tt, primaryColor, device, motion: motionLev
               <h3 className="mb-2" style={{ ...headingStyle(tt, i === 0 ? 1.0 : 0.875), color: i === 0 ? (isDark(pc) ? '#fff' : '#000') : tt.textPrimary }}><EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h3>
               <p className="text-xs" style={{ ...bodyStyle(tt), color: i === 0 ? (isDark(pc) ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)') : tt.textSecondary }}><EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} /></p>
             </div>
-          ))}
+            )}
+          </DraggableList>
         </div>
       </section>
     );
@@ -6333,7 +6355,8 @@ function FeaturesSection({ features, tt, primaryColor, device, motion: motionLev
         whileInView={motionLevel !== 'none' ? 'visible' : undefined}
         viewport={{ once: true, margin: '-30px' }}
       >
-        {features.map((f, i) => (
+        <DraggableList items={features} field="features" editMode={editMode}>
+          {(f, i) => (
           <motion.div key={i} className={`flex items-start ${iconGap} ${cardPad}`}
             variants={motionLevel !== 'none' ? featureCardVariant : undefined}
             whileHover={motionLevel !== 'none' ? { scale: parseFloat(getHoverScale(motionLevel).replace('scale(','').replace(')','')) } : undefined}
@@ -6348,7 +6371,8 @@ function FeaturesSection({ features, tt, primaryColor, device, motion: motionLev
               {tt.density === 'dense' && <p className="text-[11px] line-clamp-1" style={{ ...bodyStyle(tt), color: tt.textSecondary }}><EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} /></p>}
             </div>
           </motion.div>
-        ))}
+          )}
+        </DraggableList>
       </motion.div>
     </section>
   );
@@ -6402,7 +6426,8 @@ function TestimonialsSection({ testimonials, tt, primaryColor, device, sectionPy
           <p className="text-[10px] uppercase tracking-[0.25em] mb-2 text-center" style={{ color: tt.textMuted }}>What People Say</p>
           <h2 className="text-center mb-10" style={{ ...headingStyle(tt, 1.25), color: tt.textPrimary }}>Real Reviews</h2>
           <div className={`${isMobile ? 'columns-1' : 'columns-3'} gap-4`}>
-            {testimonials.map((t, i) => (
+            <DraggableList items={testimonials} field="testimonials" editMode={editMode}>
+              {(t, i) => (
               <div key={i}
                 className="break-inside-avoid mb-4 p-5 inline-block w-full"
                 style={{
@@ -6426,7 +6451,8 @@ function TestimonialsSection({ testimonials, tt, primaryColor, device, sectionPy
                   <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
                 </p>
               </div>
-            ))}
+              )}
+            </DraggableList>
           </div>
         </div>
       </section>
@@ -6440,7 +6466,8 @@ function TestimonialsSection({ testimonials, tt, primaryColor, device, sectionPy
         <p className="text-[10px] uppercase tracking-[0.25em] mb-2 text-center" style={{ color: tt.textMuted }}>Reviews</p>
         <h2 className="text-center mb-9" style={{ ...headingStyle(tt, 1.25), color: tt.textPrimary }}>What Customers Say</h2>
         <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-5`}>
-          {testimonials.map((t, i) => (
+          <DraggableList items={testimonials} field="testimonials" editMode={editMode}>
+            {(t, i) => (
             <div key={i} className="p-6" style={{ background: tt.pageBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius }}>
               <Stars n={t.rating} />
               <p className="text-sm mt-3 mb-5 italic" style={{ ...bodyStyle(tt), color: tt.textSecondary }}>"<EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} />"</p>
@@ -6452,7 +6479,8 @@ function TestimonialsSection({ testimonials, tt, primaryColor, device, sectionPy
                 </div>
               </div>
             </div>
-          ))}
+            )}
+          </DraggableList>
         </div>
       </div>
     </section>
@@ -7766,14 +7794,16 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
               <div className="max-w-7xl mx-auto px-6" style={{ paddingTop: isMobile ? '2.5rem' : '5rem', paddingBottom: isMobile ? '2.5rem' : '5rem' }}>
                 <h2 className="font-black tracking-tight mb-10" style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '1.25rem' : '1.75rem' }}>Why us</h2>
                 <div className={`grid ${isMobile ? 'grid-cols-1 gap-6' : 'grid-cols-3 gap-10'}`}>
-                  {features.map((f, i) => (
+                  <DraggableList items={features} field="features" editMode={editMode}>
+                    {(f, i) => (
                     <div key={i} className="flex flex-col gap-3">
                       <div className="h-px w-12" style={{ background: pc }} />
                       <EmojiIcon emoji={f.icon} size={28} color={pc} strokeWidth={1.5} />
                       <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: tt.textPrimary }}>{f.title}</h3>
                       <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
                     </div>
-                  ))}
+                    )}
+                  </DraggableList>
                 </div>
               </div>
             </section>
@@ -7784,7 +7814,8 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
               <div className="max-w-7xl mx-auto px-6" style={{ paddingTop: isMobile ? '2.5rem' : '5rem', paddingBottom: isMobile ? '2.5rem' : '5rem' }}>
                 <h2 className="font-black tracking-tight mb-10 text-center" style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '1.25rem' : '1.75rem' }}>What they say</h2>
                 <div className={`grid ${isMobile ? 'grid-cols-1 gap-5' : 'grid-cols-3 gap-8'}`}>
-                  {testimonials.map((t, i) => (
+                  <DraggableList items={testimonials} field="testimonials" editMode={editMode}>
+                    {(t, i) => (
                     <div key={i} className="flex flex-col gap-3">
                       <Stars n={t.rating} />
                       <p className="text-sm leading-relaxed italic flex-1" style={{ color: tt.textSecondary }}>{t.text}</p>
@@ -7792,7 +7823,8 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
                       <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>{t.author}</p>
                       <p className="text-[10px]" style={{ color: tt.textMuted }}>{t.role}</p>
                     </div>
-                  ))}
+                    )}
+                  </DraggableList>
                 </div>
               </div>
             </section>
@@ -8118,8 +8150,9 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
                 <h2 className="text-lg font-black mb-8 text-center" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
                   <EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'What they say'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
                 </h2>
-                <div style={{ columnCount: isMobile ? 1 : 3, columnGap: '16px' }}>
-                  {testimonials.map((t, i) => (
+                <div style={editMode ? { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' } : { columnCount: isMobile ? 1 : 3, columnGap: '16px' }}>
+                  <DraggableList items={testimonials} field="testimonials" editMode={editMode}>
+                    {(t, i) => (
                     <div key={i} style={{ breakInside: 'avoid', marginBottom: '16px', padding: '16px', background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius, boxShadow: getElevationShadow(elevation) }}>
                       <Stars n={t.rating} />
                       <p className="text-xs italic leading-relaxed mt-2 mb-3" style={{ color: tt.textSecondary }}>
@@ -8132,7 +8165,8 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
                         <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
                       </p>
                     </div>
-                  ))}
+                    )}
+                  </DraggableList>
                 </div>
               </div>
             </section>
@@ -8381,7 +8415,8 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
             <section key="features" data-editor-section="features" style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '4rem', paddingBottom: '4rem' }}>
               <div className="max-w-6xl mx-auto px-5">
                 <div className={`grid ${isMobile ? 'grid-cols-1 gap-6' : 'grid-cols-3 gap-10'}`}>
-                  {features.map((f, i) => (
+                  <DraggableList items={features} field="features" editMode={editMode}>
+                    {(f, i) => (
                     <div key={i} className="flex flex-col gap-3">
                       <div className="h-0.5 w-8" style={{ background: pc }} />
                       <EmojiIcon emoji={f.icon} size={28} color={pc} strokeWidth={1.5} />
@@ -8392,7 +8427,8 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
                         <EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} />
                       </p>
                     </div>
-                  ))}
+                    )}
+                  </DraggableList>
                 </div>
               </div>
             </section>
@@ -8402,7 +8438,8 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
             <section key="testimonials" data-editor-section="testimonials" style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}`, paddingTop: '4rem', paddingBottom: '4rem' }}>
               <div className="max-w-6xl mx-auto px-5">
                 <div className={`grid ${isMobile ? 'grid-cols-1 gap-5' : 'grid-cols-3 gap-8'}`}>
-                  {testimonials.map((t, i) => (
+                  <DraggableList items={testimonials} field="testimonials" editMode={editMode}>
+                    {(t, i) => (
                     <div key={i} className="flex flex-col gap-3">
                       <Stars n={t.rating} />
                       <p className="text-sm italic leading-relaxed" style={{ color: tt.textSecondary }}>
@@ -8416,7 +8453,8 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
                         <EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine />
                       </p>
                     </div>
-                  ))}
+                    )}
+                  </DraggableList>
                 </div>
               </div>
             </section>
