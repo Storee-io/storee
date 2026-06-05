@@ -452,8 +452,6 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
   const applyLink = useCallback(() => {
     try {
       console.log('[FloatingToolbar] applyLink called with linkUrl:', linkUrl);
-      restoreRange();
-      console.log('[FloatingToolbar] restoreRange completed');
 
       const url = linkUrl.trim();
       console.log('[FloatingToolbar] Trimmed URL:', url);
@@ -464,21 +462,28 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         return;
       }
 
+      // Try to restore saved range first
+      console.log('[FloatingToolbar] Attempting to restore saved range');
+      restoreRange();
+
+      // Get current selection after restore
       const sel = window.getSelection();
-      console.log('[FloatingToolbar] Current selection:', sel?.toString());
+      console.log('[FloatingToolbar] Current selection after restore:', sel?.toString(), 'rangeCount:', sel?.rangeCount);
 
       if (!sel || !sel.rangeCount) {
-        console.log('[FloatingToolbar] No selection found, canceling');
+        console.log('[FloatingToolbar] No selection found after restore, canceling');
         cancelLink();
         return;
       }
 
       const range = sel.getRangeAt(0);
+      console.log('[FloatingToolbar] Got range from selection');
+
       const container = range.commonAncestorContainer;
       const el = container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
       const editorField = el?.closest('[data-editor-field]') as HTMLElement;
 
-      console.log('[FloatingToolbar] Found editor field:', !!editorField);
+      console.log('[FloatingToolbar] Found editor field:', !!editorField, 'el:', el?.tagName);
 
       if (!editorField) {
         console.log('[FloatingToolbar] No editor field found, canceling');
@@ -486,23 +491,34 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         return;
       }
 
-      // Focus the field and restore selection
-      console.log('[FloatingToolbar] Focusing editor field');
+      // Ensure focus and selection are ready
+      console.log('[FloatingToolbar] Focusing editor field and ensuring selection');
       editorField.focus();
+
+      // Ensure selection is still valid
       sel.removeAllRanges();
       sel.addRange(range);
+      console.log('[FloatingToolbar] Selection re-applied');
 
-      // Create link
+      // Create link using execCommand
       const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-      console.log('[FloatingToolbar] Creating link with URL:', fullUrl);
+      console.log('[FloatingToolbar] About to execute createLink with URL:', fullUrl);
+      console.log('[FloatingToolbar] Selection before execCommand:', sel.toString());
+
       const result = document.execCommand('createLink', false, fullUrl);
-      console.log('[FloatingToolbar] execCommand result:', result);
+      console.log('[FloatingToolbar] execCommand("createLink") returned:', result);
+
+      // Check if link was actually created
+      console.log('[FloatingToolbar] Checking if link was created');
+      const linkElements = editorField.querySelectorAll('a[href]');
+      console.log('[FloatingToolbar] Found', linkElements.length, 'link elements');
 
       // Keep focus on editor after applying
       editorField.focus();
-      console.log('[FloatingToolbar] Link applied successfully');
+      console.log('[FloatingToolbar] Link operation completed');
     } catch (err) {
-      console.error('[FloatingToolbar] Error creating link:', err);
+      console.error('[FloatingToolbar] Error in applyLink:', err);
+      console.error('[FloatingToolbar] Error stack:', err instanceof Error ? err.stack : 'N/A');
     } finally {
       console.log('[FloatingToolbar] applyLink finally: closing link mode and refreshing');
       setShowLink(false);
