@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Bold, Italic, Underline, Strikethrough,
   AlignLeft, AlignCenter, AlignRight,
-  List, ListOrdered, Eraser, Link, LinkOff,
+  List, ListOrdered, Eraser, Link, Link2Off,
 } from 'lucide-react';
 
 interface Props {
@@ -843,7 +843,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
         }}
       >
         {isSelectedTextLink ? (
-          <LinkOff className="w-3.5 h-3.5 text-orange-500" />
+          <Link2Off className="w-3.5 h-3.5 text-orange-500" />
         ) : (
           <Link className="w-3.5 h-3.5" />
         )}
