@@ -273,17 +273,7 @@ function EditSpan({
       onKeyDown={singleLine ? (e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }) : undefined}
       onClick={e => e.stopPropagation()}
       className={className}
-      style={{
-        outline: 'none',
-        whiteSpace: 'inherit',
-        cursor: 'text',
-        padding: '8px 12px',
-        border: '2px solid #14b8a6',
-        borderRadius: '6px',
-        display: 'inline-block',
-        minHeight: '1.5em',
-        ...style
-      }}
+      style={{ outline: 'none', whiteSpace: 'inherit', cursor: 'text', ...style }}
     />
   );
 }
