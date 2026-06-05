@@ -389,67 +389,83 @@ function EditSpan({
       return <span className={className} style={viewStyle}>{decoded}</span>;
     }
   }
-  // Apply dragging styles if position tracking enabled
-  const draggingStyles = editMode && effectiveOnPositionChange ? {
-    position: 'relative' as const,
-    transform: `translate(${displayOffset.x}px, ${displayOffset.y}px)`,
-    transition: isDragging ? 'none' : 'transform 0.1s ease-out',
-    outline: isDragging ? '2px dashed rgba(20, 184, 166, 0.5)' : 'none',
-    borderRadius: isDragging ? '6px' : '0px',
-    backgroundColor: isDragging ? 'rgba(20, 184, 166, 0.08)' : 'transparent',
-  } : {};
+  // Common base styles
+  const baseStyle: React.CSSProperties = {
+    whiteSpace: 'inherit',
+    padding: '6px 10px',
+    minHeight: '1.4em',
+    display: 'inline-block',
+    ...style,
+  };
 
+  // Decode value for display
+  const isHtml = /<[a-z]/i.test(value);
+  const decodedValue = isHtml ? value : (() => {
+    const tmp = document.createElement('span');
+    let prev = value;
+    for (let i = 0; i < 5; i++) {
+      tmp.innerHTML = prev;
+      const next = tmp.textContent ?? prev;
+      if (next === prev) break;
+      prev = next;
+    }
+    return prev;
+  })();
+
+  // EDIT MODE: contenteditable span (only when double-clicked)
+  if (isEditing) {
+    return (
+      <span
+        ref={(el) => {
+          fieldRef.current = el;
+          if (el) {
+            if (isHtml) { if (el.innerHTML !== value) el.innerHTML = value; }
+            else { if (el.textContent !== decodedValue) el.textContent = decodedValue as string; }
+          }
+        }}
+        contentEditable
+        suppressContentEditableWarning
+        data-editor-field={field}
+        onBlur={handleFieldBlur}
+        onKeyDown={singleLine ? (e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }) : undefined}
+        className={className}
+        style={{
+          ...baseStyle,
+          outline: '2px solid rgba(20, 184, 166, 0.5)',
+          outlineOffset: '2px',
+          cursor: 'text',
+          userSelect: 'text',
+          borderRadius: '6px',
+        }}
+      />
+    );
+  }
+
+  // SELECT/DRAG MODE: regular span, no contenteditable (no I-beam cursor)
   return (
     <span
       ref={(el) => {
         fieldRef.current = el;
-        // Sync value to DOM only when not editing
-        if (el && !isEditing) {
-          const isHtml = /<[a-z]/i.test(value);
-          if (isHtml) {
-            // HTML value (has formatting spans) — render via innerHTML
-            if (el.innerHTML !== value) el.innerHTML = value;
-          } else {
-            // Plain text — fully decode any stale HTML entities
-            const decoded = (() => {
-              const tmp = document.createElement('span');
-              let prev = value;
-              for (let i = 0; i < 5; i++) {
-                tmp.innerHTML = prev;
-                const next = tmp.textContent ?? prev;
-                if (next === prev) break;
-                prev = next;
-              }
-              return prev;
-            })();
-            if (el.textContent !== decoded) el.textContent = decoded;
-          }
+        if (el) {
+          if (isHtml) { if (el.innerHTML !== value) el.innerHTML = value; }
+          else { if (el.textContent !== decodedValue) el.textContent = decodedValue as string; }
         }
       }}
-      contentEditable={isEditing}
-      suppressContentEditableWarning
       data-editor-field={field}
-      onBlur={handleFieldBlur}
-      onKeyDown={singleLine && isEditing ? (e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }) : undefined}
-      onClick={e => {
-        if (!isEditing) e.stopPropagation();
-      }}
       onDoubleClick={handleFieldDoubleClick}
       onMouseDown={handleFieldMouseDown}
       className={className}
       style={{
+        ...baseStyle,
         outline: isSelected ? '2px solid rgba(20, 184, 166, 0.5)' : 'none',
         outlineOffset: isSelected ? '2px' : '0px',
-        whiteSpace: 'inherit',
-        cursor: isDragging ? 'grabbing' : (isSelected && !isEditing ? 'grab' : (isEditing ? 'text' : 'default')),
-        padding: '6px 10px',
-        minHeight: '1.4em',
-        display: 'inline-block',
-        backgroundColor: isSelected && !isEditing ? 'rgba(20, 184, 166, 0.08)' : 'transparent',
-        borderRadius: isSelected && !isEditing ? '6px' : '0px',
-        userSelect: isEditing ? 'text' : 'none',
-        ...draggingStyles,
-        ...style
+        cursor: isDragging ? 'grabbing' : (isSelected ? 'grab' : 'default'),
+        backgroundColor: isSelected ? 'rgba(20, 184, 166, 0.08)' : 'transparent',
+        borderRadius: isSelected ? '6px' : '0px',
+        userSelect: 'none',
+        position: 'relative',
+        transform: `translate(${displayOffset.x}px, ${displayOffset.y}px)`,
+        transition: isDragging ? 'none' : undefined,
       }}
     />
   );
