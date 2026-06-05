@@ -297,6 +297,8 @@ export interface StoreDesign {
   scrollingItems?: string[];
   /** Instagram-feed section caption overrides (optional, uses products if absent) */
   instagramPosts?: Array<{ caption: string; likes: number; comments: number }>;
+  /** Field position offsets for drag-to-move functionality (field key -> { x, y } offset) */
+  fieldOffsets?: Record<string, { x: number; y: number }>;
 }
 
 export interface ClaudeStoreResponse {

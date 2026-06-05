@@ -189,6 +189,8 @@ function EditSpan({
   value,
   editMode,
   onFieldChange,
+  onPositionChange,
+  fieldOffset,
   className,
   style,
   singleLine,
@@ -197,10 +199,48 @@ function EditSpan({
   value: string;
   editMode?: boolean;
   onFieldChange?: (field: string, value: string) => void;
+  onPositionChange?: (field: string, offset: { x: number; y: number }) => void;
+  fieldOffset?: { x: number; y: number };
   className?: string;
   style?: React.CSSProperties;
   singleLine?: boolean;
 }) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const currentOffset = fieldOffset || { x: 0, y: 0 };
+  const displayOffset = {
+    x: currentOffset.x + dragOffset.x,
+    y: currentOffset.y + dragOffset.y,
+  };
+
+  const handleDragMouseDown = (e: React.MouseEvent) => {
+    if (!editMode || e.button !== 0 || !onPositionChange) return;
+    setIsDragging(true);
+    setDragStart({ x: e.clientX, y: e.clientY });
+    setDragOffset({ x: 0, y: 0 });
+    e.stopPropagation();
+  };
+
+  const handleDragMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const deltaX = e.clientX - dragStart.x;
+    const deltaY = e.clientY - dragStart.y;
+    setDragOffset({ x: deltaX, y: deltaY });
+  };
+
+  const handleDragMouseUp = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    // Snap to 8px grid
+    const SNAP_GRID = 8;
+    const snappedX = Math.round((currentOffset.x + dragOffset.x) / SNAP_GRID) * SNAP_GRID;
+    const snappedY = Math.round((currentOffset.y + dragOffset.y) / SNAP_GRID) * SNAP_GRID;
+    onPositionChange?.(field, { x: snappedX, y: snappedY });
+    setDragOffset({ x: 0, y: 0 });
+  };
   if (!editMode) {
     const isHtml = /<[a-z]/i.test(value);
     // Apply consistent line-height, vertical-align, and display styling in view mode to match edit mode
@@ -231,7 +271,8 @@ function EditSpan({
       return <span className={className} style={viewStyle}>{decoded}</span>;
     }
   }
-  return (
+  // Wrap with dragging container if position tracking is enabled
+  const innerSpan = (
     <span
       ref={(el) => {
         // Sync value to DOM only when not actively being edited
@@ -276,7 +317,7 @@ function EditSpan({
       style={{
         outline: 'none',
         whiteSpace: 'inherit',
-        cursor: 'text',
+        cursor: isDragging ? 'grabbing' : (editMode && onPositionChange ? 'grab' : 'text'),
         padding: '6px 10px',
         minHeight: '1.4em',
         display: 'inline-block',
@@ -284,6 +325,32 @@ function EditSpan({
       }}
     />
   );
+
+  // If position tracking enabled, wrap with dragging container
+  if (editMode && onPositionChange) {
+    return (
+      <div
+        ref={wrapperRef}
+        onMouseDown={handleDragMouseDown}
+        onMouseMove={handleDragMouseMove}
+        onMouseUp={handleDragMouseUp}
+        onMouseLeave={() => setIsDragging(false)}
+        style={{
+          position: 'relative',
+          display: 'inline-block',
+          transform: `translate(${displayOffset.x}px, ${displayOffset.y}px)`,
+          transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+          outline: isDragging ? '2px dashed rgba(20, 184, 166, 0.5)' : 'none',
+          borderRadius: isDragging ? '6px' : '0px',
+          backgroundColor: isDragging ? 'rgba(20, 184, 166, 0.08)' : 'transparent',
+        }}
+      >
+        {innerSpan}
+      </div>
+    );
+  }
+
+  return innerSpan;
 }
 
 interface CartItem { product: RichProduct; qty: number; }
@@ -8238,6 +8305,7 @@ interface StorePreviewProps {
    *  the mock browser frame via absolute positioning instead of portaling to body. */
   previewShell?: boolean;
   onFieldChange?: (field: string, value: string) => void;
+  onFieldPositionChange?: (field: string, offset: { x: number; y: number }) => void;
   onPageChange?: (path: string) => void;
   initialPath?: string;
   /** Ref filled by StorePreview — call navigateRef.current(path) to navigate externally. */
@@ -8267,7 +8335,7 @@ function pathToStorePage(path: string): StorePage {
   return (entry?.[0] as StorePage | undefined) ?? 'home';
 }
 
-export default function StorePreview({ store, device, editMode, previewShell, onFieldChange, onPageChange, initialPath, navigateRef }: StorePreviewProps) {
+export default function StorePreview({ store, device, editMode, previewShell, onFieldChange, onFieldPositionChange, onPageChange, initialPath, navigateRef }: StorePreviewProps) {
   const [page, setPage] = useState<StorePage>(() => pathToStorePage(initialPath ?? '/'));
   const [showCartSidebar, setShowCartSidebar] = useState(false);
 
