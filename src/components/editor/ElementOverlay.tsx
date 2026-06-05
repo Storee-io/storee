@@ -24,24 +24,46 @@ function getRelativeRect(el: Element, container: Element): Rect {
   };
 }
 
+const BLOCK_TAGS = new Set(['div','section','article','header','footer','main','aside','nav','form','ul','ol','li','table','tbody','tr','td','th']);
+const TEXT_TAGS = new Set(['p','h1','h2','h3','h4','h5','h6','span','a','strong','em','label','blockquote']);
+
 // Elements to skip (too small, utility, or not meaningful)
 function shouldSkip(el: Element): boolean {
-  if (el.tagName === 'SVG' || el.tagName === 'PATH' || el.tagName === 'CIRCLE') return true;
-  if (el.tagName === 'SPAN' && !el.className) return true;
-  if (el.tagName === 'BUTTON') return false;
+  const tag = el.tagName.toLowerCase();
+  if (tag === 'svg' || tag === 'path' || tag === 'circle' || tag === 'g' || tag === 'rect' || tag === 'polyline') return true;
   const rect = el.getBoundingClientRect();
-  if (rect.width < 16 || rect.height < 16) return true;
+  if (rect.width < 8 || rect.height < 8) return true;
   return false;
 }
+
+function isTextEl(el: Element): boolean {
+  return TEXT_TAGS.has(el.tagName.toLowerCase());
+}
+
+function isBlockEl(el: Element): boolean {
+  return BLOCK_TAGS.has(el.tagName.toLowerCase()) || el.tagName.toLowerCase() === 'button';
+}
+
+interface HoverInfo { rect: Rect; label: string; isText: boolean; }
 
 interface ElementOverlayProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
   editMode: boolean;
 }
 
+function findTarget(startEl: Element, container: Element): Element | null {
+  let el: Element | null = startEl;
+  // First check if we're directly on a text element
+  while (el && el !== container) {
+    if (!shouldSkip(el) && (isTextEl(el) || isBlockEl(el))) return el;
+    el = el.parentElement;
+  }
+  return null;
+}
+
 export default function ElementOverlay({ containerRef, editMode }: ElementOverlayProps) {
-  const [hovered, setHovered] = useState<{ rect: Rect; label: string } | null>(null);
-  const [selected, setSelected] = useState<{ rect: Rect; label: string } | null>(null);
+  const [hovered, setHovered] = useState<HoverInfo | null>(null);
+  const [selected, setSelected] = useState<HoverInfo | null>(null);
   const lastHoveredEl = useRef<Element | null>(null);
   const lastSelectedEl = useRef<Element | null>(null);
 
@@ -68,21 +90,12 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       const target = e.target as Element;
       if (!target || !container.contains(target)) { setHovered(null); return; }
 
-      // Walk up to find best candidate div/section/article
-      let el: Element | null = target;
-      while (el && el !== container) {
-        const tag = el.tagName.toLowerCase();
-        if ((tag === 'div' || tag === 'section' || tag === 'article' || tag === 'header' || tag === 'footer') && !shouldSkip(el)) {
-          break;
-        }
-        el = el.parentElement;
-      }
-
-      if (!el || el === container) { setHovered(null); return; }
+      const el = findTarget(target, container);
+      if (!el) { setHovered(null); return; }
       if (el === lastHoveredEl.current) return;
 
       lastHoveredEl.current = el;
-      setHovered({ rect: getRelativeRect(el, container), label: getLabel(el) });
+      setHovered({ rect: getRelativeRect(el, container), label: getLabel(el), isText: isTextEl(el) });
     };
 
     const handleMouseLeave = () => { setHovered(null); lastHoveredEl.current = null; };
@@ -95,16 +108,8 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       if ((target as HTMLElement).isContentEditable) return;
       if (target.closest('[contenteditable]')) return;
 
-      let el: Element | null = target;
-      while (el && el !== container) {
-        const tag = el.tagName.toLowerCase();
-        if ((tag === 'div' || tag === 'section' || tag === 'article' || tag === 'header' || tag === 'footer') && !shouldSkip(el)) {
-          break;
-        }
-        el = el.parentElement;
-      }
-
-      if (!el || el === container) { setSelected(null); lastSelectedEl.current = null; return; }
+      const el = findTarget(target, container);
+      if (!el) { setSelected(null); lastSelectedEl.current = null; return; }
 
       // Click same = deselect
       if (el === lastSelectedEl.current) {
@@ -114,7 +119,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       }
 
       lastSelectedEl.current = el;
-      setSelected({ rect: getRelativeRect(el, container), label: getLabel(el) });
+      setSelected({ rect: getRelativeRect(el, container), label: getLabel(el), isText: isTextEl(el) });
     };
 
     // Click outside = deselect
@@ -146,33 +151,27 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
 
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 40, overflow: 'hidden' }}>
-      {/* Hover overlay — semi-transparent fill + subtle border */}
-      {hovered && (!selected || hovered.label !== selected.label) && (
-        <div
-          style={{
-            position: 'absolute',
-            top: hovered.rect.top,
-            left: hovered.rect.left,
-            width: hovered.rect.width,
-            height: hovered.rect.height,
-            background: 'rgba(99, 120, 255, 0.08)',
-            outline: '1px solid rgba(99, 120, 255, 0.35)',
-            borderRadius: 2,
-            pointerEvents: 'none',
-          }}
-        >
+      {/* Hover overlay */}
+      {hovered && hovered.rect.width > 0 && (
+        <div style={{
+          position: 'absolute',
+          top: hovered.rect.top,
+          left: hovered.rect.left,
+          width: hovered.rect.width,
+          height: hovered.rect.height,
+          background: hovered.isText ? 'rgba(16, 185, 129, 0.07)' : 'rgba(99, 120, 255, 0.07)',
+          outline: hovered.isText ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(99, 120, 255, 0.35)',
+          borderRadius: 2,
+          pointerEvents: 'none',
+        }}>
           <span style={{
             position: 'absolute',
-            top: -20,
-            left: 0,
-            background: 'rgba(99, 120, 255, 0.18)',
-            color: '#4f46e5',
-            fontSize: 10,
-            fontFamily: 'monospace',
-            padding: '1px 5px',
-            borderRadius: 3,
-            whiteSpace: 'nowrap',
-            pointerEvents: 'none',
+            top: -20, left: 0,
+            background: hovered.isText ? 'rgba(16,185,129,0.15)' : 'rgba(99,120,255,0.15)',
+            color: hovered.isText ? '#059669' : '#4f46e5',
+            fontSize: 10, fontFamily: 'monospace',
+            padding: '1px 5px', borderRadius: 3,
+            whiteSpace: 'nowrap', pointerEvents: 'none',
           }}>
             {hovered.label}
           </span>
@@ -180,40 +179,29 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       )}
 
       {/* Selected overlay — outline only, no fill */}
-      {selected && (
-        <div
-          style={{
-            position: 'absolute',
-            top: selected.rect.top,
-            left: selected.rect.left,
-            width: selected.rect.width,
-            height: selected.rect.height,
-            outline: '2px solid #3b82f6',
-            borderRadius: 2,
-            pointerEvents: 'none',
-          }}
-        >
+      {selected && selected.rect.width > 0 && (
+        <div style={{
+          position: 'absolute',
+          top: selected.rect.top,
+          left: selected.rect.left,
+          width: selected.rect.width,
+          height: selected.rect.height,
+          outline: selected.isText ? '2px solid #10b981' : '2px solid #3b82f6',
+          borderRadius: 2,
+          pointerEvents: 'none',
+        }}>
           <span style={{
             position: 'absolute',
-            top: -22,
-            left: -1,
-            background: '#3b82f6',
+            top: -22, left: -1,
+            background: selected.isText ? '#10b981' : '#3b82f6',
             color: '#fff',
-            fontSize: 10,
-            fontFamily: 'monospace',
-            fontWeight: 600,
+            fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
             padding: '2px 6px',
             borderRadius: '3px 3px 0 0',
             whiteSpace: 'nowrap',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
             pointerEvents: 'none',
           }}>
             {selected.label}
-            <svg width="8" height="8" viewBox="0 0 10 10" fill="none" style={{ opacity: 0.8 }}>
-              <path d="M2 5h6M5 2l3 3-3 3" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
           </span>
         </div>
       )}
