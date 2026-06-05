@@ -409,7 +409,7 @@ function EditSpan({
         outline: isSelected ? '2px solid rgba(20, 184, 166, 0.5)' : 'none',
         outlineOffset: isSelected ? '2px' : '0px',
         whiteSpace: 'inherit',
-        cursor: isDragging ? 'grabbing' : (isSelected ? 'grab' : (isEditing ? 'text' : 'pointer')),
+        cursor: isDragging ? 'grabbing' : (isSelected && !isEditing ? 'grab' : (isEditing ? 'text' : 'pointer')),
         padding: '6px 10px',
         minHeight: '1.4em',
         display: 'inline-block',
