@@ -450,7 +450,11 @@ export default function EditorShell({ store, from }: Props) {
         },
       },
     }));
-    pushSnapshot(`Field moved: ${field}`, 'text');
+    // Debounce snapshot push to avoid re-render issues during drag
+    // Only save to history after a short delay
+    setTimeout(() => {
+      pushSnapshot(`Field moved: ${field}`, 'text');
+    }, 300);
   }, [updateActiveStore, pushSnapshot]);
 
   const handleFieldChange = useCallback((field: string, value: string) => {
