@@ -220,10 +220,11 @@ function EditSpan({
   singleLine?: boolean;
 }) {
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [potentialDrag, setPotentialDrag] = useState(false);
   const fieldRef = useRef<HTMLSpanElement>(null);
+  const dragStateRef = useRef({ potentialDrag: false, dragStart: { x: 0, y: 0 } });
+
+  const DRAG_THRESHOLD = 5;
 
   // Use context if props not provided
   const { fieldOffsets: ctxFieldOffsets, onFieldPositionChange: ctxOnPositionChange } = useFieldPosition();
@@ -236,8 +237,6 @@ function EditSpan({
     y: currentOffset.y + dragOffset.y,
   };
 
-  const DRAG_THRESHOLD = 5; // pixels before drag starts
-
   const handleDragMouseDown = (e: React.MouseEvent) => {
     if (!editMode || e.button !== 0 || !effectiveOnPositionChange) return;
 
@@ -245,18 +244,18 @@ function EditSpan({
     const target = e.currentTarget as HTMLElement;
     if (target.hasAttribute('data-ce')) return;
 
-    setPotentialDrag(true);
-    setDragStart({ x: e.clientX, y: e.clientY });
+    dragStateRef.current.potentialDrag = true;
+    dragStateRef.current.dragStart = { x: e.clientX, y: e.clientY };
     setDragOffset({ x: 0, y: 0 });
   };
 
   // Handle drag movements and end on document level
   useEffect(() => {
-    if (!potentialDrag && !isDragging) return;
-
     const handleDocumentMouseMove = (e: MouseEvent) => {
-      const deltaX = e.clientX - dragStart.x;
-      const deltaY = e.clientY - dragStart.y;
+      if (!dragStateRef.current.potentialDrag && !isDragging) return;
+
+      const deltaX = e.clientX - dragStateRef.current.dragStart.x;
+      const deltaY = e.clientY - dragStateRef.current.dragStart.y;
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
       // Only start actual drag if moved beyond threshold
@@ -279,7 +278,7 @@ function EditSpan({
         setDragOffset({ x: 0, y: 0 });
         setIsDragging(false);
       }
-      setPotentialDrag(false);
+      dragStateRef.current.potentialDrag = false;
     };
 
     document.addEventListener('mousemove', handleDocumentMouseMove);
@@ -289,7 +288,7 @@ function EditSpan({
       document.removeEventListener('mousemove', handleDocumentMouseMove);
       document.removeEventListener('mouseup', handleDocumentMouseUp);
     };
-  }, [potentialDrag, isDragging, dragStart, dragOffset, currentOffset, effectiveOnPositionChange, field]);
+  }, [isDragging, currentOffset, effectiveOnPositionChange, field, dragOffset]);
   if (!editMode) {
     const isHtml = /<[a-z]/i.test(value);
     // Apply consistent line-height, vertical-align, and display styling in view mode to match edit mode
