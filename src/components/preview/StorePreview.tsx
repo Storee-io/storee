@@ -222,6 +222,7 @@ function EditSpan({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [potentialDrag, setPotentialDrag] = useState(false);
 
   // Use context if props not provided
   const { fieldOffsets: ctxFieldOffsets, onFieldPositionChange: ctxOnPositionChange } = useFieldPosition();
@@ -234,30 +235,43 @@ function EditSpan({
     y: currentOffset.y + dragOffset.y,
   };
 
+  const DRAG_THRESHOLD = 5; // pixels before drag starts
+
   const handleDragMouseDown = (e: React.MouseEvent) => {
     if (!editMode || e.button !== 0 || !effectiveOnPositionChange) return;
-    setIsDragging(true);
+    setPotentialDrag(true);
     setDragStart({ x: e.clientX, y: e.clientY });
     setDragOffset({ x: 0, y: 0 });
-    e.stopPropagation();
   };
 
   const handleDragMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
+    if (!potentialDrag && !isDragging) return;
+
     const deltaX = e.clientX - dragStart.x;
     const deltaY = e.clientY - dragStart.y;
-    setDragOffset({ x: deltaX, y: deltaY });
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    // Only start actual drag if moved beyond threshold
+    if (distance > DRAG_THRESHOLD) {
+      if (!isDragging) {
+        setIsDragging(true);
+        e.stopPropagation();
+      }
+      setDragOffset({ x: deltaX, y: deltaY });
+    }
   };
 
   const handleDragMouseUp = () => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    // Snap to 8px grid
-    const SNAP_GRID = 8;
-    const snappedX = Math.round((currentOffset.x + dragOffset.x) / SNAP_GRID) * SNAP_GRID;
-    const snappedY = Math.round((currentOffset.y + dragOffset.y) / SNAP_GRID) * SNAP_GRID;
-    effectiveOnPositionChange?.(field, { x: snappedX, y: snappedY });
-    setDragOffset({ x: 0, y: 0 });
+    if (isDragging) {
+      setIsDragging(false);
+      // Snap to 8px grid
+      const SNAP_GRID = 8;
+      const snappedX = Math.round((currentOffset.x + dragOffset.x) / SNAP_GRID) * SNAP_GRID;
+      const snappedY = Math.round((currentOffset.y + dragOffset.y) / SNAP_GRID) * SNAP_GRID;
+      effectiveOnPositionChange?.(field, { x: snappedX, y: snappedY });
+      setDragOffset({ x: 0, y: 0 });
+    }
+    setPotentialDrag(false);
   };
   if (!editMode) {
     const isHtml = /<[a-z]/i.test(value);
