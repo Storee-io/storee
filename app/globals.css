@@ -255,3 +255,15 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+/* Override contentEditable cursor to prevent I-beam */
+[contenteditable="false"] {
+  cursor: pointer !important;
+}
+
+[contenteditable="true"]:not(:focus) {
+  cursor: pointer !important;
+}
+
+[contenteditable="true"]:focus {
+  cursor: text !important;
+}

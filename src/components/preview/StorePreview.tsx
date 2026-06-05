@@ -299,20 +299,18 @@ function EditSpan({
     }
   };
 
-  // Force cursor style to override contentEditable default
+  // Set cursor style for selected/dragging states
   useEffect(() => {
-    if (!fieldRef.current || editMode === undefined) return;
+    if (!fieldRef.current) return;
 
-    if (isEditing) {
-      fieldRef.current.style.cursor = 'text';
-    } else if (isSelected && !isDragging) {
+    // CSS will handle contentEditable cursor via !important
+    // This only handles selected/drag cursor overrides
+    if (isDragging) {
+      fieldRef.current.style.cursor = 'grabbing !important';
+    } else if (isSelected && !isEditing) {
       fieldRef.current.style.cursor = 'grab';
-    } else if (isDragging) {
-      fieldRef.current.style.cursor = 'grabbing';
-    } else {
-      fieldRef.current.style.cursor = 'pointer';
     }
-  }, [isEditing, isSelected, isDragging, editMode]);
+  }, [isSelected, isDragging, isEditing]);
 
   // Handle drag movements and end on document level
   useEffect(() => {
