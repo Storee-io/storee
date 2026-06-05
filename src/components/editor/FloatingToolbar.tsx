@@ -513,8 +513,16 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
       const linkElements = editorField.querySelectorAll('a[href]');
       console.log('[FloatingToolbar] Found', linkElements.length, 'link elements');
 
-      // Keep focus on editor after applying
-      editorField.focus();
+      // Trigger onBlur to save the new content with link to parent
+      console.log('[FloatingToolbar] Triggering blur to save content with link');
+      editorField.blur();
+
+      // Re-focus to allow further editing
+      setTimeout(() => {
+        editorField.focus();
+        console.log('[FloatingToolbar] Re-focused editor field after save');
+      }, 0);
+
       console.log('[FloatingToolbar] Link operation completed');
     } catch (err) {
       console.error('[FloatingToolbar] Error in applyLink:', err);
