@@ -643,6 +643,8 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
         </button>
       ))}
 
+      <Divider />
+
       {/* Lists - disabled */}
       <button title="Bullet list (not applicable)" disabled className="p-1.5 rounded-lg text-slate-400 opacity-40 cursor-not-allowed">
         <List className="w-3.5 h-3.5" />
