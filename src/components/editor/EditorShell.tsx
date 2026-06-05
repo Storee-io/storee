@@ -439,6 +439,20 @@ export default function EditorShell({ store, from }: Props) {
 
   // â"€â"€ onFieldChange handler (called from canvas contenteditable) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
+  const handleFieldPositionChange = useCallback((field: string, offset: { x: number; y: number }) => {
+    updateActiveStore(prev => ({
+      ...prev,
+      design: {
+        ...prev.design,
+        fieldOffsets: {
+          ...(prev.design.fieldOffsets || {}),
+          [field]: offset,
+        },
+      },
+    }));
+    pushSnapshot(`Field moved: ${field}`, 'text');
+  }, [updateActiveStore, pushSnapshot]);
+
   const handleFieldChange = useCallback((field: string, value: string) => {
     if (field === 'heroTitle')           { setHeroTitle(value); return; }
     if (field === 'heroSubtitle')        { setHeroSubtitle(value); return; }
@@ -1342,7 +1356,7 @@ export default function EditorShell({ store, from }: Props) {
               onMouseUp={() => { dragOriginRef.current = null; }}
               onMouseLeave={() => { dragOriginRef.current = null; }}
             >
-              <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} onPageChange={setCanvasPage} navigateRef={canvasNavigateRef} />
+              <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} onFieldPositionChange={handleFieldPositionChange} onPageChange={setCanvasPage} navigateRef={canvasNavigateRef} />
             </div>
           </div>
         </main>
