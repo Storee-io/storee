@@ -659,11 +659,11 @@ export function FloatingToolbar({ editMode, containerRef }: Props) {
 
       <Divider />
 
-      {/* Lists */}
-      <button title="Bullet list" onMouseDown={e => { e.preventDefault(); saveRange(); setTimeout(() => exec('insertUnorderedList'), 0); }} className={plain}>
+      {/* Lists - disabled */}
+      <button title="Bullet list (not applicable)" disabled className="p-1.5 rounded-lg text-slate-400 opacity-40 cursor-not-allowed">
         <List className="w-3.5 h-3.5" />
       </button>
-      <button title="Numbered list" onMouseDown={e => { e.preventDefault(); saveRange(); setTimeout(() => exec('insertOrderedList'), 0); }} className={plain}>
+      <button title="Numbered list (not applicable)" disabled className="p-1.5 rounded-lg text-slate-400 opacity-40 cursor-not-allowed">
         <ListOrdered className="w-3.5 h-3.5" />
       </button>
 
