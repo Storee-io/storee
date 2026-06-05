@@ -416,6 +416,7 @@ function EditSpan({
         backgroundColor: isSelected && !isEditing ? 'rgba(20, 184, 166, 0.08)' : 'transparent',
         borderRadius: isSelected && !isEditing ? '6px' : '0px',
         transition: 'all 0.15s ease-out',
+        userSelect: isEditing ? 'text' : 'none',
         ...draggingStyles,
         ...style
       }}
