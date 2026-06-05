@@ -299,6 +299,36 @@ function EditSpan({
     }
   };
 
+  // Ensure content persists and is not lost during re-renders
+  useEffect(() => {
+    if (!fieldRef.current || isEditing) return;
+
+    const el = fieldRef.current;
+    const isHtml = /<[a-z]/i.test(value);
+
+    // Only sync if content is missing or doesn't match
+    if (isHtml) {
+      if (!el.innerHTML || el.innerHTML !== value) {
+        el.innerHTML = value;
+      }
+    } else {
+      const decoded = (() => {
+        const tmp = document.createElement('span');
+        let prev = value;
+        for (let i = 0; i < 5; i++) {
+          tmp.innerHTML = prev;
+          const next = tmp.textContent ?? prev;
+          if (next === prev) break;
+          prev = next;
+        }
+        return prev;
+      })();
+      if (!el.textContent || el.textContent !== decoded) {
+        el.textContent = decoded;
+      }
+    }
+  }, [value, isEditing]);
+
   // Set cursor style for selected/dragging states
   useEffect(() => {
     if (!fieldRef.current) return;
