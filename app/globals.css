@@ -60,6 +60,15 @@
   }
 }
 
+/* ── Editor field selection border height ──────────────────────────────────── */
+[data-editor-field] {
+  line-height: 1.5;
+}
+
+[data-editor-field] * {
+  line-height: 1.5;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
