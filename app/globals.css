@@ -270,7 +270,12 @@
   outline: none !important;
 }
 
-/* Remove outline from text block elements during edit mode */
-p, h1, h2, h3, h4, h5, h6, blockquote {
+/* Remove outline and I-beam cursor from text elements globally */
+p, h1, h2, h3, h4, h5, h6, blockquote, label {
   outline: none !important;
+  cursor: default !important;
+}
+
+p *, h1 *, h2 *, h3 *, h4 *, h5 *, h6 * {
+  cursor: default !important;
 }

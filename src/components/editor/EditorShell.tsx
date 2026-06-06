@@ -1348,7 +1348,7 @@ export default function EditorShell({ store, from }: Props) {
             {/* Scroll container — no transform so fixed children don't scroll with it */}
             <div
               ref={previewRef}
-              style={{ overflowY: 'auto', overflowX: 'hidden', height: '100%', position: 'relative' }}
+              style={{ overflowY: 'auto', overflowX: 'hidden', height: '100%', position: 'relative', cursor: editMode ? 'default' : undefined }}
               onDoubleClick={() => triggerEditHint()}
               onMouseDown={e => { dragOriginRef.current = { x: e.clientX, y: e.clientY }; }}
               onMouseMove={e => {
