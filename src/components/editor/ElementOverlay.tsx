@@ -108,9 +108,24 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     const container = containerRef.current;
     if (!container) return;
 
+    // Check if a point is within the container's bounding rect
+    const isInContainer = (x: number, y: number) => {
+      const r = container.getBoundingClientRect();
+      return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    };
+
+    // Use elementFromPoint to find the real element under cursor,
+    // bypassing any framer-motion / React portal containment issues
     const handleMouseMove = (e: MouseEvent) => {
-      const target = e.target as Element;
-      if (!target || !container.contains(target)) { setHovered(null); return; }
+      if (!isInContainer(e.clientX, e.clientY)) {
+        setHovered(null);
+        lastHoveredEl.current = null;
+        return;
+      }
+
+      // elementFromPoint gives the topmost visible element at cursor position
+      const target = document.elementFromPoint(e.clientX, e.clientY);
+      if (!target) { setHovered(null); return; }
 
       const el = findTarget(target, container);
       if (!el) { setHovered(null); lastHoveredEl.current = null; return; }
@@ -123,10 +138,12 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     const handleMouseLeave = () => { setHovered(null); lastHoveredEl.current = null; };
 
     const handleClick = (e: MouseEvent) => {
-      const target = e.target as Element;
-      if (!target || !container.contains(target)) return;
-      if ((target as HTMLElement).isContentEditable) return;
-      if (target.closest('[contenteditable]')) return;
+      if (!isInContainer(e.clientX, e.clientY)) return;
+      if ((e.target as HTMLElement)?.isContentEditable) return;
+      if ((e.target as Element)?.closest('[contenteditable]')) return;
+
+      const target = document.elementFromPoint(e.clientX, e.clientY);
+      if (!target) return;
 
       const el = findTarget(target, container);
       if (!el) { setSelected(null); lastSelectedEl.current = null; return; }
@@ -142,24 +159,23 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     };
 
     const handleDocClick = (e: MouseEvent) => {
-      if (!container.contains(e.target as Node)) {
+      if (!isInContainer(e.clientX, e.clientY)) {
         setSelected(null);
         lastSelectedEl.current = null;
       }
     };
 
-    // Capture phase so events fire before framer-motion intercepts
-    container.addEventListener('mousemove', handleMouseMove, true);
-    container.addEventListener('mouseleave', handleMouseLeave, true);
-    container.addEventListener('click', handleClick, true);
+    document.addEventListener('mousemove', handleMouseMove);
+    container.addEventListener('mouseleave', handleMouseLeave);
+    document.addEventListener('click', handleClick, true);
     document.addEventListener('click', handleDocClick);
     container.addEventListener('scroll', updateSelectedRect);
     window.addEventListener('resize', updateSelectedRect);
 
     return () => {
-      container.removeEventListener('mousemove', handleMouseMove, true);
-      container.removeEventListener('mouseleave', handleMouseLeave, true);
-      container.removeEventListener('click', handleClick, true);
+      document.removeEventListener('mousemove', handleMouseMove);
+      container.removeEventListener('mouseleave', handleMouseLeave);
+      document.removeEventListener('click', handleClick, true);
       document.removeEventListener('click', handleDocClick);
       container.removeEventListener('scroll', updateSelectedRect);
       window.removeEventListener('resize', updateSelectedRect);
