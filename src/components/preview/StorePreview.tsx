@@ -248,13 +248,14 @@ function EditSpan({
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsEditing(true);
-    // Select all text on activation
+    // Let browser's native double-click selection handle word selection
+    // Triple-click will select all text (browser default behavior)
     setTimeout(() => {
       const el = spanRef.current;
       if (!el) return;
       el.focus();
-      const sel = window.getSelection();
-      if (sel) { const r = document.createRange(); r.selectNodeContents(el); sel.removeAllRanges(); sel.addRange(r); }
+      // Don't override selection - let browser's native behavior handle it
+      // Double click = word selection, triple click = all text
     }, 0);
   };
 
