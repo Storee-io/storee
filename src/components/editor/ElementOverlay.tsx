@@ -53,8 +53,10 @@ interface ElementOverlayProps {
 
 function findTarget(startEl: Element, container: Element): Element | null {
   let el: Element | null = startEl;
-  // First check if we're directly on a text element
   while (el && el !== container) {
+    // Skip elements that are EditSpan fields (they have their own selection UI)
+    if ((el as HTMLElement).dataset?.editorField !== undefined) return null;
+    if (el.closest('[data-editor-field]')) return null;
     if (!shouldSkip(el) && (isTextEl(el) || isBlockEl(el))) return el;
     el = el.parentElement;
   }
