@@ -280,42 +280,36 @@ p *, h1 *, h2 *, h3 *, h4 *, h5 *, h6 * {
   cursor: default !important;
 }
 
-/* Disable all hover effects on product cards in edit mode */
-[data-edit-mode="true"] .group:hover {
+/* ── Aggressive disable ALL hover effects in edit mode ────────────────────────── */
+
+/* Override .group hover on self and all descendants */
+[data-edit-mode="true"] .group:hover,
+[data-edit-mode="true"] .group:hover * {
   transform: none !important;
   box-shadow: none !important;
   text-shadow: none !important;
-}
-
-/* Remove scale/zoom effects on images and elements */
-[data-edit-mode="true"] .group:hover img,
-[data-edit-mode="true"] .group:hover [class*="scale"],
-[data-edit-mode="true"] img {
-  transform: scale(1) !important;
-}
-
-/* Remove all transform animations on hover */
-[data-edit-mode="true"] [class*="hover:scale"],
-[data-edit-mode="true"] [class*="hover:transform"],
-[data-edit-mode="true"] [class*="hover:-translate"],
-[data-edit-mode="true"] [class*="group-hover:scale"],
-[data-edit-mode="true"] [class*="group-hover:transform"] {
-  transform: none !important;
-}
-
-/* Remove box-shadow hover effects */
-[data-edit-mode="true"] [class*="hover:shadow"],
-[data-edit-mode="true"] [class*="group-hover:shadow"] {
-  box-shadow: none !important;
-}
-
-/* Remove opacity changes on hover (wishlist, quick add buttons) */
-[data-edit-mode="true"] [class*="group-hover:opacity"],
-[data-edit-mode="true"] [class*="opacity-0"] {
+  filter: none !important;
   opacity: 1 !important;
 }
 
-/* Disable all transitions and animations in edit mode */
+/* Force no scale/zoom on images */
+[data-edit-mode="true"] img,
+[data-edit-mode="true"] .group:hover img {
+  transform: scale(1) !important;
+}
+
+/* Remove all Tailwind hover/group-hover classes effects */
+[data-edit-mode="true"] [class*="hover:"],
+[data-edit-mode="true"] [class*="group-hover:"] {
+  /* Override specific Tailwind utilities */
+  transform: none !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+/* Disable transitions and animations */
 [data-edit-mode="true"] [class*="transition"],
 [data-edit-mode="true"] [class*="animate"] {
   transition: none !important;
