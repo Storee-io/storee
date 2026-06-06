@@ -108,33 +108,20 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     const container = containerRef.current;
     if (!container) return;
 
-    // Check if a point is within the container's bounding rect
-    const isInContainer = (x: number, y: number) => {
-      const r = container.getBoundingClientRect();
-      return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
-    };
-
-    // Get the real DOM element under cursor, skipping the overlay div itself
-    const getRealTarget = (x: number, y: number): Element | null => {
-      const els = document.elementsFromPoint(x, y);
-      for (const el of els) {
-        // Skip our overlay div
-        if ((el as HTMLElement).dataset?.overlay) continue;
-        // Skip elements outside container
-        if (!container.contains(el)) continue;
-        return el;
-      }
-      return null;
+    // e.target from document mousemove correctly respects pointer-events:none on the overlay,
+    // so we can use it directly — browser skips our overlay and gives the real element below.
+    const getTarget = (e: MouseEvent): Element | null => {
+      const target = e.target as Element;
+      if (!target) return null;
+      // Skip if part of our overlay (shouldn't happen due to pointer-events:none, but safety check)
+      if (target.closest('[data-overlay]')) return null;
+      // Must be inside the container
+      if (!container.contains(target)) return null;
+      return target;
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isInContainer(e.clientX, e.clientY)) {
-        setHovered(null);
-        lastHoveredEl.current = null;
-        return;
-      }
-
-      const target = getRealTarget(e.clientX, e.clientY);
+      const target = getTarget(e);
       if (!target) { setHovered(null); lastHoveredEl.current = null; return; }
 
       const el = findTarget(target, container);
@@ -148,12 +135,10 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     const handleMouseLeave = () => { setHovered(null); lastHoveredEl.current = null; };
 
     const handleClick = (e: MouseEvent) => {
-      if (!isInContainer(e.clientX, e.clientY)) return;
-      if ((e.target as HTMLElement)?.isContentEditable) return;
-      if ((e.target as Element)?.closest('[contenteditable]')) return;
-
-      const target = getRealTarget(e.clientX, e.clientY);
+      const target = getTarget(e);
       if (!target) return;
+      if ((target as HTMLElement).isContentEditable) return;
+      if (target.closest('[contenteditable]')) return;
 
       const el = findTarget(target, container);
       if (!el) { setSelected(null); lastSelectedEl.current = null; return; }
@@ -169,7 +154,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     };
 
     const handleDocClick = (e: MouseEvent) => {
-      if (!isInContainer(e.clientX, e.clientY)) {
+      if (!container.contains(e.target as Node)) {
         setSelected(null);
         lastSelectedEl.current = null;
       }
