@@ -1362,6 +1362,16 @@ export default function EditorShell({ store, from }: Props) {
               }}
               onMouseUp={() => { dragOriginRef.current = null; }}
               onMouseLeave={() => { dragOriginRef.current = null; }}
+              onClickCapture={(e) => {
+                // In edit mode, block all navigation clicks except on editor fields/overlays
+                if (!editMode) return;
+                const target = e.target as HTMLElement;
+                if (target.closest('[data-editor-field]') || target.closest('[data-overlay]')) return;
+                if (target.tagName === 'A' || target.tagName === 'BUTTON' || target.closest('a') || target.closest('button')) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              }}
             >
               <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} onFieldPositionChange={handleFieldPositionChange} onArrayReorder={handleArrayReorder} onPageChange={setCanvasPage} navigateRef={canvasNavigateRef} />
               <ElementOverlay containerRef={previewRef} editMode={editMode} />
