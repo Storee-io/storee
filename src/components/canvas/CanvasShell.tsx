@@ -480,7 +480,7 @@ export default function CanvasShell({ store, from }: Props) {
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <Tip label="Back to Preview">
             <button
-              onClick={() => { toast('Going backâ€¦', { duration: 1200 }); router.push(backHref); }}
+              onClick={() => { toast('Going back...', { duration: 1200 }); router.push(backHref); }}
               className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 transition-colors flex-shrink-0"
             >
               <ArrowLeft className="w-4 h-4" />
