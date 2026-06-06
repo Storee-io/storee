@@ -779,14 +779,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       <select
         title="Font family"
         defaultValue=""
-        onMouseDown={e => {
-          e.preventDefault();
-          saveRange();
-          // Use setTimeout to allow dropdown to open after prevention
-          setTimeout(() => {
-            (e.target as HTMLSelectElement).click();
-          }, 0);
-        }}
+        onMouseDown={e => saveRange()}
         onChange={e => {
           restoreRange();
           handleFontFamily(e.target.value);
@@ -805,14 +798,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       <select
         title="Font size"
         value={currentFontSize}
-        onMouseDown={e => {
-          e.preventDefault();
-          saveRange();
-          // Use setTimeout to allow dropdown to open after prevention
-          setTimeout(() => {
-            (e.target as HTMLSelectElement).click();
-          }, 0);
-        }}
+        onMouseDown={e => saveRange()}
         onChange={e => {
           console.log('Font size changed to:', e.target.value);
           restoreRange();
@@ -902,14 +888,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       <select
         title="Line height"
         defaultValue="1.5"
-        onMouseDown={e => {
-          e.preventDefault();
-          saveRange();
-          // Use setTimeout to allow dropdown to open after prevention
-          setTimeout(() => {
-            (e.target as HTMLSelectElement).click();
-          }, 0);
-        }}
+        onMouseDown={e => saveRange()}
         onChange={e => {
           restoreRange();
           handleLineHeight(e.target.value);
