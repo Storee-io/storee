@@ -81,33 +81,42 @@ function findTarget(startEl: Element, container: Element): Element | null {
   if (!insideContainer) return null;
 
   let el: Element | null = startEl;
-  let firstMatch: Element | null = null;
+  let candidates: Element[] = [];
 
+  // Walk up and collect all selectable elements
   while (el && el !== container) {
     if ((el as HTMLElement).dataset?.editorField !== undefined) return null;
     if (el.closest('[data-editor-field]')) return null;
     if (isInExcludedSection(el)) return null;
 
     const tag = el.tagName.toLowerCase();
-    const isSelectable = !shouldSkip(el) && (tag === 'span' || tag === 'a' || tag === 'strong' || tag === 'em' || isBlockEl(el));
+
+    // Check if selectable: span/inline OR block element
+    const isText = tag === 'span' || tag === 'a' || tag === 'strong' || tag === 'em';
+    const isBlock = isBlockEl(el);
+    const isSelectable = !shouldSkip(el) && (isText || isBlock);
 
     if (isSelectable) {
-      // Store first match (innermost)
-      if (!firstMatch) firstMatch = el;
+      candidates.push(el);
 
-      // Continue walking up to find product cards (.group.cursor-pointer) or larger meaningful containers
-      // Prefer the larger container if it's a card/product wrapper
-      if (el.className && typeof el.className === 'string') {
-        if (el.className.includes('group') && el.className.includes('cursor-pointer')) {
-          return el; // Found product card container, return it
-        }
+      // If found product card (.group.cursor-pointer), prefer it
+      if (el.classList.contains('group') && el.classList.contains('cursor-pointer')) {
+        return el;
       }
     }
 
     el = el.parentElement;
   }
 
-  return firstMatch; // Return innermost match if no special container found
+  // Return outermost (last) candidate that is a block element
+  for (let i = candidates.length - 1; i >= 0; i--) {
+    if (isBlockEl(candidates[i])) {
+      return candidates[i];
+    }
+  }
+
+  // Fallback: return innermost candidate
+  return candidates.length > 0 ? candidates[0] : null;
 }
 
 export default function ElementOverlay({ containerRef, editMode }: ElementOverlayProps) {
