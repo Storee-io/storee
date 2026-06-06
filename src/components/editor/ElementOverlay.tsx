@@ -81,15 +81,33 @@ function findTarget(startEl: Element, container: Element): Element | null {
   if (!insideContainer) return null;
 
   let el: Element | null = startEl;
+  let firstMatch: Element | null = null;
+
   while (el && el !== container) {
     if ((el as HTMLElement).dataset?.editorField !== undefined) return null;
     if (el.closest('[data-editor-field]')) return null;
     if (isInExcludedSection(el)) return null;
+
     const tag = el.tagName.toLowerCase();
-    if (!shouldSkip(el) && (tag === 'span' || tag === 'a' || tag === 'strong' || tag === 'em' || isBlockEl(el))) return el;
+    const isSelectable = !shouldSkip(el) && (tag === 'span' || tag === 'a' || tag === 'strong' || tag === 'em' || isBlockEl(el));
+
+    if (isSelectable) {
+      // Store first match (innermost)
+      if (!firstMatch) firstMatch = el;
+
+      // Continue walking up to find product cards (.group.cursor-pointer) or larger meaningful containers
+      // Prefer the larger container if it's a card/product wrapper
+      if (el.className && typeof el.className === 'string') {
+        if (el.className.includes('group') && el.className.includes('cursor-pointer')) {
+          return el; // Found product card container, return it
+        }
+      }
+    }
+
     el = el.parentElement;
   }
-  return null;
+
+  return firstMatch; // Return innermost match if no special container found
 }
 
 export default function ElementOverlay({ containerRef, editMode }: ElementOverlayProps) {
