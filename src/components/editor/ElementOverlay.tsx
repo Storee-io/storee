@@ -71,6 +71,15 @@ interface ElementOverlayProps {
 }
 
 function findTarget(startEl: Element, container: Element): Element | null {
+  // Quick containment check using ancestor walk (avoids container.contains() reference issues)
+  let check: Element | null = startEl;
+  let insideContainer = false;
+  while (check) {
+    if (check === container) { insideContainer = true; break; }
+    check = check.parentElement;
+  }
+  if (!insideContainer) return null;
+
   let el: Element | null = startEl;
   while (el && el !== container) {
     if ((el as HTMLElement).dataset?.editorField !== undefined) return null;
@@ -111,15 +120,13 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     const container = containerRef.current;
     if (!container) return;
 
-    // e.target from document mousemove correctly respects pointer-events:none on the overlay,
-    // so we can use it directly — browser skips our overlay and gives the real element below.
+    // e.target from document mousemove correctly respects pointer-events:none on the overlay.
+    // We rely on findTarget's DOM walk to scope results to within the container —
+    // elements outside (sidebar etc.) will naturally return null when walking up past container.
     const getTarget = (e: MouseEvent): Element | null => {
       const target = e.target as Element;
       if (!target) return null;
-      // Skip if part of our overlay (shouldn't happen due to pointer-events:none, but safety check)
       if (target.closest('[data-overlay]')) return null;
-      // Must be inside the container
-      if (!container.contains(target)) return null;
       return target;
     };
 
