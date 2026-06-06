@@ -2670,12 +2670,18 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
           {displayed.map(p => (
             <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
               <div className="relative overflow-hidden rounded-2xl mb-3" style={{ aspectRatio: isMobile ? '3/4' : '3/4', background: tt.surfaceBg }}>
-                <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                {/* ProductImg: Remove transition-transform and group-hover:scale-105 in edit mode */}
+                <ProductImg
+                  src={p.image}
+                  alt={p.name}
+                  fallback={p.imageFallback}
+                  className={`w-full h-full object-cover ${editMode ? '' : 'group-hover:scale-105 transition-transform duration-700'}`}
+                />
                 {p.badge && (
                   <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{ background: primaryColor }}>{p.badge}</span>
                 )}
-                {/* Quick add — always visible on mobile, hover on desktop */}
-                <div className={`absolute bottom-0 inset-x-0 p-3 transition-transform duration-200 ${isMobile ? '' : 'translate-y-full group-hover:translate-y-0'}`}>
+                {/* Quick add button: Remove transition-transform and translate in edit mode */}
+                <div className={`absolute bottom-0 inset-x-0 p-3 ${editMode ? '' : 'transition-transform duration-200'} ${isMobile || editMode ? '' : 'translate-y-full group-hover:translate-y-0'}`}>
                   <button
                     onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(_btn)); }}
                     className="w-full py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-xl text-white shadow-lg"
@@ -2684,12 +2690,13 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
                     + Add to Cart
                   </button>
                 </div>
+                {/* Wishlist button: Remove transition-all and hover:scale in edit mode */}
                 <button
                   data-wishlist-btn=""
                   onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
-                  className={`absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow transition-all hover:scale-110 active:scale-95 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'}`}
+                  className={`absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow ${editMode ? '' : 'transition-all hover:scale-110 active:scale-95'} ${isMobile || editMode ? '' : 'opacity-0 group-hover:opacity-100'}`}
                 >
-                  <Heart className={`w-3.5 h-3.5 transition-colors ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
+                  <Heart className={`w-3.5 h-3.5 ${editMode ? '' : 'transition-colors'} ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
                 </button>
               </div>
               <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
