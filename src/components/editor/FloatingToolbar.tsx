@@ -779,6 +779,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       <select
         title="Font family"
         defaultValue=""
+        tabIndex={-1}
         onMouseDown={e => saveRange()}
         onChange={e => {
           restoreRange();
@@ -798,6 +799,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       <select
         title="Font size"
         value={currentFontSize}
+        tabIndex={-1}
         onMouseDown={e => saveRange()}
         onChange={e => {
           console.log('Font size changed to:', e.target.value);
@@ -888,6 +890,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       <select
         title="Line height"
         defaultValue="1.5"
+        tabIndex={-1}
         onMouseDown={e => saveRange()}
         onChange={e => {
           restoreRange();
