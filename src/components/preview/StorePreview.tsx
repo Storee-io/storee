@@ -264,12 +264,9 @@ interface LayoutProps {
   onArrayReorder?: (field: string, newItems: unknown[]) => void;
 }
 
-// ── Draggable list wrapper for edit mode card reordering ─────────────────────
+// ── List wrapper (drag reorder removed) ─────────────────────────────────────
 function DraggableList<T>({
   items,
-  field,
-  editMode,
-  className,
   children,
 }: {
   items: T[];
@@ -278,53 +275,7 @@ function DraggableList<T>({
   className?: string;
   children: (item: T, index: number) => React.ReactNode;
 }) {
-  const { onArrayReorder } = useFieldPosition();
-  const [localItems, setLocalItems] = useState(items);
-
-  // Sync external items changes when not dragging
-  useEffect(() => { setLocalItems(items); }, [items]);
-
-  if (!editMode || !onArrayReorder) {
-    return <>{items.map((item, i) => children(item, i))}</>;
-  }
-
-  return (
-    <Reorder.Group
-      axis="x"
-      values={localItems}
-      onReorder={(newItems) => {
-        setLocalItems(newItems);
-        onArrayReorder(field, newItems);
-      }}
-      className={className}
-      style={{ listStyle: 'none', padding: 0, margin: 0, display: 'contents' }}
-      as="div"
-    >
-      {localItems.map((item, i) => (
-        <Reorder.Item
-          key={JSON.stringify(item)}
-          value={item}
-          as="div"
-          whileDrag={{
-            scale: 1.03,
-            zIndex: 50,
-          }}
-          style={{
-            cursor: 'grab',
-            listStyle: 'none',
-            padding: 0,
-            margin: 0,
-            background: 'none',
-            border: 'none',
-            boxShadow: 'none',
-            outline: 'none',
-          }}
-        >
-          {children(item, i)}
-        </Reorder.Item>
-      ))}
-    </Reorder.Group>
-  );
+  return <>{items.map((item, i) => children(item, i))}</>;
 }
 
 // ── Cart toast popup ─────────────────────────────────────────────────────────
