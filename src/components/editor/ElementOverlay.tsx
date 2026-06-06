@@ -95,9 +95,15 @@ function findTarget(startEl: Element, container: Element): Element | null {
       // Store first match (innermost selectable)
       if (!firstMatch) firstMatch = el;
 
-      // Check if this is a product card (.group.cursor-pointer)
-      // If so, return it (prefer the card container)
-      if (el.classList.contains('group') && el.classList.contains('cursor-pointer')) {
+      // Check if this is a product card container
+      // Pattern 1: .group.cursor-pointer class
+      const hasGroupCursorPointer = el.classList.contains('group') && el.classList.contains('cursor-pointer');
+      // Pattern 2: has onClick handler + contains img and text children (typical product card pattern)
+      const hasOnClick = (el as any).onclick !== null || el.getAttribute('onclick') !== null;
+      const hasProductContent = el.querySelector('img') && (el.querySelector('p') || el.querySelector('span'));
+      const isProductCard = hasGroupCursorPointer || (hasOnClick && hasProductContent);
+
+      if (isProductCard) {
         return el;
       }
     }
