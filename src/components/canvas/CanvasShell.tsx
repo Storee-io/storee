@@ -54,7 +54,7 @@ function getFieldLabel(field: string) {
     const section = m[1] === 'faq' ? 'FAQ' : m[1].charAt(0).toUpperCase() + m[1].slice(1, -1);
     const idx = parseInt(m[2]) + 1;
     const key = m[3];
-    return `${section} ${idx} â€” ${key.charAt(0).toUpperCase() + key.slice(1)}`;
+    return `${section} ${idx} - ${key.charAt(0).toUpperCase() + key.slice(1)}`;
   }
   return field;
 }
@@ -450,7 +450,7 @@ export default function CanvasShell({ store, from }: Props) {
     setIsSaving(false);
     setSaved(true);
     toast.success('Changes saved!', {
-      description: liveContextStore.status === 'Published' ? 'Live store has been updated.' : 'Returning to previewâ€¦',
+      description: liveContextStore.status === 'Published' ? 'Live store has been updated.' : 'Returning to preview...',
     });
 
     const previewUrl = `/preview/${liveContextStore.id}`;
@@ -548,7 +548,7 @@ export default function CanvasShell({ store, from }: Props) {
                 href={storefrontUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => toast('Opening live storeâ€¦', { duration: 1200 })}
+                onClick={() => toast('Opening live store...', { duration: 1200 })}
                 className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
               >
                 <Globe className="w-4 h-4" />
@@ -564,7 +564,7 @@ export default function CanvasShell({ store, from }: Props) {
               {saved
                 ? <><Check className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Saved</span></>
                 : isSaving
-                ? <><Save className="w-4 h-4 flex-shrink-0 animate-pulse" /><span className="hidden sm:inline">Savingâ€¦</span></>
+                ? <><Save className="w-4 h-4 flex-shrink-0 animate-pulse" /><span className="hidden sm:inline">Saving...</span></>
                 : <><Save className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Save</span></>
               }
             </button>
@@ -811,12 +811,12 @@ export default function CanvasShell({ store, from }: Props) {
 
                 <Section icon={Mail} title="Newsletter" open={openSection === 'newsletter'} onToggle={() => toggle('newsletter')}>
                   <Field label="Headline"><Input value={newsletter.headline} onChange={v => setNewsletter(n => ({ ...n, headline: v }))} placeholder="Stay in the loop" /></Field>
-                  <Field label="Subtext"><Textarea value={newsletter.subtext} onChange={v => setNewsletter(n => ({ ...n, subtext: v }))} placeholder="Subscribe for exclusive dealsâ€¦" rows={2} /></Field>
+                  <Field label="Subtext"><Textarea value={newsletter.subtext} onChange={v => setNewsletter(n => ({ ...n, subtext: v }))} placeholder="Subscribe for exclusive deals..." rows={2} /></Field>
                   <p className="text-xs text-slate-400">Leave headline empty to hide.</p>
                 </Section>
 
                 <Section icon={BookOpen} title="Brand Story" open={openSection === 'brandStory'} onToggle={() => toggle('brandStory')}>
-                  <Field label="Story"><Textarea value={brandStory} onChange={setBrandStory} placeholder="Tell your brand's storyâ€¦" rows={5} /></Field>
+                  <Field label="Story"><Textarea value={brandStory} onChange={setBrandStory} placeholder="Tell your brand's story..." rows={5} /></Field>
                   <p className="text-xs text-slate-400">Leave empty to hide.</p>
                 </Section>
               </motion.div>
