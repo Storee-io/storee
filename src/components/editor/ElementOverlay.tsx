@@ -72,8 +72,9 @@ function findTarget(startEl: Element, container: Element): Element | null {
     // Skip elements that are EditSpan fields (they have their own selection UI)
     if ((el as HTMLElement).dataset?.editorField !== undefined) return null;
     if (el.closest('[data-editor-field]')) return null;
-    // Only allow block elements, skip text elements
-    if (!shouldSkip(el) && isBlockEl(el)) return el;
+    // Allow span/inline elements and block elements, skip text blocks (p, h1-h6, etc.)
+    const tag = el.tagName.toLowerCase();
+    if (!shouldSkip(el) && (tag === 'span' || tag === 'a' || tag === 'strong' || tag === 'em' || isBlockEl(el))) return el;
     el = el.parentElement;
   }
   return null;
