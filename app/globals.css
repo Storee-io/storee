@@ -269,3 +269,8 @@
   user-select: text;
   outline: none !important;
 }
+
+/* Remove outline from text block elements during edit mode */
+p, h1, h2, h3, h4, h5, h6, blockquote {
+  outline: none !important;
+}
