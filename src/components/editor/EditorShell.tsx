@@ -1348,6 +1348,7 @@ export default function EditorShell({ store, from }: Props) {
             {/* Scroll container — no transform so fixed children don't scroll with it */}
             <div
               ref={previewRef}
+              data-edit-mode={editMode}
               style={{ overflowY: 'auto', overflowX: 'hidden', height: '100%', position: 'relative', cursor: editMode ? 'default' : undefined }}
               onDoubleClick={() => triggerEditHint()}
               onMouseDown={e => { dragOriginRef.current = { x: e.clientX, y: e.clientY }; }}
@@ -1362,16 +1363,6 @@ export default function EditorShell({ store, from }: Props) {
               }}
               onMouseUp={() => { dragOriginRef.current = null; }}
               onMouseLeave={() => { dragOriginRef.current = null; }}
-              onClickCapture={(e) => {
-                // In edit mode, block all navigation clicks except on editor fields/overlays
-                if (!editMode) return;
-                const target = e.target as HTMLElement;
-                if (target.closest('[data-editor-field]') || target.closest('[data-overlay]')) return;
-                if (target.tagName === 'A' || target.tagName === 'BUTTON' || target.closest('a') || target.closest('button')) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }
-              }}
             >
               <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} onFieldPositionChange={handleFieldPositionChange} onArrayReorder={handleArrayReorder} onPageChange={setCanvasPage} navigateRef={canvasNavigateRef} />
               <ElementOverlay containerRef={previewRef} editMode={editMode} />

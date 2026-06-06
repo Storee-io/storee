@@ -279,3 +279,17 @@ p, h1, h2, h3, h4, h5, h6, blockquote, label {
 p *, h1 *, h2 *, h3 *, h4 *, h5 *, h6 * {
   cursor: default !important;
 }
+
+/* Disable all interactions in edit mode (except editor fields) */
+[data-edit-mode="true"] a,
+[data-edit-mode="true"] button,
+[data-edit-mode="true"] [onclick],
+[data-edit-mode="true"] [data-wishlist-btn] {
+  pointer-events: none !important;
+}
+
+/* Allow editor field interactions */
+[data-edit-mode="true"] [data-editor-field],
+[data-edit-mode="true"] [data-overlay] {
+  pointer-events: auto !important;
+}
