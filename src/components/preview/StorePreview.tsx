@@ -196,13 +196,15 @@ function EmojiIcon({
 }
 
 // ── Canvas editor: inline contenteditable text helper ────────────────────────
-// Renders a <span contentEditable> in edit mode, plain text fragment otherwise.
-// Uses a callback ref so external value syncs to DOM without disrupting cursor.
-
+// Renders a plain span. In edit mode, double-click activates contenteditable for text styling.
 function EditSpan({
+  field,
   value,
+  editMode,
+  onFieldChange,
   className,
   style,
+  singleLine,
 }: {
   field: string;
   value: string;
@@ -214,26 +216,78 @@ function EditSpan({
   style?: React.CSSProperties;
   singleLine?: boolean;
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const spanRef = useRef<HTMLSpanElement>(null);
+
+  const decode = (v: string) => {
+    const isHtml = /<[a-z]/i.test(v);
+    if (isHtml) return v;
+    const tmp = document.createElement('span');
+    let prev = v;
+    for (let i = 0; i < 5; i++) { tmp.innerHTML = prev; const next = tmp.textContent ?? prev; if (next === prev) break; prev = next; }
+    return prev;
+  };
+
+  const decodedValue = decode(value);
   const isHtml = /<[a-z]/i.test(value);
   const spanStyle: React.CSSProperties = { ...style, lineHeight: 1, verticalAlign: 'middle', display: 'inline' };
 
-  if (isHtml) {
-    return <span className={className} style={spanStyle} dangerouslySetInnerHTML={{ __html: value }} />;
+  // Sync DOM content when not editing
+  useEffect(() => {
+    if (!spanRef.current || isEditing) return;
+    const el = spanRef.current;
+    if (isHtml) { if (el.innerHTML !== value) el.innerHTML = value; }
+    else { if (el.textContent !== decodedValue) el.textContent = decodedValue; }
+  }, [value, isEditing, isHtml, decodedValue]);
+
+  if (!editMode) {
+    if (isHtml) return <span className={className} style={spanStyle} dangerouslySetInnerHTML={{ __html: value }} />;
+    return <span className={className} style={spanStyle}>{decodedValue}</span>;
   }
 
-  const decoded = (() => {
-    const tmp = document.createElement('span');
-    let prev = value;
-    for (let i = 0; i < 5; i++) {
-      tmp.innerHTML = prev;
-      const next = tmp.textContent ?? prev;
-      if (next === prev) break;
-      prev = next;
-    }
-    return prev;
-  })();
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditing(true);
+    // Select all text on activation
+    setTimeout(() => {
+      const el = spanRef.current;
+      if (!el) return;
+      el.focus();
+      const sel = window.getSelection();
+      if (sel) { const r = document.createRange(); r.selectNodeContents(el); sel.removeAllRanges(); sel.addRange(r); }
+    }, 0);
+  };
 
-  return <span className={className} style={spanStyle}>{decoded}</span>;
+  const handleBlur = () => {
+    setIsEditing(false);
+    const el = spanRef.current;
+    if (!el) return;
+    const hasFormatting = el.querySelector('[style]') !== null || el.querySelector('a[href]') !== null;
+    onFieldChange?.(field, hasFormatting ? el.innerHTML : (el.textContent ?? ''));
+  };
+
+  return (
+    <span
+      ref={(el) => {
+        (spanRef as React.MutableRefObject<HTMLSpanElement | null>).current = el;
+        if (el && !isEditing) {
+          if (isHtml) { if (el.innerHTML !== value) el.innerHTML = value; }
+          else { if (el.textContent !== decodedValue) el.textContent = decodedValue; }
+        }
+      }}
+      data-editor-field={isEditing ? field : undefined}
+      contentEditable={isEditing}
+      suppressContentEditableWarning
+      onDoubleClick={handleDoubleClick}
+      onBlur={isEditing ? handleBlur : undefined}
+      onKeyDown={isEditing && singleLine ? (e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }) : undefined}
+      className={className}
+      style={{
+        ...spanStyle,
+        ...(isEditing ? { outline: '2px solid rgba(20,184,166,0.5)', outlineOffset: '2px', borderRadius: '4px', cursor: 'text', userSelect: 'text' } : { cursor: 'default', userSelect: 'none' }),
+      }}
+    />
+  );
 }
 
 interface CartItem { product: RichProduct; qty: number; }
