@@ -45,26 +45,18 @@ function isInExcludedSection(el: Element): boolean {
   return false;
 }
 
-type ElType = 'span' | 'text' | 'block' | 'product' | 'feature' | 'testimonial' | 'hero' | 'trust' | 'collection' | 'stat' | 'faq' | 'newsletter' | 'other';
+type ElType = 'span' | 'a' | 'text' | 'div' | 'section' | 'button' | 'svg';
 
 function getElType(el: Element): ElType {
   const tag = el.tagName.toLowerCase();
-  if (tag === 'span' || tag === 'a' || tag === 'strong' || tag === 'em') return 'span';
+  if (tag === 'span') return 'span';
+  if (tag === 'a') return 'a';
+  if (tag === 'svg') return 'svg';
+  if (tag === 'button') return 'button';
+  if (tag === 'div') return 'div';
+  if (tag === 'section' || tag === 'article' || tag === 'header' || tag === 'footer') return 'section';
   if (TEXT_TAGS.has(tag)) return 'text';
-
-  // Detect component type from data-editor-section
-  const section = el.closest('[data-editor-section]')?.getAttribute('data-editor-section');
-  if (section === 'products') return 'product';
-  if (section === 'features') return 'feature';
-  if (section === 'testimonials') return 'testimonial';
-  if (section === 'hero') return 'hero';
-  if (section === 'trust') return 'trust';
-  if (section === 'collections') return 'collection';
-  if (section === 'stats') return 'stat';
-  if (section === 'faq') return 'faq';
-  if (section === 'newsletter') return 'newsletter';
-
-  return 'block';
+  return 'div';
 }
 
 function isBlockEl(el: Element): boolean {
@@ -72,19 +64,13 @@ function isBlockEl(el: Element): boolean {
 }
 
 const TYPE_COLORS: Record<ElType, { hover: string; outline: string; label: string }> = {
-  span:       { hover: 'rgba(16,185,129,0.07)',  outline: 'rgba(16,185,129,0.5)',  label: '#10b981' },
-  text:       { hover: 'rgba(245,158,11,0.07)',  outline: 'rgba(245,158,11,0.5)',  label: '#f59e0b' },
-  block:      { hover: 'rgba(99,120,255,0.07)',  outline: 'rgba(99,120,255,0.45)', label: '#6366f1' },
-  product:    { hover: 'rgba(239,68,68,0.07)',   outline: 'rgba(239,68,68,0.5)',   label: '#ef4444' },
-  feature:    { hover: 'rgba(168,85,247,0.07)',  outline: 'rgba(168,85,247,0.5)',  label: '#a855f7' },
-  testimonial:{ hover: 'rgba(59,130,246,0.07)',  outline: 'rgba(59,130,246,0.5)',  label: '#3b82f6' },
-  hero:       { hover: 'rgba(34,197,94,0.07)',   outline: 'rgba(34,197,94,0.5)',   label: '#22c55e' },
-  trust:      { hover: 'rgba(245,158,11,0.07)',  outline: 'rgba(245,158,11,0.5)',  label: '#f59e0b' },
-  collection: { hover: 'rgba(236,72,153,0.07)',  outline: 'rgba(236,72,153,0.5)',  label: '#ec4899' },
-  stat:       { hover: 'rgba(8,145,178,0.07)',   outline: 'rgba(8,145,178,0.5)',   label: '#0891b2' },
-  faq:        { hover: 'rgba(249,115,22,0.07)',  outline: 'rgba(249,115,22,0.5)',  label: '#f97316' },
-  newsletter: { hover: 'rgba(139,92,46,0.07)',   outline: 'rgba(139,92,46,0.5)',   label: '#8b5c2e' },
-  other:      { hover: 'rgba(107,114,128,0.07)', outline: 'rgba(107,114,128,0.5)', label: '#6b7280' },
+  span:    { hover: 'rgba(16,185,129,0.07)',   outline: 'rgba(16,185,129,0.5)',   label: '#10b981' },
+  a:       { hover: 'rgba(59,130,246,0.07)',   outline: 'rgba(59,130,246,0.5)',   label: '#3b82f6' },
+  text:    { hover: 'rgba(245,158,11,0.07)',   outline: 'rgba(245,158,11,0.5)',   label: '#f59e0b' },
+  div:     { hover: 'rgba(99,120,255,0.07)',   outline: 'rgba(99,120,255,0.45)',  label: '#6366f1' },
+  section: { hover: 'rgba(168,85,247,0.07)',   outline: 'rgba(168,85,247,0.5)',   label: '#a855f7' },
+  button:  { hover: 'rgba(239,68,68,0.07)',    outline: 'rgba(239,68,68,0.5)',    label: '#ef4444' },
+  svg:     { hover: 'rgba(34,197,94,0.07)',    outline: 'rgba(34,197,94,0.5)',    label: '#22c55e' },
 };
 
 interface HoverInfo { rect: Rect; label: string; elType: ElType; }
