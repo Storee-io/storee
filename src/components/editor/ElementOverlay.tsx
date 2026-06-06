@@ -114,9 +114,10 @@ function findTarget(startEl: Element, container: Element): Element | null {
 
       // Check if this is a product card container
       // Pattern 1: .group.cursor-pointer class (most specific)
+      // Prefer inner selectable elements, fall back to product card if no inner elements
       const hasGroupCursorPointer = el.classList.contains('group') && el.classList.contains('cursor-pointer');
       if (hasGroupCursorPointer) {
-        return el;
+        return firstMatch || el;  // Prefer inner element if found
       }
 
       // Stop at section boundaries - don't walk past data-editor-section
