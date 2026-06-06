@@ -15,9 +15,9 @@ function getLabel(el: Element): string {
 function getRelativeRect(el: Element, container: Element): Rect {
   const elRect = el.getBoundingClientRect();
   const containerRect = container.getBoundingClientRect();
-  const scrollTop = (container as HTMLElement).scrollTop || 0;
+  // Position relative to container's visible top-left (no scrollTop — overlay covers visible area only)
   return {
-    top: elRect.top - containerRect.top + scrollTop,
+    top: elRect.top - containerRect.top,
     left: elRect.left - containerRect.left,
     width: elRect.width,
     height: elRect.height,
@@ -114,8 +114,20 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
     };
 
-    // Use elementFromPoint to find the real element under cursor,
-    // bypassing any framer-motion / React portal containment issues
+    // Get the real DOM element under cursor, skipping the overlay div itself
+    const getRealTarget = (x: number, y: number): Element | null => {
+      // Use e.target from mousemove — browser resolves pointer-events:none correctly
+      // so we just need the element at coordinates inside the container
+      const els = document.elementsFromPoint(x, y);
+      // Skip our own overlay elements (they have data-overlay attribute)
+      for (const el of els) {
+        if ((el as HTMLElement).dataset?.overlay) continue;
+        if (!container.contains(el) && el !== container) continue;
+        return el;
+      }
+      return null;
+    };
+
     const handleMouseMove = (e: MouseEvent) => {
       if (!isInContainer(e.clientX, e.clientY)) {
         setHovered(null);
@@ -123,9 +135,8 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
         return;
       }
 
-      // elementFromPoint gives the topmost visible element at cursor position
-      const target = document.elementFromPoint(e.clientX, e.clientY);
-      if (!target) { setHovered(null); return; }
+      const target = getRealTarget(e.clientX, e.clientY);
+      if (!target) { setHovered(null); lastHoveredEl.current = null; return; }
 
       const el = findTarget(target, container);
       if (!el) { setHovered(null); lastHoveredEl.current = null; return; }
@@ -142,7 +153,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       if ((e.target as HTMLElement)?.isContentEditable) return;
       if ((e.target as Element)?.closest('[contenteditable]')) return;
 
-      const target = document.elementFromPoint(e.clientX, e.clientY);
+      const target = getRealTarget(e.clientX, e.clientY);
       if (!target) return;
 
       const el = findTarget(target, container);
@@ -185,7 +196,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
   if (!editMode) return null;
 
   return (
-    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 40, overflow: 'hidden' }}>
+    <div data-overlay="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 40, overflow: 'hidden' }}>
       {/* Hover overlay — semi-transparent fill */}
       {hovered && hovered.rect.width > 0 && (() => {
         const c = TYPE_COLORS[hovered.elType];
