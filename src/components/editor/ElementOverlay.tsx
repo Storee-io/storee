@@ -105,6 +105,13 @@ function findTarget(startEl: Element, container: Element): Element | null {
       // Store first match (innermost selectable)
       if (!firstMatch) firstMatch = el;
 
+      // For text containers (p, h1-h6, blockquote), prefer parent over inline children (span, a, etc.)
+      // This ensures selecting "text" element (orange) instead of "span" (teal)
+      const tag = el.tagName.toLowerCase();
+      if (tag === 'p' || tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6' || tag === 'blockquote') {
+        firstMatch = el;  // Update to prefer parent block container
+      }
+
       // Check if this is a product card container
       // Pattern 1: .group.cursor-pointer class (most specific)
       const hasGroupCursorPointer = el.classList.contains('group') && el.classList.contains('cursor-pointer');
