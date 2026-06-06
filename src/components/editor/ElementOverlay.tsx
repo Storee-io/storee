@@ -112,12 +112,6 @@ function findTarget(startEl: Element, container: Element): Element | null {
         return el;
       }
 
-      // For button tags: if we have a firstMatch (inner text element), prefer it over button container
-      const tag = el.tagName.toLowerCase();
-      if (tag === 'button' && firstMatch) {
-        return firstMatch;
-      }
-
       // Stop at section boundaries - don't walk past data-editor-section
       if (el.hasAttribute('data-editor-section')) {
         return firstMatch || el;
