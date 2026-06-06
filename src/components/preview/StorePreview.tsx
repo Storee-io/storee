@@ -200,15 +200,9 @@ function EmojiIcon({
 // Uses a callback ref so external value syncs to DOM without disrupting cursor.
 
 function EditSpan({
-  field,
   value,
-  editMode,
-  onFieldChange,
-  onPositionChange,
-  fieldOffset,
   className,
   style,
-  singleLine,
 }: {
   field: string;
   value: string;
@@ -220,188 +214,14 @@ function EditSpan({
   style?: React.CSSProperties;
   singleLine?: boolean;
 }) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSelected, setIsSelected] = useState(false);
-  const fieldRef = useRef<HTMLSpanElement>(null);
-  const dragStateRef = useRef({ potentialDrag: false, dragStart: { x: 0, y: 0 } });
-
-  const DRAG_THRESHOLD = 5;
-
-  // Use context if props not provided
-  const { fieldOffsets: ctxFieldOffsets, onFieldPositionChange: ctxOnPositionChange } = useFieldPosition();
-  const effectiveOffset = fieldOffset ?? ctxFieldOffsets?.[field];
-  const effectiveOnPositionChange = onPositionChange ?? ctxOnPositionChange;
-
-  const currentOffset = effectiveOffset || { x: 0, y: 0 };
-  const displayOffset = {
-    x: currentOffset.x + dragOffset.x,
-    y: currentOffset.y + dragOffset.y,
-  };
-
-  const handleFieldMouseDown = (e: React.MouseEvent) => {
-    if (!editMode || e.button !== 0) return;
-
-    // Don't allow drag if currently editing text
-    if (isEditing) return;
-
-    // Mark field as selected for drag
-    setIsSelected(true);
-
-    // If position change enabled, start potential drag
-    if (effectiveOnPositionChange) {
-      dragStateRef.current.potentialDrag = true;
-      dragStateRef.current.dragStart = { x: e.clientX, y: e.clientY };
-      setDragOffset({ x: 0, y: 0 });
-    }
-  };
-
-  const handleFieldDoubleClick = (e: React.MouseEvent) => {
-    if (!editMode) return;
-    e.stopPropagation();
-
-    // Enter edit mode on double-click
-    setIsEditing(true);
-    setIsSelected(false);
-
-    // Auto-select word
-    const target = e.currentTarget as HTMLElement;
-    const selection = window.getSelection();
-    if (selection && target) {
-      const range = document.createRange();
-      range.selectNodeContents(target);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-  };
-
-  const handleFieldBlur = () => {
-    setIsEditing(false);
-    setIsSelected(false);
-
-    const el = fieldRef.current;
-    if (!el) return;
-
-    // Save changes
-    const hasFormatting = el.querySelector('[style]') !== null || el.querySelector('a[href]') !== null;
-    onFieldChange?.(field, hasFormatting ? el.innerHTML : (el.textContent ?? ''));
-  };
-
-
-  // Ensure content persists and is not lost during re-renders
-  useEffect(() => {
-    if (!fieldRef.current || isEditing) return;
-
-    const el = fieldRef.current;
-    const isHtml = /<[a-z]/i.test(value);
-
-    // Only sync if content is missing or doesn't match
-    if (isHtml) {
-      if (!el.innerHTML || el.innerHTML !== value) {
-        el.innerHTML = value;
-      }
-    } else {
-      const decoded = (() => {
-        const tmp = document.createElement('span');
-        let prev = value;
-        for (let i = 0; i < 5; i++) {
-          tmp.innerHTML = prev;
-          const next = tmp.textContent ?? prev;
-          if (next === prev) break;
-          prev = next;
-        }
-        return prev;
-      })();
-      if (!el.textContent || el.textContent !== decoded) {
-        el.textContent = decoded;
-      }
-    }
-  }, [value, isEditing]);
-
-
-  // Handle drag movements and end on document level
-  useEffect(() => {
-    const handleDocumentMouseMove = (e: MouseEvent) => {
-      if (!dragStateRef.current.potentialDrag && !isDragging) return;
-
-      const deltaX = e.clientX - dragStateRef.current.dragStart.x;
-      const deltaY = e.clientY - dragStateRef.current.dragStart.y;
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-      // Only start actual drag if moved beyond threshold
-      if (distance > DRAG_THRESHOLD && !isDragging) {
-        setIsDragging(true);
-      }
-
-      if (isDragging || distance > DRAG_THRESHOLD) {
-        setDragOffset({ x: deltaX, y: deltaY });
-      }
-    };
-
-    const handleDocumentMouseUp = () => {
-      if (isDragging) {
-        // Snap to 8px grid
-        const SNAP_GRID = 8;
-        const snappedX = Math.round((currentOffset.x + dragOffset.x) / SNAP_GRID) * SNAP_GRID;
-        const snappedY = Math.round((currentOffset.y + dragOffset.y) / SNAP_GRID) * SNAP_GRID;
-        effectiveOnPositionChange?.(field, { x: snappedX, y: snappedY });
-        setDragOffset({ x: 0, y: 0 });
-        setIsDragging(false);
-      }
-      dragStateRef.current.potentialDrag = false;
-    };
-
-    document.addEventListener('mousemove', handleDocumentMouseMove);
-    document.addEventListener('mouseup', handleDocumentMouseUp);
-
-    return () => {
-      document.removeEventListener('mousemove', handleDocumentMouseMove);
-      document.removeEventListener('mouseup', handleDocumentMouseUp);
-    };
-  }, [isDragging, currentOffset, effectiveOnPositionChange, field, dragOffset]);
-  if (!editMode) {
-    const isHtml = /<[a-z]/i.test(value);
-    // Apply consistent line-height, vertical-align, and display styling in view mode to match edit mode
-    const viewStyle = { ...style, lineHeight: 1, verticalAlign: 'middle' as const, display: 'inline' as const };
-
-    if (isHtml) {
-      // HTML with formatting spans — render as HTML
-      return (
-        <span
-          className={className}
-          style={viewStyle}
-          dangerouslySetInnerHTML={{ __html: value }}
-        />
-      );
-    } else {
-      // Plain text — decode any stale HTML entities (&amp;amp; → &)
-      const decoded = (() => {
-        const tmp = document.createElement('span');
-        let prev = value;
-        for (let i = 0; i < 5; i++) {
-          tmp.innerHTML = prev;
-          const next = tmp.textContent ?? prev;
-          if (next === prev) break;
-          prev = next;
-        }
-        return prev;
-      })();
-      return <span className={className} style={viewStyle}>{decoded}</span>;
-    }
-  }
-  // Common base styles
-  const baseStyle: React.CSSProperties = {
-    whiteSpace: 'inherit',
-    padding: '6px 10px',
-    minHeight: '1.4em',
-    display: 'inline-block',
-    ...style,
-  };
-
-  // Decode value for display
   const isHtml = /<[a-z]/i.test(value);
-  const decodedValue = isHtml ? value : (() => {
+  const spanStyle: React.CSSProperties = { ...style, lineHeight: 1, verticalAlign: 'middle', display: 'inline' };
+
+  if (isHtml) {
+    return <span className={className} style={spanStyle} dangerouslySetInnerHTML={{ __html: value }} />;
+  }
+
+  const decoded = (() => {
     const tmp = document.createElement('span');
     let prev = value;
     for (let i = 0; i < 5; i++) {
@@ -413,62 +233,7 @@ function EditSpan({
     return prev;
   })();
 
-  // EDIT MODE: contenteditable span (only when double-clicked)
-  if (isEditing) {
-    return (
-      <span
-        ref={(el) => {
-          fieldRef.current = el;
-          if (el) {
-            if (isHtml) { if (el.innerHTML !== value) el.innerHTML = value; }
-            else { if (el.textContent !== decodedValue) el.textContent = decodedValue as string; }
-          }
-        }}
-        contentEditable
-        suppressContentEditableWarning
-        data-editor-field={field}
-        onBlur={handleFieldBlur}
-        onKeyDown={singleLine ? (e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }) : undefined}
-        className={className}
-        style={{
-          ...baseStyle,
-          outline: '2px solid rgba(20, 184, 166, 0.5)',
-          outlineOffset: '2px',
-          cursor: 'text',
-          userSelect: 'text',
-          borderRadius: '6px',
-        }}
-      />
-    );
-  }
-
-  // SELECT/DRAG MODE: regular span, no contenteditable (no I-beam cursor)
-  return (
-    <span
-      ref={(el) => {
-        fieldRef.current = el;
-        if (el) {
-          if (isHtml) { if (el.innerHTML !== value) el.innerHTML = value; }
-          else { if (el.textContent !== decodedValue) el.textContent = decodedValue as string; }
-        }
-      }}
-      data-editor-field={field}
-      onDoubleClick={handleFieldDoubleClick}
-      onMouseDown={handleFieldMouseDown}
-      className={className}
-      style={{
-        ...baseStyle,
-        outline: 'none',
-        cursor: isDragging ? 'grabbing' : 'default',
-        backgroundColor: 'transparent',
-        borderRadius: '0px',
-        userSelect: 'none',
-        position: 'relative',
-        transform: `translate(${displayOffset.x}px, ${displayOffset.y}px)`,
-        transition: isDragging ? 'none' : undefined,
-      }}
-    />
-  );
+  return <span className={className} style={spanStyle}>{decoded}</span>;
 }
 
 interface CartItem { product: RichProduct; qty: number; }
