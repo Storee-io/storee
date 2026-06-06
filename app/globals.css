@@ -280,30 +280,38 @@ p *, h1 *, h2 *, h3 *, h4 *, h5 *, h6 * {
   cursor: default !important;
 }
 
-/* Disable hover effects on product cards in edit mode */
-[data-edit-mode="true"] img {
-  transform: scale(1) !important;
-}
-
+/* Disable all hover effects on product cards in edit mode */
 [data-edit-mode="true"] .group:hover {
   transform: none !important;
   box-shadow: none !important;
   text-shadow: none !important;
 }
 
-[data-edit-mode="true"] .group:hover img {
+/* Remove scale/zoom effects on images and elements */
+[data-edit-mode="true"] .group:hover img,
+[data-edit-mode="true"] .group:hover [class*="scale"],
+[data-edit-mode="true"] img {
   transform: scale(1) !important;
 }
 
-[data-edit-mode="true"] [class*="hover:scale"] {
-  transform: scale(1) !important;
+/* Remove all transform animations on hover */
+[data-edit-mode="true"] [class*="hover:scale"],
+[data-edit-mode="true"] [class*="hover:transform"],
+[data-edit-mode="true"] [class*="hover:-translate"],
+[data-edit-mode="true"] [class*="group-hover:scale"],
+[data-edit-mode="true"] [class*="group-hover:transform"] {
+  transform: none !important;
 }
 
-[data-edit-mode="true"] [class*="hover:shadow"] {
+/* Remove box-shadow hover effects */
+[data-edit-mode="true"] [class*="hover:shadow"],
+[data-edit-mode="true"] [class*="group-hover:shadow"] {
   box-shadow: none !important;
 }
 
-[data-edit-mode="true"] [class*="hover:-translate"] {
-  transform: translateY(0) !important;
+/* Remove opacity changes on hover (wishlist, quick add buttons) */
+[data-edit-mode="true"] [class*="group-hover:opacity"],
+[data-edit-mode="true"] [class*="opacity-0"] {
+  opacity: 1 !important;
 }
 
