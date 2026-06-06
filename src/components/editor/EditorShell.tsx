@@ -1363,6 +1363,20 @@ export default function EditorShell({ store, from }: Props) {
               }}
               onMouseUp={() => { dragOriginRef.current = null; }}
               onMouseLeave={() => { dragOriginRef.current = null; }}
+              onClickCapture={(e) => {
+                // In edit mode, prevent navigation but allow selection/editing
+                if (!editMode) return;
+                const target = e.target as HTMLElement;
+                // Allow clicks on editor fields and overlay selections
+                if (target.closest('[data-editor-field]') || target.closest('[data-overlay]')) return;
+                // Block all navigation (links, buttons, divs with onClick, wishlist)
+                if (target.tagName === 'A' || target.tagName === 'BUTTON' ||
+                    target.hasAttribute('onclick') || target.hasAttribute('data-wishlist-btn') ||
+                    (target as any).onclick || target.closest('[data-wishlist-btn]')) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              }}
             >
               <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} onFieldPositionChange={handleFieldPositionChange} onArrayReorder={handleArrayReorder} onPageChange={setCanvasPage} navigateRef={canvasNavigateRef} />
               <ElementOverlay containerRef={previewRef} editMode={editMode} />

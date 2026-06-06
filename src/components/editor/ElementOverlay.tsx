@@ -39,9 +39,9 @@ function shouldSkip(el: Element): boolean {
   return false;
 }
 
-// Skip elements inside these sections
+// All sections are now selectable in edit mode (including products)
 function isInExcludedSection(el: Element): boolean {
-  return !!el.closest('[data-editor-section="products"]');
+  return false;
 }
 
 type ElType = 'span' | 'text' | 'block';
