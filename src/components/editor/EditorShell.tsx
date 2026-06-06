@@ -1364,15 +1364,17 @@ export default function EditorShell({ store, from }: Props) {
               onMouseUp={() => { dragOriginRef.current = null; }}
               onMouseLeave={() => { dragOriginRef.current = null; }}
               onClickCapture={(e) => {
-                // In edit mode, prevent navigation but allow selection/editing
+                // In edit mode, prevent all navigation except selection/editing
                 if (!editMode) return;
                 const target = e.target as HTMLElement;
                 // Allow clicks on editor fields and overlay selections
                 if (target.closest('[data-editor-field]') || target.closest('[data-overlay]')) return;
-                // Block all navigation (links, buttons, divs with onClick, wishlist)
-                if (target.tagName === 'A' || target.tagName === 'BUTTON' ||
-                    target.hasAttribute('onclick') || target.hasAttribute('data-wishlist-btn') ||
-                    (target as any).onclick || target.closest('[data-wishlist-btn]')) {
+                // Block: links, buttons, product cards (divs with onClick), wishlist buttons
+                const isLink = target.tagName === 'A';
+                const isButton = target.tagName === 'BUTTON';
+                const isProductClick = target.closest('.group.cursor-pointer') && (target as any).onclick;
+                const isWishlist = target.hasAttribute('data-wishlist-btn') || target.closest('[data-wishlist-btn]');
+                if (isLink || isButton || isProductClick || isWishlist || target.hasAttribute('onclick')) {
                   e.preventDefault();
                   e.stopPropagation();
                 }
