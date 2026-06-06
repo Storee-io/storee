@@ -116,13 +116,12 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
 
     // Get the real DOM element under cursor, skipping the overlay div itself
     const getRealTarget = (x: number, y: number): Element | null => {
-      // Use e.target from mousemove — browser resolves pointer-events:none correctly
-      // so we just need the element at coordinates inside the container
       const els = document.elementsFromPoint(x, y);
-      // Skip our own overlay elements (they have data-overlay attribute)
       for (const el of els) {
+        // Skip our overlay div
         if ((el as HTMLElement).dataset?.overlay) continue;
-        if (!container.contains(el) && el !== container) continue;
+        // Skip elements outside container
+        if (!container.contains(el)) continue;
         return el;
       }
       return null;
