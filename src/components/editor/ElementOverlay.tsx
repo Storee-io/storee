@@ -114,9 +114,12 @@ function findTarget(startEl: Element, container: Element): Element | null {
 
       // Check if this is a product card container
       // Pattern 1: .group.cursor-pointer class (most specific)
+      // Pattern 2: .group class on div (fallback for variant layouts)
       // Prefer inner selectable elements, fall back to product card if no inner elements
+      const tag = el.tagName.toLowerCase();
       const hasGroupCursorPointer = el.classList.contains('group') && el.classList.contains('cursor-pointer');
-      if (hasGroupCursorPointer) {
+      const hasGroupDiv = tag === 'div' && el.classList.contains('group');
+      if (hasGroupCursorPointer || hasGroupDiv) {
         return firstMatch || el;  // Prefer inner element if found
       }
 
