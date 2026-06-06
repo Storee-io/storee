@@ -246,8 +246,6 @@ function EditSpan({
   }
 
   const handleDoubleClick = (e: React.MouseEvent) => {
-    // Disable editing in testimonials section
-    if ((e.currentTarget as HTMLElement).closest('[data-editor-section="testimonials"]')) return;
     e.stopPropagation();
     setIsEditing(true);
     // Select all text on activation

@@ -38,8 +38,7 @@ function shouldSkip(el: Element): boolean {
 
 // Skip elements inside these sections
 function isInExcludedSection(el: Element): boolean {
-  return !!el.closest('[data-editor-section="products"]') ||
-         !!el.closest('[data-editor-section="testimonials"]');
+  return !!el.closest('[data-editor-section="products"]');
 }
 
 type ElType = 'span' | 'text' | 'block';
