@@ -36,6 +36,15 @@ function shouldSkip(el: Element): boolean {
   return false;
 }
 
+type ElType = 'span' | 'text' | 'block';
+
+function getElType(el: Element): ElType {
+  const tag = el.tagName.toLowerCase();
+  if (tag === 'span' || tag === 'a' || tag === 'strong' || tag === 'em') return 'span';
+  if (TEXT_TAGS.has(tag)) return 'text';
+  return 'block';
+}
+
 function isTextEl(el: Element): boolean {
   return TEXT_TAGS.has(el.tagName.toLowerCase());
 }
@@ -44,7 +53,13 @@ function isBlockEl(el: Element): boolean {
   return BLOCK_TAGS.has(el.tagName.toLowerCase()) || el.tagName.toLowerCase() === 'button';
 }
 
-interface HoverInfo { rect: Rect; label: string; isText: boolean; }
+const TYPE_COLORS: Record<ElType, { hover: string; outline: string; label: string; text: string }> = {
+  span:  { hover: 'rgba(16,185,129,0.07)',  outline: 'rgba(16,185,129,0.5)',  label: '#10b981', text: '#fff' },
+  text:  { hover: 'rgba(245,158,11,0.07)',  outline: 'rgba(245,158,11,0.5)',  label: '#f59e0b', text: '#fff' },
+  block: { hover: 'rgba(99,120,255,0.07)',  outline: 'rgba(99,120,255,0.45)', label: '#6366f1', text: '#fff' },
+};
+
+interface HoverInfo { rect: Rect; label: string; elType: ElType; }
 
 interface ElementOverlayProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -74,6 +89,10 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     if (!lastSelectedEl.current || !containerRef.current) return;
     const rect = getRelativeRect(lastSelectedEl.current, containerRef.current);
     setSelected(prev => prev ? { ...prev, rect } : null);
+    if (lastHoveredEl.current && containerRef.current) {
+      const hRect = getRelativeRect(lastHoveredEl.current, containerRef.current);
+      setHovered(prev => prev ? { ...prev, rect: hRect } : null);
+    }
   }, [containerRef]);
 
   useEffect(() => {
@@ -97,7 +116,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       if (el === lastHoveredEl.current) return;
 
       lastHoveredEl.current = el;
-      setHovered({ rect: getRelativeRect(el, container), label: getLabel(el), isText: isTextEl(el) });
+      setHovered({ rect: getRelativeRect(el, container), label: getLabel(el), elType: getElType(el) });
     };
 
     const handleMouseLeave = () => { setHovered(null); lastHoveredEl.current = null; };
@@ -121,7 +140,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       }
 
       lastSelectedEl.current = el;
-      setSelected({ rect: getRelativeRect(el, container), label: getLabel(el), isText: isTextEl(el) });
+      setSelected({ rect: getRelativeRect(el, container), label: getLabel(el), elType: getElType(el) });
     };
 
     // Click outside = deselect
@@ -154,59 +173,56 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 40, overflow: 'hidden' }}>
       {/* Hover overlay */}
-      {hovered && hovered.rect.width > 0 && (
-        <div style={{
-          position: 'absolute',
-          top: hovered.rect.top,
-          left: hovered.rect.left,
-          width: hovered.rect.width,
-          height: hovered.rect.height,
-          background: hovered.isText ? 'rgba(16, 185, 129, 0.07)' : 'rgba(99, 120, 255, 0.07)',
-          outline: hovered.isText ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(99, 120, 255, 0.35)',
-          borderRadius: 2,
-          pointerEvents: 'none',
-        }}>
-          <span style={{
+      {hovered && hovered.rect.width > 0 && (() => {
+        const c = TYPE_COLORS[hovered.elType];
+        return (
+          <div style={{
             position: 'absolute',
-            top: -20, left: 0,
-            background: hovered.isText ? 'rgba(16,185,129,0.15)' : 'rgba(99,120,255,0.15)',
-            color: hovered.isText ? '#059669' : '#4f46e5',
-            fontSize: 10, fontFamily: 'monospace',
-            padding: '1px 5px', borderRadius: 3,
-            whiteSpace: 'nowrap', pointerEvents: 'none',
+            top: hovered.rect.top, left: hovered.rect.left,
+            width: hovered.rect.width, height: hovered.rect.height,
+            background: c.hover,
+            outline: `1px solid ${c.outline}`,
+            borderRadius: 2, pointerEvents: 'none',
           }}>
-            {hovered.label}
-          </span>
-        </div>
-      )}
+            <span style={{
+              position: 'absolute', top: -20, left: 0,
+              background: c.label + '22',
+              color: c.label,
+              fontSize: 10, fontFamily: 'monospace',
+              padding: '1px 5px', borderRadius: 3,
+              whiteSpace: 'nowrap', pointerEvents: 'none',
+            }}>
+              {hovered.label}
+            </span>
+          </div>
+        );
+      })()}
 
       {/* Selected overlay — outline only, no fill */}
-      {selected && selected.rect.width > 0 && (
-        <div style={{
-          position: 'absolute',
-          top: selected.rect.top,
-          left: selected.rect.left,
-          width: selected.rect.width,
-          height: selected.rect.height,
-          outline: selected.isText ? '2px solid #10b981' : '2px solid #3b82f6',
-          borderRadius: 2,
-          pointerEvents: 'none',
-        }}>
-          <span style={{
+      {selected && selected.rect.width > 0 && (() => {
+        const c = TYPE_COLORS[selected.elType];
+        return (
+          <div style={{
             position: 'absolute',
-            top: -22, left: -1,
-            background: selected.isText ? '#10b981' : '#3b82f6',
-            color: '#fff',
-            fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
-            padding: '2px 6px',
-            borderRadius: '3px 3px 0 0',
-            whiteSpace: 'nowrap',
-            pointerEvents: 'none',
+            top: selected.rect.top, left: selected.rect.left,
+            width: selected.rect.width, height: selected.rect.height,
+            outline: `2px solid ${c.label}`,
+            borderRadius: 2, pointerEvents: 'none',
           }}>
-            {selected.label}
-          </span>
-        </div>
-      )}
+            <span style={{
+              position: 'absolute', top: -22, left: -1,
+              background: c.label,
+              color: '#fff',
+              fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
+              padding: '2px 6px',
+              borderRadius: '3px 3px 0 0',
+              whiteSpace: 'nowrap', pointerEvents: 'none',
+            }}>
+              {selected.label}
+            </span>
+          </div>
+        );
+      })()}
     </div>
   );
 }
