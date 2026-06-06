@@ -8547,7 +8547,12 @@ export default function StorePreview({ store, device, editMode, previewShell, on
   };
 
   const shared = {
-    onProductClick: (p: RichProduct) => { setSelectedProduct(p); setPage('product'); },
+    // In edit mode, block product navigation but allow element selection
+    onProductClick: (p: RichProduct) => {
+      if (editMode) return; // Don't navigate when editing
+      setSelectedProduct(p);
+      setPage('product');
+    },
     onAddToCart: (p: RichProduct, sourceRect?: DOMRect) => addToCart(p, sourceRect),
     onCartClick: () => setShowCartSidebar(true),
     onWishlistClick: () => setPage('wishlist'),
@@ -8569,7 +8574,7 @@ export default function StorePreview({ store, device, editMode, previewShell, on
   const allProducts = (design?.products ?? []) as RichProduct[];
 
   if (page === 'wishlist') {
-    content = <WishlistPage wishlist={wishlist} products={allProducts} onToggleWishlist={toggleWishlist} onAddToCart={addToCart} onProductClick={p => { setSelectedProduct(p); setPage('product'); }} onBack={() => setPage('home')} primaryColor={primaryColor} storeName={storeName} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} device={device} />;
+    content = <WishlistPage wishlist={wishlist} products={allProducts} onToggleWishlist={toggleWishlist} onAddToCart={addToCart} onProductClick={p => { if (!editMode) { setSelectedProduct(p); setPage('product'); } }} onBack={() => setPage('home')} primaryColor={primaryColor} storeName={storeName} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} device={device} />;
   } else if (page === 'product' && selectedProduct) {
     content = <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} onBack={() => setPage('home')} onAddToCart={addToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} layoutStyle={design?.layoutStyle} />;
   } else if (page === 'cart') {

@@ -1364,17 +1364,31 @@ export default function EditorShell({ store, from }: Props) {
               onMouseUp={() => { dragOriginRef.current = null; }}
               onMouseLeave={() => { dragOriginRef.current = null; }}
               onClickCapture={(e) => {
-                // In edit mode, prevent all navigation except selection/editing
+                // In edit mode, prevent ALL clicks except on editor fields and selection overlay
                 if (!editMode) return;
                 const target = e.target as HTMLElement;
-                // Allow clicks on editor fields and overlay selections
+
+                // ALLOW: clicks on editor fields (contenteditable) and overlay (for selection)
                 if (target.closest('[data-editor-field]') || target.closest('[data-overlay]')) return;
-                // Block: links, buttons, product cards (divs with onClick), wishlist buttons
-                const isLink = target.tagName === 'A';
-                const isButton = target.tagName === 'BUTTON';
-                const isProductClick = target.closest('.group.cursor-pointer') && (target as any).onclick;
-                const isWishlist = target.hasAttribute('data-wishlist-btn') || target.closest('[data-wishlist-btn]');
-                if (isLink || isButton || isProductClick || isWishlist || target.hasAttribute('onclick')) {
+
+                // BLOCK: everything else
+                // - Links (a tags)
+                // - Buttons (button, including wishlist)
+                // - Divs with onClick handlers (product cards, etc)
+                // - Any clickable element with cursor-pointer
+                const isLink = target.tagName === 'A' || target.closest('a');
+                const isButton = target.tagName === 'BUTTON' || target.closest('button');
+                const isClickableDiv = target.closest('[onclick]') || target.closest('.cursor-pointer') || target.closest('.group.cursor-pointer');
+                const isWishlist = target.closest('[data-wishlist-btn]');
+
+                if (isLink || isButton || isClickableDiv || isWishlist) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  return;
+                }
+
+                // Final catch-all: block any click that has an onclick attribute anywhere up the tree
+                if (target.closest('[onclick]')) {
                   e.preventDefault();
                   e.stopPropagation();
                 }
