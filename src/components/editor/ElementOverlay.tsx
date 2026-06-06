@@ -33,7 +33,8 @@ const TEXT_TAGS = new Set(['p','h1','h2','h3','h4','h5','h6','span','a','strong'
 // Elements to skip (too small, utility, or not meaningful)
 function shouldSkip(el: Element): boolean {
   const tag = el.tagName.toLowerCase();
-  if (tag === 'svg' || tag === 'path' || tag === 'circle' || tag === 'g' || tag === 'rect' || tag === 'polyline') return true;
+  // Skip only internal SVG path elements, not the SVG container itself
+  if (tag === 'path' || tag === 'circle' || tag === 'g' || tag === 'rect' || tag === 'polyline') return true;
   const rect = el.getBoundingClientRect();
   if (rect.width < 8 || rect.height < 8) return true;
   return false;
