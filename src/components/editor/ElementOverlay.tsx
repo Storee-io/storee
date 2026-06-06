@@ -72,7 +72,8 @@ function findTarget(startEl: Element, container: Element): Element | null {
     // Skip elements that are EditSpan fields (they have their own selection UI)
     if ((el as HTMLElement).dataset?.editorField !== undefined) return null;
     if (el.closest('[data-editor-field]')) return null;
-    if (!shouldSkip(el) && (isTextEl(el) || isBlockEl(el))) return el;
+    // Only allow block elements, skip text elements
+    if (!shouldSkip(el) && isBlockEl(el)) return el;
     el = el.parentElement;
   }
   return null;
