@@ -240,76 +240,10 @@ function EditSpan({
     else { if (el.textContent !== decodedValue) el.textContent = decodedValue; }
   }, [value, isEditing, isHtml, decodedValue]);
 
-  if (!editMode) {
-    if (isHtml) return <span className={className} style={spanStyle} dangerouslySetInnerHTML={{ __html: value }} />;
-    return <span className={className} style={spanStyle}>{decodedValue}</span>;
-  }
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    // Triple click = select all text
-    if (e.detail === 3) {
-      setIsEditing(true);
-      setTimeout(() => {
-        const el = spanRef.current;
-        if (!el) return;
-        el.focus();
-        // Select all text on triple click
-        const sel = window.getSelection();
-        if (sel) {
-          const r = document.createRange();
-          r.selectNodeContents(el);
-          sel.removeAllRanges();
-          sel.addRange(r);
-        }
-      }, 0);
-    }
-  };
-
-  const handleDoubleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsEditing(true);
-    // Let browser's native double-click word selection work
-    // Browser will automatically select the word double-clicked
-    setTimeout(() => {
-      const el = spanRef.current;
-      if (!el) return;
-      el.focus();
-    }, 0);
-  };
-
-  const handleBlur = () => {
-    setIsEditing(false);
-    const el = spanRef.current;
-    if (!el) return;
-    const hasFormatting = el.querySelector('[style]') !== null || el.querySelector('a[href]') !== null;
-    onFieldChange?.(field, hasFormatting ? el.innerHTML : (el.textContent ?? ''));
-  };
-
-  return (
-    <span
-      ref={(el) => {
-        (spanRef as React.MutableRefObject<HTMLSpanElement | null>).current = el;
-        if (el && !isEditing) {
-          if (isHtml) { if (el.innerHTML !== value) el.innerHTML = value; }
-          else { if (el.textContent !== decodedValue) el.textContent = decodedValue; }
-        }
-      }}
-      data-editor-field={isEditing ? field : undefined}
-      contentEditable={isEditing}
-      suppressContentEditableWarning
-      onClick={handleClick}
-      onDoubleClick={handleDoubleClick}
-      onBlur={isEditing ? handleBlur : undefined}
-      onKeyDown={isEditing && singleLine ? (e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }) : undefined}
-      className={className}
-      style={{
-        ...spanStyle,
-        ...(isEditing ? { outline: '2px solid rgba(20,184,166,0.5)', outlineOffset: '2px', borderRadius: '4px', cursor: 'text', userSelect: 'text' } : { cursor: 'default', userSelect: 'none' }),
-      }}
-    />
-  );
+  // In edit mode, only allow component hover & selection (no text editing)
+  // Display text as read-only with ElementOverlay for selection
+  if (isHtml) return <span className={className} style={spanStyle} dangerouslySetInnerHTML={{ __html: value }} />;
+  return <span className={className} style={spanStyle}>{decodedValue}</span>;
 }
 
 interface CartItem { product: RichProduct; qty: number; }
