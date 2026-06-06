@@ -15,10 +15,13 @@ function getLabel(el: Element): string {
 function getRelativeRect(el: Element, container: Element): Rect {
   const elRect = el.getBoundingClientRect();
   const containerRect = container.getBoundingClientRect();
-  // Position relative to container's visible top-left (no scrollTop — overlay covers visible area only)
+  // Overlay is position:absolute inside overflow:auto container, so it covers
+  // the full scrollable content area — positions must include scroll offset.
+  const scrollTop = (container as HTMLElement).scrollTop || 0;
+  const scrollLeft = (container as HTMLElement).scrollLeft || 0;
   return {
-    top: elRect.top - containerRect.top,
-    left: elRect.left - containerRect.left,
+    top: elRect.top - containerRect.top + scrollTop,
+    left: elRect.left - containerRect.left + scrollLeft,
     width: elRect.width,
     height: elRect.height,
   };
