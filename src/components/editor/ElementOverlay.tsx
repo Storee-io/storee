@@ -81,9 +81,7 @@ function findTarget(startEl: Element, container: Element): Element | null {
 }
 
 export default function ElementOverlay({ containerRef, editMode }: ElementOverlayProps) {
-  const [hovered, setHovered] = useState<HoverInfo | null>(null);
   const [selected, setSelected] = useState<HoverInfo | null>(null);
-  const lastHoveredEl = useRef<Element | null>(null);
   const lastSelectedEl = useRef<Element | null>(null);
 
   // Update selected rect on scroll/resize
@@ -91,37 +89,17 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     if (!lastSelectedEl.current || !containerRef.current) return;
     const rect = getRelativeRect(lastSelectedEl.current, containerRef.current);
     setSelected(prev => prev ? { ...prev, rect } : null);
-    if (lastHoveredEl.current && containerRef.current) {
-      const hRect = getRelativeRect(lastHoveredEl.current, containerRef.current);
-      setHovered(prev => prev ? { ...prev, rect: hRect } : null);
-    }
   }, [containerRef]);
 
   useEffect(() => {
     if (!editMode) {
-      setHovered(null);
       setSelected(null);
-      lastHoveredEl.current = null;
       lastSelectedEl.current = null;
       return;
     }
 
     const container = containerRef.current;
     if (!container) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const target = e.target as Element;
-      if (!target || !container.contains(target)) { setHovered(null); return; }
-
-      const el = findTarget(target, container);
-      if (!el) { setHovered(null); return; }
-      if (el === lastHoveredEl.current) return;
-
-      lastHoveredEl.current = el;
-      setHovered({ rect: getRelativeRect(el, container), label: getLabel(el), elType: getElType(el) });
-    };
-
-    const handleMouseLeave = () => { setHovered(null); lastHoveredEl.current = null; };
 
     const handleClick = (e: MouseEvent) => {
       const target = e.target as Element;
@@ -154,16 +132,12 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     };
 
     // Use capture phase so events fire before framer-motion Reorder intercepts them
-    container.addEventListener('mousemove', handleMouseMove, true);
-    container.addEventListener('mouseleave', handleMouseLeave, true);
     container.addEventListener('click', handleClick, true);
     document.addEventListener('click', handleDocClick);
     container.addEventListener('scroll', updateSelectedRect);
     window.addEventListener('resize', updateSelectedRect);
 
     return () => {
-      container.removeEventListener('mousemove', handleMouseMove, true);
-      container.removeEventListener('mouseleave', handleMouseLeave, true);
       container.removeEventListener('click', handleClick, true);
       document.removeEventListener('click', handleDocClick);
       container.removeEventListener('scroll', updateSelectedRect);
@@ -175,32 +149,6 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
 
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 40, overflow: 'hidden' }}>
-      {/* Hover overlay */}
-      {hovered && hovered.rect.width > 0 && (() => {
-        const c = TYPE_COLORS[hovered.elType];
-        return (
-          <div style={{
-            position: 'absolute',
-            top: hovered.rect.top, left: hovered.rect.left,
-            width: hovered.rect.width, height: hovered.rect.height,
-            background: c.hover,
-            outline: `1px solid ${c.outline}`,
-            borderRadius: 2, pointerEvents: 'none',
-          }}>
-            <span style={{
-              position: 'absolute', top: -20, left: 0,
-              background: c.label + '22',
-              color: c.label,
-              fontSize: 10, fontFamily: 'monospace',
-              padding: '1px 5px', borderRadius: 3,
-              whiteSpace: 'nowrap', pointerEvents: 'none',
-            }}>
-              {hovered.label}
-            </span>
-          </div>
-        );
-      })()}
-
       {/* Selected overlay — outline only, no fill */}
       {selected && selected.rect.width > 0 && (() => {
         const c = TYPE_COLORS[selected.elType];
