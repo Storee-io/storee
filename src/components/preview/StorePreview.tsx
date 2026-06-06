@@ -245,17 +245,37 @@ function EditSpan({
     return <span className={className} style={spanStyle}>{decodedValue}</span>;
   }
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    // Triple click = select all text
+    if (e.detail === 3) {
+      setIsEditing(true);
+      setTimeout(() => {
+        const el = spanRef.current;
+        if (!el) return;
+        el.focus();
+        // Select all text on triple click
+        const sel = window.getSelection();
+        if (sel) {
+          const r = document.createRange();
+          r.selectNodeContents(el);
+          sel.removeAllRanges();
+          sel.addRange(r);
+        }
+      }, 0);
+    }
+  };
+
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsEditing(true);
-    // Let browser's native double-click selection handle word selection
-    // Triple-click will select all text (browser default behavior)
+    // Let browser's native double-click word selection work
+    // Browser will automatically select the word double-clicked
     setTimeout(() => {
       const el = spanRef.current;
       if (!el) return;
       el.focus();
-      // Don't override selection - let browser's native behavior handle it
-      // Double click = word selection, triple click = all text
     }, 0);
   };
 
@@ -279,6 +299,7 @@ function EditSpan({
       data-editor-field={isEditing ? field : undefined}
       contentEditable={isEditing}
       suppressContentEditableWarning
+      onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       onBlur={isEditing ? handleBlur : undefined}
       onKeyDown={isEditing && singleLine ? (e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }) : undefined}
