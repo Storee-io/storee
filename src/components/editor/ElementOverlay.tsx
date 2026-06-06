@@ -153,17 +153,18 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       }
     };
 
-    container.addEventListener('mousemove', handleMouseMove);
-    container.addEventListener('mouseleave', handleMouseLeave);
-    container.addEventListener('click', handleClick);
+    // Use capture phase so events fire before framer-motion Reorder intercepts them
+    container.addEventListener('mousemove', handleMouseMove, true);
+    container.addEventListener('mouseleave', handleMouseLeave, true);
+    container.addEventListener('click', handleClick, true);
     document.addEventListener('click', handleDocClick);
     container.addEventListener('scroll', updateSelectedRect);
     window.addEventListener('resize', updateSelectedRect);
 
     return () => {
-      container.removeEventListener('mousemove', handleMouseMove);
-      container.removeEventListener('mouseleave', handleMouseLeave);
-      container.removeEventListener('click', handleClick);
+      container.removeEventListener('mousemove', handleMouseMove, true);
+      container.removeEventListener('mouseleave', handleMouseLeave, true);
+      container.removeEventListener('click', handleClick, true);
       document.removeEventListener('click', handleDocClick);
       container.removeEventListener('scroll', updateSelectedRect);
       window.removeEventListener('resize', updateSelectedRect);
