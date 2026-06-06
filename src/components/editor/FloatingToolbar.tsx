@@ -785,6 +785,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
           // Reset to allow re-selecting same value
           (e.target as HTMLSelectElement).value = '';
         }}
+        onBlur={() => restoreRange()}
         className={selectCls + ' max-w-[72px]'}
       >
         {FONT_FAMILIES.map(f => (
@@ -804,6 +805,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
           }
           // Let updateCurrentFontSize handle the state update via refresh
         }}
+        onBlur={() => restoreRange()}
         className={selectCls + ' w-[46px]'}
       >
         <option value="">---</option>
@@ -890,6 +892,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
           // Reset to allow re-selecting same value
           (e.target as HTMLSelectElement).value = '1.5';
         }}
+        onBlur={() => restoreRange()}
         className={selectCls + ' w-[48px]'}
       >
         {LINE_HEIGHTS.map(l => (
