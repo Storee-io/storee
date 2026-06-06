@@ -95,10 +95,18 @@ function findTarget(startEl: Element, container: Element): Element | null {
 export default function ElementOverlay({ containerRef, editMode }: ElementOverlayProps) {
   const [hovered, setHovered] = useState<HoverInfo | null>(null);
   const [selected, setSelected] = useState<HoverInfo | null>(null);
+  const [overlayHeight, setOverlayHeight] = useState(0);
   const lastHoveredEl = useRef<Element | null>(null);
   const lastSelectedEl = useRef<Element | null>(null);
 
+  const updateOverlayHeight = useCallback(() => {
+    if (containerRef.current) {
+      setOverlayHeight(containerRef.current.scrollHeight);
+    }
+  }, [containerRef]);
+
   const updateSelectedRect = useCallback(() => {
+    updateOverlayHeight();
     if (!lastSelectedEl.current || !containerRef.current) return;
     const rect = getRelativeRect(lastSelectedEl.current, containerRef.current);
     setSelected(prev => prev ? { ...prev, rect } : null);
@@ -106,7 +114,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       const hRect = getRelativeRect(lastHoveredEl.current, containerRef.current);
       setHovered(prev => prev ? { ...prev, rect: hRect } : null);
     }
-  }, [containerRef]);
+  }, [containerRef, updateOverlayHeight]);
 
   useEffect(() => {
     if (!editMode) {
@@ -119,6 +127,9 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
 
     const container = containerRef.current;
     if (!container) return;
+
+    // Set initial overlay height to cover full scrollable content
+    updateOverlayHeight();
 
     // e.target from document mousemove correctly respects pointer-events:none on the overlay.
     // We rely on findTarget's DOM walk to scope results to within the container —
@@ -185,12 +196,12 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       container.removeEventListener('scroll', updateSelectedRect);
       window.removeEventListener('resize', updateSelectedRect);
     };
-  }, [editMode, containerRef, updateSelectedRect]);
+  }, [editMode, containerRef, updateSelectedRect, updateOverlayHeight]);
 
   if (!editMode) return null;
 
   return (
-    <div data-overlay="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 40, overflow: 'hidden' }}>
+    <div data-overlay="true" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: overlayHeight || '100%', pointerEvents: 'none', zIndex: 40, overflow: 'visible' }}>
       {/* Hover overlay — semi-transparent fill */}
       {hovered && hovered.rect.width > 0 && (() => {
         const c = TYPE_COLORS[hovered.elType];
