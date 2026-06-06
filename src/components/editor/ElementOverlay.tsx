@@ -36,9 +36,10 @@ function shouldSkip(el: Element): boolean {
   return false;
 }
 
-// Skip elements inside products section
-function isInProductsSection(el: Element): boolean {
-  return !!el.closest('[data-editor-section="products"]');
+// Skip elements inside these sections
+function isInExcludedSection(el: Element): boolean {
+  return !!el.closest('[data-editor-section="products"]') ||
+         !!el.closest('[data-editor-section="testimonials"]');
 }
 
 type ElType = 'span' | 'text' | 'block';
@@ -72,7 +73,7 @@ function findTarget(startEl: Element, container: Element): Element | null {
   while (el && el !== container) {
     if ((el as HTMLElement).dataset?.editorField !== undefined) return null;
     if (el.closest('[data-editor-field]')) return null;
-    if (isInProductsSection(el)) return null;
+    if (isInExcludedSection(el)) return null;
     const tag = el.tagName.toLowerCase();
     if (!shouldSkip(el) && (tag === 'span' || tag === 'a' || tag === 'strong' || tag === 'em' || isBlockEl(el))) return el;
     el = el.parentElement;
