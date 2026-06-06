@@ -121,7 +121,7 @@ export default function Editor() {
   const [saved, setSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Local editable state â€” mirrors store design
+  // Local editable state — mirrors store design
   const design = activeStore?.design;
 
   const [storeName, setStoreName]       = useState(activeStore?.name ?? '');
@@ -159,7 +159,7 @@ export default function Editor() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeStore?.id, activeStore?.design, activeStore?.primaryColor]);
 
-  // Live preview store â€” merges edits into activeStore shape
+  // Live preview store — merges edits into activeStore shape
   const liveStore = activeStore ? {
     ...activeStore,
     name: storeName,

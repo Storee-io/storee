@@ -476,7 +476,7 @@ export default function CanvasShell({ store, from }: Props) {
       {/* â”€â”€ Top bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="bg-white border-b border-slate-200 px-4 sm:px-6 h-12 flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
 
-        {/* Left â€” back + store name */}
+        {/* Left — back + store name */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <Tip label="Back to Preview">
             <button
@@ -500,7 +500,7 @@ export default function CanvasShell({ store, from }: Props) {
           }
         </div>
 
-        {/* Center â€” device switcher + edit/preview toggle */}
+        {/* Center — device switcher + edit/preview toggle */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <div className="flex items-center bg-slate-100 rounded-xl h-8 px-[3px] gap-0.5">
             {([
@@ -540,7 +540,7 @@ export default function CanvasShell({ store, from }: Props) {
           </div>
         </div>
 
-        {/* Right â€” live link + save */}
+        {/* Right — live link + save */}
         <div className="flex items-center gap-1 flex-1 justify-end">
           {storefrontUrl && (
             <Tip label="View live store">
@@ -834,7 +834,7 @@ export default function CanvasShell({ store, from }: Props) {
         {/* â”€â”€ Preview area â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <main className="flex-1 overflow-hidden bg-slate-100 flex justify-center">
 
-          {/* Floating text-format toolbar â€” fixed position, escapes overflow */}
+          {/* Floating text-format toolbar — fixed position, escapes overflow */}
           <FloatingToolbar editMode={editMode} containerRef={previewRef} />
 
           {/* Edit mode hint bar */}
@@ -855,7 +855,7 @@ export default function CanvasShell({ store, from }: Props) {
           {/*
             transform:translateZ(0) is on the FRAME WRAPPER (not the scroll div).
             This makes position:fixed descendants contained by the frame wrapper
-            rather than the viewport â€” so overlays are sticky to the frame.
+            rather than the viewport — so overlays are sticky to the frame.
             The scroll div is kept separate so that scrolling the content does NOT
             move the fixed overlays (fixed inside a scrollable transform = scrolls).
           */}
@@ -873,7 +873,7 @@ export default function CanvasShell({ store, from }: Props) {
               position: 'relative',
             }}
           >
-            {/* Scroll container â€” no transform so fixed children don't scroll with it */}
+            {/* Scroll container — no transform so fixed children don't scroll with it */}
             <div
               ref={previewRef}
               style={{

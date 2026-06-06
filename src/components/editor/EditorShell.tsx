@@ -799,7 +799,7 @@ export default function EditorShell({ store, from }: Props) {
       {/* â"€â"€ Top bar â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
       <div className="bg-white border-b border-slate-200 px-4 sm:px-6 h-12 flex items-center gap-3 flex-shrink-0 z-10" style={{ isolation: 'isolate', boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>
 
-        {/* Left â€" back + store name */}
+        {/* Left — back + store name */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <Tip label="Back to Preview">
             <button
@@ -1328,7 +1328,7 @@ export default function EditorShell({ store, from }: Props) {
           {/*
             transform:translateZ(0) is on the FRAME WRAPPER (not the scroll div).
             This makes position:fixed descendants contained by the frame wrapper
-            rather than the viewport â€" so overlays are sticky to the frame.
+            rather than the viewport — so overlays are sticky to the frame.
             The scroll div is kept separate so that scrolling the content does NOT
             move the fixed overlays (fixed inside a scrollable transform = scrolls).
           */}
