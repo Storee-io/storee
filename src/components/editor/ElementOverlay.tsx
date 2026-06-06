@@ -81,25 +81,22 @@ function findTarget(startEl: Element, container: Element): Element | null {
   if (!insideContainer) return null;
 
   let el: Element | null = startEl;
-  let candidates: Element[] = [];
+  let firstMatch: Element | null = null;
 
-  // Walk up and collect all selectable elements
   while (el && el !== container) {
     if ((el as HTMLElement).dataset?.editorField !== undefined) return null;
     if (el.closest('[data-editor-field]')) return null;
     if (isInExcludedSection(el)) return null;
 
     const tag = el.tagName.toLowerCase();
-
-    // Check if selectable: span/inline OR block element
-    const isText = tag === 'span' || tag === 'a' || tag === 'strong' || tag === 'em';
-    const isBlock = isBlockEl(el);
-    const isSelectable = !shouldSkip(el) && (isText || isBlock);
+    const isSelectable = !shouldSkip(el) && (tag === 'span' || tag === 'a' || tag === 'strong' || tag === 'em' || isBlockEl(el));
 
     if (isSelectable) {
-      candidates.push(el);
+      // Store first match (innermost selectable)
+      if (!firstMatch) firstMatch = el;
 
-      // If found product card (.group.cursor-pointer), prefer it
+      // Check if this is a product card (.group.cursor-pointer)
+      // If so, return it (prefer the card container)
       if (el.classList.contains('group') && el.classList.contains('cursor-pointer')) {
         return el;
       }
@@ -108,15 +105,8 @@ function findTarget(startEl: Element, container: Element): Element | null {
     el = el.parentElement;
   }
 
-  // Return outermost (last) candidate that is a block element
-  for (let i = candidates.length - 1; i >= 0; i--) {
-    if (isBlockEl(candidates[i])) {
-      return candidates[i];
-    }
-  }
-
-  // Fallback: return innermost candidate
-  return candidates.length > 0 ? candidates[0] : null;
+  // Return innermost selectable match
+  return firstMatch;
 }
 
 export default function ElementOverlay({ containerRef, editMode }: ElementOverlayProps) {
