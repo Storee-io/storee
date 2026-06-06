@@ -3083,7 +3083,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
           {collections.map((c, i) => (
             <button key={i} onClick={() => setSelectedCol(i)} className="flex items-center gap-2 text-xs transition-all px-5 py-2"
               style={selectedCol === i ? { background: primaryColor, color: btnText, letterSpacing: '0.14em', fontFamily: 'system-ui' } : { color: '#8a7a6a', letterSpacing: '0.14em', fontFamily: 'system-ui' }}>
-              {c.emoji} {c.name.toUpperCase()}
+              <span>{c.emoji}</span> <span>{c.name.toUpperCase()}</span>
             </button>
           ))}
         </div>
@@ -3630,7 +3630,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
           {collections.map((c, i) => (
             <button key={i} onClick={() => setSelectedCol(i)} className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold border-2 transition-all hover:scale-105"
               style={selectedCol === i ? { background: primaryColor, borderColor: primaryColor, color: heroTextColor } : { borderColor: tt.surfaceBorder, color: tt.textPrimary }}>
-              <span className="text-base">{c.emoji}</span> {c.name}
+              <span className="text-base">{c.emoji}</span> <span>{c.name}</span>
             </button>
           ))}
         </div>
@@ -7504,7 +7504,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
                     style={selectedCol === i
                       ? { background: tt.textPrimary, color: tt.pageBg, borderRadius: tt.btnRadius }
                       : { background: 'transparent', color: tt.textSecondary, border: `1px solid ${tt.divider}`, borderRadius: tt.btnRadius }}>
-                    <span>{c.emoji}</span> {c.name}
+                    <span>{c.emoji}</span> <span>{c.name}</span>
                   </button>
                 ))}
               </div>
