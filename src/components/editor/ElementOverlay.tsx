@@ -106,15 +106,15 @@ function findTarget(startEl: Element, container: Element): Element | null {
       if (!firstMatch) firstMatch = el;
 
       // Check if this is a product card container
-      // Pattern 1: .group.cursor-pointer class
+      // Pattern 1: .group.cursor-pointer class (most specific)
       const hasGroupCursorPointer = el.classList.contains('group') && el.classList.contains('cursor-pointer');
-      // Pattern 2: has onClick handler + contains img and text children (typical product card pattern)
-      const hasOnClick = (el as any).onclick !== null || el.getAttribute('onclick') !== null;
-      const hasProductContent = el.querySelector('img') && (el.querySelector('p') || el.querySelector('span'));
-      const isProductCard = hasGroupCursorPointer || (hasOnClick && hasProductContent);
-
-      if (isProductCard) {
+      if (hasGroupCursorPointer) {
         return el;
+      }
+
+      // Stop at section boundaries - don't walk past data-editor-section
+      if (el.hasAttribute('data-editor-section')) {
+        return firstMatch || el;
       }
     }
 
