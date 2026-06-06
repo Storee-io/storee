@@ -315,3 +315,10 @@ p *, h1 *, h2 *, h3 *, h4 *, h5 *, h6 * {
   opacity: 1 !important;
 }
 
+/* Disable all transitions and animations in edit mode */
+[data-edit-mode="true"] [class*="transition"],
+[data-edit-mode="true"] [class*="animate"] {
+  transition: none !important;
+  animation: none !important;
+}
+
