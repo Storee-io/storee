@@ -458,11 +458,10 @@ function EditSpan({
       className={className}
       style={{
         ...baseStyle,
-        outline: isSelected ? '2px solid rgba(20, 184, 166, 0.5)' : 'none',
-        outlineOffset: isSelected ? '2px' : '0px',
-        cursor: isDragging ? 'grabbing' : (isSelected ? 'grab' : 'default'),
-        backgroundColor: isSelected ? 'rgba(20, 184, 166, 0.08)' : 'transparent',
-        borderRadius: isSelected ? '6px' : '0px',
+        outline: 'none',
+        cursor: isDragging ? 'grabbing' : 'default',
+        backgroundColor: 'transparent',
+        borderRadius: '0px',
         userSelect: 'none',
         position: 'relative',
         transform: `translate(${displayOffset.x}px, ${displayOffset.y}px)`,
