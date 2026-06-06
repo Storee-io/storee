@@ -260,10 +260,12 @@
   cursor: default !important;
   -webkit-user-select: none;
   user-select: none;
+  outline: none !important;
 }
 
 [data-editor-field]:focus {
   cursor: text !important;
   -webkit-user-select: text;
   user-select: text;
+  outline: none !important;
 }
