@@ -161,6 +161,7 @@ interface DragState {
   maxWidth: number;
   maxHeight: number;
   el: HTMLElement;
+  siblings: HTMLElement[]; // same tag+class elements to sync
   parentRect: DOMRect;
 }
 
@@ -210,6 +211,16 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     const maxWidth = parentRect.right - elRect.left;
     const maxHeight = parentRect.bottom - elRect.top;
 
+    // Find same-type siblings once at drag start (avoid querySelectorAll every frame)
+    const siblings: HTMLElement[] = [];
+    if (container) {
+      const tag = el.tagName.toLowerCase();
+      const cls = el.className;
+      container.querySelectorAll<HTMLElement>(tag).forEach(s => {
+        if (s !== el && s.className === cls) siblings.push(s);
+      });
+    }
+
     dragRef.current = {
       handle,
       startX: e.clientX,
@@ -222,6 +233,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       maxWidth,
       maxHeight,
       el,
+      siblings,
       parentRect,
     };
 
@@ -247,10 +259,15 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
         newH = Math.max(minHeight, startHeight - dy);
       }
 
-      // Apply size to actual element
+      // Apply size to actual element + same-type siblings (realtime sync)
       el.style.width = `${newW}px`;
       el.style.height = `${newH}px`;
       el.style.boxSizing = 'border-box';
+      dragRef.current.siblings.forEach(s => {
+        s.style.width = `${newW}px`;
+        s.style.height = `${newH}px`;
+        s.style.boxSizing = 'border-box';
+      });
 
       // Compute new overlay rect purely from delta — zero getBoundingClientRect calls
       const { startRelRect } = dragRef.current;
@@ -286,20 +303,6 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
         const { el } = dragRef.current;
         const newW = el.style.width;
         const newH = el.style.height;
-
-        // Sync same-type siblings (same tag + same className) inside the container
-        if (newW || newH) {
-          const tag = el.tagName.toLowerCase();
-          const cls = el.className;
-          const siblings = containerRef.current.querySelectorAll<HTMLElement>(tag);
-          siblings.forEach(sibling => {
-            if (sibling !== el && sibling.className === cls) {
-              if (newW) sibling.style.width = newW;
-              if (newH) sibling.style.height = newH;
-              sibling.style.boxSizing = 'border-box';
-            }
-          });
-        }
 
         // Sync React state
         const rect = getRelativeRect(el, containerRef.current);
