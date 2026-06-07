@@ -282,14 +282,32 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     };
 
     const onMouseUp = () => {
-      // Sync React state once on release
-      if (lastSelectedEl.current && containerRef.current) {
-        const rect = getRelativeRect(lastSelectedEl.current, containerRef.current);
+      if (dragRef.current && containerRef.current) {
+        const { el } = dragRef.current;
+        const newW = el.style.width;
+        const newH = el.style.height;
+
+        // Sync same-type siblings (same tag + same className) inside the container
+        if (newW || newH) {
+          const tag = el.tagName.toLowerCase();
+          const cls = el.className;
+          const siblings = containerRef.current.querySelectorAll<HTMLElement>(tag);
+          siblings.forEach(sibling => {
+            if (sibling !== el && sibling.className === cls) {
+              if (newW) sibling.style.width = newW;
+              if (newH) sibling.style.height = newH;
+              sibling.style.boxSizing = 'border-box';
+            }
+          });
+        }
+
+        // Sync React state
+        const rect = getRelativeRect(el, containerRef.current);
         setSelected(prev => prev ? { ...prev, rect } : null);
         setOverlayHeight(containerRef.current.scrollHeight);
       }
       dragRef.current = null;
-      didDragRef.current = true; // Flag to suppress the upcoming click event
+      didDragRef.current = true;
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
     };
