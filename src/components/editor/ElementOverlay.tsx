@@ -166,6 +166,9 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
   const lastHoveredEl = useRef<Element | null>(null);
   const lastSelectedEl = useRef<Element | null>(null);
   const dragRef = useRef<DragState | null>(null);
+  // Direct DOM refs for zero-re-render drag updates
+  const selectionBorderRef = useRef<HTMLDivElement | null>(null);
+  const handleElsRef = useRef<(HTMLDivElement | null)[]>([]);
 
   const updateOverlayHeight = useCallback(() => {
     if (containerRef.current) {
@@ -214,7 +217,6 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       let newW = startWidth;
       let newH = startHeight;
 
-      // Calculate max size based on parent bounds
       const elRect = el.getBoundingClientRect();
       const maxW = parentRect.right - elRect.left;
       const maxH = parentRect.bottom - elRect.top;
@@ -232,19 +234,39 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
         newH = Math.max(20, startHeight - dy);
       }
 
+      // Apply size to actual element
       el.style.width = `${newW}px`;
       el.style.height = `${newH}px`;
       el.style.boxSizing = 'border-box';
 
-      // Update overlay rect
+      // Update overlay DOM directly — no React setState, no re-render
       const container = containerRef.current;
       if (container) {
         const rect = getRelativeRect(el, container);
-        setSelected(prev => prev ? { ...prev, rect } : null);
+        if (selectionBorderRef.current) {
+          selectionBorderRef.current.style.top    = `${rect.top}px`;
+          selectionBorderRef.current.style.left   = `${rect.left}px`;
+          selectionBorderRef.current.style.width  = `${rect.width}px`;
+          selectionBorderRef.current.style.height = `${rect.height}px`;
+        }
+        // Update all 8 handle positions directly
+        const handlePositions: HandlePos[] = ['nw','n','ne','e','se','s','sw','w'];
+        handlePositions.forEach((pos, i) => {
+          const hEl = handleElsRef.current[i];
+          if (!hEl) return;
+          const { top, left } = getHandlePosition(pos, rect);
+          hEl.style.top  = `${top}px`;
+          hEl.style.left = `${left}px`;
+        });
       }
     };
 
     const onMouseUp = () => {
+      // Sync React state once on release
+      if (lastSelectedEl.current && containerRef.current) {
+        const rect = getRelativeRect(lastSelectedEl.current, containerRef.current);
+        setSelected(prev => prev ? { ...prev, rect } : null);
+      }
       dragRef.current = null;
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
@@ -374,7 +396,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
         return (
           <>
             {/* Typed-color border */}
-            <div style={{
+            <div ref={selectionBorderRef} style={{
               position: 'absolute',
               top: rect.top, left: rect.left,
               width: rect.width, height: rect.height,
@@ -398,11 +420,12 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
             </div>
 
             {/* Resize handles */}
-            {handles.map(pos => {
+            {handles.map((pos, i) => {
               const { top, left } = getHandlePosition(pos, rect);
               return (
                 <div
                   key={pos}
+                  ref={el => { handleElsRef.current[i] = el; }}
                   data-overlay="true"
                   onMouseDown={(e) => handleResizeStart(e, pos)}
                   style={{
