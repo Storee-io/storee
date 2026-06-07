@@ -155,8 +155,11 @@ interface DragState {
   startY: number;
   startWidth: number;
   startHeight: number;
+  startRelRect: Rect; // element rect relative to container at drag start
   minWidth: number;
   minHeight: number;
+  maxWidth: number;
+  maxHeight: number;
   el: HTMLElement;
   parentRect: DOMRect;
 }
@@ -202,46 +205,46 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     const parentRect = parent ? parent.getBoundingClientRect() : document.body.getBoundingClientRect();
     const elRect = el.getBoundingClientRect();
 
+    const container = containerRef.current;
+    const startRelRect = container ? getRelativeRect(el, container) : { top: 0, left: 0, width: elRect.width, height: elRect.height };
+    const maxWidth = parentRect.right - elRect.left;
+    const maxHeight = parentRect.bottom - elRect.top;
+
     dragRef.current = {
       handle,
       startX: e.clientX,
       startY: e.clientY,
       startWidth: elRect.width,
       startHeight: elRect.height,
+      startRelRect,
       minWidth: 20,
       minHeight: 20,
+      maxWidth,
+      maxHeight,
       el,
       parentRect,
     };
 
     const onMouseMove = (ev: MouseEvent) => {
       if (!dragRef.current || !containerRef.current) return;
-      const { handle, startX, startY, startWidth, startHeight, minWidth, minHeight, el, parentRect } = dragRef.current;
+      const { handle, startX, startY, startWidth, startHeight, minWidth, minHeight, maxWidth, maxHeight, el } = dragRef.current;
       const dx = ev.clientX - startX;
       const dy = ev.clientY - startY;
 
       let newW = startWidth;
       let newH = startHeight;
 
-      const elRect = el.getBoundingClientRect();
-      const maxW = parentRect.right - elRect.left;
-      const maxH = parentRect.bottom - elRect.top;
-
-      // Use pre-measured natural content size (not live scrollWidth which grows with inline style)
-      const minW = minWidth;
-      const minH = minHeight;
-
       if (handle === 'e' || handle === 'ne' || handle === 'se') {
-        newW = Math.max(minW, Math.min(startWidth + dx, maxW));
+        newW = Math.max(minWidth, Math.min(startWidth + dx, maxWidth));
       }
       if (handle === 'w' || handle === 'nw' || handle === 'sw') {
-        newW = Math.max(minW, startWidth - dx);
+        newW = Math.max(minWidth, startWidth - dx);
       }
       if (handle === 's' || handle === 'se' || handle === 'sw') {
-        newH = Math.max(minH, Math.min(startHeight + dy, maxH));
+        newH = Math.max(minHeight, Math.min(startHeight + dy, maxHeight));
       }
       if (handle === 'n' || handle === 'ne' || handle === 'nw') {
-        newH = Math.max(minH, startHeight - dy);
+        newH = Math.max(minHeight, startHeight - dy);
       }
 
       // Apply size to actual element
@@ -249,29 +252,32 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       el.style.height = `${newH}px`;
       el.style.boxSizing = 'border-box';
 
-      // Update overlay DOM directly — no React setState, no re-render
+      // Compute new overlay rect purely from delta — zero getBoundingClientRect calls
+      const { startRelRect } = dragRef.current;
+      const rect: Rect = {
+        top: startRelRect.top,
+        left: startRelRect.left,
+        width: newW,
+        height: newH,
+      };
+
+      if (selectionBorderRef.current) {
+        selectionBorderRef.current.style.top    = `${rect.top}px`;
+        selectionBorderRef.current.style.left   = `${rect.left}px`;
+        selectionBorderRef.current.style.width  = `${rect.width}px`;
+        selectionBorderRef.current.style.height = `${rect.height}px`;
+      }
+      const handlePositions: HandlePos[] = ['nw','n','ne','e','se','s','sw','w'];
+      handlePositions.forEach((pos, i) => {
+        const hEl = handleElsRef.current[i];
+        if (!hEl) return;
+        const { top, left } = getHandlePosition(pos, rect);
+        hEl.style.top  = `${top}px`;
+        hEl.style.left = `${left}px`;
+      });
       const container = containerRef.current;
-      if (container) {
-        const rect = getRelativeRect(el, container);
-        if (selectionBorderRef.current) {
-          selectionBorderRef.current.style.top    = `${rect.top}px`;
-          selectionBorderRef.current.style.left   = `${rect.left}px`;
-          selectionBorderRef.current.style.width  = `${rect.width}px`;
-          selectionBorderRef.current.style.height = `${rect.height}px`;
-        }
-        // Update all 8 handle positions directly
-        const handlePositions: HandlePos[] = ['nw','n','ne','e','se','s','sw','w'];
-        handlePositions.forEach((pos, i) => {
-          const hEl = handleElsRef.current[i];
-          if (!hEl) return;
-          const { top, left } = getHandlePosition(pos, rect);
-          hEl.style.top  = `${top}px`;
-          hEl.style.left = `${left}px`;
-        });
-        // Stretch overlay to match new scrollHeight so it covers full page
-        if (overlayRootRef.current) {
-          overlayRootRef.current.style.height = `${container.scrollHeight}px`;
-        }
+      if (container && overlayRootRef.current) {
+        overlayRootRef.current.style.height = `${container.scrollHeight}px`;
       }
     };
 
