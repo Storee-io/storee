@@ -119,7 +119,7 @@ function findTarget(startEl: Element, container: Element): Element | null {
       const hasGroupCursorPointer = el.classList.contains('group') && el.classList.contains('cursor-pointer');
       const hasGroupDiv = tag === 'div' && el.classList.contains('group');
       if (hasGroupCursorPointer || hasGroupDiv) {
-        return el;  // Always return product card, not inner elements
+        return firstMatch || el;  // Prefer inner element, fall back to card
       }
 
       // Stop at section boundaries - don't walk past data-editor-section
