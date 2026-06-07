@@ -4,6 +4,38 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface Rect { top: number; left: number; width: number; height: number; }
 
+type HandlePos = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
+
+const HANDLE_SIZE = 10;
+const HANDLE_COLOR = '#1e90ff';
+const SELECTION_COLOR = '#1e90ff';
+
+const HANDLE_CURSORS: Record<HandlePos, string> = {
+  nw: 'nwse-resize', n: 'ns-resize', ne: 'nesw-resize',
+  e: 'ew-resize', se: 'nwse-resize', s: 'ns-resize',
+  sw: 'nesw-resize', w: 'ew-resize',
+};
+
+function getHandlePosition(pos: HandlePos, rect: Rect) {
+  const h = HANDLE_SIZE / 2;
+  const { top, left, width, height } = rect;
+  const cx = left + width / 2;
+  const cy = top + height / 2;
+  const r = left + width;
+  const b = top + height;
+  const map: Record<HandlePos, { top: number; left: number }> = {
+    nw: { top: top - h, left: left - h },
+    n:  { top: top - h, left: cx - h },
+    ne: { top: top - h, left: r - h },
+    e:  { top: cy - h,  left: r - h },
+    se: { top: b - h,   left: r - h },
+    s:  { top: b - h,   left: cx - h },
+    sw: { top: b - h,   left: left - h },
+    w:  { top: cy - h,  left: left - h },
+  };
+  return map[pos];
+}
+
 function getLabel(el: Element): string {
   const tag = el.tagName.toLowerCase();
   const cls = el.className && typeof el.className === 'string'
@@ -15,8 +47,6 @@ function getLabel(el: Element): string {
 function getRelativeRect(el: Element, container: Element): Rect {
   const elRect = el.getBoundingClientRect();
   const containerRect = container.getBoundingClientRect();
-  // Overlay is position:absolute inside overflow:auto container, so it covers
-  // the full scrollable content area — positions must include scroll offset.
   const scrollTop = (container as HTMLElement).scrollTop || 0;
   const scrollLeft = (container as HTMLElement).scrollLeft || 0;
   return {
@@ -30,20 +60,15 @@ function getRelativeRect(el: Element, container: Element): Rect {
 const BLOCK_TAGS = new Set(['div','section','article','header','footer','main','aside','nav','form','ul','ol','li','table','tbody','tr','td','th','svg','p','h1','h2','h3','h4','h5','h6']);
 const TEXT_TAGS = new Set(['p','h1','h2','h3','h4','h5','h6','span','a','strong','em','label','blockquote']);
 
-// Elements to skip (too small, utility, or not meaningful)
 function shouldSkip(el: Element): boolean {
   const tag = el.tagName.toLowerCase();
-  // Skip only internal SVG path elements, not the SVG container itself
   if (tag === 'path' || tag === 'circle' || tag === 'g' || tag === 'rect' || tag === 'polyline') return true;
   const rect = el.getBoundingClientRect();
   if (rect.width < 8 || rect.height < 8) return true;
   return false;
 }
 
-// All sections are now selectable in edit mode (including products)
-function isInExcludedSection(el: Element): boolean {
-  return false;
-}
+function isInExcludedSection(_el: Element): boolean { return false; }
 
 type ElType = 'span' | 'a' | 'text' | 'div' | 'section' | 'button' | 'svg';
 
@@ -81,7 +106,6 @@ interface ElementOverlayProps {
 }
 
 function findTarget(startEl: Element, container: Element): Element | null {
-  // Quick containment check using ancestor walk (avoids container.contains() reference issues)
   let check: Element | null = startEl;
   let insideContainer = false;
   while (check) {
@@ -102,27 +126,18 @@ function findTarget(startEl: Element, container: Element): Element | null {
     const isSelectable = !shouldSkip(el) && (tag === 'span' || tag === 'a' || tag === 'strong' || tag === 'em' || isBlockEl(el));
 
     if (isSelectable) {
-      // Store first match (innermost selectable)
       if (!firstMatch) firstMatch = el;
 
-      // For text containers (p, h1-h6, blockquote), prefer parent over inline children (span, a, etc.)
-      // This ensures selecting "text" element (orange) instead of "span" (teal)
-      const tag = el.tagName.toLowerCase();
       if (tag === 'p' || tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6' || tag === 'blockquote') {
-        firstMatch = el;  // Update to prefer parent block container
+        firstMatch = el;
       }
 
-      // Check if this is a product card container
-      // Pattern 1: .group.cursor-pointer class (most specific)
-      // Pattern 2: .group class on div (fallback for variant layouts)
-      // Product cards are treated as atomic units - select card only, not inner elements
       const hasGroupCursorPointer = el.classList.contains('group') && el.classList.contains('cursor-pointer');
       const hasGroupDiv = tag === 'div' && el.classList.contains('group');
       if (hasGroupCursorPointer || hasGroupDiv) {
-        return firstMatch || el;  // Prefer inner element, fall back to card
+        return firstMatch || el;
       }
 
-      // Stop at section boundaries - don't walk past data-editor-section
       if (el.hasAttribute('data-editor-section')) {
         return firstMatch || el;
       }
@@ -131,8 +146,17 @@ function findTarget(startEl: Element, container: Element): Element | null {
     el = el.parentElement;
   }
 
-  // Return innermost selectable match
   return firstMatch;
+}
+
+interface DragState {
+  handle: HandlePos;
+  startX: number;
+  startY: number;
+  startWidth: number;
+  startHeight: number;
+  el: HTMLElement;
+  parentRect: DOMRect;
 }
 
 export default function ElementOverlay({ containerRef, editMode }: ElementOverlayProps) {
@@ -141,6 +165,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
   const [overlayHeight, setOverlayHeight] = useState(0);
   const lastHoveredEl = useRef<Element | null>(null);
   const lastSelectedEl = useRef<Element | null>(null);
+  const dragRef = useRef<DragState | null>(null);
 
   const updateOverlayHeight = useCallback(() => {
     if (containerRef.current) {
@@ -159,6 +184,76 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     }
   }, [containerRef, updateOverlayHeight]);
 
+  // Resize drag handlers
+  const handleResizeStart = useCallback((e: React.MouseEvent, handle: HandlePos) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const el = lastSelectedEl.current as HTMLElement | null;
+    if (!el) return;
+
+    const parent = el.parentElement;
+    const parentRect = parent ? parent.getBoundingClientRect() : document.body.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+
+    dragRef.current = {
+      handle,
+      startX: e.clientX,
+      startY: e.clientY,
+      startWidth: elRect.width,
+      startHeight: elRect.height,
+      el,
+      parentRect,
+    };
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!dragRef.current || !containerRef.current) return;
+      const { handle, startX, startY, startWidth, startHeight, el, parentRect } = dragRef.current;
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+
+      let newW = startWidth;
+      let newH = startHeight;
+
+      // Calculate max size based on parent bounds
+      const elRect = el.getBoundingClientRect();
+      const maxW = parentRect.right - elRect.left;
+      const maxH = parentRect.bottom - elRect.top;
+
+      if (handle === 'e' || handle === 'ne' || handle === 'se') {
+        newW = Math.max(20, Math.min(startWidth + dx, maxW));
+      }
+      if (handle === 'w' || handle === 'nw' || handle === 'sw') {
+        newW = Math.max(20, startWidth - dx);
+      }
+      if (handle === 's' || handle === 'se' || handle === 'sw') {
+        newH = Math.max(20, Math.min(startHeight + dy, maxH));
+      }
+      if (handle === 'n' || handle === 'ne' || handle === 'nw') {
+        newH = Math.max(20, startHeight - dy);
+      }
+
+      el.style.width = `${newW}px`;
+      el.style.height = `${newH}px`;
+      el.style.boxSizing = 'border-box';
+
+      // Update overlay rect
+      const container = containerRef.current;
+      if (container) {
+        const rect = getRelativeRect(el, container);
+        setSelected(prev => prev ? { ...prev, rect } : null);
+      }
+    };
+
+    const onMouseUp = () => {
+      dragRef.current = null;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [containerRef]);
+
   useEffect(() => {
     if (!editMode) {
       setHovered(null);
@@ -171,12 +266,8 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     const container = containerRef.current;
     if (!container) return;
 
-    // Set initial overlay height to cover full scrollable content
     updateOverlayHeight();
 
-    // e.target from document mousemove correctly respects pointer-events:none on the overlay.
-    // We rely on findTarget's DOM walk to scope results to within the container —
-    // elements outside (sidebar etc.) will naturally return null when walking up past container.
     const getTarget = (e: MouseEvent): Element | null => {
       const target = e.target as Element;
       if (!target) return null;
@@ -185,6 +276,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     };
 
     const handleMouseMove = (e: MouseEvent) => {
+      if (dragRef.current) return; // Don't update hover during resize
       const target = getTarget(e);
       if (!target) { setHovered(null); lastHoveredEl.current = null; return; }
 
@@ -199,6 +291,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     const handleMouseLeave = () => { setHovered(null); lastHoveredEl.current = null; };
 
     const handleClick = (e: MouseEvent) => {
+      if (dragRef.current) return;
       const target = getTarget(e);
       if (!target) return;
       if ((target as HTMLElement).isContentEditable) return;
@@ -243,10 +336,13 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
 
   if (!editMode) return null;
 
+  const handles: HandlePos[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+
   return (
     <div data-overlay="true" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: overlayHeight || '100%', pointerEvents: 'none', zIndex: 40, overflow: 'visible' }}>
-      {/* Hover overlay — semi-transparent fill */}
-      {hovered && hovered.rect.width > 0 && (() => {
+
+      {/* Hover overlay */}
+      {hovered && hovered.rect.width > 0 && !selected && (() => {
         const c = TYPE_COLORS[hovered.elType];
         return (
           <div style={{
@@ -259,8 +355,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
           }}>
             <span style={{
               position: 'absolute', top: -20, left: 0,
-              background: c.label + '22',
-              color: c.label,
+              background: c.label + '22', color: c.label,
               fontSize: 10, fontFamily: 'monospace',
               padding: '1px 5px', borderRadius: 3,
               whiteSpace: 'nowrap', pointerEvents: 'none',
@@ -271,29 +366,59 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
         );
       })()}
 
-      {/* Selected overlay — outline only, no fill */}
+      {/* Selected overlay — Framer style */}
       {selected && selected.rect.width > 0 && (() => {
-        const c = TYPE_COLORS[selected.elType];
+        const { rect, label } = selected;
         return (
-          <div style={{
-            position: 'absolute',
-            top: selected.rect.top, left: selected.rect.left,
-            width: selected.rect.width, height: selected.rect.height,
-            outline: `2px solid ${c.label}`,
-            borderRadius: 2, pointerEvents: 'none',
-          }}>
-            <span style={{
-              position: 'absolute', top: -22, left: -1,
-              background: c.label,
-              color: '#fff',
-              fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
-              padding: '2px 6px',
-              borderRadius: '3px 3px 0 0',
-              whiteSpace: 'nowrap', pointerEvents: 'none',
+          <>
+            {/* Blue border */}
+            <div style={{
+              position: 'absolute',
+              top: rect.top, left: rect.left,
+              width: rect.width, height: rect.height,
+              border: `2px solid ${SELECTION_COLOR}`,
+              borderRadius: 2,
+              pointerEvents: 'none',
+              boxSizing: 'border-box',
             }}>
-              {selected.label}
-            </span>
-          </div>
+              {/* Label */}
+              <span style={{
+                position: 'absolute', top: -22, left: -2,
+                background: SELECTION_COLOR,
+                color: '#fff',
+                fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
+                padding: '2px 6px',
+                borderRadius: '3px 3px 0 0',
+                whiteSpace: 'nowrap', pointerEvents: 'none',
+              }}>
+                {label}
+              </span>
+            </div>
+
+            {/* Resize handles */}
+            {handles.map(pos => {
+              const { top, left } = getHandlePosition(pos, rect);
+              return (
+                <div
+                  key={pos}
+                  data-overlay="true"
+                  onMouseDown={(e) => handleResizeStart(e, pos)}
+                  style={{
+                    position: 'absolute',
+                    top, left,
+                    width: HANDLE_SIZE, height: HANDLE_SIZE,
+                    background: '#fff',
+                    border: `2px solid ${HANDLE_COLOR}`,
+                    borderRadius: '50%',
+                    cursor: HANDLE_CURSORS[pos],
+                    pointerEvents: 'auto',
+                    zIndex: 41,
+                    boxSizing: 'border-box',
+                  }}
+                />
+              );
+            })}
+          </>
         );
       })()}
     </div>
