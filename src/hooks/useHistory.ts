@@ -164,7 +164,42 @@ function detectChanges(
   if (pd.trustBadges?.length === cd.trustBadges?.length && JSON.stringify(pd.trustBadges) !== JSON.stringify(cd.trustBadges)) changes.push('Trust badges');
   if (pd.stats?.length === cd.stats?.length && JSON.stringify(pd.stats) !== JSON.stringify(cd.stats)) changes.push('Stats');
 
+  // Element resize / position overrides
+  const prevOv = pd.elementOverrides ?? {};
+  const currOv = cd.elementOverrides ?? {};
+  if (JSON.stringify(prevOv) !== JSON.stringify(currOv)) {
+    // Find which selectors changed and produce human-readable labels
+    const resized: string[] = [];
+    const allKeys = new Set([...Object.keys(prevOv), ...Object.keys(currOv)]);
+    allKeys.forEach(key => {
+      if (JSON.stringify(prevOv[key]) !== JSON.stringify(currOv[key])) {
+        // key format: "tagName|className" → extract tag + first meaningful class
+        const pipeIdx = key.indexOf('|');
+        const tag = pipeIdx > -1 ? key.slice(0, pipeIdx) : key;
+        const className = pipeIdx > -1 ? key.slice(pipeIdx + 1) : '';
+        // Pick the first non-positional Tailwind class as a short identifier
+        const shortClass = className
+          .split(' ')
+          .find(c => c && !['flex','grid','items-center','justify-center','relative','absolute','overflow','w-full','h-full'].some(skip => c.startsWith(skip)));
+        const label = shortClass ? `${tag}.${shortClass}` : tag;
+
+        // Describe what changed (size vs position)
+        const pv = prevOv[key] ?? {};
+        const cv = currOv[key] ?? {};
+        const sizeChanged = pv.width !== cv.width || pv.height !== cv.height;
+        const posChanged  = pv.marginTop !== cv.marginTop || pv.marginLeft !== cv.marginLeft;
+        const action = sizeChanged && posChanged ? 'resized & moved'
+                     : sizeChanged ? 'resized'
+                     : posChanged  ? 'moved'
+                     : 'updated';
+
+        resized.push(`${label} ${action}`);
+      }
+    });
+    if (resized.length) changes.push(...resized);
+  }
+
   // Deduplicate
   const unique = Array.from(new Set(changes));
-  return unique.length > 0 ? `${unique.join(', ')} changed` : 'Updated';
+  return unique.length > 0 ? `${unique.join(', ')}` : 'Updated';
 }
