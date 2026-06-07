@@ -202,24 +202,14 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     const parentRect = parent ? parent.getBoundingClientRect() : document.body.getBoundingClientRect();
     const elRect = el.getBoundingClientRect();
 
-    // Measure natural content size by temporarily clearing inline size
-    const prevW = el.style.width;
-    const prevH = el.style.height;
-    el.style.width = '';
-    el.style.height = '';
-    const naturalW = el.scrollWidth;
-    const naturalH = el.scrollHeight;
-    el.style.width = prevW;
-    el.style.height = prevH;
-
     dragRef.current = {
       handle,
       startX: e.clientX,
       startY: e.clientY,
       startWidth: elRect.width,
       startHeight: elRect.height,
-      minWidth: Math.max(20, naturalW),
-      minHeight: Math.max(20, naturalH),
+      minWidth: 20,
+      minHeight: 20,
       el,
       parentRect,
     };
