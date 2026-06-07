@@ -180,7 +180,8 @@ function detectChanges(
 
         // Describe what changed (size vs position)
         const sizeChanged = pv.width !== cv.width || pv.height !== cv.height;
-        const posChanged  = pv.marginTop !== cv.marginTop || pv.marginLeft !== cv.marginLeft;
+        const posChanged  = pv.marginTop !== cv.marginTop || pv.marginLeft !== cv.marginLeft
+                         || pv.transform !== cv.transform;
         const action = sizeChanged && posChanged ? 'resized & moved'
                      : sizeChanged ? 'resized'
                      : posChanged  ? 'moved'

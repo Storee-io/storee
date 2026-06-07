@@ -7,8 +7,6 @@ interface Rect { top: number; left: number; width: number; height: number; }
 type HandlePos = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
 
 const HANDLE_SIZE = 10;
-const HANDLE_COLOR = '#1e90ff';
-const SELECTION_COLOR = '#1e90ff';
 
 const HANDLE_CURSORS: Record<HandlePos, string> = {
   nw: 'nwse-resize', n: 'ns-resize', ne: 'nesw-resize',
@@ -55,6 +53,13 @@ function getRelativeRect(el: Element, container: Element): Rect {
     width: elRect.width,
     height: elRect.height,
   };
+}
+
+/** Parse translate(x, y) from inline transform style */
+function parseTranslate(el: HTMLElement): { x: number; y: number } {
+  const t = el.style.transform || '';
+  const m = t.match(/translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)/);
+  return m ? { x: parseFloat(m[1]), y: parseFloat(m[2]) } : { x: 0, y: 0 };
 }
 
 const BLOCK_TAGS = new Set(['div','section','article','header','footer','main','aside','nav','form','ul','ol','li','table','tbody','tr','td','th','svg','p','h1','h2','h3','h4','h5','h6']);
@@ -105,6 +110,8 @@ export type ElementStyleOverride = {
   height?: string;
   marginTop?: string;
   marginLeft?: string;
+  /** CSS transform translate, e.g. "translate(40px, -20px)" */
+  transform?: string;
   /** Human-readable label for version history, e.g. "Product card" */
   humanLabel?: string;
 };
@@ -114,7 +121,7 @@ interface ElementOverlayProps {
   editMode: boolean;
   /** Saved overrides to restore on load: Record<"tagName|className", styles> */
   elementOverrides?: Record<string, ElementStyleOverride>;
-  /** Called after each resize drag with the new override for that element */
+  /** Called after each resize/move drag with the new override for that element */
   onElementOverride?: (selector: string, styles: ElementStyleOverride) => void;
 }
 
@@ -128,7 +135,6 @@ function buildHumanLabel(el: Element): string {
   const tag = el.tagName.toLowerCase();
   const cls = (el.className || '').toLowerCase();
 
-  // 1. Check parent section via data-editor-section attribute
   let sectionName = '';
   let ancestor = el.parentElement;
   while (ancestor) {
@@ -137,7 +143,6 @@ function buildHumanLabel(el: Element): string {
     ancestor = ancestor.parentElement;
   }
 
-  // Map data-editor-section values → friendly names
   const SECTION_LABELS: Record<string, string> = {
     hero: 'Hero', trust: 'Trust badges', collections: 'Collections',
     products: 'Products', features: 'Features', testimonials: 'Testimonials',
@@ -146,7 +151,6 @@ function buildHumanLabel(el: Element): string {
     scrollingBanner: 'Banner', instagramFeed: 'Instagram feed',
   };
 
-  // 2. Classify by class keywords
   const CLASS_KEYWORDS: Array<[string, string]> = [
     ['product-card', 'Product card'], ['product', 'Product card'],
     ['trust', 'Trust badge'], ['testimonial', 'Testimonial'],
@@ -159,7 +163,6 @@ function buildHumanLabel(el: Element): string {
     ['collection', 'Collection'], ['category', 'Category'],
   ];
 
-  // 3. Classify by tag
   const TAG_LABELS: Record<string, string> = {
     h1: 'Heading', h2: 'Heading', h3: 'Heading', h4: 'Heading',
     h5: 'Heading', h6: 'Heading',
@@ -172,18 +175,12 @@ function buildHumanLabel(el: Element): string {
     form: 'Form', input: 'Input',
   };
 
-  // Build label: element type + section context
   let elementType = '';
-
-  // Try class keywords first
   for (const [keyword, label] of CLASS_KEYWORDS) {
     if (cls.includes(keyword)) { elementType = label; break; }
   }
-
-  // Fall back to tag label
   if (!elementType) elementType = TAG_LABELS[tag] || 'Element';
 
-  // Combine with section context
   const sectionLabel = SECTION_LABELS[sectionName] ?? '';
   if (sectionLabel && !elementType.toLowerCase().includes(sectionLabel.toLowerCase())) {
     return `${sectionLabel} — ${elementType}`;
@@ -235,55 +232,70 @@ function findTarget(startEl: Element, container: Element): Element | null {
   return firstMatch;
 }
 
+// ── Drag state for resize ─────────────────────────────────────────────────────
 interface DragState {
   handle: HandlePos;
   startX: number;
   startY: number;
   startWidth: number;
   startHeight: number;
-  startRelRect: Rect; // element rect relative to container at drag start
-  startMarginTop: number;  // inline marginTop at drag start (px)
-  startMarginLeft: number; // inline marginLeft at drag start (px)
+  startRelRect: Rect;
+  startMarginTop: number;
+  startMarginLeft: number;
   minWidth: number;
   minHeight: number;
   maxWidth: number;
   maxHeight: number;
   el: HTMLElement;
-  siblings: HTMLElement[]; // same tag+class elements to sync
+  siblings: HTMLElement[];
   parentRect: DOMRect;
 }
 
-export default function ElementOverlay({ containerRef, editMode, elementOverrides, onElementOverride }: ElementOverlayProps) {
-  const [hovered, setHovered] = useState<HoverInfo | null>(null);
-  const [selected, setSelected] = useState<HoverInfo | null>(null);
-  const [overlayHeight, setOverlayHeight] = useState(0);
-  const lastHoveredEl = useRef<Element | null>(null);
-  const lastSelectedEl = useRef<Element | null>(null);
-  const dragRef = useRef<DragState | null>(null);
-  const didDragRef = useRef(false); // Suppress click after drag
-  // Direct DOM refs for zero-re-render drag updates
-  const overlayRootRef = useRef<HTMLDivElement | null>(null);
-  const selectionBorderRef = useRef<HTMLDivElement | null>(null);
-  const handleElsRef = useRef<(HTMLDivElement | null)[]>([]);
+// ── Drag state for move ───────────────────────────────────────────────────────
+interface MoveState {
+  startX: number;
+  startY: number;
+  startTranslateX: number;
+  startTranslateY: number;
+  startRelRect: Rect;
+  el: HTMLElement;
+}
 
-  // Apply saved overrides to DOM whenever overrides change (also handles undo/redo restore)
+export default function ElementOverlay({ containerRef, editMode, elementOverrides, onElementOverride }: ElementOverlayProps) {
+  const [hovered,       setHovered]       = useState<HoverInfo | null>(null);
+  const [selected,      setSelected]      = useState<HoverInfo | null>(null);
+  const [overlayHeight, setOverlayHeight] = useState(0);
+  const [isMoving,      setIsMoving]      = useState(false); // grabbing cursor state
+
+  const lastHoveredEl  = useRef<Element | null>(null);
+  const lastSelectedEl = useRef<Element | null>(null);
+  const dragRef        = useRef<DragState | null>(null);  // resize
+  const moveRef        = useRef<MoveState | null>(null);  // move
+  const didDragRef     = useRef(false);
+
+  // Direct DOM refs — zero re-renders during drag/move
+  const overlayRootRef    = useRef<HTMLDivElement | null>(null);
+  const selectionBorderRef = useRef<HTMLDivElement | null>(null);
+  const handleElsRef      = useRef<(HTMLDivElement | null)[]>([]);
+
+  // ── Apply / clear overrides on load and undo/redo ──────────────────────────
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    // First pass: clear all previously-applied resize styles from every element
-    // (needed when undoing — the old inline styles must be removed before re-applying)
-    const OVERRIDE_PROPS = ['width', 'height', 'margin-top', 'margin-left'] as const;
-    container.querySelectorAll<HTMLElement>('*').forEach(el => {
-      // Only clear elements that had box-sizing set by us (marker that we touched them)
-      if (el.style.boxSizing === 'border-box') {
-        OVERRIDE_PROPS.forEach(p => { el.style.removeProperty(p); });
-        el.style.removeProperty('box-sizing');
-      }
+    // Clear all previously-applied override styles (marker: data-overridden attribute)
+    container.querySelectorAll<HTMLElement>('[data-overridden]').forEach(el => {
+      el.style.removeProperty('width');
+      el.style.removeProperty('height');
+      el.style.removeProperty('margin-top');
+      el.style.removeProperty('margin-left');
+      el.style.removeProperty('transform');
+      el.style.removeProperty('box-sizing');
+      el.removeAttribute('data-overridden');
     });
 
-    // Second pass: re-apply current overrides
     if (!elementOverrides) return;
+
     for (const [selector, styles] of Object.entries(elementOverrides)) {
       const pipeIdx = selector.indexOf('|');
       const tag = selector.slice(0, pipeIdx);
@@ -294,16 +306,16 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
           if (styles.height)     el.style.height     = styles.height;
           if (styles.marginTop)  el.style.marginTop  = styles.marginTop;
           if (styles.marginLeft) el.style.marginLeft = styles.marginLeft;
+          if (styles.transform)  el.style.transform  = styles.transform;
           el.style.boxSizing = 'border-box';
+          el.setAttribute('data-overridden', '1');
         }
       });
     }
   }, [containerRef, elementOverrides]);
 
   const updateOverlayHeight = useCallback(() => {
-    if (containerRef.current) {
-      setOverlayHeight(containerRef.current.scrollHeight);
-    }
+    if (containerRef.current) setOverlayHeight(containerRef.current.scrollHeight);
   }, [containerRef]);
 
   const updateSelectedRect = useCallback(() => {
@@ -317,7 +329,19 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     }
   }, [containerRef, updateOverlayHeight]);
 
-  // Resize drag handlers
+  // ── Helper: emit override after resize or move ────────────────────────────
+  const emitOverride = useCallback((el: HTMLElement) => {
+    if (!onElementOverride) return;
+    const styles: ElementStyleOverride = { humanLabel: buildHumanLabel(el) };
+    if (el.style.width)      styles.width      = el.style.width;
+    if (el.style.height)     styles.height     = el.style.height;
+    if (el.style.marginTop)  styles.marginTop  = el.style.marginTop;
+    if (el.style.marginLeft) styles.marginLeft = el.style.marginLeft;
+    if (el.style.transform)  styles.transform  = el.style.transform;
+    onElementOverride(buildSelector(el), styles);
+  }, [onElementOverride]);
+
+  // ── RESIZE drag ───────────────────────────────────────────────────────────
   const handleResizeStart = useCallback((e: React.MouseEvent, handle: HandlePos) => {
     e.stopPropagation();
     e.preventDefault();
@@ -327,17 +351,15 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     const parent = el.parentElement;
     const parentRect = parent ? parent.getBoundingClientRect() : document.body.getBoundingClientRect();
     const elRect = el.getBoundingClientRect();
-
     const container = containerRef.current;
     const startRelRect = container ? getRelativeRect(el, container) : { top: 0, left: 0, width: elRect.width, height: elRect.height };
 
-    // Only constrain by parent if parent has fixed/explicit height (not auto-sized by content).
-    // For auto-height parents, parentRect.bottom ≈ elRect.bottom which would prevent growing.
-    const parentHasFixedHeight = parent ? (parent as HTMLElement).style.height !== '' || parent.scrollHeight > elRect.height * 1.5 : false;
-    const maxWidth = parentRect.right - elRect.left;
+    const parentHasFixedHeight = parent
+      ? (parent as HTMLElement).style.height !== '' || parent.scrollHeight > elRect.height * 1.5
+      : false;
+    const maxWidth  = parentRect.right  - elRect.left;
     const maxHeight = parentHasFixedHeight ? parentRect.bottom - elRect.top : 99999;
 
-    // Find same-type siblings once at drag start (avoid querySelectorAll every frame)
     const siblings: HTMLElement[] = [];
     if (container) {
       const tag = el.tagName.toLowerCase();
@@ -347,118 +369,71 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       });
     }
 
-    const startMarginTop = parseFloat(el.style.marginTop) || 0;
+    const startMarginTop  = parseFloat(el.style.marginTop)  || 0;
     const startMarginLeft = parseFloat(el.style.marginLeft) || 0;
 
     dragRef.current = {
       handle,
-      startX: e.clientX,
-      startY: e.clientY,
-      startWidth: elRect.width,
-      startHeight: elRect.height,
-      startRelRect,
-      startMarginTop,
-      startMarginLeft,
-      minWidth: 20,
-      minHeight: 20,
-      maxWidth,
-      maxHeight,
-      el,
-      siblings,
-      parentRect,
+      startX: e.clientX, startY: e.clientY,
+      startWidth: elRect.width, startHeight: elRect.height,
+      startRelRect, startMarginTop, startMarginLeft,
+      minWidth: 20, minHeight: 20,
+      maxWidth, maxHeight,
+      el, siblings, parentRect,
     };
 
     const onMouseMove = (ev: MouseEvent) => {
       if (!dragRef.current || !containerRef.current) return;
-      const { handle, startX, startY, startWidth, startHeight, startMarginTop, startMarginLeft, minWidth, minHeight, maxWidth, maxHeight, el } = dragRef.current;
+      const { handle, startX, startY, startWidth, startHeight,
+              startMarginTop, startMarginLeft,
+              minWidth, minHeight, maxWidth, maxHeight, el } = dragRef.current;
       const dx = ev.clientX - startX;
       const dy = ev.clientY - startY;
 
-      let newW = startWidth;
-      let newH = startHeight;
-      let newMarginTop = startMarginTop;
-      let newMarginLeft = startMarginLeft;
+      let newW = startWidth, newH = startHeight;
+      let newMarginTop = startMarginTop, newMarginLeft = startMarginLeft;
 
-      if (handle === 'e' || handle === 'ne' || handle === 'se') {
+      if (handle === 'e' || handle === 'ne' || handle === 'se')
         newW = Math.max(minWidth, Math.min(startWidth + dx, maxWidth));
-      }
       if (handle === 'w' || handle === 'nw' || handle === 'sw') {
-        // West: grow/shrink left edge, right edge stays fixed
-        const clampedDx = Math.min(dx, startWidth - minWidth); // can't shrink past minWidth
+        const clampedDx = Math.min(dx, startWidth - minWidth);
         newW = Math.max(minWidth, startWidth - dx);
         newMarginLeft = startMarginLeft + clampedDx;
       }
-      if (handle === 's' || handle === 'se' || handle === 'sw') {
+      if (handle === 's' || handle === 'se' || handle === 'sw')
         newH = Math.max(minHeight, Math.min(startHeight + dy, maxHeight));
-      }
       if (handle === 'n' || handle === 'ne' || handle === 'nw') {
-        // North: grow/shrink top edge, bottom edge stays fixed
-        const clampedDy = Math.min(dy, startHeight - minHeight); // can't shrink past minHeight
+        const clampedDy = Math.min(dy, startHeight - minHeight);
         newH = Math.max(minHeight, startHeight - dy);
         newMarginTop = startMarginTop + clampedDy;
       }
 
-      // Apply size + margin to actual element (siblings get only size — margin is per-element position)
-      el.style.width = `${newW}px`;
-      el.style.height = `${newH}px`;
-      el.style.marginTop = newMarginTop !== 0 ? `${newMarginTop}px` : '';
+      el.style.width      = `${newW}px`;
+      el.style.height     = `${newH}px`;
+      el.style.marginTop  = newMarginTop  !== 0 ? `${newMarginTop}px`  : '';
       el.style.marginLeft = newMarginLeft !== 0 ? `${newMarginLeft}px` : '';
-      el.style.boxSizing = 'border-box';
+      el.style.boxSizing  = 'border-box';
       dragRef.current.siblings.forEach(s => {
-        s.style.width = `${newW}px`;
-        s.style.height = `${newH}px`;
+        s.style.width = `${newW}px`; s.style.height = `${newH}px`;
         s.style.boxSizing = 'border-box';
       });
 
-      // Compute new overlay rect purely from delta — zero getBoundingClientRect calls
       const { startRelRect } = dragRef.current;
       const rect: Rect = {
-        top: startRelRect.top + (newMarginTop - startMarginTop),
-        left: startRelRect.left + (newMarginLeft - startMarginLeft),
-        width: newW,
-        height: newH,
+        top:    startRelRect.top  + (newMarginTop  - startMarginTop),
+        left:   startRelRect.left + (newMarginLeft - startMarginLeft),
+        width:  newW, height: newH,
       };
-
-      if (selectionBorderRef.current) {
-        selectionBorderRef.current.style.top    = `${rect.top}px`;
-        selectionBorderRef.current.style.left   = `${rect.left}px`;
-        selectionBorderRef.current.style.width  = `${rect.width}px`;
-        selectionBorderRef.current.style.height = `${rect.height}px`;
-      }
-      const handlePositions: HandlePos[] = ['nw','n','ne','e','se','s','sw','w'];
-      handlePositions.forEach((pos, i) => {
-        const hEl = handleElsRef.current[i];
-        if (!hEl) return;
-        const { top, left } = getHandlePosition(pos, rect);
-        hEl.style.top  = `${top}px`;
-        hEl.style.left = `${left}px`;
-      });
-      const container = containerRef.current;
-      if (container && overlayRootRef.current) {
-        overlayRootRef.current.style.height = `${container.scrollHeight}px`;
-      }
+      updateSelectionDOM(rect);
     };
 
     const onMouseUp = () => {
       if (dragRef.current && containerRef.current) {
         const { el } = dragRef.current;
-
-        // Sync React state
         const rect = getRelativeRect(el, containerRef.current);
         setSelected(prev => prev ? { ...prev, rect } : null);
         setOverlayHeight(containerRef.current.scrollHeight);
-
-        // Emit override for persistence (undo/redo + autosave)
-        if (onElementOverride) {
-          const styles: ElementStyleOverride = {
-            humanLabel: buildHumanLabel(el),
-          };
-          if (el.style.width)      styles.width      = el.style.width;
-          if (el.style.height)     styles.height     = el.style.height;
-          if (el.style.marginTop)  styles.marginTop  = el.style.marginTop;
-          if (el.style.marginLeft) styles.marginLeft = el.style.marginLeft;
-          onElementOverride(buildSelector(el), styles);
-        }
+        emitOverride(el);
       }
       dragRef.current = null;
       didDragRef.current = true;
@@ -468,14 +443,96 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-  }, [containerRef, onElementOverride]);
+  }, [containerRef, emitOverride]);
 
+  // ── MOVE drag ─────────────────────────────────────────────────────────────
+  const handleMoveStart = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const el = lastSelectedEl.current as HTMLElement | null;
+    if (!el || !containerRef.current) return;
+
+    const { x: startTranslateX, y: startTranslateY } = parseTranslate(el);
+    const startRelRect = getRelativeRect(el, containerRef.current);
+
+    moveRef.current = {
+      startX: e.clientX, startY: e.clientY,
+      startTranslateX, startTranslateY,
+      startRelRect, el,
+    };
+
+    setIsMoving(true);
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!moveRef.current) return;
+      const { startX, startY, startTranslateX, startTranslateY, startRelRect, el } = moveRef.current;
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+
+      const newTx = startTranslateX + dx;
+      const newTy = startTranslateY + dy;
+
+      el.style.transform = `translate(${newTx}px, ${newTy}px)`;
+      el.setAttribute('data-overridden', '1');
+
+      // Update overlay rect (no getBoundingClientRect)
+      const rect: Rect = {
+        top:    startRelRect.top  + dy,
+        left:   startRelRect.left + dx,
+        width:  startRelRect.width,
+        height: startRelRect.height,
+      };
+      updateSelectionDOM(rect);
+    };
+
+    const onMouseUp = () => {
+      if (moveRef.current && containerRef.current) {
+        const { el } = moveRef.current;
+        const rect = getRelativeRect(el, containerRef.current);
+        setSelected(prev => prev ? { ...prev, rect } : null);
+        setOverlayHeight(containerRef.current.scrollHeight);
+        emitOverride(el);
+      }
+      moveRef.current = null;
+      didDragRef.current = true;
+      setIsMoving(false);
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [containerRef, emitOverride]);
+
+  // ── Shared: update selection border + handles via DOM (no re-render) ───────
+  function updateSelectionDOM(rect: Rect) {
+    if (selectionBorderRef.current) {
+      selectionBorderRef.current.style.top    = `${rect.top}px`;
+      selectionBorderRef.current.style.left   = `${rect.left}px`;
+      selectionBorderRef.current.style.width  = `${rect.width}px`;
+      selectionBorderRef.current.style.height = `${rect.height}px`;
+    }
+    const positions: HandlePos[] = ['nw','n','ne','e','se','s','sw','w'];
+    positions.forEach((pos, i) => {
+      const hEl = handleElsRef.current[i];
+      if (!hEl) return;
+      const { top, left } = getHandlePosition(pos, rect);
+      hEl.style.top  = `${top}px`;
+      hEl.style.left = `${left}px`;
+    });
+    const container = containerRef.current;
+    if (container && overlayRootRef.current) {
+      overlayRootRef.current.style.height = `${container.scrollHeight}px`;
+    }
+  }
+
+  // ── Mouse events (hover + click to select) ────────────────────────────────
   useEffect(() => {
     if (!editMode) {
-      setHovered(null);
-      setSelected(null);
-      lastHoveredEl.current = null;
-      lastSelectedEl.current = null;
+      setHovered(null); setSelected(null);
+      lastHoveredEl.current = null; lastSelectedEl.current = null;
       return;
     }
 
@@ -492,14 +549,12 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (dragRef.current) return; // Don't update hover during resize
+      if (dragRef.current || moveRef.current) return;
       const target = getTarget(e);
       if (!target) { setHovered(null); lastHoveredEl.current = null; return; }
-
       const el = findTarget(target, container);
       if (!el) { setHovered(null); lastHoveredEl.current = null; return; }
       if (el === lastHoveredEl.current) return;
-
       lastHoveredEl.current = el;
       setHovered({ rect: getRelativeRect(el, container), label: getLabel(el), elType: getElType(el) });
     };
@@ -507,8 +562,8 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     const handleMouseLeave = () => { setHovered(null); lastHoveredEl.current = null; };
 
     const handleClick = (e: MouseEvent) => {
-      if (dragRef.current) return;
-      if (didDragRef.current) { didDragRef.current = false; return; } // Suppress click after drag
+      if (dragRef.current || moveRef.current) return;
+      if (didDragRef.current) { didDragRef.current = false; return; }
       const target = getTarget(e);
       if (!target) return;
       if ((target as HTMLElement).isContentEditable) return;
@@ -518,9 +573,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       if (!el) { setSelected(null); lastSelectedEl.current = null; return; }
 
       if (el === lastSelectedEl.current) {
-        setSelected(null);
-        lastSelectedEl.current = null;
-        return;
+        setSelected(null); lastSelectedEl.current = null; return;
       }
 
       lastSelectedEl.current = el;
@@ -529,8 +582,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
     const handleDocClick = (e: MouseEvent) => {
       if (!container.contains(e.target as Node)) {
-        setSelected(null);
-        lastSelectedEl.current = null;
+        setSelected(null); lastSelectedEl.current = null;
       }
     };
 
@@ -556,91 +608,123 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
   const handles: HandlePos[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
 
   return (
-    <div ref={overlayRootRef} data-overlay="true" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: overlayHeight || '100%', pointerEvents: 'none', zIndex: 40, overflow: 'visible' }}>
+    <>
+      {/* Global grabbing cursor during move */}
+      {isMoving && (
+        <style>{`* { cursor: grabbing !important; }`}</style>
+      )}
 
-      {/* Hover overlay */}
-      {hovered && hovered.rect.width > 0 && (() => {
-        const c = TYPE_COLORS[hovered.elType];
-        return (
-          <div style={{
-            position: 'absolute',
-            top: hovered.rect.top, left: hovered.rect.left,
-            width: hovered.rect.width, height: hovered.rect.height,
-            background: c.hover,
-            outline: `1px solid ${c.outline}`,
-            borderRadius: 2, pointerEvents: 'none',
-          }}>
-            <span style={{
-              position: 'absolute', top: -20, left: 0,
-              background: c.label + '22', color: c.label,
-              fontSize: 10, fontFamily: 'monospace',
-              padding: '1px 5px', borderRadius: 3,
-              whiteSpace: 'nowrap', pointerEvents: 'none',
-            }}>
-              {hovered.label}
-            </span>
-          </div>
-        );
-      })()}
-
-      {/* Selected overlay — Framer style */}
-      {selected && selected.rect.width > 0 && (() => {
-        const { rect, label, elType } = selected;
-        const c = TYPE_COLORS[elType];
-        const color = c.label;
-        return (
-          <>
-            {/* Typed-color border */}
-            <div ref={selectionBorderRef} style={{
+      <div
+        ref={overlayRootRef}
+        data-overlay="true"
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: overlayHeight || '100%', pointerEvents: 'none', zIndex: 40, overflow: 'visible' }}
+      >
+        {/* Hover outline */}
+        {hovered && hovered.rect.width > 0 && (() => {
+          const c = TYPE_COLORS[hovered.elType];
+          return (
+            <div style={{
               position: 'absolute',
-              top: rect.top, left: rect.left,
-              width: rect.width, height: rect.height,
-              border: `2px solid ${color}`,
-              borderRadius: 2,
-              pointerEvents: 'none',
-              boxSizing: 'border-box',
+              top: hovered.rect.top, left: hovered.rect.left,
+              width: hovered.rect.width, height: hovered.rect.height,
+              background: c.hover, outline: `1px solid ${c.outline}`,
+              borderRadius: 2, pointerEvents: 'none',
             }}>
-              {/* Label */}
               <span style={{
-                position: 'absolute', top: -22, left: -2,
-                background: color,
-                color: '#fff',
-                fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
-                padding: '2px 6px',
-                borderRadius: '3px 3px 0 0',
+                position: 'absolute', top: -20, left: 0,
+                background: c.label + '22', color: c.label,
+                fontSize: 10, fontFamily: 'monospace',
+                padding: '1px 5px', borderRadius: 3,
                 whiteSpace: 'nowrap', pointerEvents: 'none',
               }}>
-                {label}
+                {hovered.label}
               </span>
             </div>
+          );
+        })()}
 
-            {/* Resize handles */}
-            {handles.map((pos, i) => {
-              const { top, left } = getHandlePosition(pos, rect);
-              return (
-                <div
-                  key={pos}
-                  ref={el => { handleElsRef.current[i] = el; }}
+        {/* Selected element — Framer-style border + handles */}
+        {selected && selected.rect.width > 0 && (() => {
+          const { rect, label, elType } = selected;
+          const c = TYPE_COLORS[elType];
+          const color = c.label;
+          return (
+            <>
+              {/* Draggable selection border (move) */}
+              <div
+                ref={selectionBorderRef}
+                data-overlay="true"
+                onMouseDown={handleMoveStart}
+                style={{
+                  position: 'absolute',
+                  top: rect.top, left: rect.left,
+                  width: rect.width, height: rect.height,
+                  border: `2px solid ${color}`,
+                  borderRadius: 2,
+                  cursor: 'grab',
+                  pointerEvents: 'auto',
+                  boxSizing: 'border-box',
+                }}
+              >
+                {/* Element label */}
+                <span style={{
+                  position: 'absolute', top: -22, left: -2,
+                  background: color, color: '#fff',
+                  fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
+                  padding: '2px 6px', borderRadius: '3px 3px 0 0',
+                  whiteSpace: 'nowrap', pointerEvents: 'none',
+                }}>
+                  {label}
+                </span>
+
+                {/* Move icon in center-top — Framer style */}
+                <span
                   data-overlay="true"
-                  onMouseDown={(e) => handleResizeStart(e, pos)}
                   style={{
                     position: 'absolute',
-                    top, left,
-                    width: HANDLE_SIZE, height: HANDLE_SIZE,
-                    background: '#fff',
-                    border: `2px solid ${color}`,
-                    borderRadius: '50%',
-                    cursor: HANDLE_CURSORS[pos],
-                    pointerEvents: 'auto',
-                    zIndex: 41,
-                    boxSizing: 'border-box',
+                    top: -22, left: '50%', transform: 'translateX(-50%)',
+                    background: color + '22', color, borderRadius: 3,
+                    width: 20, height: 18,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    pointerEvents: 'none',
                   }}
-                />
-              );
-            })}
-          </>
-        );
-      })()}
-    </div>
+                >
+                  {/* Four-arrow move icon (SVG) */}
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                    <path d="M5.5 1L5.5 10M1 5.5L10 5.5M5.5 1L3.5 3M5.5 1L7.5 3M5.5 10L3.5 8M5.5 10L7.5 8M1 5.5L3 3.5M1 5.5L3 7.5M10 5.5L8 3.5M10 5.5L8 7.5"
+                      stroke={color} strokeWidth="1.2" strokeLinecap="round"/>
+                  </svg>
+                </span>
+              </div>
+
+              {/* Resize handles (8 points) */}
+              {handles.map((pos, i) => {
+                const { top, left } = getHandlePosition(pos, rect);
+                return (
+                  <div
+                    key={pos}
+                    ref={el => { handleElsRef.current[i] = el; }}
+                    data-overlay="true"
+                    onMouseDown={(e) => handleResizeStart(e, pos)}
+                    style={{
+                      position: 'absolute',
+                      top, left,
+                      width: HANDLE_SIZE, height: HANDLE_SIZE,
+                      background: '#fff',
+                      border: `2px solid ${color}`,
+                      borderRadius: '50%',
+                      cursor: HANDLE_CURSORS[pos],
+                      pointerEvents: 'auto',
+                      zIndex: 41,
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                );
+              })}
+            </>
+          );
+        })()}
+      </div>
+    </>
   );
 }

@@ -309,6 +309,8 @@ export interface StoreDesign {
     height?: string;
     marginTop?: string;
     marginLeft?: string;
+    /** CSS transform for drag-to-move, e.g. "translate(40px, -20px)" */
+    transform?: string;
     /** Human-readable label for version history, e.g. "Product card" */
     humanLabel?: string;
   }>;
