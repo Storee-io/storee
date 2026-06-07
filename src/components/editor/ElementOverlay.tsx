@@ -100,9 +100,25 @@ const TYPE_COLORS: Record<ElType, { hover: string; outline: string; label: strin
 
 interface HoverInfo { rect: Rect; label: string; elType: ElType; }
 
+export type ElementStyleOverride = {
+  width?: string;
+  height?: string;
+  marginTop?: string;
+  marginLeft?: string;
+};
+
 interface ElementOverlayProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
   editMode: boolean;
+  /** Saved overrides to restore on load: Record<"tagName|className", styles> */
+  elementOverrides?: Record<string, ElementStyleOverride>;
+  /** Called after each resize drag with the new override for that element */
+  onElementOverride?: (selector: string, styles: ElementStyleOverride) => void;
+}
+
+/** Build a stable selector key for an element: "tagName|className" */
+function buildSelector(el: Element): string {
+  return `${el.tagName.toLowerCase()}|${el.className}`;
 }
 
 function findTarget(startEl: Element, container: Element): Element | null {
@@ -167,7 +183,7 @@ interface DragState {
   parentRect: DOMRect;
 }
 
-export default function ElementOverlay({ containerRef, editMode }: ElementOverlayProps) {
+export default function ElementOverlay({ containerRef, editMode, elementOverrides, onElementOverride }: ElementOverlayProps) {
   const [hovered, setHovered] = useState<HoverInfo | null>(null);
   const [selected, setSelected] = useState<HoverInfo | null>(null);
   const [overlayHeight, setOverlayHeight] = useState(0);
@@ -179,6 +195,40 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
   const overlayRootRef = useRef<HTMLDivElement | null>(null);
   const selectionBorderRef = useRef<HTMLDivElement | null>(null);
   const handleElsRef = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Apply saved overrides to DOM whenever overrides change (also handles undo/redo restore)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // First pass: clear all previously-applied resize styles from every element
+    // (needed when undoing — the old inline styles must be removed before re-applying)
+    const OVERRIDE_PROPS = ['width', 'height', 'margin-top', 'margin-left'] as const;
+    container.querySelectorAll<HTMLElement>('*').forEach(el => {
+      // Only clear elements that had box-sizing set by us (marker that we touched them)
+      if (el.style.boxSizing === 'border-box') {
+        OVERRIDE_PROPS.forEach(p => { el.style.removeProperty(p); });
+        el.style.removeProperty('box-sizing');
+      }
+    });
+
+    // Second pass: re-apply current overrides
+    if (!elementOverrides) return;
+    for (const [selector, styles] of Object.entries(elementOverrides)) {
+      const pipeIdx = selector.indexOf('|');
+      const tag = selector.slice(0, pipeIdx);
+      const className = selector.slice(pipeIdx + 1);
+      container.querySelectorAll<HTMLElement>(tag).forEach(el => {
+        if (el.className === className) {
+          if (styles.width)      el.style.width      = styles.width;
+          if (styles.height)     el.style.height     = styles.height;
+          if (styles.marginTop)  el.style.marginTop  = styles.marginTop;
+          if (styles.marginLeft) el.style.marginLeft = styles.marginLeft;
+          el.style.boxSizing = 'border-box';
+        }
+      });
+    }
+  }, [containerRef, elementOverrides]);
 
   const updateOverlayHeight = useCallback(() => {
     if (containerRef.current) {
@@ -322,13 +372,21 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     const onMouseUp = () => {
       if (dragRef.current && containerRef.current) {
         const { el } = dragRef.current;
-        const newW = el.style.width;
-        const newH = el.style.height;
 
         // Sync React state
         const rect = getRelativeRect(el, containerRef.current);
         setSelected(prev => prev ? { ...prev, rect } : null);
         setOverlayHeight(containerRef.current.scrollHeight);
+
+        // Emit override for persistence (undo/redo + autosave)
+        if (onElementOverride) {
+          const styles: ElementStyleOverride = {};
+          if (el.style.width)      styles.width      = el.style.width;
+          if (el.style.height)     styles.height     = el.style.height;
+          if (el.style.marginTop)  styles.marginTop  = el.style.marginTop;
+          if (el.style.marginLeft) styles.marginLeft = el.style.marginLeft;
+          onElementOverride(buildSelector(el), styles);
+        }
       }
       dragRef.current = null;
       didDragRef.current = true;
@@ -338,7 +396,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
 
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-  }, [containerRef]);
+  }, [containerRef, onElementOverride]);
 
   useEffect(() => {
     if (!editMode) {

@@ -299,6 +299,17 @@ export interface StoreDesign {
   instagramPosts?: Array<{ caption: string; likes: number; comments: number }>;
   /** Field position offsets for drag-to-move functionality (field key -> { x, y } offset) */
   fieldOffsets?: Record<string, { x: number; y: number }>;
+  /**
+   * Visual element size overrides from the drag-resize editor.
+   * Key: "tagName|className" (e.g. "div|max-w-6xl mx-auto px-5")
+   * Value: CSS inline style properties to restore on load.
+   */
+  elementOverrides?: Record<string, {
+    width?: string;
+    height?: string;
+    marginTop?: string;
+    marginLeft?: string;
+  }>;
 }
 
 export interface ClaudeStoreResponse {

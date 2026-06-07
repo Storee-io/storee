@@ -282,6 +282,11 @@ export default function EditorShell({ store, from }: Props) {
   const [sectionHeadings, setSectionHeadings] = useState<{ testimonials?: string; features?: string; products?: string; faq?: string; newsletter?: string }>(d?.sectionHeadings ?? {});
   const [footerNote,      setFooterNote]      = useState(d?.footerNote ?? '');
 
+  // Element size overrides from drag-resize (persisted in design.elementOverrides)
+  const [elementOverrides, setElementOverrides] = useState<Record<string, { width?: string; height?: string; marginTop?: string; marginLeft?: string }>>(
+    d?.elementOverrides ?? {}
+  );
+
   // Section order for drag reorder
   const [sectionItems, setSectionItems] = useState<SectionItem[]>(() => deriveInitialSections(d));
 
@@ -379,6 +384,14 @@ export default function EditorShell({ store, from }: Props) {
       }
     }
 
+    // Restore element overrides (resize history)
+    const snapshotOverrides = design.elementOverrides ?? {};
+    if (JSON.stringify(snapshotOverrides) !== JSON.stringify(elementOverrides)) {
+      setElementOverrides(snapshotOverrides);
+      // Also clear inline styles that no longer exist in the restored snapshot
+      // (ElementOverlay's useEffect will re-apply the correct ones from the new state)
+    }
+
     // Restore store name
     if (currentSnapshot.storeName !== undefined && currentSnapshot.storeName !== storeName) {
       setStoreName(currentSnapshot.storeName);
@@ -444,6 +457,13 @@ export default function EditorShell({ store, from }: Props) {
     // Disabled - drag-to-move causes section unmount issues, needs further investigation
     console.log('Field position change:', field, offset);
   }, [updateActiveStore, pushSnapshot]);
+
+  const handleElementOverride = useCallback((selector: string, styles: { width?: string; height?: string; marginTop?: string; marginLeft?: string }) => {
+    setElementOverrides(prev => ({ ...prev, [selector]: styles }));
+    // Trigger autosave by signalling dirty (setIsDirty is triggered via the useEffect deps below)
+    setIsDirty(true);
+    setSaved(false);
+  }, []);
 
   const handleArrayReorder = useCallback((field: string, newItems: unknown[]) => {
     if (field === 'testimonials') {
@@ -661,6 +681,7 @@ export default function EditorShell({ store, from }: Props) {
       sectionHeadings,
       footerNote: footerNote || undefined,
       sectionOrder: effectiveSectionOrder,
+      elementOverrides: Object.keys(elementOverrides).length ? elementOverrides : undefined,
       ...(liveContextStore.design?.designTokens ? {
         designTokens: buildReorderedDesignTokens(),
       } : {}),
@@ -695,7 +716,7 @@ export default function EditorShell({ store, from }: Props) {
   }, [liveContextStore, storeName, primaryColor, tagline, heroTitle, heroSubtitle, ctaText,
       promoBar, accentColor, brandStory, features, testimonials, faq, newsletter,
       navLinks, trustBadges, stats, sectionHeadings, footerNote,
-      sectionItems, updateActiveStore, isSaving]);
+      sectionItems, elementOverrides, updateActiveStore, isSaving]);
 
   // Keep ref in sync so autosave always calls the latest version
   persistStoreRef.current = persistStore;
@@ -741,6 +762,7 @@ export default function EditorShell({ store, from }: Props) {
         footerNote,
         tagline,
         sectionOrder: sectionItems.map(i => i.type),
+        elementOverrides: Object.keys(elementOverrides).length ? elementOverrides : undefined,
       } as StoreDesign;
       pushSnapshot(currentDesign, storeName, primaryColor);
     }, 5000);
@@ -749,7 +771,8 @@ export default function EditorShell({ store, from }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeName, primaryColor, tagline, heroTitle, heroSubtitle, ctaText,
       promoBar, accentColor, brandStory, features, testimonials, faq, newsletter,
-      navLinks, trustBadges, stats, sectionHeadings, footerNote, sectionItems, pushSnapshot]);
+      navLinks, trustBadges, stats, sectionHeadings, footerNote, sectionItems,
+      elementOverrides, pushSnapshot]);
 
   const handlePublishComplete = useCallback((subdomain: string) => {
     updateActiveStore({
@@ -1395,7 +1418,7 @@ export default function EditorShell({ store, from }: Props) {
               }}
             >
               <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} onFieldPositionChange={handleFieldPositionChange} onArrayReorder={handleArrayReorder} onPageChange={setCanvasPage} navigateRef={canvasNavigateRef} />
-              <ElementOverlay containerRef={previewRef} editMode={editMode} />
+              <ElementOverlay containerRef={previewRef} editMode={editMode} elementOverrides={elementOverrides} onElementOverride={handleElementOverride} />
             </div>
           </div>
         </main>
