@@ -309,6 +309,8 @@ export interface StoreDesign {
     height?: string;
     marginTop?: string;
     marginLeft?: string;
+    /** Human-readable label for version history, e.g. "Product card" */
+    humanLabel?: string;
   }>;
 }
 

@@ -105,6 +105,8 @@ export type ElementStyleOverride = {
   height?: string;
   marginTop?: string;
   marginLeft?: string;
+  /** Human-readable label for version history, e.g. "Product card" */
+  humanLabel?: string;
 };
 
 interface ElementOverlayProps {
@@ -119,6 +121,74 @@ interface ElementOverlayProps {
 /** Build a stable selector key for an element: "tagName|className" */
 function buildSelector(el: Element): string {
   return `${el.tagName.toLowerCase()}|${el.className}`;
+}
+
+/** Derive a human-readable label for an element based on its tag, classes, and parent section */
+function buildHumanLabel(el: Element): string {
+  const tag = el.tagName.toLowerCase();
+  const cls = (el.className || '').toLowerCase();
+
+  // 1. Check parent section via data-editor-section attribute
+  let sectionName = '';
+  let ancestor = el.parentElement;
+  while (ancestor) {
+    const sec = ancestor.getAttribute('data-editor-section');
+    if (sec) { sectionName = sec; break; }
+    ancestor = ancestor.parentElement;
+  }
+
+  // Map data-editor-section values → friendly names
+  const SECTION_LABELS: Record<string, string> = {
+    hero: 'Hero', trust: 'Trust badges', collections: 'Collections',
+    products: 'Products', features: 'Features', testimonials: 'Testimonials',
+    stats: 'Stats', brandStory: 'Brand story', faq: 'FAQ',
+    newsletter: 'Newsletter', promoBar: 'Promo bar', footer: 'Footer',
+    scrollingBanner: 'Banner', instagramFeed: 'Instagram feed',
+  };
+
+  // 2. Classify by class keywords
+  const CLASS_KEYWORDS: Array<[string, string]> = [
+    ['product-card', 'Product card'], ['product', 'Product card'],
+    ['trust', 'Trust badge'], ['testimonial', 'Testimonial'],
+    ['feature', 'Feature card'], ['hero', 'Hero'],
+    ['footer', 'Footer'], ['nav', 'Navigation'],
+    ['banner', 'Banner'], ['badge', 'Badge'],
+    ['card', 'Card'], ['grid', 'Grid'],
+    ['carousel', 'Carousel'], ['stat', 'Stat'],
+    ['faq', 'FAQ'], ['newsletter', 'Newsletter'],
+    ['collection', 'Collection'], ['category', 'Category'],
+  ];
+
+  // 3. Classify by tag
+  const TAG_LABELS: Record<string, string> = {
+    h1: 'Heading', h2: 'Heading', h3: 'Heading', h4: 'Heading',
+    h5: 'Heading', h6: 'Heading',
+    p: 'Paragraph', span: 'Text',
+    button: 'Button', a: 'Link',
+    img: 'Image', svg: 'Icon',
+    ul: 'List', ol: 'List', li: 'List item',
+    section: 'Section', header: 'Header', footer: 'Footer',
+    nav: 'Navigation', aside: 'Sidebar',
+    form: 'Form', input: 'Input',
+  };
+
+  // Build label: element type + section context
+  let elementType = '';
+
+  // Try class keywords first
+  for (const [keyword, label] of CLASS_KEYWORDS) {
+    if (cls.includes(keyword)) { elementType = label; break; }
+  }
+
+  // Fall back to tag label
+  if (!elementType) elementType = TAG_LABELS[tag] || 'Element';
+
+  // Combine with section context
+  const sectionLabel = SECTION_LABELS[sectionName] ?? '';
+  if (sectionLabel && !elementType.toLowerCase().includes(sectionLabel.toLowerCase())) {
+    return `${sectionLabel} — ${elementType}`;
+  }
+  return elementType;
 }
 
 function findTarget(startEl: Element, container: Element): Element | null {
@@ -380,7 +450,9 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
         // Emit override for persistence (undo/redo + autosave)
         if (onElementOverride) {
-          const styles: ElementStyleOverride = {};
+          const styles: ElementStyleOverride = {
+            humanLabel: buildHumanLabel(el),
+          };
           if (el.style.width)      styles.width      = el.style.width;
           if (el.style.height)     styles.height     = el.style.height;
           if (el.style.marginTop)  styles.marginTop  = el.style.marginTop;

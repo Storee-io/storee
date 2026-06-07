@@ -173,19 +173,12 @@ function detectChanges(
     const allKeys = new Set([...Object.keys(prevOv), ...Object.keys(currOv)]);
     allKeys.forEach(key => {
       if (JSON.stringify(prevOv[key]) !== JSON.stringify(currOv[key])) {
-        // key format: "tagName|className" → extract tag + first meaningful class
-        const pipeIdx = key.indexOf('|');
-        const tag = pipeIdx > -1 ? key.slice(0, pipeIdx) : key;
-        const className = pipeIdx > -1 ? key.slice(pipeIdx + 1) : '';
-        // Pick the first non-positional Tailwind class as a short identifier
-        const shortClass = className
-          .split(' ')
-          .find(c => c && !['flex','grid','items-center','justify-center','relative','absolute','overflow','w-full','h-full'].some(skip => c.startsWith(skip)));
-        const label = shortClass ? `${tag}.${shortClass}` : tag;
+        // Use stored human label if available, otherwise fall back to selector
+        const cv = currOv[key] ?? {};
+        const pv = prevOv[key] ?? {};
+        const label = cv.humanLabel || pv.humanLabel || key.split('|')[0];
 
         // Describe what changed (size vs position)
-        const pv = prevOv[key] ?? {};
-        const cv = currOv[key] ?? {};
         const sizeChanged = pv.width !== cv.width || pv.height !== cv.height;
         const posChanged  = pv.marginTop !== cv.marginTop || pv.marginLeft !== cv.marginLeft;
         const action = sizeChanged && posChanged ? 'resized & moved'
