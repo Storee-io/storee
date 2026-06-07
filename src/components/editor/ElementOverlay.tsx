@@ -208,8 +208,12 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
 
     const container = containerRef.current;
     const startRelRect = container ? getRelativeRect(el, container) : { top: 0, left: 0, width: elRect.width, height: elRect.height };
+
+    // Only constrain by parent if parent has fixed/explicit height (not auto-sized by content).
+    // For auto-height parents, parentRect.bottom ≈ elRect.bottom which would prevent growing.
+    const parentHasFixedHeight = parent ? (parent as HTMLElement).style.height !== '' || parent.scrollHeight > elRect.height * 1.5 : false;
     const maxWidth = parentRect.right - elRect.left;
-    const maxHeight = parentRect.bottom - elRect.top;
+    const maxHeight = parentHasFixedHeight ? parentRect.bottom - elRect.top : 99999;
 
     // Find same-type siblings once at drag start (avoid querySelectorAll every frame)
     const siblings: HTMLElement[] = [];
