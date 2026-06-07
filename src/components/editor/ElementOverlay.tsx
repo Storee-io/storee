@@ -223,17 +223,21 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       const maxW = parentRect.right - elRect.left;
       const maxH = parentRect.bottom - elRect.top;
 
+      // Minimum size = content size (scrollWidth/scrollHeight) so children never get clipped
+      const minW = Math.max(20, el.scrollWidth);
+      const minH = Math.max(20, el.scrollHeight);
+
       if (handle === 'e' || handle === 'ne' || handle === 'se') {
-        newW = Math.max(20, Math.min(startWidth + dx, maxW));
+        newW = Math.max(minW, Math.min(startWidth + dx, maxW));
       }
       if (handle === 'w' || handle === 'nw' || handle === 'sw') {
-        newW = Math.max(20, startWidth - dx);
+        newW = Math.max(minW, startWidth - dx);
       }
       if (handle === 's' || handle === 'se' || handle === 'sw') {
-        newH = Math.max(20, Math.min(startHeight + dy, maxH));
+        newH = Math.max(minH, Math.min(startHeight + dy, maxH));
       }
       if (handle === 'n' || handle === 'ne' || handle === 'nw') {
-        newH = Math.max(20, startHeight - dy);
+        newH = Math.max(minH, startHeight - dy);
       }
 
       // Apply size to actual element
