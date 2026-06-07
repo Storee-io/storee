@@ -342,7 +342,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     <div data-overlay="true" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: overlayHeight || '100%', pointerEvents: 'none', zIndex: 40, overflow: 'visible' }}>
 
       {/* Hover overlay */}
-      {hovered && hovered.rect.width > 0 && !selected && (() => {
+      {hovered && hovered.rect.width > 0 && (() => {
         const c = TYPE_COLORS[hovered.elType];
         return (
           <div style={{
