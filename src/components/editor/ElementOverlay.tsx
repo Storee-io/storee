@@ -156,6 +156,8 @@ interface DragState {
   startWidth: number;
   startHeight: number;
   startRelRect: Rect; // element rect relative to container at drag start
+  startMarginTop: number;  // inline marginTop at drag start (px)
+  startMarginLeft: number; // inline marginLeft at drag start (px)
   minWidth: number;
   minHeight: number;
   maxWidth: number;
@@ -225,6 +227,9 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       });
     }
 
+    const startMarginTop = parseFloat(el.style.marginTop) || 0;
+    const startMarginLeft = parseFloat(el.style.marginLeft) || 0;
+
     dragRef.current = {
       handle,
       startX: e.clientX,
@@ -232,6 +237,8 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       startWidth: elRect.width,
       startHeight: elRect.height,
       startRelRect,
+      startMarginTop,
+      startMarginLeft,
       minWidth: 20,
       minHeight: 20,
       maxWidth,
@@ -243,29 +250,39 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
 
     const onMouseMove = (ev: MouseEvent) => {
       if (!dragRef.current || !containerRef.current) return;
-      const { handle, startX, startY, startWidth, startHeight, minWidth, minHeight, maxWidth, maxHeight, el } = dragRef.current;
+      const { handle, startX, startY, startWidth, startHeight, startMarginTop, startMarginLeft, minWidth, minHeight, maxWidth, maxHeight, el } = dragRef.current;
       const dx = ev.clientX - startX;
       const dy = ev.clientY - startY;
 
       let newW = startWidth;
       let newH = startHeight;
+      let newMarginTop = startMarginTop;
+      let newMarginLeft = startMarginLeft;
 
       if (handle === 'e' || handle === 'ne' || handle === 'se') {
         newW = Math.max(minWidth, Math.min(startWidth + dx, maxWidth));
       }
       if (handle === 'w' || handle === 'nw' || handle === 'sw') {
+        // West: grow/shrink left edge, right edge stays fixed
+        const clampedDx = Math.min(dx, startWidth - minWidth); // can't shrink past minWidth
         newW = Math.max(minWidth, startWidth - dx);
+        newMarginLeft = startMarginLeft + clampedDx;
       }
       if (handle === 's' || handle === 'se' || handle === 'sw') {
         newH = Math.max(minHeight, Math.min(startHeight + dy, maxHeight));
       }
       if (handle === 'n' || handle === 'ne' || handle === 'nw') {
+        // North: grow/shrink top edge, bottom edge stays fixed
+        const clampedDy = Math.min(dy, startHeight - minHeight); // can't shrink past minHeight
         newH = Math.max(minHeight, startHeight - dy);
+        newMarginTop = startMarginTop + clampedDy;
       }
 
-      // Apply size to actual element + same-type siblings (realtime sync)
+      // Apply size + margin to actual element (siblings get only size — margin is per-element position)
       el.style.width = `${newW}px`;
       el.style.height = `${newH}px`;
+      el.style.marginTop = newMarginTop !== 0 ? `${newMarginTop}px` : '';
+      el.style.marginLeft = newMarginLeft !== 0 ? `${newMarginLeft}px` : '';
       el.style.boxSizing = 'border-box';
       dragRef.current.siblings.forEach(s => {
         s.style.width = `${newW}px`;
@@ -276,8 +293,8 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       // Compute new overlay rect purely from delta — zero getBoundingClientRect calls
       const { startRelRect } = dragRef.current;
       const rect: Rect = {
-        top: startRelRect.top,
-        left: startRelRect.left,
+        top: startRelRect.top + (newMarginTop - startMarginTop),
+        left: startRelRect.left + (newMarginLeft - startMarginLeft),
         width: newW,
         height: newH,
       };
