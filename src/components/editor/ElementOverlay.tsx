@@ -166,6 +166,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
   const lastHoveredEl = useRef<Element | null>(null);
   const lastSelectedEl = useRef<Element | null>(null);
   const dragRef = useRef<DragState | null>(null);
+  const didDragRef = useRef(false); // Suppress click after drag
   // Direct DOM refs for zero-re-render drag updates
   const selectionBorderRef = useRef<HTMLDivElement | null>(null);
   const handleElsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -268,6 +269,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
         setSelected(prev => prev ? { ...prev, rect } : null);
       }
       dragRef.current = null;
+      didDragRef.current = true; // Flag to suppress the upcoming click event
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
     };
@@ -314,6 +316,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
 
     const handleClick = (e: MouseEvent) => {
       if (dragRef.current) return;
+      if (didDragRef.current) { didDragRef.current = false; return; } // Suppress click after drag
       const target = getTarget(e);
       if (!target) return;
       if ((target as HTMLElement).isContentEditable) return;
