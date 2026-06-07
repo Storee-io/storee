@@ -168,6 +168,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
   const dragRef = useRef<DragState | null>(null);
   const didDragRef = useRef(false); // Suppress click after drag
   // Direct DOM refs for zero-re-render drag updates
+  const overlayRootRef = useRef<HTMLDivElement | null>(null);
   const selectionBorderRef = useRef<HTMLDivElement | null>(null);
   const handleElsRef = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -259,6 +260,10 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
           hEl.style.top  = `${top}px`;
           hEl.style.left = `${left}px`;
         });
+        // Stretch overlay to match new scrollHeight so it covers full page
+        if (overlayRootRef.current) {
+          overlayRootRef.current.style.height = `${container.scrollHeight}px`;
+        }
       }
     };
 
@@ -267,6 +272,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       if (lastSelectedEl.current && containerRef.current) {
         const rect = getRelativeRect(lastSelectedEl.current, containerRef.current);
         setSelected(prev => prev ? { ...prev, rect } : null);
+        setOverlayHeight(containerRef.current.scrollHeight);
       }
       dragRef.current = null;
       didDragRef.current = true; // Flag to suppress the upcoming click event
@@ -364,7 +370,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
   const handles: HandlePos[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
 
   return (
-    <div data-overlay="true" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: overlayHeight || '100%', pointerEvents: 'none', zIndex: 40, overflow: 'visible' }}>
+    <div ref={overlayRootRef} data-overlay="true" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: overlayHeight || '100%', pointerEvents: 'none', zIndex: 40, overflow: 'visible' }}>
 
       {/* Hover overlay */}
       {hovered && hovered.rect.width > 0 && (() => {
