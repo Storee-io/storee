@@ -368,15 +368,17 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
 
       {/* Selected overlay — Framer style */}
       {selected && selected.rect.width > 0 && (() => {
-        const { rect, label } = selected;
+        const { rect, label, elType } = selected;
+        const c = TYPE_COLORS[elType];
+        const color = c.label;
         return (
           <>
-            {/* Blue border */}
+            {/* Typed-color border */}
             <div style={{
               position: 'absolute',
               top: rect.top, left: rect.left,
               width: rect.width, height: rect.height,
-              border: `2px solid ${SELECTION_COLOR}`,
+              border: `2px solid ${color}`,
               borderRadius: 2,
               pointerEvents: 'none',
               boxSizing: 'border-box',
@@ -384,7 +386,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
               {/* Label */}
               <span style={{
                 position: 'absolute', top: -22, left: -2,
-                background: SELECTION_COLOR,
+                background: color,
                 color: '#fff',
                 fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
                 padding: '2px 6px',
@@ -408,7 +410,7 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
                     top, left,
                     width: HANDLE_SIZE, height: HANDLE_SIZE,
                     background: '#fff',
-                    border: `2px solid ${HANDLE_COLOR}`,
+                    border: `2px solid ${color}`,
                     borderRadius: '50%',
                     cursor: HANDLE_CURSORS[pos],
                     pointerEvents: 'auto',
