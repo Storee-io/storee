@@ -155,6 +155,8 @@ interface DragState {
   startY: number;
   startWidth: number;
   startHeight: number;
+  minWidth: number;
+  minHeight: number;
   el: HTMLElement;
   parentRect: DOMRect;
 }
@@ -200,19 +202,31 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
     const parentRect = parent ? parent.getBoundingClientRect() : document.body.getBoundingClientRect();
     const elRect = el.getBoundingClientRect();
 
+    // Measure natural content size by temporarily clearing inline size
+    const prevW = el.style.width;
+    const prevH = el.style.height;
+    el.style.width = '';
+    el.style.height = '';
+    const naturalW = el.scrollWidth;
+    const naturalH = el.scrollHeight;
+    el.style.width = prevW;
+    el.style.height = prevH;
+
     dragRef.current = {
       handle,
       startX: e.clientX,
       startY: e.clientY,
       startWidth: elRect.width,
       startHeight: elRect.height,
+      minWidth: Math.max(20, naturalW),
+      minHeight: Math.max(20, naturalH),
       el,
       parentRect,
     };
 
     const onMouseMove = (ev: MouseEvent) => {
       if (!dragRef.current || !containerRef.current) return;
-      const { handle, startX, startY, startWidth, startHeight, el, parentRect } = dragRef.current;
+      const { handle, startX, startY, startWidth, startHeight, minWidth, minHeight, el, parentRect } = dragRef.current;
       const dx = ev.clientX - startX;
       const dy = ev.clientY - startY;
 
@@ -223,9 +237,9 @@ export default function ElementOverlay({ containerRef, editMode }: ElementOverla
       const maxW = parentRect.right - elRect.left;
       const maxH = parentRect.bottom - elRect.top;
 
-      // Minimum size = content size (scrollWidth/scrollHeight) so children never get clipped
-      const minW = Math.max(20, el.scrollWidth);
-      const minH = Math.max(20, el.scrollHeight);
+      // Use pre-measured natural content size (not live scrollWidth which grows with inline style)
+      const minW = minWidth;
+      const minH = minHeight;
 
       if (handle === 'e' || handle === 'ne' || handle === 'se') {
         newW = Math.max(minW, Math.min(startWidth + dx, maxW));
