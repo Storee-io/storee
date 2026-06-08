@@ -110,7 +110,13 @@ export type ElementStyleOverride = {
   marginLeft?: string;
   /** CSS transform translate, e.g. "translate(40px, -20px)" */
   transform?: string;
-  /** display override — set to "inline-block" when promoting inline element for transform */
+  /** position: relative — used for inline elements where transform is ignored */
+  position?: string;
+  /** top offset for inline elements (position:relative approach) */
+  top?: string;
+  /** left offset for inline elements (position:relative approach) */
+  left?: string;
+  /** @deprecated — kept for backward compat; no longer written for new moves */
   display?: string;
   /** Human-readable label for version history, e.g. "Product card" */
   humanLabel?: string;
@@ -259,12 +265,17 @@ interface MoveState {
   startTranslateY: number;
   startMarginTop: number;
   startMarginLeft: number;
+  /** initial top/left for inline-offset elements */
+  startInlineTop: number;
+  startInlineLeft: number;
   startRelRect: Rect;
   el: HTMLElement;
   lastClientX: number;
   lastClientY: number;
   /** true when React/Framer already owns el.style.transform — use margin instead */
   useMargin: boolean;
+  /** true when element is display:inline — use position:relative top/left instead of transform */
+  useInlineOffset: boolean;
 }
 
 export default function ElementOverlay({ containerRef, editMode, elementOverrides, onElementOverride }: ElementOverlayProps) {
@@ -298,6 +309,9 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       el.style.removeProperty('margin-top');
       el.style.removeProperty('margin-left');
       el.style.removeProperty('transform');
+      el.style.removeProperty('position');
+      el.style.removeProperty('top');
+      el.style.removeProperty('left');
       el.style.removeProperty('display');
       el.style.removeProperty('box-sizing');
       el.removeAttribute('data-overridden');
@@ -315,8 +329,21 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
           if (styles.height)     el.style.height     = styles.height;
           if (styles.marginTop)  el.style.marginTop  = styles.marginTop;
           if (styles.marginLeft) el.style.marginLeft = styles.marginLeft;
-          if (styles.transform)  el.style.transform  = styles.transform;
-          if (styles.display)    el.style.display    = styles.display;
+          if (styles.position)   el.style.position   = styles.position;
+          if (styles.top)        el.style.top        = styles.top;
+          if (styles.left)       el.style.left       = styles.left;
+          if (styles.transform) {
+            el.style.transform = styles.transform;
+            // Backward compat: legacy overrides saved transform on an inline element
+            // (transform is ignored on display:inline). Auto-migrate to position:relative.
+            if (window.getComputedStyle(el).display === 'inline') {
+              const { x, y } = parseTranslate(el);
+              el.style.removeProperty('transform');
+              el.style.position = 'relative';
+              el.style.left = `${x}px`;
+              el.style.top  = `${y}px`;
+            }
+          }
           el.style.boxSizing = 'border-box';
           el.setAttribute('data-overridden', '1');
         }
@@ -348,7 +375,9 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     if (el.style.marginTop)  styles.marginTop  = el.style.marginTop;
     if (el.style.marginLeft) styles.marginLeft = el.style.marginLeft;
     if (el.style.transform)  styles.transform  = el.style.transform;
-    if (el.style.display && el.style.display !== 'inline') styles.display = el.style.display;
+    if (el.style.position)   styles.position   = el.style.position;
+    if (el.style.top)        styles.top        = el.style.top;
+    if (el.style.left)       styles.left       = el.style.left;
     onElementOverride(buildSelector(el), styles);
   }, [onElementOverride]);
 
@@ -574,35 +603,41 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     };
     // ─────────────────────────────────────────────────────────────────────────
 
+    // For display:inline elements, transform is ignored by CSS spec.
+    // Use position:relative + top/left instead — works on inline without changing display.
+    // This survives React re-renders since React doesn't manage position/top/left here.
+    const computedDisplay = window.getComputedStyle(el).display;
+    const useInlineOffset = !useMargin && computedDisplay === 'inline';
+    const startInlineTop  = useInlineOffset ? (parseFloat(el.style.top)  || 0) : 0;
+    const startInlineLeft = useInlineOffset ? (parseFloat(el.style.left) || 0) : 0;
+
     moveRef.current = {
       startX: e.clientX, startY: e.clientY,
       startTranslateX, startTranslateY,
       startMarginTop, startMarginLeft,
+      startInlineTop, startInlineLeft,
       startRelRect, el,
       lastClientX: e.clientX, lastClientY: e.clientY,
-      useMargin,
+      useMargin, useInlineOffset,
     };
 
     // Direct DOM cursor — no React re-render
     document.body.style.cursor = 'grabbing';
     document.body.style.userSelect = 'none';
 
-    // Promote inline → inline-block so CSS transform takes effect
-    // (transform is ignored on display:inline non-replaced elements per CSS spec)
-    const computedDisplay = window.getComputedStyle(el).display;
-    if (computedDisplay === 'inline') {
-      el.style.display = 'inline-block';
-    }
-
     // Promote element to compositor layer + disable any CSS transition during drag
     const savedTransition = el.style.transition;
     el.style.transition = 'none';
-    el.style.willChange = 'transform';
+    el.style.willChange = useInlineOffset ? 'top, left' : 'transform';
 
     const applyPosition = (el: HTMLElement, dx: number, dy: number, state: MoveState) => {
       if (state.useMargin) {
         el.style.marginLeft = `${state.startMarginLeft + dx}px`;
         el.style.marginTop  = `${state.startMarginTop  + dy}px`;
+      } else if (state.useInlineOffset) {
+        el.style.position = 'relative';
+        el.style.left = `${state.startInlineLeft + dx}px`;
+        el.style.top  = `${state.startInlineTop  + dy}px`;
       } else {
         el.style.transform = `translate(${state.startTranslateX + dx}px, ${state.startTranslateY + dy}px)`;
       }

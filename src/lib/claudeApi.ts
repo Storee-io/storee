@@ -309,9 +309,15 @@ export interface StoreDesign {
     height?: string;
     marginTop?: string;
     marginLeft?: string;
-    /** CSS transform for drag-to-move, e.g. "translate(40px, -20px)" */
+    /** CSS transform for drag-to-move on block/inline-block elements */
     transform?: string;
-    /** display override — "inline-block" when promoting inline element for transform */
+    /** position:relative — used for inline elements where transform is ignored */
+    position?: string;
+    /** top offset for inline elements (position:relative approach) */
+    top?: string;
+    /** left offset for inline elements (position:relative approach) */
+    left?: string;
+    /** @deprecated kept for backward compat */
     display?: string;
     /** Human-readable label for version history, e.g. "Product card" */
     humanLabel?: string;
