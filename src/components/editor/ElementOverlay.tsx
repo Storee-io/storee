@@ -257,6 +257,8 @@ interface MoveState {
   startTranslateY: number;
   startRelRect: Rect;
   el: HTMLElement;
+  lastClientX: number;
+  lastClientY: number;
 }
 
 export default function ElementOverlay({ containerRef, editMode, elementOverrides, onElementOverride }: ElementOverlayProps) {
@@ -457,6 +459,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       startX: e.clientX, startY: e.clientY,
       startTranslateX, startTranslateY,
       startRelRect, el,
+      lastClientX: e.clientX, lastClientY: e.clientY,
     };
 
     // Direct DOM cursor — no React re-render
@@ -468,6 +471,10 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
       const clientX = ev.clientX;
       const clientY = ev.clientY;
+
+      // Always track latest position so onMouseUp can apply final transform
+      moveRef.current.lastClientX = clientX;
+      moveRef.current.lastClientY = clientY;
 
       // Cancel pending frame — only process latest position per 60fps
       if (moveRafRef.current !== null) cancelAnimationFrame(moveRafRef.current);
@@ -498,7 +505,14 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         moveRafRef.current = null;
       }
       if (moveRef.current && containerRef.current) {
-        const { el } = moveRef.current;
+        const { el, startX, startY, startTranslateX, startTranslateY, lastClientX, lastClientY } = moveRef.current;
+
+        // Apply final transform synchronously — rAF may have been cancelled
+        const dx = lastClientX - startX;
+        const dy = lastClientY - startY;
+        el.style.transform = `translate(${startTranslateX + dx}px, ${startTranslateY + dy}px)`;
+        el.setAttribute('data-overridden', '1');
+
         const rect = getRelativeRect(el, containerRef.current);
         setSelected(prev => prev ? { ...prev, rect } : null);
         setOverlayHeight(containerRef.current.scrollHeight);
