@@ -465,6 +465,34 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     // using transform would be overwritten on every re-render — use margin instead.
     const useMargin = el.style.transform !== '' && !el.style.transform.startsWith('translate(');
 
+    // ── Constrain + snap helpers ──────────────────────────────────────────────
+    // Get parent bounds (relative to container) for movement constraint
+    const parentEl = el.parentElement;
+    const parentRelRect: Rect = parentEl && containerRef.current
+      ? getRelativeRect(parentEl, containerRef.current)
+      : { top: -99999, left: -99999, width: 999999, height: 999999 };
+
+    const SNAP = 8; // px grid
+
+    /** Snap raw delta to 8px grid, then clamp within parent bounds */
+    const constrainAndSnap = (rawDx: number, rawDy: number): { dx: number; dy: number } => {
+      // Snap to grid
+      const snDx = Math.round(rawDx / SNAP) * SNAP;
+      const snDy = Math.round(rawDy / SNAP) * SNAP;
+
+      // Clamp so element stays inside parent (only when parent is smaller than 999999)
+      const minDx = parentRelRect.left - startRelRect.left;
+      const maxDx = (parentRelRect.left + parentRelRect.width)  - (startRelRect.left + startRelRect.width);
+      const minDy = parentRelRect.top  - startRelRect.top;
+      const maxDy = (parentRelRect.top  + parentRelRect.height) - (startRelRect.top  + startRelRect.height);
+
+      return {
+        dx: maxDx > minDx ? Math.max(minDx, Math.min(maxDx, snDx)) : snDx,
+        dy: maxDy > minDy ? Math.max(minDy, Math.min(maxDy, snDy)) : snDy,
+      };
+    };
+    // ─────────────────────────────────────────────────────────────────────────
+
     moveRef.current = {
       startX: e.clientX, startY: e.clientY,
       startTranslateX, startTranslateY,
@@ -505,8 +533,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         moveRafRef.current = null;
         if (!moveRef.current) return;
         const { startX, startY, startRelRect, el } = moveRef.current;
-        const dx = clientX - startX;
-        const dy = clientY - startY;
+        const { dx, dy } = constrainAndSnap(clientX - startX, clientY - startY);
 
         applyPosition(el, dx, dy, moveRef.current);
 
@@ -529,8 +556,8 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         const { el, startX, startY, lastClientX, lastClientY } = moveRef.current;
 
         // Apply final position synchronously — rAF may have been cancelled
-        const dx = lastClientX - startX;
-        const dy = lastClientY - startY;
+        // Use constrainAndSnap so saved position matches what was shown during drag
+        const { dx, dy } = constrainAndSnap(lastClientX - startX, lastClientY - startY);
         applyPosition(el, dx, dy, moveRef.current);
 
         const rect = getRelativeRect(el, containerRef.current);
