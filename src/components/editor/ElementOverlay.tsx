@@ -281,6 +281,8 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
   const overlayRootRef    = useRef<HTMLDivElement | null>(null);
   const selectionBorderRef = useRef<HTMLDivElement | null>(null);
   const handleElsRef      = useRef<(HTMLDivElement | null)[]>([]);
+  const guideHRef         = useRef<HTMLDivElement | null>(null); // horizontal guide line
+  const guideVRef         = useRef<HTMLDivElement | null>(null); // vertical guide line
 
   // ── Apply / clear overrides on load and undo/redo ──────────────────────────
   useEffect(() => {
@@ -465,22 +467,58 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     // using transform would be overwritten on every re-render — use margin instead.
     const useMargin = el.style.transform !== '' && !el.style.transform.startsWith('translate(');
 
-    // ── Constrain + snap helpers ──────────────────────────────────────────────
-    // Get parent bounds (relative to container) for movement constraint
+    // ── Constrain + snap + axis-lock helpers ─────────────────────────────────
     const parentEl = el.parentElement;
     const parentRelRect: Rect = parentEl && containerRef.current
       ? getRelativeRect(parentEl, containerRef.current)
       : { top: -99999, left: -99999, width: 999999, height: 999999 };
 
-    const SNAP = 8; // px grid
+    const SNAP         = 8;   // px grid
+    const CENTER_SNAP  = 12;  // px radius for center-snap attraction
+    const parentCenterX = parentRelRect.left + parentRelRect.width  / 2;
+    const parentCenterY = parentRelRect.top  + parentRelRect.height / 2;
 
-    /** Snap raw delta to 8px grid, then clamp within parent bounds */
-    const constrainAndSnap = (rawDx: number, rawDy: number): { dx: number; dy: number } => {
-      // Snap to grid
-      const snDx = Math.round(rawDx / SNAP) * SNAP;
-      const snDy = Math.round(rawDy / SNAP) * SNAP;
+    type SnapResult = { dx: number; dy: number; snapV: boolean; snapH: boolean; axisLock: 'h' | 'v' | null };
 
-      // Clamp so element stays inside parent (only when parent is smaller than 999999)
+    /**
+     * 1. Axis lock  — if Shift held, lock to dominant axis
+     * 2. Center snap — attract element center to parent center within CENTER_SNAP px
+     * 3. Grid snap   — round to SNAP px grid
+     * 4. Clamp       — keep element inside parent bounds
+     */
+    const constrainAndSnap = (rawDx: number, rawDy: number, shiftKey = false): SnapResult => {
+      // 1. Axis lock
+      let effDx = rawDx, effDy = rawDy;
+      let axisLock: 'h' | 'v' | null = null;
+      if (shiftKey) {
+        if (Math.abs(rawDx) >= Math.abs(rawDy)) { effDy = 0; axisLock = 'h'; }
+        else                                     { effDx = 0; axisLock = 'v'; }
+      }
+
+      // 2+3. Snap: try center first, fall back to grid
+      const elCX = startRelRect.left + startRelRect.width  / 2 + effDx;
+      const elCY = startRelRect.top  + startRelRect.height / 2 + effDy;
+      let snapV = false, snapH = false;
+      let snDx = effDx, snDy = effDy;
+
+      if (!axisLock || axisLock === 'h') { // horizontal movement allowed
+        if (Math.abs(elCX - parentCenterX) < CENTER_SNAP) {
+          snDx = parentCenterX - (startRelRect.left + startRelRect.width / 2);
+          snapV = true;
+        } else {
+          snDx = Math.round(effDx / SNAP) * SNAP;
+        }
+      }
+      if (!axisLock || axisLock === 'v') { // vertical movement allowed
+        if (Math.abs(elCY - parentCenterY) < CENTER_SNAP) {
+          snDy = parentCenterY - (startRelRect.top + startRelRect.height / 2);
+          snapH = true;
+        } else {
+          snDy = Math.round(effDy / SNAP) * SNAP;
+        }
+      }
+
+      // 4. Clamp inside parent
       const minDx = parentRelRect.left - startRelRect.left;
       const maxDx = (parentRelRect.left + parentRelRect.width)  - (startRelRect.left + startRelRect.width);
       const minDy = parentRelRect.top  - startRelRect.top;
@@ -489,7 +527,43 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       return {
         dx: maxDx > minDx ? Math.max(minDx, Math.min(maxDx, snDx)) : snDx,
         dy: maxDy > minDy ? Math.max(minDy, Math.min(maxDy, snDy)) : snDy,
+        snapV, snapH, axisLock,
       };
+    };
+
+    /** Update guide line DOM positions + visibility — zero re-renders */
+    const updateGuides = (dx: number, dy: number, snapV: boolean, snapH: boolean, axisLock: 'h' | 'v' | null) => {
+      const ACTIVE   = '#06b6d4';          // bright cyan
+      const INACTIVE = 'rgba(6,182,212,0.35)'; // dim cyan
+
+      if (guideHRef.current) {
+        // Horizontal guide: sits at a Y position, spans parent width
+        const y = axisLock === 'h'
+          ? startRelRect.top + startRelRect.height / 2 + dy  // track element center
+          : parentCenterY;
+        guideHRef.current.style.top    = `${y}px`;
+        guideHRef.current.style.left   = `${parentRelRect.left}px`;
+        guideHRef.current.style.width  = `${parentRelRect.width}px`;
+        guideHRef.current.style.borderTopColor = (snapH || axisLock === 'h') ? ACTIVE : INACTIVE;
+        guideHRef.current.style.opacity = '1';
+        guideHRef.current.style.display = 'block';
+      }
+      if (guideVRef.current) {
+        // Vertical guide: sits at an X position, spans parent height
+        const x = axisLock === 'v'
+          ? startRelRect.left + startRelRect.width / 2 + dx  // track element center
+          : parentCenterX;
+        guideVRef.current.style.left   = `${x}px`;
+        guideVRef.current.style.top    = `${parentRelRect.top}px`;
+        guideVRef.current.style.height = `${parentRelRect.height}px`;
+        guideVRef.current.style.borderLeftColor = (snapV || axisLock === 'v') ? ACTIVE : INACTIVE;
+        guideVRef.current.style.opacity = '1';
+        guideVRef.current.style.display = 'block';
+      }
+    };
+    const hideGuides = () => {
+      if (guideHRef.current) guideHRef.current.style.display = 'none';
+      if (guideVRef.current) guideVRef.current.style.display = 'none';
     };
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -519,8 +593,9 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     const onMouseMove = (ev: MouseEvent) => {
       if (!moveRef.current) return;
 
-      const clientX = ev.clientX;
-      const clientY = ev.clientY;
+      const clientX  = ev.clientX;
+      const clientY  = ev.clientY;
+      const shiftKey = ev.shiftKey;
 
       // Always track latest position so onMouseUp can apply final position
       moveRef.current.lastClientX = clientX;
@@ -533,9 +608,10 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         moveRafRef.current = null;
         if (!moveRef.current) return;
         const { startX, startY, startRelRect, el } = moveRef.current;
-        const { dx, dy } = constrainAndSnap(clientX - startX, clientY - startY);
+        const { dx, dy, snapV, snapH, axisLock } = constrainAndSnap(clientX - startX, clientY - startY, shiftKey);
 
         applyPosition(el, dx, dy, moveRef.current);
+        updateGuides(dx, dy, snapV, snapH, axisLock);
 
         // Pure delta math — no getBoundingClientRect, no scrollHeight per frame
         updateSelectionDOM({
@@ -556,7 +632,6 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         const { el, startX, startY, lastClientX, lastClientY } = moveRef.current;
 
         // Apply final position synchronously — rAF may have been cancelled
-        // Use constrainAndSnap so saved position matches what was shown during drag
         const { dx, dy } = constrainAndSnap(lastClientX - startX, lastClientY - startY);
         applyPosition(el, dx, dy, moveRef.current);
 
@@ -565,6 +640,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         setOverlayHeight(containerRef.current.scrollHeight);
         emitOverride(el);
       }
+      hideGuides();
       moveRef.current = null;
       didDragRef.current = true;
       document.body.style.cursor = '';
@@ -774,6 +850,20 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
             </>
           );
         })()}
+
+        {/* ── Guide lines (shown during move drag) ─────────────────────── */}
+        {/* Horizontal guide — sits at a Y position */}
+        <div ref={guideHRef} style={{
+          display: 'none', position: 'absolute', height: 0,
+          borderTop: '1px dashed rgba(6,182,212,0.35)',
+          pointerEvents: 'none', zIndex: 50,
+        }} />
+        {/* Vertical guide — sits at an X position */}
+        <div ref={guideVRef} style={{
+          display: 'none', position: 'absolute', width: 0,
+          borderLeft: '1px dashed rgba(6,182,212,0.35)',
+          pointerEvents: 'none', zIndex: 50,
+        }} />
       </div>
     </>
   );
