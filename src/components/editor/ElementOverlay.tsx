@@ -265,13 +265,13 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
   const [hovered,       setHovered]       = useState<HoverInfo | null>(null);
   const [selected,      setSelected]      = useState<HoverInfo | null>(null);
   const [overlayHeight, setOverlayHeight] = useState(0);
-  const [isMoving,      setIsMoving]      = useState(false); // grabbing cursor state
 
   const lastHoveredEl  = useRef<Element | null>(null);
   const lastSelectedEl = useRef<Element | null>(null);
   const dragRef        = useRef<DragState | null>(null);  // resize
   const moveRef        = useRef<MoveState | null>(null);  // move
   const didDragRef     = useRef(false);
+  const moveRafRef     = useRef<number | null>(null);     // rAF id for move throttle
 
   // Direct DOM refs — zero re-renders during drag/move
   const overlayRootRef    = useRef<HTMLDivElement | null>(null);
@@ -461,32 +461,44 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       startRelRect, el,
     };
 
-    setIsMoving(true);
+    // Direct DOM cursor — no React re-render
+    document.body.style.cursor = 'grabbing';
     document.body.style.userSelect = 'none';
 
     const onMouseMove = (ev: MouseEvent) => {
       if (!moveRef.current) return;
-      const { startX, startY, startTranslateX, startTranslateY, startRelRect, el } = moveRef.current;
-      const dx = ev.clientX - startX;
-      const dy = ev.clientY - startY;
 
-      const newTx = startTranslateX + dx;
-      const newTy = startTranslateY + dy;
+      const clientX = ev.clientX;
+      const clientY = ev.clientY;
 
-      el.style.transform = `translate(${newTx}px, ${newTy}px)`;
-      el.setAttribute('data-overridden', '1');
+      // Cancel pending frame — only process latest position per 60fps
+      if (moveRafRef.current !== null) cancelAnimationFrame(moveRafRef.current);
 
-      // Update overlay rect (no getBoundingClientRect)
-      const rect: Rect = {
-        top:    startRelRect.top  + dy,
-        left:   startRelRect.left + dx,
-        width:  startRelRect.width,
-        height: startRelRect.height,
-      };
-      updateSelectionDOM(rect);
+      moveRafRef.current = requestAnimationFrame(() => {
+        moveRafRef.current = null;
+        if (!moveRef.current) return;
+        const { startX, startY, startTranslateX, startTranslateY, startRelRect, el } = moveRef.current;
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+
+        el.style.transform = `translate(${startTranslateX + dx}px, ${startTranslateY + dy}px)`;
+        el.setAttribute('data-overridden', '1');
+
+        // Pure delta math — no getBoundingClientRect, no scrollHeight per frame
+        updateSelectionDOM({
+          top:    startRelRect.top  + dy,
+          left:   startRelRect.left + dx,
+          width:  startRelRect.width,
+          height: startRelRect.height,
+        }, true /* skipHeightUpdate */);
+      });
     };
 
     const onMouseUp = () => {
+      if (moveRafRef.current !== null) {
+        cancelAnimationFrame(moveRafRef.current);
+        moveRafRef.current = null;
+      }
       if (moveRef.current && containerRef.current) {
         const { el } = moveRef.current;
         const rect = getRelativeRect(el, containerRef.current);
@@ -496,7 +508,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       }
       moveRef.current = null;
       didDragRef.current = true;
-      setIsMoving(false);
+      document.body.style.cursor = '';
       document.body.style.userSelect = '';
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
@@ -507,7 +519,8 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
   }, [containerRef, emitOverride]);
 
   // ── Shared: update selection border + handles via DOM (no re-render) ───────
-  function updateSelectionDOM(rect: Rect) {
+  // skipHeightUpdate: true during move — avoids scrollHeight reflow every frame
+  function updateSelectionDOM(rect: Rect, skipHeightUpdate = false) {
     if (selectionBorderRef.current) {
       selectionBorderRef.current.style.top    = `${rect.top}px`;
       selectionBorderRef.current.style.left   = `${rect.left}px`;
@@ -522,9 +535,11 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       hEl.style.top  = `${top}px`;
       hEl.style.left = `${left}px`;
     });
-    const container = containerRef.current;
-    if (container && overlayRootRef.current) {
-      overlayRootRef.current.style.height = `${container.scrollHeight}px`;
+    if (!skipHeightUpdate) {
+      const container = containerRef.current;
+      if (container && overlayRootRef.current) {
+        overlayRootRef.current.style.height = `${container.scrollHeight}px`;
+      }
     }
   }
 
@@ -609,11 +624,6 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
   return (
     <>
-      {/* Global grabbing cursor during move */}
-      {isMoving && (
-        <style>{`* { cursor: grabbing !important; }`}</style>
-      )}
-
       <div
         ref={overlayRootRef}
         data-overlay="true"
