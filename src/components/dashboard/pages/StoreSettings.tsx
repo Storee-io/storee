@@ -233,33 +233,48 @@ export default function StoreSettings() {
         <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 transition-colors" />
       </Link>
 
-      {/* Danger Zone */}
-      <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-8 h-8 bg-red-100 rounded-xl flex items-center justify-center">
-            <AlertTriangle className="w-4 h-4 text-red-600" />
+      {/* Unpublish Store (reversible) */}
+      {activeStore?.status === 'Published' && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 bg-orange-50 rounded-xl flex items-center justify-center">
+              <CloudOff className="w-4 h-4 text-orange-500" />
+            </div>
+            <h3 className="font-bold text-slate-900">Unpublish Store</h3>
           </div>
-          <div>
-            <h3 className="font-bold text-red-900">Danger Zone</h3>
-            <p className="text-xs text-red-700 mt-0.5">Irreversible and destructive actions</p>
-          </div>
-        </div>
-        <div className="space-y-2">
-          {activeStore?.status === 'Published' && (
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-800">Take store offline</p>
+              <p className="text-xs text-slate-400">Remove from public access (can be republished)</p>
+            </div>
             <button
               onClick={() => setShowUnpublishConfirm(true)}
-              className="w-full flex items-center gap-3 px-4 py-3 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl transition-colors text-sm font-medium"
+              className="px-4 py-2 text-sm font-semibold text-orange-600 border border-orange-200 rounded-xl hover:bg-orange-50 transition-colors"
             >
-              <CloudOff className="w-4 h-4" />
-              Unpublish Store
+              Unpublish
             </button>
-          )}
+          </div>
+        </div>
+      )}
+
+      {/* Danger Zone */}
+      <div className="bg-white rounded-2xl border border-red-100 p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 bg-red-50 rounded-xl flex items-center justify-center">
+            <Trash2 className="w-4 h-4 text-red-500" />
+          </div>
+          <h3 className="font-bold text-slate-900">Danger Zone</h3>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-800">Delete Store</p>
+            <p className="text-xs text-slate-400">Permanently delete store and all data</p>
+          </div>
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="w-full flex items-center gap-3 px-4 py-3 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl transition-colors text-sm font-medium"
+            className="px-4 py-2 text-sm font-semibold text-red-600 border border-red-200 rounded-xl hover:bg-red-50 transition-colors"
           >
-            <Trash2 className="w-4 h-4" />
-            Delete Store
+            Delete
           </button>
         </div>
       </div>
