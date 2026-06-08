@@ -234,21 +234,12 @@ export default function MyStoresPage() {
                                   transition={{ duration: 0.12 }}
                                   className="absolute right-0 top-full mt-1 w-40 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden"
                                 >
-                                  {isPublished && (
-                                    <button
-                                      onClick={() => { setOpenMenuId(null); setUnpublishStore(store); }}
-                                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-orange-500 hover:bg-orange-50 transition-colors border-b border-slate-100"
-                                    >
-                                      <CloudOff className="w-3.5 h-3.5" />
-                                      Unpublish
-                                    </button>
-                                  )}
                                   <button
                                     onClick={() => { setOpenMenuId(null); setConfirmDelete(store.id); }}
                                     className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
-                                    Delete store
+                                    Delete Store
                                   </button>
                                 </motion.div>
                               )}
