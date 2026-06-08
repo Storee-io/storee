@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Monitor, Tablet, Smartphone, Globe, Rocket, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw, Check, ChevronDown, PencilLine, LayoutDashboard } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
+import { CartProvider } from '../../context/CartContext';
+import { WishlistProvider } from '../../context/WishlistContext';
 const StorePreview = lazy(() => import('./StorePreview'));
 import ElementOverlay from '../editor/ElementOverlay';
 import PublishModal from './PublishModal';
@@ -514,9 +516,13 @@ export default function PreviewShell({ store, from = null }: Props) {
               ref={scrollContainerRef}
               style={{ overflowY: 'auto', height: '100%', position: 'relative' }}
             >
-              <Suspense fallback={<div className="w-full h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /></div>}>
-                <StorePreview store={liveStore} device={device} previewShell onPageChange={setCurrentPath} navigateRef={navigateRef} />
-              </Suspense>
+              <CartProvider>
+                <WishlistProvider>
+                  <Suspense fallback={<div className="w-full h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /></div>}>
+                    <StorePreview store={liveStore} device={device} previewShell onPageChange={setCurrentPath} navigateRef={navigateRef} />
+                  </Suspense>
+                </WishlistProvider>
+              </CartProvider>
               {/* Apply saved element overrides (resize/move) in read-only mode */}
               <ElementOverlay
                 containerRef={scrollContainerRef}
