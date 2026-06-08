@@ -263,9 +263,8 @@ export default function StoreSettings() {
           </button>
         </div>
       </div>
-    </div>
 
-    {/* Unpublish Confirmation Modal */}
+      {/* Unpublish Confirmation Modal */}
     <AnimatePresence>
       {showUnpublishConfirm && activeStore && (
         <>
@@ -360,5 +359,6 @@ export default function StoreSettings() {
         </>
       )}
     </AnimatePresence>
+    </div>
   );
 }
