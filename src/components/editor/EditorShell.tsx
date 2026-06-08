@@ -455,6 +455,7 @@ export default function EditorShell({ store, from }: Props) {
     setStats(ds?.stats ?? []);
     setSectionHeadings(ds?.sectionHeadings ?? {});
     setFooterNote(ds?.footerNote ?? '');
+    setElementOverrides(ds?.elementOverrides ?? {});
     setSectionItems(deriveInitialSections(ds));
   // Only re-sync when the active store ID changes (switching stores).
   // Do NOT include liveContextStore.design — it creates a new reference every render
@@ -604,6 +605,7 @@ export default function EditorShell({ store, from }: Props) {
       sectionHeadings,
       footerNote: footerNote || undefined,
       sectionOrder: effectiveSectionOrder,
+      elementOverrides: Object.keys(elementOverrides).length ? elementOverrides : undefined,
       // Override section order when designTokens exist
       ...(liveContextStore.design?.designTokens ? {
         designTokens: buildReorderedDesignTokens(),
