@@ -23,6 +23,8 @@ import { DEFAULT_SHIPPING_METHODS, DEFAULT_PAYMENT_METHODS } from '../../context
 import type { StoreDesign, RichProduct, DesignSystem, DesignTokens } from '../../lib/claudeApi';
 import { makePriceFmt } from '../../lib/formatCurrency';
 import { supabase } from '../../lib/supabase';
+import { useCart, type CartItem } from '../../context/CartContext';
+import { useWishlist } from '../../context/WishlistContext';
 
 // ── Field position context for drag-to-move ────────────────────────────────────
 type FieldOffsetMap = Record<string, { x: number; y: number }>;
@@ -8316,15 +8318,8 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
     return () => { navigateRef.current = null; };
   }, [navigateRef, onPageChange]);
 
-  // Persist cart in localStorage so it survives Next.js page navigations
-  const cartKey = `storee_cart_${store.id}`;
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try { return JSON.parse(localStorage.getItem(cartKey) ?? '[]'); } catch { return []; }
-  });
-  useEffect(() => {
-    try { localStorage.setItem(cartKey, JSON.stringify(cart)); } catch {}
-  }, [cart, cartKey]);
+  // Use cart from context (persisted to localStorage)
+  const { cart, cartCount, cartTotal, addToCart, removeFromCart, updateQty, clearCart } = useCart();
   const [selectedProduct, setSelectedProduct] = useState<RichProduct | null>(null);
   const [orderNum] = useState(() => `ORD-${Math.floor(100000 + Math.random() * 900000)}`);
   const [selectedShippingId, setSelectedShippingId] = useState('');
@@ -8399,7 +8394,6 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
   const fmtPrice = makePriceFmt(currencyCode);
   const shippingSettings = store.shippingSettings;
   const paymentSettings = store.paymentSettings;
-  const cartCount = cart.reduce((s, i) => s + i.qty, 0);
 
   // Compute feature flags from advancedOptions
   const advFeatures = store.advancedOptions?.features;
@@ -8408,7 +8402,6 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
     showReviews:  advFeatures?.reviews  !== false,
     uiT: UI_T[LANG_CODE_MAP[store.language ?? ''] ?? 'en'] ?? UI_T.en,
   };
-  const cartTotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
 
   // Resolve shipping cost for SuccessPage total
   const enabledShipping = (shippingSettings?.methods ?? DEFAULT_SHIPPING_METHODS).filter(m => m.enabled);
@@ -8464,29 +8457,16 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
   const [flyItems, setFlyItems] = useState<FlyItem[]>([]);
   const [cartToast, setCartToast] = useState<CartToastItem | null>(null);
   const cartToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [wishlist, setWishlist] = useState<Set<string>>(new Set());
-  const toggleWishlist = useCallback((id: string) => {
-    setWishlist(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }, []);
+  // Use wishlist from context
+  const { wishlist, toggleWishlist } = useWishlist();
 
-  const addToCart = (p: RichProduct, sourceRect?: DOMRect) => {
-    let newCount = 0;
-    setCart(prev => {
-      const existing = prev.find(i => i.product.id === p.id);
-      const next = existing
-        ? prev.map(i => i.product.id === p.id ? { ...i, qty: i.qty + 1 } : i)
-        : [...prev, { product: p, qty: 1 }];
-      newCount = next.reduce((s, i) => s + i.qty, 0);
-      return next;
-    });
+  // Wrap context addToCart with toast and fly animation logic
+  const handleAddToCart = useCallback((p: RichProduct, sourceRect?: DOMRect) => {
+    addToCart(p); // Call context's addToCart
 
     // Show cart toast
     if (cartToastTimer.current) clearTimeout(cartToastTimer.current);
-    setCartToast({ id: `toast-${Date.now()}`, product: p, cartCount: newCount || 1 });
+    setCartToast({ id: `toast-${Date.now()}`, product: p, cartCount: cartCount + 1 });
     cartToastTimer.current = setTimeout(() => setCartToast(null), 4200);
 
     if (sourceRect) {
@@ -8501,13 +8481,7 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
       }]);
       setTimeout(() => setFlyItems(prev => prev.filter(f => f.id !== flyId)), (FLY_MAX + 0.2) * 1000);
     }
-  };
-
-  const updateQty = (productId: string, delta: number) => {
-    setCart(prev =>
-      prev.map(i => i.product.id === productId ? { ...i, qty: Math.max(0, i.qty + delta) } : i).filter(i => i.qty > 0)
-    );
-  };
+  }, [addToCart, cartCount]);
 
   const shared = {
     // In edit mode, block product navigation but allow element selection
@@ -8516,7 +8490,7 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
       setSelectedProduct(p);
       setPage('product');
     },
-    onAddToCart: (p: RichProduct, sourceRect?: DOMRect) => addToCart(p, sourceRect),
+    onAddToCart: (p: RichProduct, sourceRect?: DOMRect) => handleAddToCart(p, sourceRect),
     onCartClick: () => setShowCartSidebar(true),
     onWishlistClick: () => setPage('wishlist'),
     cartCount,
@@ -8539,13 +8513,13 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
   if (page === 'wishlist') {
     content = <WishlistPage wishlist={wishlist} products={allProducts} onToggleWishlist={toggleWishlist} onAddToCart={addToCart} onProductClick={p => { if (!editMode) { setSelectedProduct(p); setPage('product'); } }} onBack={() => setPage('home')} primaryColor={primaryColor} storeName={storeName} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} device={device} />;
   } else if (page === 'product' && selectedProduct) {
-    content = <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} onBack={() => setPage('home')} onAddToCart={addToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} layoutStyle={design?.layoutStyle} />;
+    content = <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} onBack={() => setPage('home')} onAddToCart={handleAddToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} layoutStyle={design?.layoutStyle} />;
   } else if (page === 'cart') {
     content = <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} onBack={() => setPage('home')} onCheckout={() => setPage('checkout')} onUpdateQty={updateQty} />;
   } else if (page === 'checkout') {
     content = <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} paymentSettings={paymentSettings} layoutStyle={design?.layoutStyle} onBack={() => setPage('cart')} onPlaceOrder={async (pid, sid, customer) => { setSelectedPaymentId(pid); setSelectedShippingId(sid); await saveOrder(pid, sid, customer); setPage('success'); }} />;
   } else if (page === 'success') {
-    content = <SuccessPage primaryColor={primaryColor} storeName={storeName} orderNum={orderNum} total={cartTotal + shippingCost} fmtPrice={fmtPrice} paymentSettings={paymentSettings} selectedPaymentId={selectedPaymentId} layoutStyle={design?.layoutStyle} onContinue={() => { setCart([]); setPage('home'); }} buyerUser={buyerUser} onShowAuth={() => setShowAuthModal(true)} onMyOrders={() => setPage('myorders')} />;
+    content = <SuccessPage primaryColor={primaryColor} storeName={storeName} orderNum={orderNum} total={cartTotal + shippingCost} fmtPrice={fmtPrice} paymentSettings={paymentSettings} selectedPaymentId={selectedPaymentId} layoutStyle={design?.layoutStyle} onContinue={() => { clearCart(); setPage('home'); }} buyerUser={buyerUser} onShowAuth={() => setShowAuthModal(true)} onMyOrders={() => setPage('myorders')} />;
   } else if (page === 'myorders' && buyerUser) {
     content = <MyOrdersPage buyerUserId={buyerUser.id} primaryColor={primaryColor} storeName={storeName} storeId={store.id} onBack={() => setPage('home')} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} />;
   } else if (!design) {

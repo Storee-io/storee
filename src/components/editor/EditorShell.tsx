@@ -1429,7 +1429,7 @@ export default function EditorShell({ store, from }: Props) {
                 }
               }}
             >
-              <CartProvider>
+              <CartProvider storeId={store.id}>
                 <WishlistProvider>
                   <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /></div>}>
                     <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} onFieldPositionChange={handleFieldPositionChange} onArrayReorder={handleArrayReorder} onPageChange={setCanvasPage} navigateRef={canvasNavigateRef} />

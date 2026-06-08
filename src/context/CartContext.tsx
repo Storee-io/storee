@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { RichProduct } from '@/src/lib/claudeApi';
 
 export interface CartItem {
@@ -20,8 +20,19 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [cart, setCart] = useState<CartItem[]>([]);
+export function CartProvider({ children, storeId }: { children: React.ReactNode; storeId?: string }) {
+  const cartKey = storeId ? `storee_cart_${storeId}` : null;
+
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (!cartKey || typeof window === 'undefined') return [];
+    try { return JSON.parse(localStorage.getItem(cartKey) ?? '[]'); } catch { return []; }
+  });
+
+  // Persist cart to localStorage
+  useEffect(() => {
+    if (!cartKey) return;
+    try { localStorage.setItem(cartKey, JSON.stringify(cart)); } catch {}
+  }, [cart, cartKey]);
 
   const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
   const cartTotal = cart.reduce((sum, item) => sum + item.product.price * item.qty, 0);
