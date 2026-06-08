@@ -5447,8 +5447,8 @@ function TkGridOverlapping({ products, tt, primaryColor, device, onProductClick,
                 transition: 'transform 0.25s ease, z-index 0s',
               }}
               onClick={() => onProductClick(p)}
-              onMouseEnter={e => { if (editMode || isMobile) return; (e.currentTarget as HTMLElement).style.transform = 'scale(1.04) translateY(-8px)'; (e.currentTarget as HTMLElement).style.zIndex = '10'; }}
-              onMouseLeave={e => { if (editMode || isMobile) return; (e.currentTarget as HTMLElement).style.transform = 'scale(1) translateY(0)'; (e.currentTarget as HTMLElement).style.zIndex = String(ci + 1); }}
+              onMouseEnter={e => { if (isMobile) return; (e.currentTarget as HTMLElement).style.transform = 'scale(1.04) translateY(-8px)'; (e.currentTarget as HTMLElement).style.zIndex = '10'; }}
+              onMouseLeave={e => { if (isMobile) return; (e.currentTarget as HTMLElement).style.transform = 'scale(1) translateY(0)'; (e.currentTarget as HTMLElement).style.zIndex = String(ci + 1); }}
             >
               <div className="relative overflow-hidden" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', background: tt.surfaceBg }}>
                 <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
@@ -6666,8 +6666,8 @@ function CategorySpotlightSection({ design, tt, primaryColor, device, variant = 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {spotlightProducts.slice(1, 4).map(p => (
               <div key={p.id} onClick={() => onProductClick(p)} style={{ display: 'flex', gap: '16px', cursor: 'pointer', padding: '12px', borderRadius: tt.surfaceRadius, border: `1px solid ${tt.surfaceBorder}`, background: tt.pageBg, transition: 'transform 0.2s' }}
-                onMouseEnter={e => { if (!editMode) (e.currentTarget as HTMLElement).style.transform = 'translateX(4px)'; }}
-                onMouseLeave={e => { if (!editMode) (e.currentTarget as HTMLElement).style.transform = 'none'; }}>
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateX(4px)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; }}>
                 <div style={{ width: '60px', height: '60px', borderRadius: tt.surfaceRadius, overflow: 'hidden', flexShrink: 0 }}>
                   <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                 </div>
@@ -6733,8 +6733,8 @@ function CategorySpotlightSection({ design, tt, primaryColor, device, variant = 
             {spotlightProducts.slice(0, 4).map((p, i) => (
               <motion.div key={p.id} onClick={() => onProductClick(p)} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }}
                 style={{ cursor: 'pointer', borderRadius: tt.surfaceRadius, overflow: 'hidden', position: 'relative' }}
-                onMouseEnter={e => { if (!editMode) (e.currentTarget as HTMLElement).style.transform = 'scale(1.02)'; }}
-                onMouseLeave={e => { if (!editMode) (e.currentTarget as HTMLElement).style.transform = 'none'; }}>
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.02)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; }}>
                 <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: tt.surfaceBg }}>
                   <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                 </div>
@@ -8297,7 +8297,7 @@ export default function StorePreview({ store, device, editMode, previewShell, on
 
   // Local field position state initialized from design.fieldOffsets
   const [fieldOffsets, setFieldOffsets] = useState<FieldOffsetMap>(() =>
-    store.design.fieldOffsets || {}
+    store.design?.fieldOffsets || {}
   );
 
   // Callback to update field position (also calls parent callback for persistence)

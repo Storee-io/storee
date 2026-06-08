@@ -401,7 +401,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
         let node;
         const elementsToKeep: Element[] = [];
         while (node = walker.nextNode()) {
-          if (node instanceof Element && !node.style.fontSize && node.tagName === 'A') {
+          if (node instanceof HTMLElement && !node.style.fontSize && node.tagName === 'A') {
             elementsToKeep.push(node.cloneNode(true) as Element);
           }
         }
