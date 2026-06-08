@@ -3,14 +3,13 @@
 import { useState, useRef, useCallback, useEffect, Suspense, lazy } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Monitor, Tablet, Smartphone, Globe, Rocket, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw, Check, ChevronDown, PencilLine, LayoutDashboard } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, Globe, Rocket, ArrowLeft, RefreshCw, X, Sparkles, Check, ChevronDown, PencilLine, LayoutDashboard } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { CartProvider } from '../../context/CartContext';
 import { WishlistProvider } from '../../context/WishlistContext';
 const StorePreview = lazy(() => import('./StorePreview'));
 import ElementOverlay from '../editor/ElementOverlay';
 import PublishModal from './PublishModal';
-import UnpublishModal from './UnpublishModal';
 import { generateStoreWithClaude } from '../../lib/claudeApiClient';
 import { getGuestId } from '../../lib/guestId';
 import GeneratingOverlay from '../GeneratingOverlay';
@@ -45,7 +44,6 @@ export default function PreviewShell({ store, from = null }: Props) {
   const [device, setDevice] = useState<DeviceMode>('desktop');
   const [currentPath, setCurrentPath] = useState('/');
   const [showPublishModal, setShowPublishModal] = useState(false);
-  const [showUnpublishModal, setShowUnpublishModal] = useState(false);
   const [showRegenModal, setShowRegenModal] = useState(false);
   const [regenBoxValue, setRegenBoxValue] = useState<PromptBoxValue | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -125,13 +123,6 @@ export default function PreviewShell({ store, from = null }: Props) {
     });
     toast.success('Store is now live! 🎉', { description: `https://${subdomain}` });
   };
-
-  const handleUnpublish = () => {
-    updateActiveStore({ status: 'Draft' });
-    setShowUnpublishModal(false);
-    toast.success('Store unpublished', { description: 'Your store is no longer publicly accessible.' });
-  };
-
 
   const openRegenModal = () => {
     // Pre-fill PromptBox from current store values
@@ -379,38 +370,16 @@ export default function PreviewShell({ store, from = null }: Props) {
             <span className="hidden sm:inline">Editor</span>
           </button>
 
-          {/* Publish / Republish / Unpublish — keeps label as primary CTA */}
-          {isPublished ? (
-            <Tip label="Take store offline">
-              <button
-                onClick={() => setShowUnpublishModal(true)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-red-50 text-red-600 border border-red-200 text-sm font-medium rounded-xl hover:bg-red-100 transition-all"
-              >
-                <CloudOff className="w-4 h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">Unpublish</span>
-              </button>
-            </Tip>
-          ) : hasPublishedBefore ? (
-            <Tip label="Re-publish your store">
-              <button
-                onClick={() => setShowPublishModal(true)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 gradient-bg text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all shadow-md"
-              >
-                <RotateCcw className="w-4 h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">Republish</span>
-              </button>
-            </Tip>
-          ) : (
-            <Tip label="Make your store live">
-              <button
-                onClick={() => setShowPublishModal(true)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 gradient-bg text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all shadow-md"
-              >
-                <Rocket className="w-4 h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">Publish</span>
-              </button>
-            </Tip>
-          )}
+          {/* Publish — unified button for first publish & updates */}
+          <Tip label={isPublished ? 'Publish changes to live store' : 'Make your store live'}>
+            <button
+              onClick={() => setShowPublishModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 gradient-bg text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all shadow-md"
+            >
+              <Rocket className="w-4 h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Publish</span>
+            </button>
+          </Tip>
 
           {/* Divider */}
           <div className="w-px h-5 bg-slate-200 mx-0.5 flex-shrink-0" />
@@ -622,19 +591,9 @@ export default function PreviewShell({ store, from = null }: Props) {
             store={liveStore}
             onPublish={handlePublishComplete}
             onClose={() => setShowPublishModal(false)}
-            {...(hasPublishedBefore && !isPublished
+            {...((isPublished || hasPublishedBefore) && liveStore.publishedDomain
               ? { fixedSubdomain: liveStore.publishedDomain }
               : {})}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showUnpublishModal && (
-          <UnpublishModal
-            store={liveStore}
-            onConfirm={handleUnpublish}
-            onClose={() => setShowUnpublishModal(false)}
           />
         )}
       </AnimatePresence>
