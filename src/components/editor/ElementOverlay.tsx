@@ -255,10 +255,14 @@ interface MoveState {
   startY: number;
   startTranslateX: number;
   startTranslateY: number;
+  startMarginTop: number;
+  startMarginLeft: number;
   startRelRect: Rect;
   el: HTMLElement;
   lastClientX: number;
   lastClientY: number;
+  /** true when React/Framer already owns el.style.transform — use margin instead */
+  useMargin: boolean;
 }
 
 export default function ElementOverlay({ containerRef, editMode, elementOverrides, onElementOverride }: ElementOverlayProps) {
@@ -453,18 +457,36 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     if (!el || !containerRef.current) return;
 
     const { x: startTranslateX, y: startTranslateY } = parseTranslate(el);
+    const startMarginTop  = parseFloat(el.style.marginTop)  || 0;
+    const startMarginLeft = parseFloat(el.style.marginLeft) || 0;
     const startRelRect = getRelativeRect(el, containerRef.current);
+
+    // If React/Framer already owns el.style.transform (e.g. 'none' from Framer Motion),
+    // using transform would be overwritten on every re-render — use margin instead.
+    const useMargin = el.style.transform !== '' && !el.style.transform.startsWith('translate(');
 
     moveRef.current = {
       startX: e.clientX, startY: e.clientY,
       startTranslateX, startTranslateY,
+      startMarginTop, startMarginLeft,
       startRelRect, el,
       lastClientX: e.clientX, lastClientY: e.clientY,
+      useMargin,
     };
 
     // Direct DOM cursor — no React re-render
     document.body.style.cursor = 'grabbing';
     document.body.style.userSelect = 'none';
+
+    const applyPosition = (el: HTMLElement, dx: number, dy: number, state: MoveState) => {
+      if (state.useMargin) {
+        el.style.marginLeft = `${state.startMarginLeft + dx}px`;
+        el.style.marginTop  = `${state.startMarginTop  + dy}px`;
+      } else {
+        el.style.transform = `translate(${state.startTranslateX + dx}px, ${state.startTranslateY + dy}px)`;
+      }
+      el.setAttribute('data-overridden', '1');
+    };
 
     const onMouseMove = (ev: MouseEvent) => {
       if (!moveRef.current) return;
@@ -472,7 +494,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       const clientX = ev.clientX;
       const clientY = ev.clientY;
 
-      // Always track latest position so onMouseUp can apply final transform
+      // Always track latest position so onMouseUp can apply final position
       moveRef.current.lastClientX = clientX;
       moveRef.current.lastClientY = clientY;
 
@@ -482,12 +504,11 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       moveRafRef.current = requestAnimationFrame(() => {
         moveRafRef.current = null;
         if (!moveRef.current) return;
-        const { startX, startY, startTranslateX, startTranslateY, startRelRect, el } = moveRef.current;
+        const { startX, startY, startRelRect, el } = moveRef.current;
         const dx = clientX - startX;
         const dy = clientY - startY;
 
-        el.style.transform = `translate(${startTranslateX + dx}px, ${startTranslateY + dy}px)`;
-        el.setAttribute('data-overridden', '1');
+        applyPosition(el, dx, dy, moveRef.current);
 
         // Pure delta math — no getBoundingClientRect, no scrollHeight per frame
         updateSelectionDOM({
@@ -505,13 +526,12 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         moveRafRef.current = null;
       }
       if (moveRef.current && containerRef.current) {
-        const { el, startX, startY, startTranslateX, startTranslateY, lastClientX, lastClientY } = moveRef.current;
+        const { el, startX, startY, lastClientX, lastClientY } = moveRef.current;
 
-        // Apply final transform synchronously — rAF may have been cancelled
+        // Apply final position synchronously — rAF may have been cancelled
         const dx = lastClientX - startX;
         const dy = lastClientY - startY;
-        el.style.transform = `translate(${startTranslateX + dx}px, ${startTranslateY + dy}px)`;
-        el.setAttribute('data-overridden', '1');
+        applyPosition(el, dx, dy, moveRef.current);
 
         const rect = getRelativeRect(el, containerRef.current);
         setSelected(prev => prev ? { ...prev, rect } : null);
