@@ -467,9 +467,10 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     const startMarginLeft = parseFloat(el.style.marginLeft) || 0;
     const startRelRect = getRelativeRect(el, containerRef.current);
 
-    // If React/Framer already owns el.style.transform (e.g. 'none' from Framer Motion),
-    // using transform would be overwritten on every re-render — use margin instead.
-    const useMargin = el.style.transform !== '' && !el.style.transform.startsWith('translate(');
+    // Use margin only when the element has a non-translate transform we cannot safely
+    // override (e.g. rotate, scale). 'none' and 'translate(...)' are safe to replace.
+    const t = el.style.transform;
+    const useMargin = t !== '' && t !== 'none' && !t.startsWith('translate(');
 
     // ── Constrain + snap + axis-lock helpers ─────────────────────────────────
     const parentEl = el.parentElement;
