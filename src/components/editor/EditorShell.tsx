@@ -240,7 +240,7 @@ interface Props {
 }
 
 export default function EditorShell({ store, from }: Props) {
-  const { updateActiveStore, activeStore } = useStore();
+  const { updateActiveStore, activeStore, setActiveStore } = useStore();
   const router = useRouter();
   const [device, setDevice] = useState<Device>('desktop');
   const [openSection, setOpenSection] = useState<string>('hero');
@@ -420,6 +420,16 @@ export default function EditorShell({ store, from }: Props) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [canUndo, canRedo, historyUndo, historyRedo]);
+
+  // Ensure activeStore in context always points to THIS store.
+  // Without this, activeStore may still be a different store (e.g. sorted[0] from
+  // the dashboard), and updateActiveStore would patch + persist the WRONG store.
+  useEffect(() => {
+    if (activeStore?.id !== store.id) {
+      setActiveStore(store);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store.id]);
 
   // Sync from context when store id changes
   useEffect(() => {
