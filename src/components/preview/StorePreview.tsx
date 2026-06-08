@@ -248,7 +248,6 @@ function EditSpan({
   return <span className={className} style={spanStyle}>{decodedValue}</span>;
 }
 
-interface CartItem { product: RichProduct; qty: number; }
 type StorePage = 'home' | 'product' | 'cart' | 'checkout' | 'success' | 'myorders' | 'wishlist';
 
 interface BuyerUser { id: string; email: string; }
