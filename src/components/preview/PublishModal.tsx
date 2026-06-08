@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Globe, Rocket, Check, ExternalLink, LayoutDashboard, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { X, Globe, Rocket, Check, ExternalLink, LayoutDashboard, Loader2, AlertCircle, RefreshCw, Copy } from 'lucide-react';
 import type { Store } from '@/src/context/StoreContext';
 import { findAvailableSubdomain } from '@/src/lib/subdomainGenerator';
 
@@ -62,8 +62,10 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
   const [formError, setFormError] = useState('');
   const [checkStatus, setCheckStatus] = useState<CheckStatus>('idle');
   const [isGeneratingDefault, setIsGeneratingDefault] = useState(!fixedSubdomain);
+  const [copied, setCopied] = useState(false);
 
   const apiResultRef = useRef<{ success: boolean; error?: string } | null>(null);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // The store's own published subdomain — upsert is fine for re-publishing
   const ownSubdomain = store.publishedDomain ?? '';
@@ -251,6 +253,33 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
     const t = setTimeout(advance, 900);
     return () => clearTimeout(t);
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Copy URL to clipboard ───────────────────────────────────────────────
+  const handleCopyUrl = useCallback(() => {
+    const url = `https://${publishedUrl}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {
+      // Fallback for older browsers
+      try {
+        const el = document.createElement('textarea');
+        el.value = url;
+        el.style.position = 'fixed';
+        el.style.opacity = '0';
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        setCopied(true);
+        if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+        copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    });
+  }, [publishedUrl]);
 
   // ── Derived: is publish button enabled? ──────────────────────────────────
   const canPublish =
@@ -488,8 +517,24 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
               <p className="text-sm text-slate-500 mb-5">Your store is now live and accessible to everyone.</p>
 
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-6">
-                <p className="text-xs text-emerald-600 font-medium mb-0.5">Your store URL</p>
-                <p className="text-base font-mono font-bold text-emerald-800">https://{publishedUrl}</p>
+                <p className="text-xs text-emerald-600 font-medium mb-2">Your store URL</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-mono font-bold text-emerald-800 flex-1 break-all">https://{publishedUrl}</p>
+                  <button
+                    onClick={handleCopyUrl}
+                    className="flex-shrink-0 p-2 rounded-lg text-emerald-600 hover:bg-emerald-100 transition-colors"
+                    title="Copy URL"
+                  >
+                    {copied ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+                {copied && (
+                  <p className="text-xs text-emerald-600 font-medium mt-2">✓ Copied to clipboard</p>
+                )}
               </div>
 
               <div className="flex gap-3">
