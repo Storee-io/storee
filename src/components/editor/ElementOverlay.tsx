@@ -515,10 +515,22 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       ? getRelativeRect(parentEl, containerRef.current)
       : { top: -99999, left: -99999, width: 999999, height: 999999 };
 
+    // For center-snap, walk up to the nearest data-editor-section (full page width).
+    // Using the immediate parent gives wrong results when the parent is a narrow
+    // flex column — the element would snap to the column center, not the page center.
+    let sectionAncestor: Element | null = el.parentElement;
+    while (sectionAncestor && !sectionAncestor.getAttribute('data-editor-section')) {
+      sectionAncestor = sectionAncestor.parentElement;
+    }
+    const snapRefEl = sectionAncestor ?? containerRef.current;
+    const snapRefRect: Rect = snapRefEl && containerRef.current
+      ? getRelativeRect(snapRefEl, containerRef.current)
+      : parentRelRect;
+
     const SNAP         = 8;   // px grid
     const CENTER_SNAP  = 12;  // px radius for center-snap attraction
-    const parentCenterX = parentRelRect.left + parentRelRect.width  / 2;
-    const parentCenterY = parentRelRect.top  + parentRelRect.height / 2;
+    const parentCenterX = snapRefRect.left + snapRefRect.width  / 2;
+    const parentCenterY = snapRefRect.top  + snapRefRect.height / 2;
 
     type SnapResult = { dx: number; dy: number; snapV: boolean; snapH: boolean; axisLock: 'h' | 'v' | null };
 
@@ -576,25 +588,25 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       const INACTIVE = 'rgba(6,182,212,0.35)'; // dim cyan
 
       if (guideHRef.current) {
-        // Horizontal guide: sits at a Y position, spans parent width
+        // Horizontal guide: sits at a Y position, spans section (full page) width
         const y = axisLock === 'h'
           ? startRelRect.top + startRelRect.height / 2 + dy  // track element center
           : parentCenterY;
         guideHRef.current.style.top    = `${y}px`;
-        guideHRef.current.style.left   = `${parentRelRect.left}px`;
-        guideHRef.current.style.width  = `${parentRelRect.width}px`;
+        guideHRef.current.style.left   = `${snapRefRect.left}px`;
+        guideHRef.current.style.width  = `${snapRefRect.width}px`;
         guideHRef.current.style.borderTopColor = (snapH || axisLock === 'h') ? ACTIVE : INACTIVE;
         guideHRef.current.style.opacity = '1';
         guideHRef.current.style.display = 'block';
       }
       if (guideVRef.current) {
-        // Vertical guide: sits at an X position, spans parent height
+        // Vertical guide: sits at an X position, spans section height
         const x = axisLock === 'v'
           ? startRelRect.left + startRelRect.width / 2 + dx  // track element center
           : parentCenterX;
         guideVRef.current.style.left   = `${x}px`;
-        guideVRef.current.style.top    = `${parentRelRect.top}px`;
-        guideVRef.current.style.height = `${parentRelRect.height}px`;
+        guideVRef.current.style.top    = `${snapRefRect.top}px`;
+        guideVRef.current.style.height = `${snapRefRect.height}px`;
         guideVRef.current.style.borderLeftColor = (snapV || axisLock === 'v') ? ACTIVE : INACTIVE;
         guideVRef.current.style.opacity = '1';
         guideVRef.current.style.display = 'block';
