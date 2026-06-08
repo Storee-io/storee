@@ -480,55 +480,52 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
     type SnapResult = { dx: number; dy: number; snapV: boolean; snapH: boolean; axisLock: 'h' | 'v' | null };
 
+    // Clamp bounds (shared)
+    const minDx = parentRelRect.left - startRelRect.left;
+    const maxDx = (parentRelRect.left + parentRelRect.width)  - (startRelRect.left + startRelRect.width);
+    const minDy = parentRelRect.top  - startRelRect.top;
+    const maxDy = (parentRelRect.top  + parentRelRect.height) - (startRelRect.top  + startRelRect.height);
+    const clamp = (v: number, lo: number, hi: number) => hi > lo ? Math.max(lo, Math.min(hi, v)) : v;
+
     /**
-     * 1. Axis lock  — if Shift held, lock to dominant axis
-     * 2. Center snap — attract element center to parent center within CENTER_SNAP px
-     * 3. Grid snap   — round to SNAP px grid
-     * 4. Clamp       — keep element inside parent bounds
+     * LIVE (during drag rAF) — smooth, no grid snap.
+     * Axis lock + center snap + constrain only.
+     * Grid snap is intentionally omitted to avoid 8px jump jitter during drag.
      */
-    const constrainAndSnap = (rawDx: number, rawDy: number, shiftKey = false): SnapResult => {
-      // 1. Axis lock
+    const constrainLive = (rawDx: number, rawDy: number, shiftKey: boolean): SnapResult => {
       let effDx = rawDx, effDy = rawDy;
       let axisLock: 'h' | 'v' | null = null;
       if (shiftKey) {
         if (Math.abs(rawDx) >= Math.abs(rawDy)) { effDy = 0; axisLock = 'h'; }
         else                                     { effDx = 0; axisLock = 'v'; }
       }
-
-      // 2+3. Snap: try center first, fall back to grid
+      let snDx = effDx, snDy = effDy;
+      let snapV = false, snapH = false;
       const elCX = startRelRect.left + startRelRect.width  / 2 + effDx;
       const elCY = startRelRect.top  + startRelRect.height / 2 + effDy;
+      if (!axisLock || axisLock === 'h') {
+        if (Math.abs(elCX - parentCenterX) < CENTER_SNAP) { snDx = parentCenterX - (startRelRect.left + startRelRect.width  / 2); snapV = true; }
+      }
+      if (!axisLock || axisLock === 'v') {
+        if (Math.abs(elCY - parentCenterY) < CENTER_SNAP) { snDy = parentCenterY - (startRelRect.top  + startRelRect.height / 2); snapH = true; }
+      }
+      return { dx: clamp(snDx, minDx, maxDx), dy: clamp(snDy, minDy, maxDy), snapV, snapH, axisLock };
+    };
+
+    /**
+     * FINAL (on mouseUp) — snap to 8px grid + center snap + constrain.
+     * Applied once on release so saved position is grid-aligned.
+     */
+    const constrainFinal = (rawDx: number, rawDy: number): SnapResult => {
+      let snDx = rawDx, snDy = rawDy;
       let snapV = false, snapH = false;
-      let snDx = effDx, snDy = effDy;
-
-      if (!axisLock || axisLock === 'h') { // horizontal movement allowed
-        if (Math.abs(elCX - parentCenterX) < CENTER_SNAP) {
-          snDx = parentCenterX - (startRelRect.left + startRelRect.width / 2);
-          snapV = true;
-        } else {
-          snDx = Math.round(effDx / SNAP) * SNAP;
-        }
-      }
-      if (!axisLock || axisLock === 'v') { // vertical movement allowed
-        if (Math.abs(elCY - parentCenterY) < CENTER_SNAP) {
-          snDy = parentCenterY - (startRelRect.top + startRelRect.height / 2);
-          snapH = true;
-        } else {
-          snDy = Math.round(effDy / SNAP) * SNAP;
-        }
-      }
-
-      // 4. Clamp inside parent
-      const minDx = parentRelRect.left - startRelRect.left;
-      const maxDx = (parentRelRect.left + parentRelRect.width)  - (startRelRect.left + startRelRect.width);
-      const minDy = parentRelRect.top  - startRelRect.top;
-      const maxDy = (parentRelRect.top  + parentRelRect.height) - (startRelRect.top  + startRelRect.height);
-
-      return {
-        dx: maxDx > minDx ? Math.max(minDx, Math.min(maxDx, snDx)) : snDx,
-        dy: maxDy > minDy ? Math.max(minDy, Math.min(maxDy, snDy)) : snDy,
-        snapV, snapH, axisLock,
-      };
+      const elCX = startRelRect.left + startRelRect.width  / 2 + rawDx;
+      const elCY = startRelRect.top  + startRelRect.height / 2 + rawDy;
+      if (Math.abs(elCX - parentCenterX) < CENTER_SNAP) { snDx = parentCenterX - (startRelRect.left + startRelRect.width  / 2); snapV = true; }
+      else snDx = Math.round(rawDx / SNAP) * SNAP;
+      if (Math.abs(elCY - parentCenterY) < CENTER_SNAP) { snDy = parentCenterY - (startRelRect.top  + startRelRect.height / 2); snapH = true; }
+      else snDy = Math.round(rawDy / SNAP) * SNAP;
+      return { dx: clamp(snDx, minDx, maxDx), dy: clamp(snDy, minDy, maxDy), snapV, snapH, axisLock: null };
     };
 
     /** Update guide line DOM positions + visibility — zero re-renders */
@@ -608,7 +605,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         moveRafRef.current = null;
         if (!moveRef.current) return;
         const { startX, startY, startRelRect, el } = moveRef.current;
-        const { dx, dy, snapV, snapH, axisLock } = constrainAndSnap(clientX - startX, clientY - startY, shiftKey);
+        const { dx, dy, snapV, snapH, axisLock } = constrainLive(clientX - startX, clientY - startY, shiftKey);
 
         applyPosition(el, dx, dy, moveRef.current);
         updateGuides(dx, dy, snapV, snapH, axisLock);
@@ -632,7 +629,8 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         const { el, startX, startY, lastClientX, lastClientY } = moveRef.current;
 
         // Apply final position synchronously — rAF may have been cancelled
-        const { dx, dy } = constrainAndSnap(lastClientX - startX, lastClientY - startY);
+        // constrainFinal: grid snap applied once on release (not during drag)
+        const { dx, dy } = constrainFinal(lastClientX - startX, lastClientY - startY);
         applyPosition(el, dx, dy, moveRef.current);
 
         const rect = getRelativeRect(el, containerRef.current);
