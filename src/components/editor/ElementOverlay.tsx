@@ -787,6 +787,8 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     const handleClick = (e: MouseEvent) => {
       if (dragRef.current || moveRef.current) return;
       if (didDragRef.current) { didDragRef.current = false; return; }
+      // Prevent selection change if any mouse button is still held
+      if (e.buttons !== 0) return;
       const target = getTarget(e);
       if (!target) return;
       if ((target as HTMLElement).isContentEditable) return;
