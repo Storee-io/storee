@@ -22,7 +22,7 @@ import type { StoreDesign } from '../../lib/claudeApi';
 import { toast } from 'sonner';
 import { Tip } from '@/components/ui/tip';
 import { FloatingToolbar } from './FloatingToolbar';
-import ElementOverlay from './ElementOverlay';
+import ElementOverlay, { type ElementStyleOverride } from './ElementOverlay';
 
 type Device = 'desktop' | 'tablet' | 'mobile';
 
@@ -283,7 +283,7 @@ export default function EditorShell({ store, from }: Props) {
   const [footerNote,      setFooterNote]      = useState(d?.footerNote ?? '');
 
   // Element size overrides from drag-resize (persisted in design.elementOverrides)
-  const [elementOverrides, setElementOverrides] = useState<Record<string, { width?: string; height?: string; marginTop?: string; marginLeft?: string }>>(
+  const [elementOverrides, setElementOverrides] = useState<Record<string, ElementStyleOverride>>(
     d?.elementOverrides ?? {}
   );
 
@@ -458,7 +458,7 @@ export default function EditorShell({ store, from }: Props) {
     console.log('Field position change:', field, offset);
   }, [updateActiveStore, pushSnapshot]);
 
-  const handleElementOverride = useCallback((selector: string, styles: { width?: string; height?: string; marginTop?: string; marginLeft?: string }) => {
+  const handleElementOverride = useCallback((selector: string, styles: ElementStyleOverride) => {
     setElementOverrides(prev => ({ ...prev, [selector]: styles }));
     // Trigger autosave by signalling dirty (setIsDirty is triggered via the useEffect deps below)
     setIsDirty(true);

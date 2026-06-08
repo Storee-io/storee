@@ -349,7 +349,10 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         }
       });
     }
-  }, [containerRef, elementOverrides]);
+  // editMode is included so overrides are re-applied when template components
+  // conditionally re-render (e.g. EditSpan vs plain span) on mode switch.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [containerRef, elementOverrides, editMode]);
 
   const updateOverlayHeight = useCallback(() => {
     if (containerRef.current) setOverlayHeight(containerRef.current.scrollHeight);

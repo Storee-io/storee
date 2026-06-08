@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Monitor, Tablet, Smartphone, Globe, Rocket, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw, Check, ChevronDown, PencilLine, LayoutDashboard } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import StorePreview from './StorePreview';
+import ElementOverlay from '../editor/ElementOverlay';
 import PublishModal from './PublishModal';
 import UnpublishModal from './UnpublishModal';
 import { generateStoreWithClaude } from '../../lib/claudeApiClient';
@@ -511,9 +512,15 @@ export default function PreviewShell({ store, from = null }: Props) {
             {/* Scroll div — no transform; scrolls store content independently */}
             <div
               ref={scrollContainerRef}
-              style={{ overflowY: 'auto', height: '100%' }}
+              style={{ overflowY: 'auto', height: '100%', position: 'relative' }}
             >
               <StorePreview store={liveStore} device={device} previewShell onPageChange={setCurrentPath} navigateRef={navigateRef} />
+              {/* Apply saved element overrides (resize/move) in read-only mode */}
+              <ElementOverlay
+                containerRef={scrollContainerRef}
+                editMode={false}
+                elementOverrides={liveStore.design?.elementOverrides}
+              />
             </div>
           </div>
 
