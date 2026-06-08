@@ -582,6 +582,11 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     document.body.style.cursor = 'grabbing';
     document.body.style.userSelect = 'none';
 
+    // Promote element to compositor layer + disable any CSS transition during drag
+    const savedTransition = el.style.transition;
+    el.style.transition = 'none';
+    el.style.willChange = 'transform';
+
     const applyPosition = (el: HTMLElement, dx: number, dy: number, state: MoveState) => {
       if (state.useMargin) {
         el.style.marginLeft = `${state.startMarginLeft + dx}px`;
@@ -644,6 +649,9 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         emitOverride(el);
       }
       hideGuides();
+      // Restore transition + remove compositor hint
+      el.style.transition = savedTransition;
+      el.style.willChange = '';
       moveRef.current = null;
       didDragRef.current = true;
       document.body.style.cursor = '';
