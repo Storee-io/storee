@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, Suspense, lazy } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Monitor, Tablet, Smartphone, Globe, Rocket, ArrowLeft, RefreshCw, X, Sparkles, CloudOff, RotateCcw, Check, ChevronDown, PencilLine, LayoutDashboard } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
-import StorePreview from './StorePreview';
+const StorePreview = lazy(() => import('./StorePreview'));
 import ElementOverlay from '../editor/ElementOverlay';
 import PublishModal from './PublishModal';
 import UnpublishModal from './UnpublishModal';
@@ -514,7 +514,9 @@ export default function PreviewShell({ store, from = null }: Props) {
               ref={scrollContainerRef}
               style={{ overflowY: 'auto', height: '100%', position: 'relative' }}
             >
-              <StorePreview store={liveStore} device={device} previewShell onPageChange={setCurrentPath} navigateRef={navigateRef} />
+              <Suspense fallback={<div className="w-full h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /></div>}>
+                <StorePreview store={liveStore} device={device} previewShell onPageChange={setCurrentPath} navigateRef={navigateRef} />
+              </Suspense>
               {/* Apply saved element overrides (resize/move) in read-only mode */}
               <ElementOverlay
                 containerRef={scrollContainerRef}

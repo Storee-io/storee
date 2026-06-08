@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, Suspense, lazy } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import {
@@ -14,7 +14,7 @@ import {
 import { useHistory } from '../../hooks/useHistory';
 import HistoryPanel from './HistoryPanel';
 import { useStore } from '../../context/StoreContext';
-import StorePreview from '../preview/StorePreview';
+const StorePreview = lazy(() => import('../preview/StorePreview'));
 import PublishModal from '../preview/PublishModal';
 import UnpublishModal from '../preview/UnpublishModal';
 import type { Store } from '../../context/StoreContext';
@@ -1427,7 +1427,9 @@ export default function EditorShell({ store, from }: Props) {
                 }
               }}
             >
-              <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} onFieldPositionChange={handleFieldPositionChange} onArrayReorder={handleArrayReorder} onPageChange={setCanvasPage} navigateRef={canvasNavigateRef} />
+              <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /></div>}>
+                <StorePreview store={previewStore} device={device} editMode={editMode} previewShell onFieldChange={handleFieldChange} onFieldPositionChange={handleFieldPositionChange} onArrayReorder={handleArrayReorder} onPageChange={setCanvasPage} navigateRef={canvasNavigateRef} />
+              </Suspense>
               <ElementOverlay containerRef={previewRef} editMode={editMode} elementOverrides={elementOverrides} onElementOverride={handleElementOverride} />
             </div>
           </div>

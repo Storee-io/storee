@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform, Reorder } from 'framer-motion';
@@ -8291,7 +8291,7 @@ function pathToStorePage(path: string): StorePage {
   return (entry?.[0] as StorePage | undefined) ?? 'home';
 }
 
-export default function StorePreview({ store, device, editMode, previewShell, onFieldChange, onFieldPositionChange, onArrayReorder, onPageChange, initialPath, navigateRef }: StorePreviewProps) {
+function StorePreview({ store, device, editMode, previewShell, onFieldChange, onFieldPositionChange, onArrayReorder, onPageChange, initialPath, navigateRef }: StorePreviewProps) {
   const [page, setPage] = useState<StorePage>(() => pathToStorePage(initialPath ?? '/'));
   const [showCartSidebar, setShowCartSidebar] = useState(false);
 
@@ -8687,3 +8687,4 @@ export default function StorePreview({ store, device, editMode, previewShell, on
   );
 }
 
+export default memo(StorePreview);
