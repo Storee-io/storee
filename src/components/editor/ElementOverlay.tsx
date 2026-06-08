@@ -677,24 +677,6 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
                   {label}
                 </span>
 
-                {/* Move icon in center-top — Framer style */}
-                <span
-                  data-overlay="true"
-                  style={{
-                    position: 'absolute',
-                    top: -22, left: '50%', transform: 'translateX(-50%)',
-                    background: color + '22', color, borderRadius: 3,
-                    width: 20, height: 18,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    pointerEvents: 'none',
-                  }}
-                >
-                  {/* Four-arrow move icon (SVG) */}
-                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                    <path d="M5.5 1L5.5 10M1 5.5L10 5.5M5.5 1L3.5 3M5.5 1L7.5 3M5.5 10L3.5 8M5.5 10L7.5 8M1 5.5L3 3.5M1 5.5L3 7.5M10 5.5L8 3.5M10 5.5L8 7.5"
-                      stroke={color} strokeWidth="1.2" strokeLinecap="round"/>
-                  </svg>
-                </span>
               </div>
 
               {/* Resize handles (8 points) */}
