@@ -458,6 +458,10 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     const el = lastSelectedEl.current as HTMLElement | null;
     if (!el || !containerRef.current) return;
 
+    // Clear hover immediately so no other element highlights during drag
+    setHovered(null);
+    lastHoveredEl.current = null;
+
     const { x: startTranslateX, y: startTranslateY } = parseTranslate(el);
     const startMarginTop  = parseFloat(el.style.marginTop)  || 0;
     const startMarginLeft = parseFloat(el.style.marginLeft) || 0;
