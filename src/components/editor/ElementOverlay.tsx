@@ -36,9 +36,7 @@ function getHandlePosition(pos: HandlePos, rect: Rect) {
 
 function getLabel(el: Element): string {
   const tag = el.tagName.toLowerCase();
-  const cls = el.className && typeof el.className === 'string'
-    ? el.className.split(' ').find(c => c.length > 0 && c.length < 20)
-    : '';
+  const cls = (el.getAttribute('class') || '').split(' ').find(c => c.length > 0 && c.length < 20);
   return cls ? `${tag}.${cls}` : tag;
 }
 
@@ -127,13 +125,13 @@ interface ElementOverlayProps {
 
 /** Build a stable selector key for an element: "tagName|className" */
 function buildSelector(el: Element): string {
-  return `${el.tagName.toLowerCase()}|${el.className}`;
+  return `${el.tagName.toLowerCase()}|${el.getAttribute('class') || ''}`;
 }
 
 /** Derive a human-readable label for an element based on its tag, classes, and parent section */
 function buildHumanLabel(el: Element): string {
   const tag = el.tagName.toLowerCase();
-  const cls = (el.className || '').toLowerCase();
+  const cls = (el.getAttribute('class') || '').toLowerCase();
 
   let sectionName = '';
   let ancestor = el.parentElement;
@@ -301,7 +299,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       const tag = selector.slice(0, pipeIdx);
       const className = selector.slice(pipeIdx + 1);
       container.querySelectorAll<HTMLElement>(tag).forEach(el => {
-        if (el.className === className) {
+        if ((el.getAttribute('class') || '') === className) {
           if (styles.width)      el.style.width      = styles.width;
           if (styles.height)     el.style.height     = styles.height;
           if (styles.marginTop)  el.style.marginTop  = styles.marginTop;
@@ -363,9 +361,9 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     const siblings: HTMLElement[] = [];
     if (container) {
       const tag = el.tagName.toLowerCase();
-      const cls = el.className;
+      const cls = el.getAttribute('class') || '';
       container.querySelectorAll<HTMLElement>(tag).forEach(s => {
-        if (s !== el && s.className === cls) siblings.push(s);
+        if (s !== el && (s.getAttribute('class') || '') === cls) siblings.push(s);
       });
     }
 
