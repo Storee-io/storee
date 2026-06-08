@@ -519,7 +519,7 @@ export default function PreviewShell({ store, from = null }: Props) {
               <CartProvider storeId={liveStore.id}>
                 <WishlistProvider>
                   <Suspense fallback={<div className="w-full h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /></div>}>
-                    <StorePreview store={liveStore} device={device} previewShell onPageChange={setCurrentPath} navigateRef={navigateRef} />
+                    <StorePreview store={liveStore} device={device} previewShell onPageChange={setCurrentPath} navigateRef={navigateRef} elementOverrides={liveStore.design?.elementOverrides} />
                   </Suspense>
                 </WishlistProvider>
               </CartProvider>

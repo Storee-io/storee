@@ -8267,6 +8267,8 @@ interface StorePreviewProps {
   initialPath?: string;
   /** Ref filled by StorePreview — call navigateRef.current(path) to navigate externally. */
   navigateRef?: React.MutableRefObject<((path: string) => void) | null>;
+  /** Element style overrides (resize, position changes) to apply to the preview */
+  elementOverrides?: Record<string, any>;
 }
 
 // ── Store page routing ────────────────────────────────────────────────────────
@@ -8292,7 +8294,7 @@ function pathToStorePage(path: string): StorePage {
   return (entry?.[0] as StorePage | undefined) ?? 'home';
 }
 
-function StorePreview({ store, device, editMode, previewShell, onFieldChange, onFieldPositionChange, onArrayReorder, onPageChange, initialPath, navigateRef }: StorePreviewProps) {
+function StorePreview({ store, device, editMode, previewShell, onFieldChange, onFieldPositionChange, onArrayReorder, onPageChange, initialPath, navigateRef, elementOverrides }: StorePreviewProps) {
   const [page, setPage] = useState<StorePage>(() => pathToStorePage(initialPath ?? '/'));
   const [showCartSidebar, setShowCartSidebar] = useState(false);
 
@@ -8458,6 +8460,49 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
   const cartToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Use wishlist from context
   const { wishlist, toggleWishlist } = useWishlist();
+
+  // Apply element style overrides (resize, position, etc.) to DOM
+  useEffect(() => {
+    const container = previewContainerRef.current;
+    if (!container || !elementOverrides) return;
+
+    // Clear previous overrides
+    container.querySelectorAll<HTMLElement>('[data-overridden]').forEach(el => {
+      el.style.removeProperty('width');
+      el.style.removeProperty('height');
+      el.style.removeProperty('margin-top');
+      el.style.removeProperty('margin-left');
+      el.style.removeProperty('transform');
+      el.style.removeProperty('position');
+      el.style.removeProperty('top');
+      el.style.removeProperty('left');
+      el.style.removeProperty('display');
+      el.style.removeProperty('box-sizing');
+      el.removeAttribute('data-overridden');
+    });
+
+    // Apply overrides from design.elementOverrides
+    for (const [selector, styles] of Object.entries(elementOverrides)) {
+      const pipeIdx = selector.indexOf('|');
+      const tag = selector.slice(0, pipeIdx);
+      const className = selector.slice(pipeIdx + 1);
+      container.querySelectorAll<HTMLElement>(tag).forEach(el => {
+        if ((el.getAttribute('class') || '') === className) {
+          if (styles.width) el.style.width = styles.width;
+          if (styles.height) el.style.height = styles.height;
+          if (styles.marginTop) el.style.marginTop = styles.marginTop;
+          if (styles.marginLeft) el.style.marginLeft = styles.marginLeft;
+          if (styles.position) el.style.position = styles.position;
+          if (styles.top) el.style.top = styles.top;
+          if (styles.left) el.style.left = styles.left;
+          if (styles.transform) el.style.transform = styles.transform;
+          if (styles.display) el.style.display = styles.display;
+          el.style.boxSizing = 'border-box';
+          el.setAttribute('data-overridden', '1');
+        }
+      });
+    }
+  }, [elementOverrides]);
 
   // Wrap context addToCart with toast and fly animation logic
   const handleAddToCart = useCallback((p: RichProduct, sourceRect?: DOMRect) => {
