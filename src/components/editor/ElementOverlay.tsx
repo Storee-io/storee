@@ -110,6 +110,8 @@ export type ElementStyleOverride = {
   marginLeft?: string;
   /** CSS transform translate, e.g. "translate(40px, -20px)" */
   transform?: string;
+  /** display override — set to "inline-block" when promoting inline element for transform */
+  display?: string;
   /** Human-readable label for version history, e.g. "Product card" */
   humanLabel?: string;
 };
@@ -296,6 +298,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       el.style.removeProperty('margin-top');
       el.style.removeProperty('margin-left');
       el.style.removeProperty('transform');
+      el.style.removeProperty('display');
       el.style.removeProperty('box-sizing');
       el.removeAttribute('data-overridden');
     });
@@ -313,6 +316,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
           if (styles.marginTop)  el.style.marginTop  = styles.marginTop;
           if (styles.marginLeft) el.style.marginLeft = styles.marginLeft;
           if (styles.transform)  el.style.transform  = styles.transform;
+          if (styles.display)    el.style.display    = styles.display;
           el.style.boxSizing = 'border-box';
           el.setAttribute('data-overridden', '1');
         }
@@ -344,6 +348,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     if (el.style.marginTop)  styles.marginTop  = el.style.marginTop;
     if (el.style.marginLeft) styles.marginLeft = el.style.marginLeft;
     if (el.style.transform)  styles.transform  = el.style.transform;
+    if (el.style.display && el.style.display !== 'inline') styles.display = el.style.display;
     onElementOverride(buildSelector(el), styles);
   }, [onElementOverride]);
 
@@ -581,6 +586,13 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     // Direct DOM cursor — no React re-render
     document.body.style.cursor = 'grabbing';
     document.body.style.userSelect = 'none';
+
+    // Promote inline → inline-block so CSS transform takes effect
+    // (transform is ignored on display:inline non-replaced elements per CSS spec)
+    const computedDisplay = window.getComputedStyle(el).display;
+    if (computedDisplay === 'inline') {
+      el.style.display = 'inline-block';
+    }
 
     // Promote element to compositor layer + disable any CSS transition during drag
     const savedTransition = el.style.transition;

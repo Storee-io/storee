@@ -311,6 +311,8 @@ export interface StoreDesign {
     marginLeft?: string;
     /** CSS transform for drag-to-move, e.g. "translate(40px, -20px)" */
     transform?: string;
+    /** display override — "inline-block" when promoting inline element for transform */
+    display?: string;
     /** Human-readable label for version history, e.g. "Product card" */
     humanLabel?: string;
   }>;
