@@ -283,12 +283,33 @@ export default function EditorShell({ store, from }: Props) {
   const [footerNote,      setFooterNote]      = useState(d?.footerNote ?? '');
 
   // Element size overrides from drag-resize (persisted in design.elementOverrides)
-  const [elementOverrides, setElementOverrides] = useState<Record<string, ElementStyleOverride>>(
-    d?.elementOverrides ?? {}
-  );
+  // Also backed up to localStorage to prevent loss on reload
+  const [elementOverrides, setElementOverrides] = useState<Record<string, ElementStyleOverride>>(() => {
+    // Try to restore from design data first
+    if (d?.elementOverrides) return d.elementOverrides;
+
+    // Fallback to localStorage backup
+    try {
+      const stored = localStorage.getItem(`editor_overrides_${liveContextStore.id}`);
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
 
   // Section order for drag reorder
   const [sectionItems, setSectionItems] = useState<SectionItem[]>(() => deriveInitialSections(d));
+
+  // Backup elementOverrides to localStorage on every change
+  useEffect(() => {
+    if (Object.keys(elementOverrides).length > 0) {
+      try {
+        localStorage.setItem(`editor_overrides_${liveContextStore.id}`, JSON.stringify(elementOverrides));
+      } catch {
+        // localStorage full or unavailable - silently fail
+      }
+    }
+  }, [elementOverrides, liveContextStore.id]);
 
   // History panel open state
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
@@ -1236,7 +1257,7 @@ export default function EditorShell({ store, from }: Props) {
           {/* Bottom hint */}
           {isPublished && (
             <div className="px-5 py-3 border-t border-slate-100 flex-shrink-0">
-              <p className="text-[10px] text-slate-400 text-center">Changes autosave and sync to your live store</p>
+              <p className="text-[10px] text-slate-400 text-center">Changes autosave locally. Click 'Publish Changes' to update live store</p>
             </div>
           )}
         </aside>
