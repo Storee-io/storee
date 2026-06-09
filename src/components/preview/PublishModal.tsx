@@ -56,7 +56,7 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
   const router = useRouter();
   const defaultSub = fixedSubdomain ?? slugify(store.domain.replace(`.${BASE_DOMAIN}`, '') || store.name);
   const [subdomain, setSubdomain] = useState(defaultSub);
-  const [step, setStep] = useState<Step>(fixedSubdomain ? 'processing' : 'form');
+  const [step, setStep] = useState<Step>('form');
   const [processStep, setProcessStep] = useState(0);
   const [publishedUrl, setPublishedUrl] = useState(fixedSubdomain ? `${fixedSubdomain}.${BASE_DOMAIN}` : '');
   const [formError, setFormError] = useState('');
@@ -114,38 +114,6 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [subdomain, checkAvailability]);
 
-  // ── fixedSubdomain: skip form, fire API immediately ──────────────────────
-  useEffect(() => {
-    if (!fixedSubdomain) return;
-    apiResultRef.current = null;
-    fetch('/api/publish-store', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        subdomain: fixedSubdomain,
-        name: store.name,
-        primaryColor: store.primaryColor,
-        category: store.category,
-        templateId: store.template?.id,
-        design: store.design,
-        currency: store.currency,
-        language: store.language,
-        font: store.font,
-        mood: store.mood,
-        audience: store.audience,
-      }),
-    })
-      .then(async res => {
-        if (res.ok) {
-          apiResultRef.current = { success: true };
-        } else {
-          const err = await res.json();
-          apiResultRef.current = { success: false, error: err.error ?? 'Failed to publish' };
-        }
-      })
-      .catch(() => { apiResultRef.current = { success: false, error: 'Network error. Please try again.' }; });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const formatError = getFormatError(subdomain);
 
@@ -225,13 +193,8 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
     setPublishedUrl(url);
     setFormError('');
 
-    // If republishing an existing store, show confirmation first
-    if (fixedSubdomain) {
-      setStep('confirm');
-      return;
-    }
-
-    // Otherwise go straight to processing for new stores
+    // For republish, go directly to processing (no confirmation step)
+    // For new publish, go to confirmation step if needed
     executePublish();
   };
 
@@ -370,8 +333,8 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
                     <Globe className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-slate-900">{fixedSubdomain ? 'Publish Changes' : 'Set Your Store URL'}</h2>
-                    <p className="text-xs text-slate-500 mt-0.5">{fixedSubdomain ? 'Update your live store with the latest changes' : 'Choose a unique subdomain for your store'}</p>
+                    <h2 className="text-lg font-bold text-slate-900">{fixedSubdomain ? 'Republish Store' : 'Set Your Store URL'}</h2>
+                    <p className="text-xs text-slate-500 mt-0.5">{fixedSubdomain ? 'Publish your latest changes to the live store' : 'Choose a unique subdomain for your store'}</p>
                   </div>
                 </div>
                 <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
@@ -381,17 +344,41 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
 
               {/* URL section — editable for new stores, display-only for republish */}
               <div className="mb-5">
-                <label className="block text-sm font-medium text-slate-700 mb-2">Store URL</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-slate-700">Store URL</label>
+                  {fixedSubdomain && (
+                    <a
+                      href={`/dashboard/domain?returnTo=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '')}`}
+                      className="text-xs text-slate-500 hover:text-emerald-600 transition-colors font-medium underline underline-offset-2"
+                    >
+                      Add custom domain →
+                    </a>
+                  )}
+                </div>
 
                 {fixedSubdomain ? (
-                  /* Display-only URL for republish */
-                  <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
-                    <span className="flex-1 px-4 py-3 text-sm font-mono text-slate-900">
-                      {subdomain}
-                    </span>
-                    <span className="pr-4 py-3 bg-slate-100 text-sm text-slate-500 font-mono border-l border-slate-200 whitespace-nowrap flex-shrink-0 pl-3">
-                      .{BASE_DOMAIN}
-                    </span>
+                  /* Display-only URL for republish — same as UnpublishModal */
+                  <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50 hover:border-slate-300 transition-colors">
+                    <a
+                      href={`https://${subdomain}.${BASE_DOMAIN}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center gap-2 px-4 py-3 text-sm font-mono text-slate-900 hover:text-slate-700 transition-colors truncate group"
+                    >
+                      <Globe className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate group-hover:underline">{subdomain}.{BASE_DOMAIN}</span>
+                    </a>
+                    <button
+                      onClick={handleCopyUrl}
+                      className="px-3 flex-shrink-0 text-slate-400 hover:text-emerald-600 transition-colors"
+                      title="Copy URL"
+                    >
+                      {copied ? (
+                        <Check className="w-4 h-4 text-emerald-500" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </button>
                   </div>
                 ) : (
                   /* Editable URL input for new stores */
@@ -478,14 +465,40 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
                 </div>
               )}
 
-              <button
-                onClick={startPublish}
-                disabled={!canPublish}
-                className="w-full flex items-center justify-center gap-2 py-3 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
-              >
-                <Rocket className="w-4 h-4" />
-                Publish
-              </button>
+              {/* Description for republish */}
+              {fixedSubdomain && (
+                <p className="text-sm text-slate-500 mb-6">
+                  Your store <span className="font-semibold text-slate-700">{store.name}</span> will be updated with your latest changes.
+                </p>
+              )}
+
+              {/* Button layout: single for new publish, two for republish */}
+              {fixedSubdomain ? (
+                <div className="flex gap-3">
+                  <button
+                    onClick={onClose}
+                    className="flex-1 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={startPublish}
+                    disabled={!canPublish}
+                    className="flex-1 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
+                  >
+                    Republish Now
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={startPublish}
+                  disabled={!canPublish}
+                  className="w-full flex items-center justify-center gap-2 py-3 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
+                >
+                  <Rocket className="w-4 h-4" />
+                  Publish
+                </button>
+              )}
             </motion.div>
           )}
 
