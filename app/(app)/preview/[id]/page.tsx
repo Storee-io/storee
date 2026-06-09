@@ -29,21 +29,8 @@ export default function PreviewByIdPage() {
       return;
     }
 
-    // 2. In localStorage (same browser, fast path)
-    const raw = localStorage.getItem(`storee_store_${id}`);
-    if (raw) {
-      try {
-        const loaded = JSON.parse(raw) as Store;
-        setStore(loaded);
-        setActiveStore(loaded);
-        setGeneratedStore(loaded);
-        addStore(loaded).catch(console.error);
-        return;
-      } catch { /* fall through */ }
-    }
-
-    // 3. Fetch from authenticated stores table (for published stores accessed after context load)
-    //    This handles the case where user has a published store and the context hasn't loaded yet
+    // 2. For authenticated stores: fetch from API first to get fresh publishedDomain
+    //    (critical for republish URL locking)
     fetch('/api/get-store?id=' + encodeURIComponent(id))
       .then(res => {
         if (res.ok) return res.json();
@@ -59,6 +46,19 @@ export default function PreviewByIdPage() {
       })
       .catch(err => {
         if (err === 'not-in-authenticated') {
+          // 3. For unauthenticated stores: try localStorage first
+          const raw = localStorage.getItem(`storee_store_${id}`);
+          if (raw) {
+            try {
+              const loaded = JSON.parse(raw) as Store;
+              setStore(loaded);
+              setActiveStore(loaded);
+              setGeneratedStore(loaded);
+              addStore(loaded).catch(console.error);
+              return;
+            } catch { /* fall through */ }
+          }
+
           // 4. Fallback: fetch from Supabase guest_stores
           //    (covers cleared localStorage, different browser, shared link, unauthenticated)
           fetch(`/api/save-draft-store?id=${encodeURIComponent(id)}`)
