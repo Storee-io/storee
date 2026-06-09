@@ -118,10 +118,10 @@ export default function PreviewShell({ store, from = null }: Props) {
   const handlePublishComplete = (subdomain: string) => {
     updateActiveStore({
       status: 'Published',
-      domain: subdomain,
-      publishedDomain: subdomain.replace('.storee.io', ''),
+      domain: `${subdomain}.storee.io`,
+      publishedDomain: subdomain,
     });
-    toast.success('Store is now live! 🎉', { description: `https://${subdomain}` });
+    toast.success('Store is now live! 🎉', { description: `https://${subdomain}.storee.io` });
   };
 
   const openRegenModal = () => {

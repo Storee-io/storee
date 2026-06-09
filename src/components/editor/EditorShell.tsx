@@ -789,12 +789,12 @@ export default function EditorShell({ store, from }: Props) {
   const handlePublishComplete = useCallback((subdomain: string) => {
     updateActiveStore({
       status: 'Published',
-      domain: subdomain,
-      publishedDomain: liveContextStore.publishedDomain ?? subdomain.replace('.storee.io', ''),
+      domain: `${subdomain}.storee.io`,
+      publishedDomain: subdomain,
     });
     setShowPublishModal(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [updateActiveStore, liveContextStore.publishedDomain]);
+  }, [updateActiveStore]);
 
   const isPublished = liveContextStore.status === 'Published';
   const hasPublishedBefore = !!liveContextStore.publishedDomain;
