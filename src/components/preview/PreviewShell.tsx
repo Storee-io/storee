@@ -592,7 +592,7 @@ export default function PreviewShell({ store, from = null }: Props) {
             onPublish={handlePublishComplete}
             onClose={() => setShowPublishModal(false)}
             {...((isPublished || hasPublishedBefore) && liveStore.publishedDomain
-              ? { fixedSubdomain: liveStore.publishedDomain }
+              ? { fixedSubdomain: liveStore.publishedDomain.replace('.storee.io', '') }
               : {})}
           />
         )}

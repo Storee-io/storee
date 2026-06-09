@@ -1417,7 +1417,7 @@ export default function EditorShell({ store, from }: Props) {
             onPublish={handlePublishComplete}
             onClose={() => setShowPublishModal(false)}
             {...((isPublished || hasPublishedBefore) && liveContextStore.publishedDomain
-              ? { fixedSubdomain: liveContextStore.publishedDomain }
+              ? { fixedSubdomain: liveContextStore.publishedDomain.replace('.storee.io', '') }
               : {})}
           />
         )}
