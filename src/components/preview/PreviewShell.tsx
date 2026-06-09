@@ -117,19 +117,21 @@ export default function PreviewShell({ store, from = null }: Props) {
 
   const handlePublishComplete = (subdomain: string) => {
     const publishedDomain = subdomain.replace('.storee.io', '');
-    updateActiveStore({
-      status: 'Published',
-      domain: subdomain,
-      publishedDomain,
-    });
-    // addStore ensures the store appears in My Stores even if it was
-    // a freshly-generated store not yet in the stores array
-    addStore({
+    const publishedStore = {
       ...liveStore,
-      status: 'Published',
+      status: 'Published' as const,
       domain: subdomain,
       publishedDomain,
-    }).catch(console.error);
+    };
+    // Only update activeStore if it's the same store being previewed.
+    // If the user has a different store active (e.g. Folio & Gilt) and is
+    // publishing a newly-generated store, updateActiveStore would wrongly
+    // overwrite the active store's domain.
+    if (activeStore?.id === liveStore.id) {
+      updateActiveStore({ status: 'Published', domain: subdomain, publishedDomain });
+    }
+    // addStore adds/updates this store in the stores array and persists to DB
+    addStore(publishedStore).catch(console.error);
     toast.success('Store is now live! 🎉', { description: `https://${subdomain}` });
   };
 
