@@ -75,11 +75,11 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const handlePublishComplete = (subdomain: string) => {
     updateActiveStore({
       status: 'Published',
-      domain: subdomain,
-      publishedDomain: activeStore?.publishedDomain ?? subdomain.replace('.storee.io', ''),
+      domain: `${subdomain}.storee.io`,
+      publishedDomain: getFixedSubdomain(activeStore?.publishedDomain ?? subdomain),
     });
     setShowPublishModal(false);
-    toast.success('Store published', { description: `Your store is now live at ${subdomain}` });
+    toast.success('Store published', { description: `Your store is now live at ${subdomain}.storee.io` });
   };
 
   const copyLink = () => {

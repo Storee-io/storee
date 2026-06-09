@@ -51,8 +51,8 @@ export default function MyStoresPage() {
     setActiveStore(publishStore);
     updateActiveStore({
       status: 'Published',
-      domain: subdomain,
-      publishedDomain: publishStore.publishedDomain ?? subdomain.replace('.storee.io', ''),
+      domain: `${subdomain}.storee.io`,
+      publishedDomain: getFixedSubdomain(publishStore.publishedDomain ?? subdomain),
     });
     setPublishStore(null);
     toast.success('Store published', { description: `Your store is now live at ${subdomain}` });
