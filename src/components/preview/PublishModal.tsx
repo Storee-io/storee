@@ -342,8 +342,8 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
                     <Globe className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-slate-900">{fixedSubdomain ? 'Republish Store' : 'Set Your Store URL'}</h2>
-                    <p className="text-xs text-slate-500 mt-0.5">{fixedSubdomain ? 'Publish your latest changes to the live store' : 'Choose a unique subdomain for your store'}</p>
+                    <h2 className="text-lg font-bold text-slate-900">{fixedSubdomain ? 'Publish Changes' : 'Set Your Store URL'}</h2>
+                    <p className="text-xs text-slate-500 mt-0.5">{fixedSubdomain ? 'Push your latest updates to your live store' : 'Choose a unique subdomain for your store'}</p>
                   </div>
                 </div>
                 <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
@@ -484,10 +484,10 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
                 </div>
               )}
 
-              {/* Description for republish */}
+              {/* Description for publishing changes to live store */}
               {fixedSubdomain && (
                 <p className="text-sm text-slate-500 mb-6">
-                  Your store <span className="font-semibold text-slate-700">{store.name}</span> will go live and be accessible to everyone. Latest changes will be published.
+                  Your store <span className="font-semibold text-slate-700">{store.name}</span> will be updated with your latest changes from the preview. Your live store will reflect these updates immediately.
                 </p>
               )}
 
@@ -505,7 +505,7 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
                     disabled={!canPublish}
                     className="flex-1 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
                   >
-                    Republish Now
+                    Publish Changes
                   </button>
                 </div>
               ) : (
