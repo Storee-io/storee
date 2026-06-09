@@ -24,20 +24,15 @@ export default function DomainSettings() {
   const searchParams = useSearchParams();
   const storeId = searchParams?.get('storeId');
   const { activeStore, updateActiveStore, stores, setActiveStore } = useStore();
-  const [searchParamsReady, setSearchParamsReady] = useState(false);
-
-  // Mark when searchParams are ready (After initial hydration)
-  useEffect(() => {
-    setSearchParamsReady(true);
-  }, []);
 
   // Determine which store to display: if storeId param exists, use that; otherwise use activeStore
   const displayStore = storeId && stores.length > 0
     ? stores.find(s => s.id === storeId) ?? activeStore
     : activeStore;
 
-  // Show loading if storeId doesn't match activeStore yet
-  const isLoading = searchParamsReady && storeId && activeStore?.id !== storeId;
+  // Show loading if storeId exists but doesn't match activeStore yet
+  // This prevents showing the wrong store while waiting for sync
+  const isLoading = !!(storeId && activeStore?.id !== storeId);
 
   // Sync activeStore with displayStore if they differ
   useEffect(() => {
@@ -172,12 +167,11 @@ export default function DomainSettings() {
   }, [existingDomain]);
 
   // Show loading state while waiting for correct store to sync
+  // Use full-height container to prevent layout shift
   if (isLoading) {
     return (
-      <div className="p-6 max-w-2xl space-y-6">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-        </div>
+      <div className="w-full h-screen flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
       </div>
     );
   }
