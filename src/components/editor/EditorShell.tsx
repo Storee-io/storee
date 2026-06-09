@@ -796,12 +796,8 @@ export default function EditorShell({ store, from }: Props) {
     // url is full domain from PublishModal (e.g., "my-store.storee.io")
     const subdomain = url.replace(/\.storee\.io/g, '');
 
-    // CRITICAL: Ensure we update the correct store (liveContextStore), not just activeStore
-    // If user switched stores in sidebar, activeStore might be different from editor store
-    if (liveContextStore.id !== activeStore?.id) {
-      setActiveStore(liveContextStore);
-    }
-
+    // Update the store that's being edited (liveContextStore)
+    const storeToUpdate = liveContextStore;
     updateActiveStore({
       status: 'Published',
       domain: `${subdomain}.storee.io`,
@@ -809,7 +805,7 @@ export default function EditorShell({ store, from }: Props) {
     });
     setShowPublishModal(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [updateActiveStore, liveContextStore.id, activeStore?.id, setActiveStore]);
+  }, [updateActiveStore]);
 
   const isPublished = liveContextStore.status === 'Published';
   const hasPublishedBefore = !!liveContextStore.publishedDomain;
