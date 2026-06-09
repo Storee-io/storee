@@ -701,26 +701,8 @@ export default function EditorShell({ store, from }: Props) {
 
     updateActiveStore({ name: storeName, primaryColor, design: newDesign });
 
-    if (liveContextStore.status === 'Published') {
-      const subdomain = liveContextStore.publishedDomain?.split('.')[0] ?? liveContextStore.domain?.split('.')[0];
-      if (subdomain) {
-        await fetch('/api/publish-store', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            subdomain, name: storeName, primaryColor,
-            category: liveContextStore.category,
-            templateId: liveContextStore.template?.id,
-            design: newDesign,
-            currency: liveContextStore.currency,
-            language: liveContextStore.language,
-            font: liveContextStore.font,
-            mood: liveContextStore.mood,
-            audience: liveContextStore.audience,
-          }),
-        }).catch(() => {});
-      }
-    }
+    // NOTE: Auto-sync to published store removed. Updates now only happen via explicit
+    // "Publish Changes" click in PublishModal, not real-time during editor changes.
 
     setIsSaving(false);
     setSaved(true);
