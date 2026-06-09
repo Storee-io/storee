@@ -119,6 +119,13 @@ export default function PreviewShell({ store, from = null }: Props) {
   const handlePublishComplete = (url: string) => {
     // url is full domain from PublishModal (e.g., "my-store.storee.io")
     const subdomain = url.replace(/\.storee\.io/g, '');
+
+    // CRITICAL: Ensure we update the correct store (liveStore), not just activeStore
+    // If user switched stores in sidebar, activeStore might be different from preview store
+    if (liveStore.id !== activeStore?.id) {
+      setActiveStore(liveStore);
+    }
+
     updateActiveStore({
       status: 'Published',
       domain: `${subdomain}.storee.io`,
