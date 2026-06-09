@@ -103,7 +103,7 @@ export default function PreviewShell({ store, from = null }: Props) {
     return () => ro.disconnect();
   }, [device]);
 
-  const { updateActiveStore, setGeneratedStore, setGenerationState, activeStore } = useStore();
+  const { updateActiveStore, setGeneratedStore, setGenerationState, activeStore, addStore } = useStore();
   const router = useRouter();
 
   // Use activeStore from context when it matches — stays reactive after publish/unpublish
@@ -126,6 +126,18 @@ export default function PreviewShell({ store, from = null }: Props) {
       domain: `${subdomain}.storee.io`,
       publishedDomain: subdomain,
     });
+
+    // Ensure store is in the stores list so it appears in My Stores
+    // (in case it was just created and not yet in context)
+    if (liveStore) {
+      addStore({
+        ...liveStore,
+        status: 'Published',
+        domain: `${subdomain}.storee.io`,
+        publishedDomain: subdomain,
+      }).catch(console.error);
+    }
+
     toast.success('Store is now live! 🎉', { description: `https://${subdomain}.storee.io` });
   };
 

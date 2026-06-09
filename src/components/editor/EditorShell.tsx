@@ -242,7 +242,7 @@ interface Props {
 }
 
 export default function EditorShell({ store, from }: Props) {
-  const { updateActiveStore, activeStore, setActiveStore } = useStore();
+  const { updateActiveStore, activeStore, setActiveStore, addStore } = useStore();
   const router = useRouter();
   const [device, setDevice] = useState<Device>('desktop');
   const [openSection, setOpenSection] = useState<string>('hero');
@@ -797,15 +797,26 @@ export default function EditorShell({ store, from }: Props) {
     const subdomain = url.replace(/\.storee\.io/g, '');
 
     // Update the store that's being edited (liveContextStore)
-    const storeToUpdate = liveContextStore;
     updateActiveStore({
       status: 'Published',
       domain: `${subdomain}.storee.io`,
       publishedDomain: subdomain,
     });
+
+    // Ensure store is in the stores list so it appears in My Stores
+    // (in case it was just created and not yet in context)
+    if (liveContextStore) {
+      addStore({
+        ...liveContextStore,
+        status: 'Published',
+        domain: `${subdomain}.storee.io`,
+        publishedDomain: subdomain,
+      }).catch(console.error);
+    }
+
     setShowPublishModal(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [updateActiveStore]);
+  }, [updateActiveStore, addStore]);
 
   const isPublished = liveContextStore.status === 'Published';
   const hasPublishedBefore = !!liveContextStore.publishedDomain;
