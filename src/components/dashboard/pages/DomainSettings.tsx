@@ -167,11 +167,13 @@ export default function DomainSettings() {
   }, [existingDomain]);
 
   // Show loading state while waiting for correct store to sync
-  // Use full-height container to prevent layout shift
   if (isLoading) {
     return (
-      <div className="w-full h-screen flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+          <p className="text-sm text-slate-500">Loading store...</p>
+        </div>
       </div>
     );
   }
