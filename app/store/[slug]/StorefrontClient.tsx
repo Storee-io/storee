@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import StorePreview from '@/src/components/preview/StorePreview';
+import { CartProvider } from '@/src/context/CartContext';
+import { WishlistProvider } from '@/src/context/WishlistContext';
 import type { Store } from '@/src/context/StoreContext';
 import type { DeviceMode } from '@/src/components/preview/StorePreview';
 
@@ -38,13 +40,17 @@ export default function StorefrontClient({
   }, [router]);
 
   return (
-    <div className="min-h-screen">
-      <StorePreview
-        store={store}
-        device={device}
-        onPageChange={handlePageChange}
-        initialPath={initialPath}
-      />
-    </div>
+    <CartProvider>
+      <WishlistProvider>
+        <div className="min-h-screen">
+          <StorePreview
+            store={store}
+            device={device}
+            onPageChange={handlePageChange}
+            initialPath={initialPath}
+          />
+        </div>
+      </WishlistProvider>
+    </CartProvider>
   );
 }
