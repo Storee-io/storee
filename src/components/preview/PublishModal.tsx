@@ -353,9 +353,9 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
 
               {/* URL section — editable for new stores, display-only for republish */}
               <div className="mb-5">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-slate-700">Store URL</label>
-                  {fixedSubdomain && (
+                {fixedSubdomain && (
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-slate-700">Store URL</label>
                     <a
                       href={`/dashboard/domain?returnTo=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '')}`}
                       className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 transition-colors font-medium"
@@ -363,8 +363,8 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
                       <Link className="w-3.5 h-3.5 flex-shrink-0" />
                       Add custom domain
                     </a>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {fixedSubdomain ? (
                   /* Display-only URL for republish — same as UnpublishModal */
@@ -394,32 +394,35 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
                   /* Editable URL input for new stores */
                   <>
                     <div className="flex items-center justify-between mb-2">
-                      {/* Shuffle button — generate a new random subdomain */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsGeneratingDefault(true);
-                          setFormError('');
-                          findAvailableSubdomain(store.name).then(sub => {
-                            setSubdomain(sub);
-                            setIsGeneratingDefault(false);
-                          });
-                        }}
-                        disabled={isGeneratingDefault}
-                        className="flex items-center gap-1 text-xs text-slate-400 hover:text-emerald-600 disabled:opacity-40 transition-colors"
-                        title="Generate another random URL"
-                      >
-                        <RefreshCw className={`w-3 h-3 ${isGeneratingDefault ? 'animate-spin' : ''}`} />
-                        Shuffle
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleAddCustomDomainBeforePublish}
-                        className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 transition-colors font-medium"
-                      >
-                        <Link className="w-3.5 h-3.5 flex-shrink-0" />
-                        Add custom domain
-                      </button>
+                      <label className="block text-sm font-medium text-slate-700">Store URL</label>
+                      <div className="flex items-center gap-4">
+                        {/* Shuffle button — generate a new random subdomain */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsGeneratingDefault(true);
+                            setFormError('');
+                            findAvailableSubdomain(store.name).then(sub => {
+                              setSubdomain(sub);
+                              setIsGeneratingDefault(false);
+                            });
+                          }}
+                          disabled={isGeneratingDefault}
+                          className="flex items-center gap-1 text-xs text-slate-400 hover:text-emerald-600 disabled:opacity-40 transition-colors"
+                          title="Generate another random URL"
+                        >
+                          <RefreshCw className={`w-3 h-3 ${isGeneratingDefault ? 'animate-spin' : ''}`} />
+                          Shuffle
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAddCustomDomainBeforePublish}
+                          className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 transition-colors font-medium"
+                        >
+                          <Link className="w-3.5 h-3.5 flex-shrink-0" />
+                          Add custom domain
+                        </button>
+                      </div>
                     </div>
                     <div className={`flex items-center border rounded-xl overflow-hidden transition-colors ${
                       formatError || formError || checkStatus === 'taken'
