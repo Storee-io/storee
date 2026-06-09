@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tip } from '@/components/ui/tip';
+import { getFixedSubdomain, getStoreHttpsUrl } from '../../lib/storeUrlUtils';
 
 interface DashboardHeaderProps {
   onMenuClick: () => void;
@@ -71,14 +72,16 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
     }
   };
 
-  const handlePublishComplete = (subdomain: string) => {
+  const handlePublishComplete = (url: string) => {
+    // url is full domain from PublishModal (e.g., "my-store.storee.io")
+    const subdomain = url.replace('.storee.io', '').replace(/\.storee\.io/g, '');
     updateActiveStore({
       status: 'Published',
-      domain: subdomain,
-      publishedDomain: activeStore?.publishedDomain ?? subdomain.replace('.storee.io', ''),
+      domain: `${subdomain}.storee.io`,
+      publishedDomain: subdomain,
     });
     setShowPublishModal(false);
-    toast.success('Store published', { description: `Your store is now live at ${subdomain}` });
+    toast.success('Store published', { description: `Your store is now live at ${subdomain}.storee.io` });
   };
 
   const copyLink = () => {
@@ -329,7 +332,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           onPublish={handlePublishComplete}
           onClose={() => setShowPublishModal(false)}
           {...(activeStore?.publishedDomain
-            ? { fixedSubdomain: activeStore.publishedDomain }
+            ? { fixedSubdomain: getFixedSubdomain(activeStore.publishedDomain) }
             : {})}
         />
       )}

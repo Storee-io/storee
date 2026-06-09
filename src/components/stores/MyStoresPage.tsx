@@ -14,6 +14,7 @@ import PublishModal from '@/src/components/preview/PublishModal';
 import UnpublishModal from '@/src/components/preview/UnpublishModal';
 import type { Store as StoreType } from '@/src/context/StoreContext';
 import { toast } from 'sonner';
+import { getFixedSubdomain, getStoreUrl } from '@/src/lib/storeUrlUtils';
 
 const DEMO_IDS = new Set(['store-1', 'store-2']);
 
@@ -45,13 +46,15 @@ export default function MyStoresPage() {
     setPublishStore(store);
   };
 
-  const handlePublishComplete = (subdomain: string) => {
+  const handlePublishComplete = (url: string) => {
     if (!publishStore) return;
+    // url is full domain from PublishModal (e.g., "my-store.storee.io")
+    const subdomain = url.replace(/\.storee\.io/g, '');
     setActiveStore(publishStore);
     updateActiveStore({
       status: 'Published',
-      domain: subdomain,
-      publishedDomain: publishStore.publishedDomain ?? subdomain.replace('.storee.io', ''),
+      domain: `${subdomain}.storee.io`,
+      publishedDomain: subdomain,
     });
     setPublishStore(null);
     toast.success('Store published', { description: `Your store is now live at ${subdomain}` });
@@ -205,7 +208,7 @@ export default function MyStoresPage() {
                             <p className="text-xs text-slate-400 truncate flex items-center gap-1 mt-0.5">
                               <Globe className="w-3 h-3 flex-shrink-0" />
                               {store.publishedDomain
-                                ? `${store.publishedDomain}.storee.io`
+                                ? getStoreUrl(store.publishedDomain)
                                 : store.domain}
                             </p>
                           ) : (
@@ -342,7 +345,7 @@ export default function MyStoresPage() {
             onPublish={handlePublishComplete}
             onClose={() => setPublishStore(null)}
             {...(publishStore.publishedDomain
-              ? { fixedSubdomain: publishStore.publishedDomain }
+              ? { fixedSubdomain: getFixedSubdomain(publishStore.publishedDomain) }
               : {})}
           />
         )}

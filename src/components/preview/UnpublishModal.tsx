@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { X, Globe, AlertTriangle } from 'lucide-react';
 import type { Store } from '@/src/context/StoreContext';
+import { getStoreUrl } from '@/src/lib/storeUrlUtils';
 
 interface UnpublishModalProps {
   store: Store;
@@ -12,7 +13,7 @@ interface UnpublishModalProps {
 
 export default function UnpublishModal({ store, onConfirm, onClose }: UnpublishModalProps) {
   const domain = store.publishedDomain
-    ? `${store.publishedDomain}.storee.io`
+    ? getStoreUrl(store.publishedDomain)
     : store.domain;
 
   return (
