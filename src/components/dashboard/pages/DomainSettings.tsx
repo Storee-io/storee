@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
 import {
   Globe, Check, Copy, ExternalLink, AlertCircle, CheckCircle2,
@@ -20,7 +21,20 @@ interface DnsRecord {
 }
 
 export default function DomainSettings() {
-  const { activeStore, updateActiveStore } = useStore();
+  const searchParams = useSearchParams();
+  const storeId = searchParams.get('storeId');
+  const { activeStore, updateActiveStore, stores, setActiveStore } = useStore();
+
+  // If storeId param provided, set active store to that store
+  useEffect(() => {
+    if (storeId && stores.length > 0) {
+      const store = stores.find(s => s.id === storeId);
+      if (store && store.id !== activeStore?.id) {
+        setActiveStore(store);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId, stores]);
 
   const existingDomain = activeStore?.customDomain ?? '';
   const isPublished = activeStore?.status === 'Published';

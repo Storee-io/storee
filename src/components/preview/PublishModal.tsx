@@ -357,7 +357,7 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-sm font-medium text-slate-700">Store URL</label>
                     <a
-                      href={`/dashboard/domain?returnTo=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '')}`}
+                      href={`/dashboard/domain?storeId=${store.id}&returnTo=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '')}`}
                       className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 transition-colors font-medium"
                     >
                       <Link className="w-3.5 h-3.5 flex-shrink-0" />
