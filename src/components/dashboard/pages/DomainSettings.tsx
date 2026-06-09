@@ -25,21 +25,23 @@ export default function DomainSettings() {
   const storeId = searchParams.get('storeId');
   const { activeStore, updateActiveStore, stores, setActiveStore } = useStore();
 
-  // If storeId param provided, set active store to that store
+  // Determine which store to display: if storeId param exists, use that; otherwise use activeStore
+  const displayStore = storeId && stores.length > 0
+    ? stores.find(s => s.id === storeId) ?? activeStore
+    : activeStore;
+
+  // Sync activeStore with displayStore if they differ
   useEffect(() => {
-    if (storeId && stores.length > 0) {
-      const store = stores.find(s => s.id === storeId);
-      if (store && store.id !== activeStore?.id) {
-        setActiveStore(store);
-      }
+    if (displayStore && displayStore.id !== activeStore?.id) {
+      setActiveStore(displayStore);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId, stores]);
 
-  const existingDomain = activeStore?.customDomain ?? '';
-  const isPublished = activeStore?.status === 'Published';
-  const subdomain = activeStore?.publishedDomain?.split('.')[0]
-    ?? activeStore?.domain?.split('.')[0]
+  const existingDomain = displayStore?.customDomain ?? '';
+  const isPublished = displayStore?.status === 'Published';
+  const subdomain = displayStore?.publishedDomain?.split('.')[0]
+    ?? displayStore?.domain?.split('.')[0]
     ?? '';
 
   const [showPublishModal, setShowPublishModal] = useState(false);
@@ -59,14 +61,14 @@ export default function DomainSettings() {
     : [];
 
   const handleConnect = async () => {
-    if (!activeStore) return;
+    if (!displayStore) return;
     setError('');
     setSaving(true);
 
     const res = await fetch('/api/custom-domain', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ storeId: activeStore.id, subdomain, domain: input }),
+      body: JSON.stringify({ storeId: displayStore.id, subdomain, domain: input }),
     });
 
     const data = await res.json();
@@ -80,14 +82,14 @@ export default function DomainSettings() {
   };
 
   const handleRemove = async () => {
-    if (!activeStore || !existingDomain) return;
+    if (!displayStore || !existingDomain) return;
     setRemoving(true);
     setError('');
 
     const res = await fetch('/api/custom-domain', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ storeId: activeStore.id, subdomain, domain: existingDomain }),
+      body: JSON.stringify({ storeId: displayStore.id, subdomain, domain: existingDomain }),
     });
 
     setRemoving(false);
@@ -134,20 +136,20 @@ export default function DomainSettings() {
 
   // On mount, re-fetch the latest custom_domain from DB in case context is stale
   useEffect(() => {
-    if (!activeStore?.id) return;
+    if (!displayStore?.id) return;
     supabase
       .from('stores')
       .select('custom_domain')
-      .eq('id', activeStore.id)
+      .eq('id', displayStore.id)
       .single()
       .then(({ data }) => {
         const freshDomain = data?.custom_domain ?? undefined;
-        if (freshDomain && freshDomain !== activeStore.customDomain) {
+        if (freshDomain && freshDomain !== displayStore.customDomain) {
           updateActiveStore({ customDomain: freshDomain });
         }
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeStore?.id]);
+  }, [displayStore?.id]);
 
   // Auto-check only on initial load (when domain already exists in context/DB)
   // NOT after a fresh connect — user must set DNS first, then click manually.
@@ -371,9 +373,9 @@ export default function DomainSettings() {
 
       {/* Publish Modal */}
       <AnimatePresence>
-        {showPublishModal && activeStore && (
+        {showPublishModal && displayStore && (
           <PublishModal
-            store={activeStore}
+            store={displayStore}
             onPublish={(publishedUrl) => {
               updateActiveStore({ status: 'Published', publishedDomain: publishedUrl, domain: publishedUrl });
               setShowPublishModal(false);
