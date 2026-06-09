@@ -18,6 +18,7 @@ import PromptBox, { PROMPT_CURRENCIES } from '../shared/PromptBox';
 import type { PromptBoxValue } from '../shared/PromptBox';
 import { toast } from 'sonner';
 import { Tip } from '@/components/ui/tip';
+import { getFixedSubdomain, getStoreHttpsUrl } from '../../lib/storeUrlUtils';
 
 type DeviceMode = 'desktop' | 'tablet' | 'mobile';
 
@@ -592,7 +593,7 @@ export default function PreviewShell({ store, from = null }: Props) {
             onPublish={handlePublishComplete}
             onClose={() => setShowPublishModal(false)}
             {...((isPublished || hasPublishedBefore) && liveStore.publishedDomain
-              ? { fixedSubdomain: liveStore.publishedDomain.replace('.storee.io', '') }
+              ? { fixedSubdomain: getFixedSubdomain(liveStore.publishedDomain) }
               : {})}
           />
         )}

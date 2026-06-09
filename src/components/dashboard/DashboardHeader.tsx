@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tip } from '@/components/ui/tip';
+import { getFixedSubdomain, getStoreHttpsUrl } from '../../lib/storeUrlUtils';
 
 interface DashboardHeaderProps {
   onMenuClick: () => void;
@@ -329,7 +330,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           onPublish={handlePublishComplete}
           onClose={() => setShowPublishModal(false)}
           {...(activeStore?.publishedDomain
-            ? { fixedSubdomain: activeStore.publishedDomain }
+            ? { fixedSubdomain: getFixedSubdomain(activeStore.publishedDomain) }
             : {})}
         />
       )}

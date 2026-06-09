@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { Tip } from '@/components/ui/tip';
 import { FloatingToolbar } from './FloatingToolbar';
 import ElementOverlay, { type ElementStyleOverride } from './ElementOverlay';
+import { getFixedSubdomain } from '../../lib/storeUrlUtils';
 
 type Device = 'desktop' | 'tablet' | 'mobile';
 
@@ -1417,7 +1418,7 @@ export default function EditorShell({ store, from }: Props) {
             onPublish={handlePublishComplete}
             onClose={() => setShowPublishModal(false)}
             {...((isPublished || hasPublishedBefore) && liveContextStore.publishedDomain
-              ? { fixedSubdomain: liveContextStore.publishedDomain.replace('.storee.io', '') }
+              ? { fixedSubdomain: getFixedSubdomain(liveContextStore.publishedDomain) }
               : {})}
           />
         )}

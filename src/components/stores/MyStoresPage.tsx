@@ -14,6 +14,7 @@ import PublishModal from '@/src/components/preview/PublishModal';
 import UnpublishModal from '@/src/components/preview/UnpublishModal';
 import type { Store as StoreType } from '@/src/context/StoreContext';
 import { toast } from 'sonner';
+import { getFixedSubdomain, getStoreUrl } from '@/src/lib/storeUrlUtils';
 
 const DEMO_IDS = new Set(['store-1', 'store-2']);
 
@@ -205,7 +206,7 @@ export default function MyStoresPage() {
                             <p className="text-xs text-slate-400 truncate flex items-center gap-1 mt-0.5">
                               <Globe className="w-3 h-3 flex-shrink-0" />
                               {store.publishedDomain
-                                ? `${store.publishedDomain}.storee.io`
+                                ? getStoreUrl(store.publishedDomain)
                                 : store.domain}
                             </p>
                           ) : (
@@ -342,7 +343,7 @@ export default function MyStoresPage() {
             onPublish={handlePublishComplete}
             onClose={() => setPublishStore(null)}
             {...(publishStore.publishedDomain
-              ? { fixedSubdomain: publishStore.publishedDomain }
+              ? { fixedSubdomain: getFixedSubdomain(publishStore.publishedDomain) }
               : {})}
           />
         )}
