@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Globe, Rocket, Check, ExternalLink, LayoutDashboard, Loader2, AlertCircle, RefreshCw, Copy, Info } from 'lucide-react';
+import { X, Globe, Rocket, Check, ExternalLink, LayoutDashboard, Loader2, AlertCircle, RefreshCw, Copy, Info, Link } from 'lucide-react';
 import type { Store } from '@/src/context/StoreContext';
 import { findAvailableSubdomain } from '@/src/lib/subdomainGenerator';
 
@@ -262,7 +262,7 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
   const handleAddCustomDomainBeforePublish = useCallback(() => {
     setShowCustomDomainToast(true);
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = setTimeout(() => setShowCustomDomainToast(false), 4000);
+    toastTimerRef.current = setTimeout(() => setShowCustomDomainToast(false), 10000);
   }, []);
 
   // ── Derived: is publish button enabled? ──────────────────────────────────
@@ -358,9 +358,10 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
                   {fixedSubdomain && (
                     <a
                       href={`/dashboard/domain?returnTo=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '')}`}
-                      className="text-xs text-slate-500 hover:text-emerald-600 transition-colors font-medium underline underline-offset-2"
+                      className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 transition-colors font-medium"
                     >
-                      Add custom domain →
+                      <Link className="w-3.5 h-3.5 flex-shrink-0" />
+                      Add custom domain
                     </a>
                   )}
                 </div>
@@ -414,9 +415,10 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
                       <button
                         type="button"
                         onClick={handleAddCustomDomainBeforePublish}
-                        className="text-xs text-slate-500 hover:text-emerald-600 transition-colors font-medium underline underline-offset-2"
+                        className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 transition-colors font-medium"
                       >
-                        Add custom domain →
+                        <Link className="w-3.5 h-3.5 flex-shrink-0" />
+                        Add custom domain
                       </button>
                     </div>
                     <div className={`flex items-center border rounded-xl overflow-hidden transition-colors ${
@@ -466,6 +468,14 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
                 )}
               </div>
 
+              {/* Toast notification for custom domain — above Included with Publish */}
+              {showCustomDomainToast && (
+                <div className="mb-4 flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                  <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-amber-800">Publish your store first, then you can add a custom domain.</p>
+                </div>
+              )}
+
               {/* Info section — only show for new stores */}
               {!fixedSubdomain && (
                 <div className="bg-slate-50 rounded-xl p-4 mb-5">
@@ -487,21 +497,6 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
                   Your store <span className="font-semibold text-slate-700">{store.name}</span> will go live and be accessible to everyone. Latest changes will be published.
                 </p>
               )}
-
-              {/* Toast notification for custom domain — shown before Publish button */}
-              <AnimatePresence>
-                {showCustomDomainToast && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    className="mb-4 flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl"
-                  >
-                    <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-amber-800">Publish your store first, then you can add a custom domain.</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
 
               {/* Button layout: single for new publish, two for republish */}
               {fixedSubdomain ? (
