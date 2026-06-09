@@ -699,7 +699,12 @@ export default function EditorShell({ store, from }: Props) {
       } : {}),
     };
 
-    updateActiveStore({ name: storeName, primaryColor, design: newDesign });
+    updateActiveStore({
+      name: storeName,
+      primaryColor,
+      design: newDesign,
+      ...(liveContextStore.publishedDomain ? { publishedDomain: liveContextStore.publishedDomain } : {})
+    });
 
     if (liveContextStore.status === 'Published') {
       const subdomain = liveContextStore.publishedDomain?.split('.')[0] ?? liveContextStore.domain?.split('.')[0];
