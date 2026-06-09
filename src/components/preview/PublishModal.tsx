@@ -468,7 +468,7 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
               {/* Description for republish */}
               {fixedSubdomain && (
                 <p className="text-sm text-slate-500 mb-6">
-                  Your store <span className="font-semibold text-slate-700">{store.name}</span> will be updated with your latest changes.
+                  Your store <span className="font-semibold text-slate-700">{store.name}</span> will go live and be accessible to everyone. Latest changes will be published.
                 </p>
               )}
 
