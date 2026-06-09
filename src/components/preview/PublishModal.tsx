@@ -379,75 +379,89 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
                 </button>
               </div>
 
-              {/* URL input — hidden when updating existing published store */}
-              {!fixedSubdomain && (
-                <div className="mb-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-slate-700">Store URL</label>
-                    {/* Shuffle button — generate a new random subdomain */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsGeneratingDefault(true);
-                        setFormError('');
-                        findAvailableSubdomain(store.name).then(sub => {
-                          setSubdomain(sub);
-                          setIsGeneratingDefault(false);
-                        });
-                      }}
-                      disabled={isGeneratingDefault}
-                      className="flex items-center gap-1 text-xs text-slate-400 hover:text-emerald-600 disabled:opacity-40 transition-colors"
-                      title="Generate another random URL"
-                    >
-                      <RefreshCw className={`w-3 h-3 ${isGeneratingDefault ? 'animate-spin' : ''}`} />
-                      Shuffle
-                    </button>
-                  </div>
-                  <div className={`flex items-center border rounded-xl overflow-hidden transition-colors ${
-                    formatError || formError || checkStatus === 'taken'
-                      ? 'border-red-300 ring-2 ring-red-100'
-                      : checkStatus === 'available'
-                      ? 'border-emerald-400 ring-2 ring-emerald-100'
-                      : 'border-slate-200 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100'
-                  }`}>
-                    <input
-                      value={subdomain}
-                      onChange={e => handleSubdomainChange(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter' && canPublish) startPublish(); }}
-                      placeholder="your-store"
-                      className="flex-1 px-4 py-3 text-sm font-mono text-slate-900 outline-none bg-transparent"
-                      autoFocus
-                      spellCheck={false}
-                      maxLength={50}
-                      disabled={isGeneratingDefault}
-                    />
-                    {/* Right adornment: spinner / check / x */}
-                    <div className="px-3 flex-shrink-0">
-                      {(isGeneratingDefault || (checkStatus === 'checking' && isValidSubdomain(subdomain))) && (
-                        <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
-                      )}
-                      {!isGeneratingDefault && checkStatus === 'available' && (
-                        <Check className="w-4 h-4 text-emerald-500" />
-                      )}
-                      {!isGeneratingDefault && checkStatus === 'taken' && (
-                        <AlertCircle className="w-4 h-4 text-red-500" />
-                      )}
-                    </div>
-                    <span className="pr-4 py-3 bg-slate-50 text-sm text-slate-400 font-mono border-l border-slate-200 whitespace-nowrap flex-shrink-0 pl-3">
+              {/* URL section — editable for new stores, display-only for republish */}
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Store URL</label>
+
+                {fixedSubdomain ? (
+                  /* Display-only URL for republish */
+                  <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                    <span className="flex-1 px-4 py-3 text-sm font-mono text-slate-900">
+                      {subdomain}
+                    </span>
+                    <span className="pr-4 py-3 bg-slate-100 text-sm text-slate-500 font-mono border-l border-slate-200 whitespace-nowrap flex-shrink-0 pl-3">
                       .{BASE_DOMAIN}
                     </span>
                   </div>
+                ) : (
+                  /* Editable URL input for new stores */
+                  <>
+                    <div className="flex items-center justify-between mb-2">
+                      {/* Shuffle button — generate a new random subdomain */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsGeneratingDefault(true);
+                          setFormError('');
+                          findAvailableSubdomain(store.name).then(sub => {
+                            setSubdomain(sub);
+                            setIsGeneratingDefault(false);
+                          });
+                        }}
+                        disabled={isGeneratingDefault}
+                        className="flex items-center gap-1 text-xs text-slate-400 hover:text-emerald-600 disabled:opacity-40 transition-colors"
+                        title="Generate another random URL"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${isGeneratingDefault ? 'animate-spin' : ''}`} />
+                        Shuffle
+                      </button>
+                    </div>
+                    <div className={`flex items-center border rounded-xl overflow-hidden transition-colors ${
+                      formatError || formError || checkStatus === 'taken'
+                        ? 'border-red-300 ring-2 ring-red-100'
+                        : checkStatus === 'available'
+                        ? 'border-emerald-400 ring-2 ring-emerald-100'
+                        : 'border-slate-200 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100'
+                    }`}>
+                      <input
+                        value={subdomain}
+                        onChange={e => handleSubdomainChange(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter' && canPublish) startPublish(); }}
+                        placeholder="your-store"
+                        className="flex-1 px-4 py-3 text-sm font-mono text-slate-900 outline-none bg-transparent"
+                        autoFocus
+                        spellCheck={false}
+                        maxLength={50}
+                        disabled={isGeneratingDefault}
+                      />
+                      {/* Right adornment: spinner / check / x */}
+                      <div className="px-3 flex-shrink-0">
+                        {(isGeneratingDefault || (checkStatus === 'checking' && isValidSubdomain(subdomain))) && (
+                          <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+                        )}
+                        {!isGeneratingDefault && checkStatus === 'available' && (
+                          <Check className="w-4 h-4 text-emerald-500" />
+                        )}
+                        {!isGeneratingDefault && checkStatus === 'taken' && (
+                          <AlertCircle className="w-4 h-4 text-red-500" />
+                        )}
+                      </div>
+                      <span className="pr-4 py-3 bg-slate-50 text-sm text-slate-400 font-mono border-l border-slate-200 whitespace-nowrap flex-shrink-0 pl-3">
+                        .{BASE_DOMAIN}
+                      </span>
+                    </div>
 
-                  {/* Status message below input */}
-                  {(formatError || formError)
-                    ? <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3 flex-shrink-0" />
-                        {formatError || formError}
-                      </p>
-                    : renderCheckIndicator()
-                  }
-                </div>
-              )}
+                    {/* Status message below input */}
+                    {(formatError || formError)
+                      ? <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                          {formatError || formError}
+                        </p>
+                      : renderCheckIndicator()
+                    }
+                  </>
+                )}
+              </div>
 
               {/* Info section — only show for new stores */}
               {!fixedSubdomain && (
