@@ -15,7 +15,7 @@ interface PublishModalProps {
   fixedSubdomain?: string;
 }
 
-type Step = 'form' | 'processing' | 'success';
+type Step = 'form' | 'confirm' | 'processing' | 'success';
 type CheckStatus = 'idle' | 'checking' | 'available' | 'taken';
 
 const PROCESSING_STEPS = [
@@ -156,6 +156,41 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
     setFormError('');
   };
 
+  const executePublish = useCallback(() => {
+    setStep('processing');
+    setProcessStep(0);
+    apiResultRef.current = null;
+
+    fetch('/api/publish-store', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subdomain,
+        name: store.name,
+        primaryColor: store.primaryColor,
+        category: store.category,
+        templateId: store.template?.id,
+        design: store.design,
+        currency: store.currency,
+        language: store.language,
+        font: store.font,
+        mood: store.mood,
+        audience: store.audience,
+      }),
+    })
+      .then(async res => {
+        if (res.ok) {
+          apiResultRef.current = { success: true };
+        } else {
+          const err = await res.json();
+          apiResultRef.current = { success: false, error: err.error ?? 'Failed to publish' };
+        }
+      })
+      .catch(() => {
+        apiResultRef.current = { success: false, error: 'Network error. Please try again.' };
+      });
+  }, [subdomain, store]);
+
   const startPublish = async () => {
     if (formatError || !subdomain) return;
 
@@ -189,38 +224,15 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
     const url = `${subdomain}.${BASE_DOMAIN}`;
     setPublishedUrl(url);
     setFormError('');
-    apiResultRef.current = null;
-    setStep('processing');
-    setProcessStep(0);
 
-    fetch('/api/publish-store', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        subdomain,
-        name: store.name,
-        primaryColor: store.primaryColor,
-        category: store.category,
-        templateId: store.template?.id,
-        design: store.design,
-        currency: store.currency,
-        language: store.language,
-        font: store.font,
-        mood: store.mood,
-        audience: store.audience,
-      }),
-    })
-      .then(async res => {
-        if (res.ok) {
-          apiResultRef.current = { success: true };
-        } else {
-          const err = await res.json();
-          apiResultRef.current = { success: false, error: err.error ?? 'Failed to publish' };
-        }
-      })
-      .catch(() => {
-        apiResultRef.current = { success: false, error: 'Network error. Please try again.' };
-      });
+    // If republishing an existing store, show confirmation first
+    if (fixedSubdomain) {
+      setStep('confirm');
+      return;
+    }
+
+    // Otherwise go straight to processing for new stores
+    executePublish();
   };
 
   useEffect(() => {
@@ -330,6 +342,7 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
         exit={{ opacity: 0 }}
         onClick={step === 'processing' ? undefined : onClose}
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        style={{ cursor: step === 'processing' ? 'default' : 'pointer' }}
       />
 
       {/* Modal */}
@@ -459,6 +472,56 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
                 <Rocket className="w-4 h-4" />
                 Publish
               </button>
+            </motion.div>
+          )}
+
+          {/* ── CONFIRMATION STEP (Republish) ── */}
+          {step === 'confirm' && (
+            <motion.div
+              key="confirm"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="p-6"
+            >
+              <div className="flex items-start justify-between mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                    <AlertCircle className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900">Update Live Store?</h2>
+                    <p className="text-xs text-slate-500 mt-0.5">This will replace your current published content</p>
+                  </div>
+                </div>
+                <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="bg-amber-50 rounded-xl p-4 mb-6 border border-amber-200">
+                <div className="space-y-2 text-sm text-slate-700">
+                  <p>Your live store at</p>
+                  <p className="font-mono font-semibold text-amber-900">https://{publishedUrl}</p>
+                  <p>will be updated with your latest changes.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setStep('form')}
+                  className="flex-1 py-3 px-4 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={executePublish}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-all shadow-md"
+                >
+                  <Rocket className="w-4 h-4" />
+                  Update Live
+                </button>
+              </div>
             </motion.div>
           )}
 
