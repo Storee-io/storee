@@ -72,11 +72,13 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
     }
   };
 
-  const handlePublishComplete = (subdomain: string) => {
+  const handlePublishComplete = (url: string) => {
+    // url is full domain from PublishModal (e.g., "my-store.storee.io")
+    const subdomain = url.replace('.storee.io', '').replace(/\.storee\.io/g, '');
     updateActiveStore({
       status: 'Published',
       domain: `${subdomain}.storee.io`,
-      publishedDomain: getFixedSubdomain(activeStore?.publishedDomain ?? subdomain),
+      publishedDomain: subdomain,
     });
     setShowPublishModal(false);
     toast.success('Store published', { description: `Your store is now live at ${subdomain}.storee.io` });

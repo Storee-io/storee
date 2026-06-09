@@ -792,7 +792,9 @@ export default function EditorShell({ store, from }: Props) {
       navLinks, trustBadges, stats, sectionHeadings, footerNote, sectionItems,
       elementOverrides, pushSnapshot]);
 
-  const handlePublishComplete = useCallback((subdomain: string) => {
+  const handlePublishComplete = useCallback((url: string) => {
+    // url is full domain from PublishModal (e.g., "my-store.storee.io")
+    const subdomain = url.replace(/\.storee\.io/g, '');
     updateActiveStore({
       status: 'Published',
       domain: `${subdomain}.storee.io`,

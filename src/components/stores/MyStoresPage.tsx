@@ -46,13 +46,15 @@ export default function MyStoresPage() {
     setPublishStore(store);
   };
 
-  const handlePublishComplete = (subdomain: string) => {
+  const handlePublishComplete = (url: string) => {
     if (!publishStore) return;
+    // url is full domain from PublishModal (e.g., "my-store.storee.io")
+    const subdomain = url.replace(/\.storee\.io/g, '');
     setActiveStore(publishStore);
     updateActiveStore({
       status: 'Published',
       domain: `${subdomain}.storee.io`,
-      publishedDomain: getFixedSubdomain(publishStore.publishedDomain ?? subdomain),
+      publishedDomain: subdomain,
     });
     setPublishStore(null);
     toast.success('Store published', { description: `Your store is now live at ${subdomain}` });
