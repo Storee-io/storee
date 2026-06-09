@@ -105,8 +105,9 @@ export default function PreviewShell({ store, from = null }: Props) {
   const { updateActiveStore, setGeneratedStore, setGenerationState, activeStore, addStore } = useStore();
   const router = useRouter();
 
-  // Use activeStore from context when it matches — stays reactive after publish/unpublish
-  const liveStore = activeStore?.id === store.id ? activeStore : store;
+  // Use store prop (from URL param) as source of truth for this preview page
+  // Don't fall back to activeStore from context, as it might be a different store
+  const liveStore = store;
 
   const backLabel = getBackLabel(from);
   const backHref = from ?? '/';
