@@ -53,8 +53,8 @@ import { templates } from '../data/templates';
 // Normalize publishedDomain: handle both "my-store" and "my-store.storee.io" formats
 function normalizePublishedDomain(domain: string | null | undefined): string | undefined {
   if (!domain) return undefined;
-  // Remove .storee.io suffix if it exists (handle both old and new formats)
-  return domain.replace('.storee.io', '').replace(/\.storee\.io\.storee\.io.*/, '');
+  // Remove ALL .storee.io occurrences (handle double/triple concatenations)
+  return domain.replace(/\.storee\.io/g, '').trim() || undefined;
 }
 
 export function rowToStore(row: StoreRow): Store {

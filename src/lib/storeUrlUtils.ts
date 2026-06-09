@@ -9,10 +9,12 @@ const BASE_DOMAIN = 'storee.io';
  * Extract just the subdomain part from publishedDomain
  * Handles: "my-store" → "my-store"
  *          "my-store.storee.io" → "my-store"
+ *          "my-store.storee.io.storee.io" → "my-store"
  */
 export function getSubdomainOnly(domain: string | undefined): string {
   if (!domain) return '';
-  return domain.replace(`.${BASE_DOMAIN}`, '').replace('.storee.io', '');
+  // Remove ALL .storee.io occurrences (handle double/triple concatenations)
+  return domain.replace(/\.storee\.io/g, '').trim();
 }
 
 /**
