@@ -42,6 +42,7 @@ interface StoreRow {
   shipping_settings: Store['shippingSettings'] | null;
   payment_settings: Store['paymentSettings'] | null;
   custom_domain: string | null;
+  published_domain: string | null;
   created_at: string;
   updated_at: string;
   last_used_at: string | null;
@@ -70,6 +71,7 @@ export function rowToStore(row: StoreRow): Store {
     shippingSettings: row.shipping_settings ?? undefined,
     paymentSettings: row.payment_settings ?? undefined,
     customDomain: row.custom_domain ?? undefined,
+    publishedDomain: row.published_domain ?? undefined,
     lastUsedAt: row.last_used_at ?? undefined,
   };
 }
@@ -95,6 +97,7 @@ export function storeToRow(store: Store, userId: string): Omit<StoreRow, 'update
     shipping_settings: store.shippingSettings ?? null,
     payment_settings: store.paymentSettings ?? null,
     custom_domain: store.customDomain ?? null,
+    published_domain: store.publishedDomain ?? null,
     created_at: store.createdAt,
     last_used_at: store.lastUsedAt ?? null,
   };
