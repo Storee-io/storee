@@ -102,7 +102,7 @@ export default function PreviewShell({ store, from = null }: Props) {
     return () => ro.disconnect();
   }, [device]);
 
-  const { updateActiveStore, setGeneratedStore, setGenerationState, activeStore } = useStore();
+  const { updateActiveStore, setGeneratedStore, setGenerationState, activeStore, addStore } = useStore();
   const router = useRouter();
 
   // Use activeStore from context when it matches — stays reactive after publish/unpublish
@@ -116,11 +116,20 @@ export default function PreviewShell({ store, from = null }: Props) {
   const hasPublishedBefore = !!liveStore.publishedDomain;
 
   const handlePublishComplete = (subdomain: string) => {
+    const publishedDomain = subdomain.replace('.storee.io', '');
     updateActiveStore({
       status: 'Published',
       domain: subdomain,
-      publishedDomain: subdomain.replace('.storee.io', ''),
+      publishedDomain,
     });
+    // addStore ensures the store appears in My Stores even if it was
+    // a freshly-generated store not yet in the stores array
+    addStore({
+      ...liveStore,
+      status: 'Published',
+      domain: subdomain,
+      publishedDomain,
+    }).catch(console.error);
     toast.success('Store is now live! 🎉', { description: `https://${subdomain}` });
   };
 
