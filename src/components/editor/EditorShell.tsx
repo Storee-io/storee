@@ -258,8 +258,9 @@ export default function EditorShell({ store, from }: Props) {
   const isInitialMountRef = useRef(true);
   const persistStoreRef = useRef<(() => Promise<void>) | null>(null);
 
-  // Live store from context
-  const liveContextStore = activeStore?.id === store.id ? activeStore : store;
+  // Live store from props (URL param is source of truth for this editor page)
+  // Don't fall back to activeStore from context, as it might be a different store
+  const liveContextStore = store;
   const d = liveContextStore.design;
 
   // Local editable state
