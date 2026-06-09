@@ -20,7 +20,7 @@ export default function PreviewByIdPage() {
   useEffect(() => {
     const id = params.id;
 
-    // 1. Already in context (e.g. dashboard navigation)
+    // 1. Already in context (e.g. dashboard navigation or context loaded)
     const inContext = stores.find(s => s.id === id);
     if (inContext) {
       setStore(inContext);
@@ -42,19 +42,39 @@ export default function PreviewByIdPage() {
       } catch { /* fall through */ }
     }
 
-    // 3. Fallback: fetch from Supabase guest_stores
-    //    (covers cleared localStorage, different browser, shared link)
-    fetch(`/api/save-draft-store?id=${encodeURIComponent(id)}`)
-      .then(res => (res.ok ? res.json() : Promise.reject(res.status)))
+    // 3. Fetch from authenticated stores table (for published stores accessed after context load)
+    //    This handles the case where user has a published store and the context hasn't loaded yet
+    fetch('/api/get-store?id=' + encodeURIComponent(id))
+      .then(res => {
+        if (res.ok) return res.json();
+        // Fall through to guest_stores if not found in authenticated stores
+        return Promise.reject('not-in-authenticated');
+      })
       .then(({ store: loaded }: { store: Store }) => {
-        // Repopulate localStorage so subsequent loads are instant
         localStorage.setItem(`storee_store_${loaded.id}`, JSON.stringify(loaded));
         setStore(loaded);
         setActiveStore(loaded);
         setGeneratedStore(loaded);
         addStore(loaded).catch(console.error);
       })
-      .catch(() => setNotFound(true));
+      .catch(err => {
+        if (err === 'not-in-authenticated') {
+          // 4. Fallback: fetch from Supabase guest_stores
+          //    (covers cleared localStorage, different browser, shared link, unauthenticated)
+          fetch(`/api/save-draft-store?id=${encodeURIComponent(id)}`)
+            .then(res => (res.ok ? res.json() : Promise.reject(res.status)))
+            .then(({ store: loaded }: { store: Store }) => {
+              localStorage.setItem(`storee_store_${loaded.id}`, JSON.stringify(loaded));
+              setStore(loaded);
+              setActiveStore(loaded);
+              setGeneratedStore(loaded);
+              addStore(loaded).catch(console.error);
+            })
+            .catch(() => setNotFound(true));
+        } else {
+          setNotFound(true);
+        }
+      });
   }, [params.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (notFound) {
