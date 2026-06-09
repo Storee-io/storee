@@ -50,6 +50,13 @@ interface StoreRow {
 
 import { templates } from '../data/templates';
 
+// Normalize publishedDomain: handle both "my-store" and "my-store.storee.io" formats
+function normalizePublishedDomain(domain: string | null | undefined): string | undefined {
+  if (!domain) return undefined;
+  // Remove .storee.io suffix if it exists (handle both old and new formats)
+  return domain.replace('.storee.io', '').replace(/\.storee\.io\.storee\.io.*/, '');
+}
+
 export function rowToStore(row: StoreRow): Store {
   return {
     id: row.id,
@@ -71,7 +78,7 @@ export function rowToStore(row: StoreRow): Store {
     shippingSettings: row.shipping_settings ?? undefined,
     paymentSettings: row.payment_settings ?? undefined,
     customDomain: row.custom_domain ?? undefined,
-    publishedDomain: row.published_domain ?? undefined,
+    publishedDomain: normalizePublishedDomain(row.published_domain),
     lastUsedAt: row.last_used_at ?? undefined,
   };
 }
@@ -97,7 +104,7 @@ export function storeToRow(store: Store, userId: string): Omit<StoreRow, 'update
     shipping_settings: store.shippingSettings ?? null,
     payment_settings: store.paymentSettings ?? null,
     custom_domain: store.customDomain ?? null,
-    published_domain: store.publishedDomain ?? null,
+    published_domain: normalizePublishedDomain(store.publishedDomain) ?? null,
     created_at: store.createdAt,
     last_used_at: store.lastUsedAt ?? null,
   };
