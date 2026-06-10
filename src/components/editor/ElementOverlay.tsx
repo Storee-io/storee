@@ -357,25 +357,37 @@ function mapElementToField(el: Element): string | null {
     }
   }
 
-  // TESTIMONIALS — find card by getCardIndex, then match P position within card
+  // TESTIMONIALS — find card DIV (has 2+ div siblings), then P position within it
   if (sectionType === 'testimonials') {
     if (tag === 'p') {
-      const cardIdx = getCardIndex();
-      if (cardIdx >= 0) {
-        // Find all P elements in this card
-        let cardEl: Element | null = el;
-        while (cardEl && cardEl !== section) {
-          const siblings = Array.from(cardEl.parentElement?.children || []);
-          const sameTagSiblings = siblings.filter(s => s.tagName === cardEl!.tagName);
-          if (sameTagSiblings.length >= 2) break;
-          cardEl = cardEl.parentElement;
+      // Walk up to find the card container (outer div with multiple div siblings)
+      let cardEl: Element | null = el.parentElement;
+      while (cardEl && cardEl !== section) {
+        const parent = cardEl.parentElement;
+        if (!parent) break;
+        const siblings = Array.from(parent.children);
+        const divSiblings = siblings.filter(s => s.tagName === 'DIV');
+        // Card container is a DIV with 2+ DIV siblings (other cards in the grid)
+        if (divSiblings.length >= 2) break;
+        cardEl = cardEl.parentElement;
+      }
+
+      if (cardEl && cardEl !== section) {
+        // Found card DIV, now find P index within it
+        const cardPList = Array.from(cardEl.querySelectorAll('p'));
+        const pIdx = cardPList.indexOf(el as HTMLParagraphElement);
+        if (pIdx === 0) {
+          // First P = review text
+          const cardIdx = Array.from(section!.querySelectorAll('.rounded-3xl')).indexOf(cardEl);
+          return cardIdx >= 0 ? `testimonials.${cardIdx}.text` : null;
         }
-        if (cardEl) {
-          const cardPList = Array.from(cardEl.querySelectorAll('p'));
-          const pIdx = cardPList.indexOf(el as HTMLParagraphElement);
-          if (pIdx === 0) return `testimonials.${cardIdx}.text`;
-          if (pIdx === 1) return `testimonials.${cardIdx}.author`;
-          if (pIdx === 2) return `testimonials.${cardIdx}.role`;
+        if (pIdx === 1) {
+          const cardIdx = Array.from(section!.querySelectorAll('.rounded-3xl')).indexOf(cardEl);
+          return cardIdx >= 0 ? `testimonials.${cardIdx}.author` : null;
+        }
+        if (pIdx === 2) {
+          const cardIdx = Array.from(section!.querySelectorAll('.rounded-3xl')).indexOf(cardEl);
+          return cardIdx >= 0 ? `testimonials.${cardIdx}.role` : null;
         }
       }
     }
