@@ -407,6 +407,9 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
               el.style.top = styles.top;
             }
           }
+          if (styles.textContent) {
+            el.textContent = styles.textContent;
+          }
           el.style.boxSizing = 'border-box';
           el.setAttribute('data-overridden', '1');
         }
@@ -487,6 +490,26 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     range.selectNodeContents(editDiv);
     sel?.removeAllRanges();
     sel?.addRange(range);
+
+    // Attach keyboard handlers
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        finishEditingElement(true);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        finishEditingElement(false);
+      }
+    };
+
+    const handleBlur = () => {
+      if (editInputRef.current && editInputRef.current.parentElement) {
+        finishEditingElement(true);
+      }
+    };
+
+    editDiv.addEventListener('keydown', handleKeyDown);
+    editDiv.addEventListener('blur', handleBlur);
   }, [containerRef]);
 
   const finishEditingElement = useCallback((save: boolean = true) => {
@@ -630,6 +653,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
   const handleMoveStart = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    if (editingEl) return;
     const el = lastSelectedEl.current as HTMLElement | null;
     if (!el || !containerRef.current) return;
 
@@ -1155,10 +1179,29 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       }
     };
 
+    const handleDoubleClick = (e: MouseEvent) => {
+      if (!editMode) return;
+      if (dragRef.current || moveRef.current) return;
+      if (editingEl) return;
+
+      let target = e.target as Element;
+      if (!target) return;
+
+      if (target.closest('[data-overlay]')) return;
+
+      let el = findTarget(target, container);
+      if (!el || !isEditableTextElement(el)) return;
+
+      startEditingElement(el as HTMLElement);
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
     document.addEventListener('mousemove', handleMouseMove);
     container.addEventListener('mouseleave', handleMouseLeave);
     document.addEventListener('click', handleClick, true);
     document.addEventListener('click', handleDocClick);
+    document.addEventListener('dblclick', handleDoubleClick, true);
     container.addEventListener('scroll', updateSelectedRect);
     window.addEventListener('resize', updateSelectedRect);
 
@@ -1167,10 +1210,11 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       container.removeEventListener('mouseleave', handleMouseLeave);
       document.removeEventListener('click', handleClick, true);
       document.removeEventListener('click', handleDocClick);
+      document.removeEventListener('dblclick', handleDoubleClick, true);
       container.removeEventListener('scroll', updateSelectedRect);
       window.removeEventListener('resize', updateSelectedRect);
     };
-  }, [editMode, containerRef, updateSelectedRect, updateOverlayHeight]);
+  }, [editMode, containerRef, updateSelectedRect, updateOverlayHeight, editingEl, startEditingElement]);
 
   if (!editMode) return null;
 
