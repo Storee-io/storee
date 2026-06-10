@@ -1153,15 +1153,21 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
                 </span>
               </div>
 
-              {/* Drag handles - 4 border strips (16px wide), only cover border area not children */}
-              {/* Top border */}
-              <div data-overlay="true" onMouseDown={handleMoveStart} style={{ position: 'absolute', top: rect.top - 8, left: rect.left - 8, width: rect.width + 16, height: 20, pointerEvents: 'auto', cursor: 'grab', zIndex: 42, userSelect: 'none' }} />
-              {/* Bottom border */}
-              <div data-overlay="true" onMouseDown={handleMoveStart} style={{ position: 'absolute', top: rect.top + rect.height - 12, left: rect.left - 8, width: rect.width + 16, height: 20, pointerEvents: 'auto', cursor: 'grab', zIndex: 42, userSelect: 'none' }} />
-              {/* Left border */}
-              <div data-overlay="true" onMouseDown={handleMoveStart} style={{ position: 'absolute', top: rect.top - 8, left: rect.left - 8, width: 20, height: rect.height + 16, pointerEvents: 'auto', cursor: 'grab', zIndex: 42, userSelect: 'none' }} />
-              {/* Right border */}
-              <div data-overlay="true" onMouseDown={handleMoveStart} style={{ position: 'absolute', top: rect.top - 8, left: rect.left + rect.width - 12, width: 20, height: rect.height + 16, pointerEvents: 'auto', cursor: 'grab', zIndex: 42, userSelect: 'none' }} />
+              {/* Drag handler - top edge strip for grabbing/moving */}
+              <div
+                data-overlay="true"
+                onMouseDown={handleMoveStart}
+                style={{
+                  position: 'absolute',
+                  top: rect.top, left: rect.left,
+                  width: rect.width, height: 25,
+                  pointerEvents: 'auto',
+                  cursor: 'grab',
+                  zIndex: 40,
+                  background: 'transparent',
+                  userSelect: 'none',
+                }}
+              />
 
               {/* Resize handles (8 points) */}
               {handles.map((pos, i) => {
