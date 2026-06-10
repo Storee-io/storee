@@ -956,7 +956,18 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
     const handleMouseMove = (e: MouseEvent) => {
       if (dragRef.current || moveRef.current) return;
-      const target = getTarget(e);
+      let target = getTarget(e);
+
+      // If target is null/overlay, try to find element under mouse position
+      // This allows child element hover detection even when parent is selected
+      if (!target && selected) {
+        const el = selected && lastSelectedEl.current;
+        if (el && el.contains(e.target as Node)) {
+          // Mouse is within selected element, detect child elements
+          target = e.target as Element;
+        }
+      }
+
       if (!target) { setHovered(null); lastHoveredEl.current = null; return; }
       const el = findTarget(target, container);
       if (!el) { setHovered(null); lastHoveredEl.current = null; return; }
@@ -972,7 +983,16 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       if (didDragRef.current) { didDragRef.current = false; return; }
       // Prevent selection change if any mouse button is still held
       if (e.buttons !== 0) return;
-      const target = getTarget(e);
+      let target = getTarget(e);
+
+      // Allow child element selection even when parent is selected
+      // If getTarget returns null (overlay), check if click is within selected element
+      if (!target && selected && lastSelectedEl.current) {
+        if (lastSelectedEl.current.contains(e.target as Node)) {
+          target = e.target as Element;
+        }
+      }
+
       if (!target) return;
       if ((target as HTMLElement).isContentEditable) return;
       if (target.closest('[contenteditable]')) return;
