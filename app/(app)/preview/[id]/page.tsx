@@ -14,8 +14,9 @@ export default function PreviewByIdPage() {
   const [store, setStore] = useState<Store | null>(null);
   const [notFound, setNotFound] = useState(false);
 
-  // If Replace-regenerate updated generatedStore for this ID, use it as live data
-  const displayStore = (generatedStore?.id === params.id ? generatedStore : store);
+  // Always use store loaded from context/API based on params.id
+  // Don't use generatedStore from context as it may be from previous session
+  const displayStore = store;
 
   useEffect(() => {
     const id = params.id;
