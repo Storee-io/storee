@@ -306,14 +306,19 @@ function mapElementToField(el: Element): string | null {
 
   // HERO SECTION
   if (sectionType === 'hero') {
-    if (tag === 'p' && text.length < 80) return 'tagline';
-    if (tag === 'h1' || tag === 'h2') return text.length < 100 ? 'heroTitle' : 'heroSubtitle';
+    if (tag === 'h1') return 'heroTitle';
+    if (tag === 'h2') return 'heroSubtitle';
+    if (tag === 'button' || tag === 'a') return 'ctaText';
+    if (tag === 'p') {
+      return text.length < 80 ? 'tagline' : 'heroSubtitle';
+    }
+    // Check if inside button (e.g., span inside EditSpan inside button)
+    if (el.closest('button')) return 'ctaText';
     if (tag === 'span') {
-      // Title tends to be short, subtitle tends to be long
       if (text.length < 60) return 'heroTitle';
+      if (text.length < 80) return 'tagline';
       return 'heroSubtitle';
     }
-    if (tag === 'a') return 'ctaText';
   }
 
   // PROMO BAR
