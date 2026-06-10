@@ -298,6 +298,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
   const guideVRef         = useRef<HTMLDivElement | null>(null); // vertical guide line (center snap)
   const guideHDefaultRef  = useRef<HTMLDivElement | null>(null); // horizontal default position line
   const guideVDefaultRef  = useRef<HTMLDivElement | null>(null); // vertical default position line
+  const shadowOutlineRef  = useRef<HTMLDivElement | null>(null); // shadow outline at original position (snap target)
 
   // ── Apply / clear overrides on load and undo/redo ──────────────────────────
   useEffect(() => {
@@ -579,10 +580,11 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
     const SNAP         = 8;   // px grid
     const CENTER_SNAP  = 12;  // px radius for center-snap attraction
+    const ORIGINAL_SNAP = 30; // px radius for snap-to-original attraction
     const parentCenterX = snapRefRect.left + snapRefRect.width  / 2;
     const parentCenterY = snapRefRect.top  + snapRefRect.height / 2;
 
-    type SnapResult = { dx: number; dy: number; snapV: boolean; snapH: boolean; axisLock: 'h' | 'v' | null };
+    type SnapResult = { dx: number; dy: number; snapV: boolean; snapH: boolean; axisLock: 'h' | 'v' | null; snapOriginal?: boolean };
 
     // Clamp bounds (shared)
     const minDx = parentRelRect.left - startRelRect.left;
@@ -605,15 +607,24 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       }
       let snDx = effDx, snDy = effDy;
       let snapV = false, snapH = false;
-      const elCX = startRelRect.left + startRelRect.width  / 2 + effDx;
-      const elCY = startRelRect.top  + startRelRect.height / 2 + effDy;
-      if (!axisLock || axisLock === 'h') {
-        if (Math.abs(elCX - parentCenterX) < CENTER_SNAP) { snDx = parentCenterX - (startRelRect.left + startRelRect.width  / 2); snapV = true; }
+      let snapOriginal = false;
+
+      // Check snap-to-original first (strongest snap)
+      if (Math.abs(rawDx) < ORIGINAL_SNAP && Math.abs(rawDy) < ORIGINAL_SNAP) {
+        snDx = 0;
+        snDy = 0;
+        snapOriginal = true;
+      } else {
+        const elCX = startRelRect.left + startRelRect.width  / 2 + effDx;
+        const elCY = startRelRect.top  + startRelRect.height / 2 + effDy;
+        if (!axisLock || axisLock === 'h') {
+          if (Math.abs(elCX - parentCenterX) < CENTER_SNAP) { snDx = parentCenterX - (startRelRect.left + startRelRect.width  / 2); snapV = true; }
+        }
+        if (!axisLock || axisLock === 'v') {
+          if (Math.abs(elCY - parentCenterY) < CENTER_SNAP) { snDy = parentCenterY - (startRelRect.top  + startRelRect.height / 2); snapH = true; }
+        }
       }
-      if (!axisLock || axisLock === 'v') {
-        if (Math.abs(elCY - parentCenterY) < CENTER_SNAP) { snDy = parentCenterY - (startRelRect.top  + startRelRect.height / 2); snapH = true; }
-      }
-      return { dx: clamp(snDx, minDx, maxDx), dy: clamp(snDy, minDy, maxDy), snapV, snapH, axisLock };
+      return { dx: clamp(snDx, minDx, maxDx), dy: clamp(snDy, minDy, maxDy), snapV, snapH, axisLock, snapOriginal };
     };
 
     /**
@@ -623,13 +634,22 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     const constrainFinal = (rawDx: number, rawDy: number): SnapResult => {
       let snDx = rawDx, snDy = rawDy;
       let snapV = false, snapH = false;
-      const elCX = startRelRect.left + startRelRect.width  / 2 + rawDx;
-      const elCY = startRelRect.top  + startRelRect.height / 2 + rawDy;
-      if (Math.abs(elCX - parentCenterX) < CENTER_SNAP) { snDx = parentCenterX - (startRelRect.left + startRelRect.width  / 2); snapV = true; }
-      else snDx = Math.round(rawDx / SNAP) * SNAP;
-      if (Math.abs(elCY - parentCenterY) < CENTER_SNAP) { snDy = parentCenterY - (startRelRect.top  + startRelRect.height / 2); snapH = true; }
-      else snDy = Math.round(rawDy / SNAP) * SNAP;
-      return { dx: clamp(snDx, minDx, maxDx), dy: clamp(snDy, minDy, maxDy), snapV, snapH, axisLock: null };
+      let snapOriginal = false;
+
+      // Check snap-to-original first (strongest snap)
+      if (Math.abs(rawDx) < ORIGINAL_SNAP && Math.abs(rawDy) < ORIGINAL_SNAP) {
+        snDx = 0;
+        snDy = 0;
+        snapOriginal = true;
+      } else {
+        const elCX = startRelRect.left + startRelRect.width  / 2 + rawDx;
+        const elCY = startRelRect.top  + startRelRect.height / 2 + rawDy;
+        if (Math.abs(elCX - parentCenterX) < CENTER_SNAP) { snDx = parentCenterX - (startRelRect.left + startRelRect.width  / 2); snapV = true; }
+        else snDx = Math.round(rawDx / SNAP) * SNAP;
+        if (Math.abs(elCY - parentCenterY) < CENTER_SNAP) { snDy = parentCenterY - (startRelRect.top  + startRelRect.height / 2); snapH = true; }
+        else snDy = Math.round(rawDy / SNAP) * SNAP;
+      }
+      return { dx: clamp(snDx, minDx, maxDx), dy: clamp(snDy, minDy, maxDy), snapV, snapH, axisLock: null, snapOriginal };
     };
 
     /** Update guide line DOM positions + visibility — zero re-renders */
@@ -681,12 +701,25 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         guideVDefaultRef.current.style.opacity = '0.6';
         guideVDefaultRef.current.style.display = 'block';
       }
+
+      // ── Shadow outline at original position (snap target) ────────────────────
+      if (shadowOutlineRef.current) {
+        shadowOutlineRef.current.style.top    = `${startRelRect.top}px`;
+        shadowOutlineRef.current.style.left   = `${startRelRect.left}px`;
+        shadowOutlineRef.current.style.width  = `${startRelRect.width}px`;
+        shadowOutlineRef.current.style.height = `${startRelRect.height}px`;
+        // Highlight shadow when snap-to-original is active (close to original position)
+        shadowOutlineRef.current.style.borderColor = (dx === 0 && dy === 0) ? '#3b82f6' : 'rgba(59,130,246,0.3)';
+        shadowOutlineRef.current.style.backgroundColor = (dx === 0 && dy === 0) ? 'rgba(59,130,246,0.1)' : 'rgba(59,130,246,0.05)';
+        shadowOutlineRef.current.style.display = 'block';
+      }
     };
     const hideGuides = () => {
       if (guideHRef.current) guideHRef.current.style.display = 'none';
       if (guideVRef.current) guideVRef.current.style.display = 'none';
       if (guideHDefaultRef.current) guideHDefaultRef.current.style.display = 'none';
       if (guideVDefaultRef.current) guideVDefaultRef.current.style.display = 'none';
+      if (shadowOutlineRef.current) shadowOutlineRef.current.style.display = 'none';
     };
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -1082,6 +1115,15 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
           display: 'none', position: 'absolute', width: 0,
           borderLeft: '1px dashed rgba(100,116,139,0.4)',
           pointerEvents: 'none', zIndex: 49,
+        }} />
+
+        {/* Shadow outline at original position — snap target for drag-to-reset */}
+        <div ref={shadowOutlineRef} style={{
+          display: 'none', position: 'absolute',
+          border: '2px dashed rgba(59,130,246,0.3)',
+          pointerEvents: 'none', zIndex: 48,
+          transition: 'border-color 0.15s, background-color 0.15s',
+          borderRadius: '2px',
         }} />
       </div>
     </>
