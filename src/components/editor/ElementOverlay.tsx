@@ -546,12 +546,6 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     const el = lastSelectedEl.current as HTMLElement | null;
     if (!el || !containerRef.current) return;
 
-    // Check if drag started from a child element - if yes, allow child interaction
-    // Only drag from parent's empty space or overlay elements
-    const target = e.target as HTMLElement;
-    const isChildElement = el.contains(target) && target !== el && !target.hasAttribute('data-overlay');
-    if (isChildElement) return; // Allow child to handle its own interaction
-
     // Clear hover immediately so no other element highlights during drag
     setHovered(null);
     lastHoveredEl.current = null;
@@ -1133,17 +1127,18 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
           const color = c.label;
           return (
             <>
-              {/* Visual selection border - pointerEvents:none so children are hoverable */}
+              {/* Draggable selection border (move) */}
               <div
                 ref={selectionBorderRef}
                 data-overlay="true"
+                onMouseDown={handleMoveStart}
                 style={{
                   position: 'absolute',
                   top: rect.top, left: rect.left,
                   width: rect.width, height: rect.height,
                   border: `2px solid ${color}`,
                   borderRadius: 2,
-                  pointerEvents: 'none',
+                  pointerEvents: 'auto',
                   boxSizing: 'border-box',
                 }}
               >
@@ -1158,22 +1153,6 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
                   {label}
                 </span>
               </div>
-
-              {/* Drag handler - top edge strip for grabbing/moving */}
-              <div
-                data-overlay="true"
-                onMouseDown={handleMoveStart}
-                style={{
-                  position: 'absolute',
-                  top: rect.top, left: rect.left,
-                  width: rect.width, height: 25,
-                  pointerEvents: 'auto',
-                  cursor: 'grab',
-                  zIndex: 40,
-                  background: 'transparent',
-                  userSelect: 'none',
-                }}
-              />
 
               {/* Resize handles (8 points) */}
               {handles.map((pos, i) => {
