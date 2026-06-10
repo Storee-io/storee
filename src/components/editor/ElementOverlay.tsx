@@ -340,9 +340,23 @@ function mapElementToField(el: Element): string | null {
 
   // TRUST BADGES
   if (sectionType === 'trust') {
-    const idx = getArrayIndex('badge-item') ?? getArrayIndex('[class*="flex"]');
-    if (idx !== null) {
-      return `trustBadges.${idx}.label`;
+    // Find the flex container with badge items
+    let badgeContainer = section?.querySelector('[class*="flex"]');
+    if (badgeContainer) {
+      // Get all direct children that contain text (badge items)
+      const badgeItems = Array.from(badgeContainer.children).filter((child) => {
+        const childText = (child as Element).textContent?.trim() || '';
+        return childText.length > 5;
+      });
+
+      // Find which badge contains our element
+      const badgeIndex = badgeItems.findIndex((badge) =>
+        badge.contains(el)
+      );
+
+      if (badgeIndex !== -1 && text.length > 5) {
+        return `trustBadges.${badgeIndex}.text`;
+      }
     }
   }
 

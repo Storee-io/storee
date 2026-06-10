@@ -544,9 +544,23 @@ export default function EditorShell({ store, from }: Props) {
           const [, arrayName, indexStr, fieldKey] = match;
           const index = parseInt(indexStr, 10);
 
-          // Find the container for this array section
-          const arrayContainers = document.querySelectorAll(`[class*="${arrayName}"] .p-3, [class*="${arrayName}-item"]`);
-          if (arrayContainers[index]) {
+          // Find the container for this array section - try multiple patterns
+          let arrayContainers = document.querySelectorAll(`[class*="${arrayName}"] .p-3, [class*="${arrayName}-item"]`);
+
+          // If not found, try finding by data-field pattern as fallback
+          if (arrayContainers.length === 0) {
+            arrayContainers = document.querySelectorAll(`input[data-field^="${arrayName}."], textarea[data-field^="${arrayName}."]`);
+            if (arrayContainers.length > 0) {
+              // Group by index (e.g., trustBadges.0.text, trustBadges.1.text)
+              const fieldsForIndex = Array.from(arrayContainers).filter(el => {
+                const df = el.getAttribute('data-field') || '';
+                return df.startsWith(`${arrayName}.${index}.`);
+              });
+              if (fieldsForIndex[0]) {
+                input = fieldsForIndex[0] as HTMLInputElement | HTMLTextAreaElement;
+              }
+            }
+          } else if (arrayContainers[index]) {
             // Find input within this item
             input = arrayContainers[index].querySelector(`input[data-field="${fieldName}"], textarea[data-field="${fieldName}"]`) as HTMLInputElement | HTMLTextAreaElement;
 
@@ -1255,6 +1269,22 @@ export default function EditorShell({ store, from }: Props) {
                     <Input value={promoBar} onChange={setPromoBar} placeholder="ðŸŽ‰ Free shipping on orders over $50!" dataField="promoBar" />
                   </Field>
                   <p className="text-xs text-slate-400">Leave empty to hide.</p>
+                </Section>
+
+                <Section icon={Check} title="Trust Badges" open={openSection === 'trust'} onToggle={() => toggle('trust')}>
+                  {trustBadges.map((b, i) => (
+                    <div key={i} className="p-3 bg-slate-50 rounded-xl space-y-2.5 relative group">
+                      <button onClick={() => setTrustBadges(trustBadges.filter((_, idx) => idx !== i))}
+                        className="absolute top-2 right-2 p-1 rounded text-slate-300 hover:text-red-400 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <Field label={`Badge ${i + 1}`}><Input value={b.text} onChange={v => setTrustBadges(trustBadges.map((x, idx) => idx === i ? { ...x, text: v } : x))} dataField={`trustBadges.${i}.text`} /></Field>
+                    </div>
+                  ))}
+                  <button onClick={() => setTrustBadges([...trustBadges, { icon: 'âœ¢', text: '' }])}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-emerald-600 border border-dashed border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors">
+                    <Plus className="w-3.5 h-3.5" /> Add Badge
+                  </button>
                 </Section>
 
                 <Section icon={Type} title="Hero Section" open={openSection === 'hero'} onToggle={() => toggle('hero')}>
