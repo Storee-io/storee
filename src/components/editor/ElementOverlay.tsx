@@ -709,8 +709,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         shadowOutlineRef.current.style.width  = `${startRelRect.width}px`;
         shadowOutlineRef.current.style.height = `${startRelRect.height}px`;
         // Highlight shadow when snap-to-original is active (close to original position)
-        shadowOutlineRef.current.style.borderColor = (dx === 0 && dy === 0) ? '#3b82f6' : 'rgba(59,130,246,0.3)';
-        shadowOutlineRef.current.style.backgroundColor = (dx === 0 && dy === 0) ? 'rgba(59,130,246,0.1)' : 'rgba(59,130,246,0.05)';
+        shadowOutlineRef.current.style.backgroundColor = (dx === 0 && dy === 0) ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.02)';
         shadowOutlineRef.current.style.display = 'block';
       }
     };
@@ -1120,10 +1119,8 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         {/* Shadow outline at original position — snap target for drag-to-reset */}
         <div ref={shadowOutlineRef} style={{
           display: 'none', position: 'absolute',
-          border: '2px dashed rgba(59,130,246,0.3)',
           pointerEvents: 'none', zIndex: 48,
-          transition: 'border-color 0.15s, background-color 0.15s',
-          borderRadius: '2px',
+          transition: 'background-color 0.15s',
         }} />
       </div>
     </>
