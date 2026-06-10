@@ -63,18 +63,6 @@ function parseTranslate(el: HTMLElement): { x: number; y: number } {
 const BLOCK_TAGS = new Set(['div','section','article','header','footer','main','aside','nav','form','ul','ol','li','table','tbody','tr','td','th','svg','p','h1','h2','h3','h4','h5','h6']);
 const TEXT_TAGS = new Set(['p','h1','h2','h3','h4','h5','h6','span','a','strong','em','label','blockquote']);
 
-function isEditableTextElement(el: Element): boolean {
-  const tag = el.tagName.toLowerCase();
-  if (!TEXT_TAGS.has(tag)) return false;
-  const text = el.textContent || '';
-  if (text.trim().length === 0) return false;
-  if ((el as HTMLElement).isContentEditable) return false;
-  if (el.closest('[contenteditable]')) return false;
-  if ((el as HTMLElement).dataset?.editorField !== undefined) return false;
-  if (el.closest('[data-editor-field]')) return false;
-  return true;
-}
-
 function shouldSkip(el: Element): boolean {
   const tag = el.tagName.toLowerCase();
   if (tag === 'path' || tag === 'circle' || tag === 'g' || tag === 'rect' || tag === 'polyline') return true;
@@ -132,8 +120,6 @@ export type ElementStyleOverride = {
   display?: string;
   /** Human-readable label for version history, e.g. "Product card" */
   humanLabel?: string;
-  /** Text content override for text elements */
-  textContent?: string;
 };
 
 interface ElementOverlayProps {
@@ -296,8 +282,6 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
   const [hovered,       setHovered]       = useState<HoverInfo | null>(null);
   const [selected,      setSelected]      = useState<HoverInfo | null>(null);
   const [overlayHeight, setOverlayHeight] = useState(0);
-  const [editingEl,     setEditingEl]     = useState<Element | null>(null);
-  const [editingText,   setEditingText]   = useState<string>('');
 
   const lastHoveredEl  = useRef<Element | null>(null);
   const lastSelectedEl = useRef<Element | null>(null);
@@ -305,7 +289,6 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
   const moveRef        = useRef<MoveState | null>(null);  // move
   const didDragRef     = useRef(false);
   const moveRafRef     = useRef<number | null>(null);     // rAF id for move throttle
-  const editInputRef   = useRef<HTMLDivElement | null>(null);  // contenteditable for text edit
 
   // Direct DOM refs — zero re-renders during drag/move
   const overlayRootRef    = useRef<HTMLDivElement | null>(null);
@@ -407,9 +390,6 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
               el.style.top = styles.top;
             }
           }
-          if (styles.textContent) {
-            el.textContent = styles.textContent;
-          }
           el.style.boxSizing = 'border-box';
           el.setAttribute('data-overridden', '1');
         }
@@ -449,105 +429,6 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     if (el.style.left)       styles.left       = el.style.left;
     onElementOverride(buildSelector(el), styles);
   }, [onElementOverride]);
-
-  // ── Double-click text edit ────────────────────────────────────────────────
-  const finishEditingElement = useCallback((save: boolean = true) => {
-    if (!editingEl || !editInputRef.current) return;
-
-    const newText = editInputRef.current.textContent || '';
-
-    if (save && newText !== editingText) {
-      (editingEl as HTMLElement).textContent = newText;
-
-      if (onElementOverride) {
-        const styles: ElementStyleOverride = {
-          humanLabel: buildHumanLabel(editingEl as HTMLElement),
-          textContent: newText,
-        };
-        onElementOverride(buildSelector(editingEl as HTMLElement), styles);
-      }
-    }
-
-    try {
-      editInputRef.current.remove();
-    } catch (e) {
-      // Element might have been removed already
-    }
-
-    editInputRef.current = null;
-    setEditingEl(null);
-    setEditingText('');
-  }, [editingEl, editingText, onElementOverride]);
-
-  const startEditingElement = useCallback((el: HTMLElement) => {
-    if (!containerRef.current) return;
-    const container = containerRef.current;
-    const rect = getRelativeRect(el, container);
-    const originalText = el.textContent || '';
-
-    const editDiv = document.createElement('div');
-    editDiv.contentEditable = 'true';
-    editDiv.textContent = originalText;
-    editDiv.setAttribute('data-editor-edit', 'true');
-
-    const origStyle = window.getComputedStyle(el);
-    editDiv.style.cssText = `
-      position: absolute;
-      top: ${rect.top}px;
-      left: ${rect.left}px;
-      width: ${rect.width}px;
-      height: ${rect.height}px;
-      background: rgba(59, 130, 246, 0.1);
-      border: 2px solid #3b82f6;
-      border-radius: 4px;
-      outline: none;
-      z-index: 60;
-      box-sizing: border-box;
-      overflow: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
-      pointer-events: auto;
-      color: ${origStyle.color};
-      font-size: ${origStyle.fontSize};
-      font-family: ${origStyle.fontFamily};
-      font-weight: ${origStyle.fontWeight};
-      line-height: ${origStyle.lineHeight};
-      padding: ${origStyle.padding};
-    `;
-
-    overlayRootRef.current?.appendChild(editDiv);
-    setEditingEl(el);
-    setEditingText(originalText);
-    editInputRef.current = editDiv;
-    setSelected(null);
-
-    editDiv.focus();
-    const range = document.createRange();
-    const sel = window.getSelection();
-    range.selectNodeContents(editDiv);
-    sel?.removeAllRanges();
-    sel?.addRange(range);
-
-    // Attach keyboard handlers
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        finishEditingElement(true);
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        finishEditingElement(false);
-      }
-    };
-
-    const handleBlur = () => {
-      if (editInputRef.current && editInputRef.current.parentElement) {
-        finishEditingElement(true);
-      }
-    };
-
-    editDiv.addEventListener('keydown', handleKeyDown);
-    editDiv.addEventListener('blur', handleBlur);
-  }, [containerRef, finishEditingElement]);
 
   // ── RESIZE drag ───────────────────────────────────────────────────────────
   const handleResizeStart = useCallback((e: React.MouseEvent, handle: HandlePos) => {
@@ -1188,29 +1069,10 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       }
     };
 
-    const handleDoubleClick = (e: MouseEvent) => {
-      if (!editMode) return;
-      if (dragRef.current || moveRef.current) return;
-      if (editingEl) return;
-
-      let target = e.target as Element;
-      if (!target) return;
-
-      if (target.closest('[data-overlay]')) return;
-
-      let el = findTarget(target, container);
-      if (!el || !isEditableTextElement(el)) return;
-
-      startEditingElement(el as HTMLElement);
-      e.preventDefault();
-      e.stopPropagation();
-    };
-
     document.addEventListener('mousemove', handleMouseMove);
     container.addEventListener('mouseleave', handleMouseLeave);
     document.addEventListener('click', handleClick, true);
     document.addEventListener('click', handleDocClick);
-    document.addEventListener('dblclick', handleDoubleClick, true);
     container.addEventListener('scroll', updateSelectedRect);
     window.addEventListener('resize', updateSelectedRect);
 
@@ -1219,11 +1081,10 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       container.removeEventListener('mouseleave', handleMouseLeave);
       document.removeEventListener('click', handleClick, true);
       document.removeEventListener('click', handleDocClick);
-      document.removeEventListener('dblclick', handleDoubleClick, true);
       container.removeEventListener('scroll', updateSelectedRect);
       window.removeEventListener('resize', updateSelectedRect);
     };
-  }, [editMode, containerRef, updateSelectedRect, updateOverlayHeight, editingEl, startEditingElement]);
+  }, [editMode, containerRef, updateSelectedRect, updateOverlayHeight]);
 
   if (!editMode) return null;
 
