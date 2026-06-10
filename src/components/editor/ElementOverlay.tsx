@@ -960,11 +960,21 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
       // If target is null/overlay, try to find element under mouse position
       // This allows child element hover detection even when parent is selected
-      if (!target && selected) {
-        const el = selected && lastSelectedEl.current;
-        if (el && el.contains(e.target as Node)) {
-          // Mouse is within selected element, detect child elements
-          target = e.target as Element;
+      if (!target) {
+        const rawTarget = e.target as Element;
+
+        // Check if mouse is within selected element's visual bounds
+        if (selected && lastSelectedEl.current) {
+          const rect = lastSelectedEl.current.getBoundingClientRect();
+          const clientX = e.clientX;
+          const clientY = e.clientY;
+
+          // Only allow child detection if mouse is actually within selected element
+          if (clientX >= rect.left && clientX <= rect.right &&
+              clientY >= rect.top && clientY <= rect.bottom) {
+            // Force target detection within selected element
+            target = rawTarget;
+          }
         }
       }
 
