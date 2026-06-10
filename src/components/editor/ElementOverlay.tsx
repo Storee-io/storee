@@ -285,112 +285,137 @@ function mapElementToField(el: Element): string | null {
   const text = el.textContent?.trim() || '';
   const section = el.closest('[data-editor-section]');
   const sectionType = section?.getAttribute('data-editor-section');
+  const tag = el.tagName.toLowerCase();
 
-  // Helper: Find index of item in array section (e.g., which feature, which testimonial)
-  const getArrayIndex = (containerClass: string): number | null => {
-    let parent = el.parentElement;
-    while (parent && !parent.classList.contains(containerClass)) {
-      parent = parent.parentElement;
+  // Generic helper: find card index by walking up to find
+  // an ancestor that is one of several siblings (i.e., it's an item in a list)
+  const getCardIndex = (): number => {
+    let node: Element | null = el;
+    while (node && node.parentElement && node.parentElement !== section) {
+      const parent = node.parentElement;
+      const siblings = Array.from(parent.children);
+      // If parent has 2+ children of the same tag → node is a list item
+      const sameTagSiblings = siblings.filter(s => s.tagName === node!.tagName);
+      if (sameTagSiblings.length >= 2) {
+        return siblings.indexOf(node);
+      }
+      node = parent;
     }
-    if (!parent) return null;
-    const items = Array.from(section?.querySelectorAll(`.${containerClass}`) || []);
-    return items.indexOf(parent);
+    return -1;
   };
 
   // HERO SECTION
   if (sectionType === 'hero') {
-    if (text.includes('Form Follows') || text === 'Form Follows Feeling.') return 'heroTitle';
-    if (text.includes('Scandinavian-crafted') || text.includes('built with sustainable')) return 'heroSubtitle';
-    if (text.includes('Explore')) return 'ctaText';
+    if (tag === 'p' && text.length < 80) return 'tagline';
+    if (tag === 'h1' || tag === 'h2') return text.length < 100 ? 'heroTitle' : 'heroSubtitle';
+    if (tag === 'span') {
+      // Title tends to be short, subtitle tends to be long
+      if (text.length < 60) return 'heroTitle';
+      return 'heroSubtitle';
+    }
+    if (tag === 'a') return 'ctaText';
   }
 
   // PROMO BAR
-  if (text.includes('Free white-glove delivery') || text.includes('Free shipping')) return 'promoBar';
+  if (sectionType === 'promoBar' || text.includes('Free white-glove delivery') || text.includes('Free shipping')) return 'promoBar';
 
   // BRAND STORY
   if (sectionType === 'brandStory' && text.length > 20) return 'brandStory';
 
-  // NEWSLETTER
+  // NEWSLETTER — first substantial text = headline, second = subtext
   if (sectionType === 'newsletter') {
-    if (text.includes('Stay in the loop') || text.includes('Subscribe for')) return 'newsletter.headline';
-    if (text.includes('exclusive')) return 'newsletter.subtext';
-  }
-
-  // FEATURES (array items)
-  if (sectionType === 'features') {
-    const idx = getArrayIndex('feature-card') ?? getArrayIndex('p-3');
-    if (idx !== null) {
-      // Detect if it's title or description by checking position in card
-      const cardParent = el.closest('.p-3, .feature-card, [class*="grid"]');
-      const textLength = text.length;
-      if (textLength > 50) return `features.${idx}.description`;
-      if (textLength > 5) return `features.${idx}.title`;
-    }
-  }
-
-  // TESTIMONIALS (array items)
-  if (sectionType === 'testimonials') {
-    const idx = getArrayIndex('testimonial-card') ?? getArrayIndex('p-3');
-    if (idx !== null) {
-      if (text.length > 100) return `testimonials.${idx}.text`;
-      if (text.match(/^[A-Z\s]+$/)) return `testimonials.${idx}.author`;
-      if (text.includes('Designer') || text.includes('Architect') || text.includes('Interior')) return `testimonials.${idx}.role`;
-    }
-  }
-
-  // TRUST BADGES
-  if (sectionType === 'trust') {
-    // Find the flex container with badge items
-    let badgeContainer = section?.querySelector('[class*="flex"]');
-    if (badgeContainer) {
-      // Get all direct children that contain text (badge items)
-      const badgeItems = Array.from(badgeContainer.children).filter((child) => {
-        const childText = (child as Element).textContent?.trim() || '';
-        return childText.length > 5;
-      });
-
-      // Find which badge contains our element
-      const badgeIndex = badgeItems.findIndex((badge) =>
-        badge.contains(el)
+    if ((tag === 'span' || tag === 'p' || tag === 'h2' || tag === 'h3') && text.length > 3) {
+      // Count how many text elements appear before this one
+      const textEls = Array.from(section!.querySelectorAll('span, p, h2, h3')).filter(
+        e => e.textContent!.trim().length > 3
       );
+      const pos = textEls.indexOf(el);
+      return pos === 0 ? 'newsletter.headline' : 'newsletter.subtext';
+    }
+  }
 
-      if (badgeIndex !== -1 && text.length > 5) {
-        return `trustBadges.${badgeIndex}.text`;
+  // SECTION HEADINGS (H2 in array sections)
+  if (tag === 'h2') {
+    if (sectionType === 'features')     return 'sectionHeadings.features';
+    if (sectionType === 'testimonials') return 'sectionHeadings.testimonials';
+    if (sectionType === 'products')     return 'sectionHeadings.products';
+    if (sectionType === 'faq')          return 'sectionHeadings.faq';
+    if (sectionType === 'newsletter')   return 'sectionHeadings.newsletter';
+  }
+
+  // FEATURES — match by card container index, then text length to distinguish title/description
+  if (sectionType === 'features') {
+    const cardIdx = getCardIndex();
+    if (cardIdx >= 0) {
+      if (tag === 'h3') return `features.${cardIdx}.title`;
+      if (tag === 'p') return `features.${cardIdx}.description`;
+    }
+  }
+
+  // TESTIMONIALS — find card by getCardIndex, then match P position within card
+  if (sectionType === 'testimonials') {
+    if (tag === 'p') {
+      const cardIdx = getCardIndex();
+      if (cardIdx >= 0) {
+        // Find all P elements in this card
+        let cardEl: Element | null = el;
+        while (cardEl && cardEl !== section) {
+          const siblings = Array.from(cardEl.parentElement?.children || []);
+          const sameTagSiblings = siblings.filter(s => s.tagName === cardEl!.tagName);
+          if (sameTagSiblings.length >= 2) break;
+          cardEl = cardEl.parentElement;
+        }
+        if (cardEl) {
+          const cardPList = Array.from(cardEl.querySelectorAll('p'));
+          const pIdx = cardPList.indexOf(el as HTMLParagraphElement);
+          if (pIdx === 0) return `testimonials.${cardIdx}.text`;
+          if (pIdx === 1) return `testimonials.${cardIdx}.author`;
+          if (pIdx === 2) return `testimonials.${cardIdx}.role`;
+        }
       }
     }
   }
 
-  // STATS
+  // TRUST BADGES — find badge by flex container child index
+  if (sectionType === 'trust') {
+    const badgeContainer = section?.querySelector('[class*="flex"]');
+    if (badgeContainer) {
+      const badgeItems = Array.from(badgeContainer.children).filter(
+        child => (child as Element).textContent?.trim().length > 5
+      );
+      const badgeIndex = badgeItems.findIndex(badge => badge.contains(el));
+      if (badgeIndex !== -1 && text.length > 5) return `trustBadges.${badgeIndex}.text`;
+    }
+  }
+
+  // STATS — find stat by card index, distinguish value vs label by content
   if (sectionType === 'stats') {
-    const idx = getArrayIndex('stat-item') ?? getArrayIndex('[class*="grid"]');
-    if (idx !== null) {
-      if (text.match(/^[\d,\.%\+\-]+$/)) return `stats.${idx}.value`;
-      if (text.length > 20) return `stats.${idx}.description`;
+    const idx = getCardIndex();
+    if (idx >= 0) {
+      if (text.match(/^[\d,\.%\+\-★]+$/)) return `stats.${idx}.value`;
       return `stats.${idx}.label`;
     }
   }
 
-  // FAQ
+  // FAQ — find question/answer by card index
   if (sectionType === 'faq') {
-    const idx = getArrayIndex('faq-item') ?? getArrayIndex('[class*="border"]');
-    if (idx !== null) {
-      if (text.length > 100) return `faq.${idx}.a`;
+    const idx = getCardIndex();
+    if (idx >= 0) {
+      if (text.length > 80) return `faq.${idx}.a`;
       return `faq.${idx}.q`;
     }
   }
 
-  // COLLECTIONS (tabs)
+  // COLLECTIONS (tabs) — find by sibling position
   if (sectionType === 'collections') {
-    const idx = getArrayIndex('collection-tab');
-    if (idx !== null) {
-      return `collections.${idx}.label`;
-    }
+    const idx = getCardIndex();
+    if (idx >= 0) return `collections.${idx}.label`;
   }
 
   // PRODUCTS (grid items)
   if (sectionType === 'products') {
-    const idx = getArrayIndex('product-card');
-    if (idx !== null) {
+    const idx = getCardIndex();
+    if (idx >= 0) {
       if (text.match(/^\$[\d,\.]+/) || text.includes('Price')) return null; // Skip prices
       return `products.${idx}.name`;
     }

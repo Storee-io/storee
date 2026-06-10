@@ -509,83 +509,63 @@ export default function EditorShell({ store, from }: Props) {
     // Parse field name (could be "heroTitle" or "features.0.title")
     const isArrayField = fieldName.includes('.');
     const sectionMap: Record<string, string> = {
-      'hero': 'hero',
-      'promo': 'promoBar',
-      'brand': 'brandStory',
+      'tagline': 'general',
+      'storeName': 'general',
+      'heroTitle': 'hero',
+      'heroSubtitle': 'hero',
+      'ctaText': 'hero',
+      'promoBar': 'promoBar',
+      'brandStory': 'brandStory',
       'newsletter': 'newsletter',
       'features': 'features',
       'testimonials': 'testimonials',
-      'trust': 'trust',
+      'trustBadges': 'trust',
       'stats': 'stats',
       'faq': 'faq',
       'collections': 'collections',
       'products': 'products',
+      'sectionHeadings': 'features', // default, overridden below
     };
 
     // Determine which section to open
-    let section = 'hero';
-    for (const [key, val] of Object.entries(sectionMap)) {
-      if (fieldName.includes(key)) {
-        section = val;
-        break;
+    let section = 'general';
+    // Exact match first
+    if (sectionMap[fieldName]) {
+      section = sectionMap[fieldName];
+    } else {
+      // Prefix match for array fields and dotted fields
+      for (const [key, val] of Object.entries(sectionMap)) {
+        if (fieldName.startsWith(key)) {
+          section = val;
+          break;
+        }
       }
     }
+    // Special: sectionHeadings.X → open that section
+    const shMatch = fieldName.match(/^sectionHeadings\.(\w+)$/);
+    if (shMatch) section = shMatch[1];
 
     setOpenSection(section);
 
-    // Auto-focus the field after a short delay to allow DOM updates
-    setTimeout(() => {
-      let input: HTMLInputElement | HTMLTextAreaElement | null = null;
-
-      if (isArrayField) {
-        // For array fields like "features.0.title", find the nth item and its field
-        const match = fieldName.match(/^(\w+)\.(\d+)\.(\w+)$/);
-        if (match) {
-          const [, arrayName, indexStr, fieldKey] = match;
-          const index = parseInt(indexStr, 10);
-
-          // Find the container for this array section - try multiple patterns
-          let arrayContainers = document.querySelectorAll(`[class*="${arrayName}"] .p-3, [class*="${arrayName}-item"]`);
-
-          // If not found, try finding by data-field pattern as fallback
-          if (arrayContainers.length === 0) {
-            arrayContainers = document.querySelectorAll(`input[data-field^="${arrayName}."], textarea[data-field^="${arrayName}."]`);
-            if (arrayContainers.length > 0) {
-              // Group by index (e.g., trustBadges.0.text, trustBadges.1.text)
-              const fieldsForIndex = Array.from(arrayContainers).filter(el => {
-                const df = el.getAttribute('data-field') || '';
-                return df.startsWith(`${arrayName}.${index}.`);
-              });
-              if (fieldsForIndex[0]) {
-                input = fieldsForIndex[0] as HTMLInputElement | HTMLTextAreaElement;
-              }
-            }
-          } else if (arrayContainers[index]) {
-            // Find input within this item
-            input = arrayContainers[index].querySelector(`input[data-field="${fieldName}"], textarea[data-field="${fieldName}"]`) as HTMLInputElement | HTMLTextAreaElement;
-
-            // If not found by data-field, try to find by position (first/second input)
-            if (!input) {
-              const inputs = arrayContainers[index].querySelectorAll('input, textarea');
-              if (fieldKey.includes('title') || fieldKey.includes('label')) {
-                input = inputs[0] as HTMLInputElement | HTMLTextAreaElement;
-              } else if (fieldKey.includes('description') || fieldKey.includes('text') || fieldKey.includes('a')) {
-                input = inputs[1] as HTMLInputElement | HTMLTextAreaElement;
-              }
-            }
-          }
-        }
-      } else {
-        // For simple fields like "heroTitle"
-        input = document.querySelector(`input[data-field="${fieldName}"], textarea[data-field="${fieldName}"]`) as HTMLInputElement | HTMLTextAreaElement;
-      }
-
+    // Auto-focus by data-field attribute — wait for React re-render + section animation (180ms)
+    const focusField = (fieldName: string) => {
+      const input = document.querySelector(
+        `input[data-field="${fieldName}"], textarea[data-field="${fieldName}"]`
+      ) as HTMLInputElement | HTMLTextAreaElement | null;
       if (input) {
         input.focus();
         input.select?.();
         input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return true;
       }
-    }, 200);
+      return false;
+    };
+    // 250ms: React re-render + 180ms animation + buffer
+    setTimeout(() => {
+      if (!focusField(fieldName)) {
+        setTimeout(() => focusField(fieldName), 200);
+      }
+    }, 250);
   }, []);
 
   const handleArrayReorder = useCallback((field: string, newItems: unknown[]) => {
@@ -1258,8 +1238,8 @@ export default function EditorShell({ store, from }: Props) {
                 className="flex-1 overflow-y-auto"
               >
                 <Section icon={Layers} title="General" open={openSection === 'general'} onToggle={() => toggle('general')}>
-                  <Field label="Store Name"><Input value={storeName} onChange={setStoreName} placeholder="My Store" /></Field>
-                  <Field label="Tagline"><Input value={tagline} onChange={setTagline} placeholder="Short brand tagline" /></Field>
+                  <Field label="Store Name"><Input value={storeName} onChange={setStoreName} placeholder="My Store" dataField="storeName" /></Field>
+                  <Field label="Tagline"><Input value={tagline} onChange={setTagline} placeholder="Short brand tagline" dataField="tagline" /></Field>
                   <Field label="Primary Color"><ColorInput value={primaryColor} onChange={setPrimaryColor} /></Field>
                   <Field label="Accent Color"><ColorInput value={accentColor} onChange={setAccentColor} /></Field>
                 </Section>
@@ -1294,14 +1274,15 @@ export default function EditorShell({ store, from }: Props) {
                 </Section>
 
                 <Section icon={Sparkles} title="Features" open={openSection === 'features'} onToggle={() => toggle('features')}>
+                  <Field label="Section Heading"><Input value={sectionHeadings.features ?? ''} onChange={v => setSectionHeadings(h => ({ ...h, features: v }))} placeholder="Why choose us" dataField="sectionHeadings.features" /></Field>
                   {features.map((f, i) => (
                     <div key={i} className="p-3 bg-slate-50 rounded-xl space-y-2.5 relative group">
                       <button onClick={() => setFeatures(features.filter((_, idx) => idx !== i))}
                         className="absolute top-2 right-2 p-1 rounded text-slate-300 hover:text-red-400 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                      <Field label={`Title ${i + 1}`}><Input value={f.title} onChange={v => setFeatures(features.map((x, idx) => idx === i ? { ...x, title: v } : x))} /></Field>
-                      <Field label="Description"><Textarea value={f.description} onChange={v => setFeatures(features.map((x, idx) => idx === i ? { ...x, description: v } : x))} rows={2} /></Field>
+                      <Field label={`Title ${i + 1}`}><Input value={f.title} onChange={v => setFeatures(features.map((x, idx) => idx === i ? { ...x, title: v } : x))} dataField={`features.${i}.title`} /></Field>
+                      <Field label="Description"><Textarea value={f.description} onChange={v => setFeatures(features.map((x, idx) => idx === i ? { ...x, description: v } : x))} rows={2} dataField={`features.${i}.description`} /></Field>
                     </div>
                   ))}
                   <button onClick={() => setFeatures([...features, { icon: 'âœ¨', title: '', description: '' }])}
@@ -1311,16 +1292,17 @@ export default function EditorShell({ store, from }: Props) {
                 </Section>
 
                 <Section icon={Star} title="Testimonials" open={openSection === 'testimonials'} onToggle={() => toggle('testimonials')}>
+                  <Field label="Section Heading"><Input value={sectionHeadings.testimonials ?? ''} onChange={v => setSectionHeadings(h => ({ ...h, testimonials: v }))} placeholder="What our customers say" dataField="sectionHeadings.testimonials" /></Field>
                   {testimonials.map((t, i) => (
                     <div key={i} className="p-3 bg-slate-50 rounded-xl space-y-2.5 relative group">
                       <button onClick={() => setTestimonials(testimonials.filter((_, idx) => idx !== i))}
                         className="absolute top-2 right-2 p-1 rounded text-slate-300 hover:text-red-400 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                      <Field label="Review"><Textarea value={t.text} onChange={v => setTestimonials(testimonials.map((x, idx) => idx === i ? { ...x, text: v } : x))} rows={2} /></Field>
+                      <Field label="Review"><Textarea value={t.text} onChange={v => setTestimonials(testimonials.map((x, idx) => idx === i ? { ...x, text: v } : x))} rows={2} dataField={`testimonials.${i}.text`} /></Field>
                       <div className="grid grid-cols-2 gap-2">
-                        <Field label="Author"><Input value={t.author} onChange={v => setTestimonials(testimonials.map((x, idx) => idx === i ? { ...x, author: v } : x))} /></Field>
-                        <Field label="Role"><Input value={t.role} onChange={v => setTestimonials(testimonials.map((x, idx) => idx === i ? { ...x, role: v } : x))} /></Field>
+                        <Field label="Author"><Input value={t.author} onChange={v => setTestimonials(testimonials.map((x, idx) => idx === i ? { ...x, author: v } : x))} dataField={`testimonials.${i}.author`} /></Field>
+                        <Field label="Role"><Input value={t.role} onChange={v => setTestimonials(testimonials.map((x, idx) => idx === i ? { ...x, role: v } : x))} dataField={`testimonials.${i}.role`} /></Field>
                       </div>
                     </div>
                   ))}
@@ -1348,8 +1330,8 @@ export default function EditorShell({ store, from }: Props) {
                 </Section>
 
                 <Section icon={Mail} title="Newsletter" open={openSection === 'newsletter'} onToggle={() => toggle('newsletter')}>
-                  <Field label="Headline"><Input value={newsletter.headline} onChange={v => setNewsletter(n => ({ ...n, headline: v }))} placeholder="Stay in the loop" /></Field>
-                  <Field label="Subtext"><Textarea value={newsletter.subtext} onChange={v => setNewsletter(n => ({ ...n, subtext: v }))} placeholder="Subscribe for exclusive deals..." rows={2} /></Field>
+                  <Field label="Headline"><Input value={newsletter.headline} onChange={v => setNewsletter(n => ({ ...n, headline: v }))} placeholder="Stay in the loop" dataField="newsletter.headline" /></Field>
+                  <Field label="Subtext"><Textarea value={newsletter.subtext} onChange={v => setNewsletter(n => ({ ...n, subtext: v }))} placeholder="Subscribe for exclusive deals..." rows={2} dataField="newsletter.subtext" /></Field>
                   <p className="text-xs text-slate-400">Leave headline empty to hide.</p>
                 </Section>
 
