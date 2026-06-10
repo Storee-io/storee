@@ -675,7 +675,18 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     el.style.willChange = useInlineOffset ? 'top, left' : 'transform';
 
     const applyPosition = (el: HTMLElement, dx: number, dy: number, state: MoveState) => {
-      if (state.useMargin) {
+      // For inline elements, ALWAYS use position:relative + left/top
+      // because transform doesn't affect click/hover hitbox on inline elements
+      const isInline = window.getComputedStyle(el).display === 'inline';
+
+      if (isInline) {
+        // Inline elements: use position:relative + left/top (affects hitbox)
+        el.style.position = 'relative';
+        el.style.left = `${state.startInlineLeft + dx}px`;
+        el.style.top  = `${state.startInlineTop  + dy}px`;
+        // Clear transform if any
+        el.style.transform = '';
+      } else if (state.useMargin) {
         el.style.marginLeft = `${state.startMarginLeft + dx}px`;
         el.style.marginTop  = `${state.startMarginTop  + dy}px`;
       } else if (state.useInlineOffset) {
