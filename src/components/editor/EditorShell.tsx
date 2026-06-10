@@ -1279,7 +1279,7 @@ export default function EditorShell({ store, from }: Props) {
                 </Section>
 
                 <Section icon={BookOpen} title="Brand Story" open={openSection === 'brandStory'} onToggle={() => toggle('brandStory')}>
-                  <Field label="Story"><Textarea value={brandStory} onChange={setBrandStory} placeholder="Tell your brand's story..." rows={5} /></Field>
+                  <Field label="Story"><Textarea value={brandStory} onChange={setBrandStory} placeholder="Tell your brand's story..." rows={5} dataField="brandStory" /></Field>
                   <p className="text-xs text-slate-400">Leave empty to hide.</p>
                 </Section>
               </motion.div>

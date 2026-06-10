@@ -283,23 +283,35 @@ interface MoveState {
 /** Identify which store field a text element corresponds to */
 function mapElementToField(el: Element): string | null {
   const text = el.textContent?.trim() || '';
+  const tag = el.tagName.toLowerCase();
+
+  // Check which section we're in
+  const section = el.closest('[data-editor-section]');
+  const sectionType = section?.getAttribute('data-editor-section');
 
   // Hero section
+  if (sectionType === 'hero') {
+    if (text.includes('Form Follows') || text === 'Form Follows Feeling.') return 'heroTitle';
+    if (text.includes('Scandinavian-crafted') || text.includes('built with sustainable')) return 'heroSubtitle';
+    if (text.includes('Explore')) return 'ctaText';
+  }
+
+  // Promo bar
+  if (text.includes('Free white-glove delivery') || text.includes('Free shipping')) return 'promoBar';
+
+  // Brand story - match any substantial text element
+  if (sectionType === 'brandStory' && text.length > 20) return 'brandStory';
+
+  // Newsletter
+  if (sectionType === 'newsletter') {
+    if (text.includes('Stay in the loop') || text.includes('Subscribe for')) return 'newsletter.headline';
+    if (text.includes('exclusive')) return 'newsletter.subtext';
+  }
+
+  // Fallback: Hero section elements by text
   if (text === 'Form Follows Feeling.' || text.includes('Form Follows')) return 'heroTitle';
   if (text.includes('Scandinavian-crafted furniture') || text.includes('built with sustainable')) return 'heroSubtitle';
   if (text === 'Explore the Collection' || text === 'Explore ↓') return 'ctaText';
-
-  // Promo bar
-  if (text.includes('Free white-glove delivery')) return 'promoBar';
-
-  // Brand story
-  if (el.closest('[data-editor-section="brandStory"]') && (el.tagName === 'P' || el.tagName === 'DIV')) return 'brandStory';
-
-  // Newsletter
-  if (el.closest('[data-editor-section="newsletter"]')) {
-    if (text.includes('Stay in the loop') || text.includes('Subscribe')) return 'newsletter.headline';
-    if (text.includes('Subscribe for exclusive')) return 'newsletter.subtext';
-  }
 
   return null;
 }
