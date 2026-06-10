@@ -339,12 +339,55 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
             // for better click/hover hit detection accuracy (ensures selection border
             // matches visual position of element)
             const m = styles.transform.match(/translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)/);
-            const x = m ? parseFloat(m[1]) : 0;
-            const y = m ? parseFloat(m[2]) : 0;
+            let x = m ? parseFloat(m[1]) : 0;
+            let y = m ? parseFloat(m[2]) : 0;
+
+            // SAFETY: Validate offset values to prevent layout breaking
+            const MAX_OFFSET = 250;
+            const absX = Math.abs(x);
+            const absY = Math.abs(y);
+            if (absX > MAX_OFFSET || absY > MAX_OFFSET) {
+              console.warn(
+                `[ElementOverlay] Clamping excessive transform offset for "${className}":\n` +
+                `  Original: x=${x}px, y=${y}px\n` +
+                `  Max allowed: ${MAX_OFFSET}px\n` +
+                `  This prevents layout breaking caused by large position offsets`
+              );
+              x = Math.sign(x) * Math.min(absX, MAX_OFFSET);
+              y = Math.sign(y) * Math.min(absY, MAX_OFFSET);
+            }
+
             el.style.removeProperty('transform');
             el.style.position = 'relative';
             el.style.left = `${x}px`;
             el.style.top = `${y}px`;
+          }
+          // Also validate existing position/left/top from saved overrides
+          if (styles.left) {
+            const leftVal = parseInt(styles.left);
+            const MAX_OFFSET = 250;
+            if (Math.abs(leftVal) > MAX_OFFSET) {
+              console.warn(
+                `[ElementOverlay] Clamping excessive left offset for "${className}": ${leftVal}px → ${Math.sign(leftVal) * MAX_OFFSET}px`
+              );
+              styles.left = `${Math.sign(leftVal) * MAX_OFFSET}px`;
+              el.style.left = styles.left;
+            } else {
+              el.style.left = styles.left;
+            }
+          }
+          if (styles.top) {
+            const topVal = parseInt(styles.top);
+            const MAX_OFFSET = 250;
+            if (Math.abs(topVal) > MAX_OFFSET) {
+              console.warn(
+                `[ElementOverlay] Clamping excessive top offset for "${className}": ${topVal}px → ${Math.sign(topVal) * MAX_OFFSET}px`
+              );
+              styles.top = `${Math.sign(topVal) * MAX_OFFSET}px`;
+              el.style.top = styles.top;
+            } else {
+              el.style.top = styles.top;
+            }
           }
           el.style.boxSizing = 'border-box';
           el.setAttribute('data-overridden', '1');
@@ -738,7 +781,27 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
         // Apply final position synchronously — rAF may have been cancelled
         // constrainFinal: grid snap applied once on release (not during drag)
-        const { dx, dy, snapV, snapH } = constrainFinal(lastClientX - startX, lastClientY - startY);
+        let { dx, dy, snapV, snapH } = constrainFinal(lastClientX - startX, lastClientY - startY);
+
+        // ── SAFETY: Validate offset values to prevent layout breaking ──────────
+        // Prevent excessive offsets that would shift layout beyond container bounds
+        const MAX_OFFSET = 250; // Maximum reasonable offset in pixels
+        const absDx = Math.abs(dx);
+        const absDy = Math.abs(dy);
+
+        if (absDx > MAX_OFFSET || absDy > MAX_OFFSET) {
+          const clampedDx = Math.sign(dx) * Math.min(absDx, MAX_OFFSET);
+          const clampedDy = Math.sign(dy) * Math.min(absDy, MAX_OFFSET);
+          console.warn(
+            `[ElementOverlay] Position offset clamped for "${getLabel(el)}":\n` +
+            `  Original: dx=${dx}px, dy=${dy}px\n` +
+            `  Clamped:  dx=${clampedDx}px, dy=${clampedDy}px\n` +
+            `  Reason: Offset exceeded MAX_OFFSET (${MAX_OFFSET}px) to prevent layout breaking`
+          );
+          dx = clampedDx;
+          dy = clampedDy;
+        }
+
         applyPosition(el, dx, dy, moveRef.current);
 
         // ── Apply centering style when snapped to center ──────────────────────
