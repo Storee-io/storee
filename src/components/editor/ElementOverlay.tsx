@@ -580,7 +580,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
     const SNAP         = 8;   // px grid
     const CENTER_SNAP  = 12;  // px radius for center-snap attraction
-    const ORIGINAL_SNAP = 30; // px radius for snap-to-original attraction
+    const ORIGINAL_SNAP = 10; // px radius for snap-to-original attraction
     const parentCenterX = snapRefRect.left + snapRefRect.width  / 2;
     const parentCenterY = snapRefRect.top  + snapRefRect.height / 2;
 
