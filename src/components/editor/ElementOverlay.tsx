@@ -405,12 +405,17 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     const maxWidth  = parentRect.right  - elRect.left;
     const maxHeight = parentHasFixedHeight ? parentRect.bottom - elRect.top : 99999;
 
+    // Only sync siblings if element hasn't been manually overridden
+    // Once element is positioned/resized, keep it independent from siblings
     const siblings: HTMLElement[] = [];
-    if (container) {
+    const isOverridden = el.hasAttribute('data-overridden');
+    if (container && !isOverridden) {
       const tag = el.tagName.toLowerCase();
       const cls = el.getAttribute('class') || '';
       container.querySelectorAll<HTMLElement>(tag).forEach(s => {
-        if (s !== el && (s.getAttribute('class') || '') === cls) siblings.push(s);
+        if (s !== el && (s.getAttribute('class') || '') === cls && !s.hasAttribute('data-overridden')) {
+          siblings.push(s);
+        }
       });
     }
 
