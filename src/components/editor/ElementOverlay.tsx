@@ -1045,43 +1045,32 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
           const color = c.label;
           return (
             <>
-              {/* Visual selection border (pointerEvents: none to allow child interaction) */}
+              {/* Draggable selection border (move) */}
               <div
                 ref={selectionBorderRef}
                 data-overlay="true"
+                onMouseDown={handleMoveStart}
                 style={{
                   position: 'absolute',
                   top: rect.top, left: rect.left,
                   width: rect.width, height: rect.height,
                   border: `2px solid ${color}`,
                   borderRadius: 2,
-                  pointerEvents: 'none',
+                  pointerEvents: 'auto',
                   boxSizing: 'border-box',
                 }}
-              />
-              {/* Invisible drag-capture overlay (only on top border for easier dragging) */}
-              <div
-                data-overlay="true"
-                onMouseDown={handleMoveStart}
-                style={{
-                  position: 'absolute',
-                  top: rect.top - 8, left: rect.left,
-                  width: rect.width, height: 16,
-                  pointerEvents: 'auto',
-                  cursor: 'grab',
-                  zIndex: 42,
-                }}
-              />
-              {/* Element label */}
-              <span style={{
-                position: 'absolute', top: -22, left: -2,
-                background: color, color: '#fff',
-                fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
-                padding: '2px 6px', borderRadius: '3px 3px 0 0',
-                whiteSpace: 'nowrap', pointerEvents: 'none',
-              }}>
-                {label}
-              </span>
+              >
+                {/* Element label */}
+                <span style={{
+                  position: 'absolute', top: -22, left: -2,
+                  background: color, color: '#fff',
+                  fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
+                  padding: '2px 6px', borderRadius: '3px 3px 0 0',
+                  whiteSpace: 'nowrap', pointerEvents: 'none',
+                }}>
+                  {label}
+                </span>
+              </div>
 
               {/* Resize handles (8 points) */}
               {handles.map((pos, i) => {
