@@ -991,7 +991,19 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       }
 
       if (!target) { setHovered(null); lastHoveredEl.current = null; return; }
-      const el = findTarget(target, container);
+
+      // Try normal findTarget first
+      let el = findTarget(target, container);
+
+      // If findTarget returns selected element, try to find child instead
+      // This ensures child elements are detected even when parent is selected
+      if (el === lastSelectedEl.current && lastSelectedEl.current && lastSelectedEl.current.contains(target)) {
+        const childEl = findTarget(target, lastSelectedEl.current);
+        if (childEl && childEl !== lastSelectedEl.current) {
+          el = childEl;
+        }
+      }
+
       if (!el) { setHovered(null); lastHoveredEl.current = null; return; }
       if (el === lastHoveredEl.current) return;
       lastHoveredEl.current = el;
