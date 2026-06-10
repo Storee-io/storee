@@ -546,6 +546,12 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     const el = lastSelectedEl.current as HTMLElement | null;
     if (!el || !containerRef.current) return;
 
+    // Check if drag started from a child element - if yes, allow child interaction
+    // Only drag from parent's empty space or overlay elements
+    const target = e.target as HTMLElement;
+    const isChildElement = el.contains(target) && target !== el && !target.hasAttribute('data-overlay');
+    if (isChildElement) return; // Allow child to handle its own interaction
+
     // Clear hover immediately so no other element highlights during drag
     setHovered(null);
     lastHoveredEl.current = null;
