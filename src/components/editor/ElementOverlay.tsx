@@ -997,8 +997,18 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       if ((target as HTMLElement).isContentEditable) return;
       if (target.closest('[contenteditable]')) return;
 
-      const el = findTarget(target, container);
+      let el = findTarget(target, container);
       if (!el) { setSelected(null); lastSelectedEl.current = null; return; }
+
+      // If selected element is parent of found element, prefer child selection
+      // This allows selecting child elements when parent is already selected
+      if (lastSelectedEl.current && el === lastSelectedEl.current && lastSelectedEl.current.contains(target)) {
+        // Try to find innermost selectable child instead of parent
+        const childEl = findTarget(target, lastSelectedEl.current);
+        if (childEl && childEl !== lastSelectedEl.current) {
+          el = childEl;
+        }
+      }
 
       if (el === lastSelectedEl.current) {
         setSelected(null); lastSelectedEl.current = null; return;
