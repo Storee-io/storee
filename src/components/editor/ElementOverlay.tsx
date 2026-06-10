@@ -1072,18 +1072,16 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
                   zIndex: 42,
                 }}
               />
-                {/* Element label */}
-                <span style={{
-                  position: 'absolute', top: -22, left: -2,
-                  background: color, color: '#fff',
-                  fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
-                  padding: '2px 6px', borderRadius: '3px 3px 0 0',
-                  whiteSpace: 'nowrap', pointerEvents: 'none',
-                }}>
-                  {label}
-                </span>
-
-              </div>
+              {/* Element label */}
+              <span style={{
+                position: 'absolute', top: -22, left: -2,
+                background: color, color: '#fff',
+                fontSize: 10, fontFamily: 'monospace', fontWeight: 600,
+                padding: '2px 6px', borderRadius: '3px 3px 0 0',
+                whiteSpace: 'nowrap', pointerEvents: 'none',
+              }}>
+                {label}
+              </span>
 
               {/* Resize handles (8 points) */}
               {handles.map((pos, i) => {
