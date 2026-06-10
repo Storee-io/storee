@@ -763,11 +763,16 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       const shouldUsePositioning = !state.useMargin;
 
       if (shouldUsePositioning) {
-        // Batch CSS writes for better performance - use cssText to avoid triggering multiple reflows
-        el.style.cssText = `position: relative; left: ${state.startInlineLeft + dx}px; top: ${state.startInlineTop + dy}px; transform: none;`;
+        // Use individual property assignments to preserve existing styles
+        // Setting position/left/top only - don't override other properties
+        el.style.position = 'relative';
+        el.style.left = `${state.startInlineLeft + dx}px`;
+        el.style.top = `${state.startInlineTop + dy}px`;
+        el.style.transform = 'none';
       } else {
         // Use margin only for elements with complex transforms we can't safely override
-        el.style.cssText = `margin-left: ${state.startMarginLeft + dx}px; margin-top: ${state.startMarginTop + dy}px;`;
+        el.style.marginLeft = `${state.startMarginLeft + dx}px`;
+        el.style.marginTop = `${state.startMarginTop + dy}px`;
       }
       el.setAttribute('data-overridden', '1');
     };
