@@ -461,13 +461,15 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     editDiv.contentEditable = 'true';
     editDiv.textContent = originalText;
     editDiv.setAttribute('data-editor-edit', 'true');
+
+    const origStyle = window.getComputedStyle(el);
     editDiv.style.cssText = `
       position: absolute;
       top: ${rect.top}px;
       left: ${rect.left}px;
       width: ${rect.width}px;
       height: ${rect.height}px;
-      background: rgba(59, 130, 246, 0.05);
+      background: rgba(59, 130, 246, 0.1);
       border: 2px solid #3b82f6;
       border-radius: 4px;
       outline: none;
@@ -476,6 +478,13 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       overflow: auto;
       white-space: pre-wrap;
       word-break: break-word;
+      pointer-events: auto;
+      color: ${origStyle.color};
+      font-size: ${origStyle.fontSize};
+      font-family: ${origStyle.fontFamily};
+      font-weight: ${origStyle.fontWeight};
+      line-height: ${origStyle.lineHeight};
+      padding: ${origStyle.padding};
     `;
 
     overlayRootRef.current?.appendChild(editDiv);
