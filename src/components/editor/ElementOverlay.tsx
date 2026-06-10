@@ -1116,18 +1116,17 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
           const color = c.label;
           return (
             <>
-              {/* Draggable selection border (move) */}
+              {/* Visual selection border - pointerEvents:none so children are hoverable */}
               <div
                 ref={selectionBorderRef}
                 data-overlay="true"
-                onMouseDown={handleMoveStart}
                 style={{
                   position: 'absolute',
                   top: rect.top, left: rect.left,
                   width: rect.width, height: rect.height,
                   border: `2px solid ${color}`,
                   borderRadius: 2,
-                  pointerEvents: 'auto',
+                  pointerEvents: 'none',
                   boxSizing: 'border-box',
                 }}
               >
@@ -1142,6 +1141,16 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
                   {label}
                 </span>
               </div>
+
+              {/* Drag handles - 4 thin border strips, only cover border area not children */}
+              {/* Top border */}
+              <div data-overlay="true" onMouseDown={handleMoveStart} style={{ position: 'absolute', top: rect.top - 4, left: rect.left - 4, width: rect.width + 8, height: 10, pointerEvents: 'auto', cursor: 'grab', zIndex: 42 }} />
+              {/* Bottom border */}
+              <div data-overlay="true" onMouseDown={handleMoveStart} style={{ position: 'absolute', top: rect.top + rect.height - 6, left: rect.left - 4, width: rect.width + 8, height: 10, pointerEvents: 'auto', cursor: 'grab', zIndex: 42 }} />
+              {/* Left border */}
+              <div data-overlay="true" onMouseDown={handleMoveStart} style={{ position: 'absolute', top: rect.top - 4, left: rect.left - 4, width: 10, height: rect.height + 8, pointerEvents: 'auto', cursor: 'grab', zIndex: 42 }} />
+              {/* Right border */}
+              <div data-overlay="true" onMouseDown={handleMoveStart} style={{ position: 'absolute', top: rect.top - 4, left: rect.left + rect.width - 6, width: 10, height: rect.height + 8, pointerEvents: 'auto', cursor: 'grab', zIndex: 42 }} />
 
               {/* Resize handles (8 points) */}
               {handles.map((pos, i) => {
