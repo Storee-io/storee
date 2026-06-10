@@ -543,7 +543,6 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
   const handleMoveStart = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    if (editingEl) return;
     const el = lastSelectedEl.current as HTMLElement | null;
     if (!el || !containerRef.current) return;
 
