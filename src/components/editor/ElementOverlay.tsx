@@ -1056,7 +1056,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
                   width: rect.width, height: rect.height,
                   border: `2px solid ${color}`,
                   borderRadius: 2,
-                  pointerEvents: 'auto',
+                  pointerEvents: 'none',
                   boxSizing: 'border-box',
                 }}
               >
