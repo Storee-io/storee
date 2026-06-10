@@ -726,6 +726,176 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     document.addEventListener('mouseup', onMouseUp);
   }, [containerRef, emitOverride]);
 
+  // ── HOVER DRAG: Select + move element in one gesture ─────────────────────
+  // When user clicks and drags on a hovered element, auto-select it and move
+  const handleHoverDragStart = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (!lastHoveredEl.current || !containerRef.current) return;
+
+    // First, select the hovered element
+    const el = lastHoveredEl.current as HTMLElement;
+    lastSelectedEl.current = el;
+    const hoverInfo = hovered;
+    if (hoverInfo) {
+      setSelected(hoverInfo);
+    }
+
+    // Then immediately initiate move on this element
+    // We need to set up move state directly since the selection just happened
+    setHovered(null); // Clear hover since we're now dragging
+    lastHoveredEl.current = null;
+
+    if (!containerRef.current) return;
+
+    const { x: startTranslateX, y: startTranslateY } = parseTranslate(el);
+    const startMarginTop = parseFloat(el.style.marginTop) || 0;
+    const startMarginLeft = parseFloat(el.style.marginLeft) || 0;
+    const startRelRect = getRelativeRect(el, containerRef.current);
+
+    // Use margin when element has non-translate transform
+    const t = el.style.transform;
+    const useMargin = t !== '' && t !== 'none' && !t.startsWith('translate(');
+
+    // Setup move state (mirroring handleMoveStart logic)
+    const parentEl = el.parentElement;
+    const parentRelRect: Rect = parentEl && containerRef.current
+      ? getRelativeRect(parentEl, containerRef.current)
+      : { top: -99999, left: -99999, width: 999999, height: 999999 };
+
+    let sectionAncestor: Element | null = el.parentElement;
+    while (sectionAncestor && !sectionAncestor.getAttribute('data-editor-section')) {
+      sectionAncestor = sectionAncestor.parentElement;
+    }
+    const snapRefEl = sectionAncestor ?? containerRef.current;
+    const snapRefRect: Rect = snapRefEl && containerRef.current
+      ? getRelativeRect(snapRefEl, containerRef.current)
+      : parentRelRect;
+
+    const SNAP = 8;
+    const CENTER_SNAP = 12;
+    const parentCenterX = snapRefRect.left + snapRefRect.width / 2;
+    const parentCenterY = snapRefRect.top + snapRefRect.height / 2;
+
+    const minDx = parentRelRect.left - startRelRect.left;
+    const maxDx = (parentRelRect.left + parentRelRect.width) - (startRelRect.left + startRelRect.width);
+    const minDy = parentRelRect.top - startRelRect.top;
+    const maxDy = (parentRelRect.top + parentRelRect.height) - (startRelRect.top + startRelRect.height);
+    const clamp = (v: number, lo: number, hi: number) => hi > lo ? Math.max(lo, Math.min(hi, v)) : v;
+
+    const constrainLive = (rawDx: number, rawDy: number, shiftKey: boolean) => {
+      let dx = clamp(rawDx, minDx, maxDx);
+      let dy = clamp(rawDy, minDy, maxDy);
+      let snapV = false, snapH = false, axisLock: 'h' | 'v' | null = null;
+
+      if (shiftKey) {
+        const absDx = Math.abs(dx);
+        const absDy = Math.abs(dy);
+        if (absDx > absDy + 2) { dy = 0; axisLock = 'h'; }
+        else if (absDy > absDx + 2) { dx = 0; axisLock = 'v'; }
+      }
+
+      const elCenterX = startRelRect.left + startRelRect.width / 2 + dx;
+      const elCenterY = startRelRect.top + startRelRect.height / 2 + dy;
+      const snapDistX = Math.abs(elCenterX - parentCenterX);
+      const snapDistY = Math.abs(elCenterY - parentCenterY);
+
+      if (snapDistX < CENTER_SNAP) { dx = parentCenterX - (startRelRect.left + startRelRect.width / 2); snapH = true; }
+      if (snapDistY < CENTER_SNAP) { dy = parentCenterY - (startRelRect.top + startRelRect.height / 2); snapH = snapH || true; snapV = true; }
+
+      return { dx, dy, snapV, snapH, axisLock };
+    };
+
+    const constrainSnap = (rawDx: number, rawDy: number) => {
+      const snappedDx = Math.round(rawDx / SNAP) * SNAP;
+      const snappedDy = Math.round(rawDy / SNAP) * SNAP;
+      return {
+        dx: clamp(snappedDx, minDx, maxDx),
+        dy: clamp(snappedDy, minDy, maxDy),
+        snapV: Math.abs(snappedDy - rawDy) > 0.5,
+        snapH: Math.abs(snappedDx - rawDx) > 0.5,
+        axisLock: null,
+      };
+    };
+
+    // Store initial mouse position
+    const startInlineTop = parseFloat(el.style.top) || 0;
+    const startInlineLeft = parseFloat(el.style.left) || 0;
+
+    moveRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startTranslateX,
+      startTranslateY,
+      startMarginTop,
+      startMarginLeft,
+      startInlineTop,
+      startInlineLeft,
+      startRelRect,
+      el,
+      lastClientX: e.clientX,
+      lastClientY: e.clientY,
+      useMargin,
+      useInlineOffset: window.getComputedStyle(el).display === 'inline',
+    };
+
+    // Move handler (simplified from handleMoveStart)
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!moveRef.current || !containerRef.current) return;
+      const { el, startX, startY, startTranslateX, startTranslateY, startMarginTop, startMarginLeft,
+              startInlineTop, startInlineLeft, startRelRect, useMargin, useInlineOffset } = moveRef.current;
+
+      const rawDx = ev.clientX - startX;
+      const rawDy = ev.clientY - startY;
+
+      const { dx, dy } = constrainLive(rawDx, rawDy, ev.shiftKey);
+
+      if (useMargin) {
+        el.style.marginTop = startMarginTop + dy !== 0 ? `${startMarginTop + dy}px` : '';
+        el.style.marginLeft = startMarginLeft + dx !== 0 ? `${startMarginLeft + dx}px` : '';
+      } else if (useInlineOffset) {
+        el.style.top = startInlineTop + dy !== 0 ? `${startInlineTop + dy}px` : '';
+        el.style.left = startInlineLeft + dx !== 0 ? `${startInlineLeft + dx}px` : '';
+      } else {
+        el.style.transform = `translate(${startTranslateX + dx}px, ${startTranslateY + dy}px)`;
+      }
+
+      const rect: Rect = {
+        top: startRelRect.top + dy,
+        left: startRelRect.left + dx,
+        width: startRelRect.width,
+        height: startRelRect.height,
+      };
+
+      moveRef.current.lastClientX = ev.clientX;
+      moveRef.current.lastClientY = ev.clientY;
+
+      if (moveRafRef.current !== null) cancelAnimationFrame(moveRafRef.current);
+      moveRafRef.current = requestAnimationFrame(() => {
+        updateSelectionDOM(rect, true);
+      });
+    };
+
+    const onMouseUp = () => {
+      if (moveRef.current && containerRef.current) {
+        const { el } = moveRef.current;
+        const rect = getRelativeRect(el, containerRef.current);
+        setSelected(prev => prev ? { ...prev, rect } : null);
+        setOverlayHeight(containerRef.current.scrollHeight);
+        emitOverride(el);
+      }
+      moveRef.current = null;
+      didDragRef.current = true;
+      if (moveRafRef.current !== null) cancelAnimationFrame(moveRafRef.current);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [containerRef, hovered, emitOverride, updateOverlayHeight]);
+
   // ── Shared: update selection border + handles via DOM (no re-render) ───────
   // skipHeightUpdate: true during move — avoids scrollHeight reflow every frame
   function updateSelectionDOM(rect: Rect, skipHeightUpdate = false) {
@@ -839,17 +1009,20 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         data-overlay="true"
         style={{ position: 'absolute', top: 0, left: 0, right: 0, height: overlayHeight || '100%', pointerEvents: 'none', zIndex: 40, overflow: 'visible' }}
       >
-        {/* Hover outline */}
+        {/* Hover outline — clickable & draggable to select + move */}
         {hovered && hovered.rect.width > 0 && (() => {
           const c = TYPE_COLORS[hovered.elType];
           return (
-            <div style={{
-              position: 'absolute',
-              top: hovered.rect.top, left: hovered.rect.left,
-              width: hovered.rect.width, height: hovered.rect.height,
-              background: c.hover, outline: `1px solid ${c.outline}`,
-              borderRadius: 2, pointerEvents: 'none',
-            }}>
+            <div
+              data-overlay="true"
+              onMouseDown={handleHoverDragStart}
+              style={{
+                position: 'absolute',
+                top: hovered.rect.top, left: hovered.rect.left,
+                width: hovered.rect.width, height: hovered.rect.height,
+                background: c.hover, outline: `1px solid ${c.outline}`,
+                borderRadius: 2, pointerEvents: 'auto', cursor: 'grab',
+              }}>
               <span style={{
                 position: 'absolute', top: -20, left: 0,
                 background: c.label + '22', color: c.label,
