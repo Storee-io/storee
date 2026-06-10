@@ -335,16 +335,16 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
           if (styles.top)        el.style.top        = styles.top;
           if (styles.left)       el.style.left       = styles.left;
           if (styles.transform) {
-            el.style.transform = styles.transform;
-            // Backward compat: legacy overrides saved transform on an inline element
-            // (transform is ignored on display:inline). Auto-migrate to position:relative.
-            if (window.getComputedStyle(el).display === 'inline') {
-              const { x, y } = parseTranslate(el);
-              el.style.removeProperty('transform');
-              el.style.position = 'relative';
-              el.style.left = `${x}px`;
-              el.style.top  = `${y}px`;
-            }
+            // Backward compat: migrate transform overrides to position:relative + left/top
+            // for better click/hover hit detection accuracy (ensures selection border
+            // matches visual position of element)
+            const m = styles.transform.match(/translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)/);
+            const x = m ? parseFloat(m[1]) : 0;
+            const y = m ? parseFloat(m[2]) : 0;
+            el.style.removeProperty('transform');
+            el.style.position = 'relative';
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
           }
           el.style.boxSizing = 'border-box';
           el.setAttribute('data-overridden', '1');
@@ -675,26 +675,22 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     el.style.willChange = useInlineOffset ? 'top, left' : 'transform';
 
     const applyPosition = (el: HTMLElement, dx: number, dy: number, state: MoveState) => {
-      // For inline elements, ALWAYS use position:relative + left/top
-      // because transform doesn't affect click/hover hitbox on inline elements
-      const isInline = window.getComputedStyle(el).display === 'inline';
+      // ALWAYS prefer position:relative + left/top for click/hover hit detection accuracy
+      // This works for both inline and block elements and ensures selection border
+      // matches the actual visual position of the element (important for UX)
+      const shouldUsePositioning = !state.useMargin;
 
-      if (isInline) {
-        // Inline elements: use position:relative + left/top (affects hitbox)
+      if (shouldUsePositioning) {
+        // Use position:relative + left/top for reliable hit detection
         el.style.position = 'relative';
         el.style.left = `${state.startInlineLeft + dx}px`;
         el.style.top  = `${state.startInlineTop  + dy}px`;
         // Clear transform if any
         el.style.transform = '';
-      } else if (state.useMargin) {
+      } else {
+        // Use margin only for elements with complex transforms we can't safely override
         el.style.marginLeft = `${state.startMarginLeft + dx}px`;
         el.style.marginTop  = `${state.startMarginTop  + dy}px`;
-      } else if (state.useInlineOffset) {
-        el.style.position = 'relative';
-        el.style.left = `${state.startInlineLeft + dx}px`;
-        el.style.top  = `${state.startInlineTop  + dy}px`;
-      } else {
-        el.style.transform = `translate(${state.startTranslateX + dx}px, ${state.startTranslateY + dy}px)`;
       }
       el.setAttribute('data-overridden', '1');
     };
