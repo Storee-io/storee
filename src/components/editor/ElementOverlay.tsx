@@ -962,17 +962,29 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       // This allows child element hover detection even when parent is selected
       if (!target) {
         const rawTarget = e.target as Element;
+        const clientX = e.clientX;
+        const clientY = e.clientY;
 
         // Check if mouse is within selected element's visual bounds
         if (selected && lastSelectedEl.current) {
           const rect = lastSelectedEl.current.getBoundingClientRect();
-          const clientX = e.clientX;
-          const clientY = e.clientY;
 
           // Only allow child detection if mouse is actually within selected element
           if (clientX >= rect.left && clientX <= rect.right &&
               clientY >= rect.top && clientY <= rect.bottom) {
             // Force target detection within selected element
+            target = rawTarget;
+          }
+        }
+
+        // Also check if mouse is within container but outside selected element
+        // This allows hovering other elements in same container
+        if (!target && container) {
+          const containerRect = container.getBoundingClientRect();
+
+          if (clientX >= containerRect.left && clientX <= containerRect.right &&
+              clientY >= containerRect.top && clientY <= containerRect.bottom) {
+            // Allow detection of other elements in container
             target = rawTarget;
           }
         }
@@ -995,11 +1007,29 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       if (e.buttons !== 0) return;
       let target = getTarget(e);
 
-      // Allow child element selection even when parent is selected
-      // If getTarget returns null (overlay), check if click is within selected element
-      if (!target && selected && lastSelectedEl.current) {
-        if (lastSelectedEl.current.contains(e.target as Node)) {
-          target = e.target as Element;
+      // Allow element selection even when another element is selected
+      // If getTarget returns null (overlay), check if click is within container
+      if (!target) {
+        const rawTarget = e.target as Element;
+        const clientX = e.clientX;
+        const clientY = e.clientY;
+
+        // Check if click is within selected element (child selection)
+        if (selected && lastSelectedEl.current) {
+          const rect = lastSelectedEl.current.getBoundingClientRect();
+          if (clientX >= rect.left && clientX <= rect.right &&
+              clientY >= rect.top && clientY <= rect.bottom) {
+            target = rawTarget;
+          }
+        }
+
+        // Check if click is within container but outside selected (other element selection)
+        if (!target && container) {
+          const containerRect = container.getBoundingClientRect();
+          if (clientX >= containerRect.left && clientX <= containerRect.right &&
+              clientY >= containerRect.top && clientY <= containerRect.bottom) {
+            target = rawTarget;
+          }
         }
       }
 
