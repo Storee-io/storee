@@ -734,6 +734,9 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     let lastCachedTime = 0;
     const RECT_CACHE_MS = 16; // ~1 frame at 60fps
 
+    let guideUpdateFrame = 0;
+    const GUIDE_UPDATE_INTERVAL = 2; // Update guides every 2 frames for smoother drag
+
     moveRef.current = {
       startX: e.clientX, startY: e.clientY,
       startTranslateX, startTranslateY,
@@ -760,16 +763,11 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       const shouldUsePositioning = !state.useMargin;
 
       if (shouldUsePositioning) {
-        // Use position:relative + left/top for reliable hit detection
-        el.style.position = 'relative';
-        el.style.left = `${state.startInlineLeft + dx}px`;
-        el.style.top  = `${state.startInlineTop  + dy}px`;
-        // Clear transform if any
-        el.style.transform = '';
+        // Batch CSS writes for better performance - use cssText to avoid triggering multiple reflows
+        el.style.cssText = `position: relative; left: ${state.startInlineLeft + dx}px; top: ${state.startInlineTop + dy}px; transform: none;`;
       } else {
         // Use margin only for elements with complex transforms we can't safely override
-        el.style.marginLeft = `${state.startMarginLeft + dx}px`;
-        el.style.marginTop  = `${state.startMarginTop  + dy}px`;
+        el.style.cssText = `margin-left: ${state.startMarginLeft + dx}px; margin-top: ${state.startMarginTop + dy}px;`;
       }
       el.setAttribute('data-overridden', '1');
     };
@@ -795,7 +793,12 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         const { dx, dy, snapV, snapH, axisLock } = constrainLive(clientX - startX, clientY - startY, shiftKey);
 
         applyPosition(el, dx, dy, moveRef.current);
-        updateGuides(dx, dy, snapV, snapH, axisLock);
+
+        // Debounce guide updates - only update every 2 frames for smoother drag motion
+        guideUpdateFrame++;
+        if (guideUpdateFrame % GUIDE_UPDATE_INTERVAL === 0) {
+          updateGuides(dx, dy, snapV, snapH, axisLock);
+        }
 
         // Smart rect caching: refresh actual rect every ~16ms (1 frame), use cached value otherwise
         // This balances smooth motion with accurate selection border alignment
