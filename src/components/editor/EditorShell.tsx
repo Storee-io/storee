@@ -506,21 +506,66 @@ export default function EditorShell({ store, from }: Props) {
     // Switch to Properties tab
     setSidebarTab('properties');
 
-    // Open the corresponding section
-    if (fieldName.includes('hero')) {
-      setOpenSection('hero');
-    } else if (fieldName.includes('promo')) {
-      setOpenSection('promoBar');
-    } else if (fieldName.includes('brand')) {
-      setOpenSection('brandStory');
-    } else if (fieldName.includes('newsletter')) {
-      setOpenSection('newsletter');
+    // Parse field name (could be "heroTitle" or "features.0.title")
+    const isArrayField = fieldName.includes('.');
+    const sectionMap: Record<string, string> = {
+      'hero': 'hero',
+      'promo': 'promoBar',
+      'brand': 'brandStory',
+      'newsletter': 'newsletter',
+      'features': 'features',
+      'testimonials': 'testimonials',
+      'trust': 'trust',
+      'stats': 'stats',
+      'faq': 'faq',
+      'collections': 'collections',
+      'products': 'products',
+    };
+
+    // Determine which section to open
+    let section = 'hero';
+    for (const [key, val] of Object.entries(sectionMap)) {
+      if (fieldName.includes(key)) {
+        section = val;
+        break;
+      }
     }
+
+    setOpenSection(section);
 
     // Auto-focus the field after a short delay to allow DOM updates
     setTimeout(() => {
-      const selector = `input[data-field="${fieldName}"], textarea[data-field="${fieldName}"]`;
-      const input = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
+      let input: HTMLInputElement | HTMLTextAreaElement | null = null;
+
+      if (isArrayField) {
+        // For array fields like "features.0.title", find the nth item and its field
+        const match = fieldName.match(/^(\w+)\.(\d+)\.(\w+)$/);
+        if (match) {
+          const [, arrayName, indexStr, fieldKey] = match;
+          const index = parseInt(indexStr, 10);
+
+          // Find the container for this array section
+          const arrayContainers = document.querySelectorAll(`[class*="${arrayName}"] .p-3, [class*="${arrayName}-item"]`);
+          if (arrayContainers[index]) {
+            // Find input within this item
+            input = arrayContainers[index].querySelector(`input[data-field="${fieldName}"], textarea[data-field="${fieldName}"]`) as HTMLInputElement | HTMLTextAreaElement;
+
+            // If not found by data-field, try to find by position (first/second input)
+            if (!input) {
+              const inputs = arrayContainers[index].querySelectorAll('input, textarea');
+              if (fieldKey.includes('title') || fieldKey.includes('label')) {
+                input = inputs[0] as HTMLInputElement | HTMLTextAreaElement;
+              } else if (fieldKey.includes('description') || fieldKey.includes('text') || fieldKey.includes('a')) {
+                input = inputs[1] as HTMLInputElement | HTMLTextAreaElement;
+              }
+            }
+          }
+        }
+      } else {
+        // For simple fields like "heroTitle"
+        input = document.querySelector(`input[data-field="${fieldName}"], textarea[data-field="${fieldName}"]`) as HTMLInputElement | HTMLTextAreaElement;
+      }
+
       if (input) {
         input.focus();
         input.select?.();

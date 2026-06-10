@@ -283,35 +283,104 @@ interface MoveState {
 /** Identify which store field a text element corresponds to */
 function mapElementToField(el: Element): string | null {
   const text = el.textContent?.trim() || '';
-  const tag = el.tagName.toLowerCase();
-
-  // Check which section we're in
   const section = el.closest('[data-editor-section]');
   const sectionType = section?.getAttribute('data-editor-section');
 
-  // Hero section
+  // Helper: Find index of item in array section (e.g., which feature, which testimonial)
+  const getArrayIndex = (containerClass: string): number | null => {
+    let parent = el.parentElement;
+    while (parent && !parent.classList.contains(containerClass)) {
+      parent = parent.parentElement;
+    }
+    if (!parent) return null;
+    const items = Array.from(section?.querySelectorAll(`.${containerClass}`) || []);
+    return items.indexOf(parent);
+  };
+
+  // HERO SECTION
   if (sectionType === 'hero') {
     if (text.includes('Form Follows') || text === 'Form Follows Feeling.') return 'heroTitle';
     if (text.includes('Scandinavian-crafted') || text.includes('built with sustainable')) return 'heroSubtitle';
     if (text.includes('Explore')) return 'ctaText';
   }
 
-  // Promo bar
+  // PROMO BAR
   if (text.includes('Free white-glove delivery') || text.includes('Free shipping')) return 'promoBar';
 
-  // Brand story - match any substantial text element
+  // BRAND STORY
   if (sectionType === 'brandStory' && text.length > 20) return 'brandStory';
 
-  // Newsletter
+  // NEWSLETTER
   if (sectionType === 'newsletter') {
     if (text.includes('Stay in the loop') || text.includes('Subscribe for')) return 'newsletter.headline';
     if (text.includes('exclusive')) return 'newsletter.subtext';
   }
 
-  // Fallback: Hero section elements by text
-  if (text === 'Form Follows Feeling.' || text.includes('Form Follows')) return 'heroTitle';
-  if (text.includes('Scandinavian-crafted furniture') || text.includes('built with sustainable')) return 'heroSubtitle';
-  if (text === 'Explore the Collection' || text === 'Explore ↓') return 'ctaText';
+  // FEATURES (array items)
+  if (sectionType === 'features') {
+    const idx = getArrayIndex('feature-card') ?? getArrayIndex('p-3');
+    if (idx !== null) {
+      // Detect if it's title or description by checking position in card
+      const cardParent = el.closest('.p-3, .feature-card, [class*="grid"]');
+      const textLength = text.length;
+      if (textLength > 50) return `features.${idx}.description`;
+      if (textLength > 5) return `features.${idx}.title`;
+    }
+  }
+
+  // TESTIMONIALS (array items)
+  if (sectionType === 'testimonials') {
+    const idx = getArrayIndex('testimonial-card') ?? getArrayIndex('p-3');
+    if (idx !== null) {
+      if (text.length > 100) return `testimonials.${idx}.text`;
+      if (text.match(/^[A-Z\s]+$/)) return `testimonials.${idx}.author`;
+      if (text.includes('Designer') || text.includes('Architect') || text.includes('Interior')) return `testimonials.${idx}.role`;
+    }
+  }
+
+  // TRUST BADGES
+  if (sectionType === 'trust') {
+    const idx = getArrayIndex('badge-item') ?? getArrayIndex('[class*="flex"]');
+    if (idx !== null) {
+      return `trustBadges.${idx}.label`;
+    }
+  }
+
+  // STATS
+  if (sectionType === 'stats') {
+    const idx = getArrayIndex('stat-item') ?? getArrayIndex('[class*="grid"]');
+    if (idx !== null) {
+      if (text.match(/^[\d,\.%\+\-]+$/)) return `stats.${idx}.value`;
+      if (text.length > 20) return `stats.${idx}.description`;
+      return `stats.${idx}.label`;
+    }
+  }
+
+  // FAQ
+  if (sectionType === 'faq') {
+    const idx = getArrayIndex('faq-item') ?? getArrayIndex('[class*="border"]');
+    if (idx !== null) {
+      if (text.length > 100) return `faq.${idx}.a`;
+      return `faq.${idx}.q`;
+    }
+  }
+
+  // COLLECTIONS (tabs)
+  if (sectionType === 'collections') {
+    const idx = getArrayIndex('collection-tab');
+    if (idx !== null) {
+      return `collections.${idx}.label`;
+    }
+  }
+
+  // PRODUCTS (grid items)
+  if (sectionType === 'products') {
+    const idx = getArrayIndex('product-card');
+    if (idx !== null) {
+      if (text.match(/^\$[\d,\.]+/) || text.includes('Price')) return null; // Skip prices
+      return `products.${idx}.name`;
+    }
+  }
 
   return null;
 }
