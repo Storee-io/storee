@@ -958,34 +958,15 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       if (dragRef.current || moveRef.current) return;
       let target = getTarget(e);
 
-      // If target is null/overlay, try to find element under mouse position
-      // This allows child element hover detection even when parent is selected
-      if (!target) {
-        const rawTarget = e.target as Element;
-        const clientX = e.clientX;
-        const clientY = e.clientY;
+      // If getTarget fails (overlay blocking), use elementFromPoint to find actual element
+      // This bypasses overlay blocking and gets the true element under cursor
+      if (!target && container && document.elementFromPoint) {
+        const element = document.elementFromPoint(e.clientX, e.clientY);
 
-        // Check if mouse is within selected element's visual bounds
-        if (selected && lastSelectedEl.current) {
-          const rect = lastSelectedEl.current.getBoundingClientRect();
-
-          // Only allow child detection if mouse is actually within selected element
-          if (clientX >= rect.left && clientX <= rect.right &&
-              clientY >= rect.top && clientY <= rect.bottom) {
-            // Force target detection within selected element
-            target = rawTarget;
-          }
-        }
-
-        // Also check if mouse is within container but outside selected element
-        // This allows hovering other elements in same container
-        if (!target && container) {
-          const containerRect = container.getBoundingClientRect();
-
-          if (clientX >= containerRect.left && clientX <= containerRect.right &&
-              clientY >= containerRect.top && clientY <= containerRect.bottom) {
-            // Allow detection of other elements in container
-            target = rawTarget;
+        // Verify element is within container and not an overlay
+        if (element && element !== container && container.contains(element)) {
+          if (!element.closest('[data-overlay]')) {
+            target = element;
           }
         }
       }
