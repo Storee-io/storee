@@ -784,6 +784,22 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
     const handleMouseLeave = () => { setHovered(null); lastHoveredEl.current = null; };
 
+    // ── Auto-select hovered element on mousedown ──────────────────────────────
+    const handleMouseDown = (e: MouseEvent) => {
+      if (dragRef.current || moveRef.current) return;
+      const target = getTarget(e);
+      if (!target) return;
+
+      const el = findTarget(target, container);
+      if (!el) return;
+
+      // If mousedown is on the hovered element, auto-select it
+      if (el === lastHoveredEl.current && el !== lastSelectedEl.current) {
+        lastSelectedEl.current = el;
+        setSelected({ rect: getRelativeRect(el, container), label: getLabel(el), elType: getElType(el) });
+      }
+    };
+
     const handleClick = (e: MouseEvent) => {
       if (dragRef.current || moveRef.current) return;
       if (didDragRef.current) { didDragRef.current = false; return; }
@@ -813,6 +829,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
     document.addEventListener('mousemove', handleMouseMove);
     container.addEventListener('mouseleave', handleMouseLeave);
+    document.addEventListener('mousedown', handleMouseDown, true);
     document.addEventListener('click', handleClick, true);
     document.addEventListener('click', handleDocClick);
     container.addEventListener('scroll', updateSelectedRect);
@@ -821,6 +838,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       container.removeEventListener('mouseleave', handleMouseLeave);
+      document.removeEventListener('mousedown', handleMouseDown, true);
       document.removeEventListener('click', handleClick, true);
       document.removeEventListener('click', handleDocClick);
       container.removeEventListener('scroll', updateSelectedRect);
@@ -839,37 +857,17 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         data-overlay="true"
         style={{ position: 'absolute', top: 0, left: 0, right: 0, height: overlayHeight || '100%', pointerEvents: 'none', zIndex: 40, overflow: 'visible' }}
       >
-        {/* Hover outline — click/drag to select */}
+        {/* Hover outline */}
         {hovered && hovered.rect.width > 0 && (() => {
           const c = TYPE_COLORS[hovered.elType];
-
-          const handleHoverMouseDown = (e: React.MouseEvent) => {
-            e.stopPropagation();
-            e.preventDefault();
-
-            // Select the hovered element
-            if (lastHoveredEl.current && containerRef.current) {
-              const el = lastHoveredEl.current;
-              lastSelectedEl.current = el;
-              setSelected({
-                rect: getRelativeRect(el, containerRef.current),
-                label: getLabel(el),
-                elType: getElType(el),
-              });
-            }
-          };
-
           return (
-            <div
-              data-overlay="true"
-              onMouseDown={handleHoverMouseDown}
-              style={{
-                position: 'absolute',
-                top: hovered.rect.top, left: hovered.rect.left,
-                width: hovered.rect.width, height: hovered.rect.height,
-                background: c.hover, outline: `1px solid ${c.outline}`,
-                borderRadius: 2, pointerEvents: 'auto', cursor: 'pointer',
-              }}>
+            <div style={{
+              position: 'absolute',
+              top: hovered.rect.top, left: hovered.rect.left,
+              width: hovered.rect.width, height: hovered.rect.height,
+              background: c.hover, outline: `1px solid ${c.outline}`,
+              borderRadius: 2, pointerEvents: 'none',
+            }}>
               <span style={{
                 position: 'absolute', top: -20, left: 0,
                 background: c.label + '22', color: c.label,
