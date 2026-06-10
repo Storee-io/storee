@@ -86,24 +86,26 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Input({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+function Input({ value, onChange, placeholder, dataField }: { value: string; onChange: (v: string) => void; placeholder?: string; dataField?: string }) {
   return (
     <input
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
+      data-field={dataField}
       className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 bg-white transition-all placeholder:text-slate-300"
     />
   );
 }
 
-function Textarea({ value, onChange, placeholder, rows = 3 }: { value: string; onChange: (v: string) => void; placeholder?: string; rows?: number }) {
+function Textarea({ value, onChange, placeholder, rows = 3, dataField }: { value: string; onChange: (v: string) => void; placeholder?: string; rows?: number; dataField?: string }) {
   return (
     <textarea
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
       rows={rows}
+      data-field={dataField}
       className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 bg-white resize-none transition-all placeholder:text-slate-300"
     />
   );
@@ -496,6 +498,35 @@ export default function EditorShell({ store, from }: Props) {
     // Trigger autosave by signalling dirty (setIsDirty is triggered via the useEffect deps below)
     setIsDirty(true);
     setSaved(false);
+  }, []);
+
+  const handleTextElementSelected = useCallback((fieldName: string | null) => {
+    if (!fieldName) return;
+
+    // Switch to Properties tab
+    setSidebarTab('properties');
+
+    // Open the corresponding section
+    if (fieldName.includes('hero')) {
+      setOpenSection('hero');
+    } else if (fieldName.includes('promo')) {
+      setOpenSection('promoBar');
+    } else if (fieldName.includes('brand')) {
+      setOpenSection('brandStory');
+    } else if (fieldName.includes('newsletter')) {
+      setOpenSection('newsletter');
+    }
+
+    // Auto-focus the field after a short delay to allow DOM updates
+    setTimeout(() => {
+      const selector = `input[data-field="${fieldName}"], textarea[data-field="${fieldName}"]`;
+      const input = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
+      if (input) {
+        input.focus();
+        input.select?.();
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 200);
   }, []);
 
   const handleArrayReorder = useCallback((field: string, newItems: unknown[]) => {
@@ -1176,15 +1207,15 @@ export default function EditorShell({ store, from }: Props) {
 
                 <Section icon={Megaphone} title="Promo Bar" open={openSection === 'promoBar'} onToggle={() => toggle('promoBar')}>
                   <Field label="Announcement">
-                    <Input value={promoBar} onChange={setPromoBar} placeholder="ðŸŽ‰ Free shipping on orders over $50!" />
+                    <Input value={promoBar} onChange={setPromoBar} placeholder="ðŸŽ‰ Free shipping on orders over $50!" dataField="promoBar" />
                   </Field>
                   <p className="text-xs text-slate-400">Leave empty to hide.</p>
                 </Section>
 
                 <Section icon={Type} title="Hero Section" open={openSection === 'hero'} onToggle={() => toggle('hero')}>
-                  <Field label="Headline"><Textarea value={heroTitle} onChange={setHeroTitle} placeholder="Your bold headline" rows={2} /></Field>
-                  <Field label="Subheadline"><Textarea value={heroSubtitle} onChange={setHeroSubtitle} placeholder="Supporting description" rows={3} /></Field>
-                  <Field label="CTA Button"><Input value={ctaText} onChange={setCtaText} placeholder="Shop Now" /></Field>
+                  <Field label="Headline"><Textarea value={heroTitle} onChange={setHeroTitle} placeholder="Your bold headline" rows={2} dataField="heroTitle" /></Field>
+                  <Field label="Subheadline"><Textarea value={heroSubtitle} onChange={setHeroSubtitle} placeholder="Supporting description" rows={3} dataField="heroSubtitle" /></Field>
+                  <Field label="CTA Button"><Input value={ctaText} onChange={setCtaText} placeholder="Shop Now" dataField="ctaText" /></Field>
                 </Section>
 
                 <Section icon={Sparkles} title="Features" open={openSection === 'features'} onToggle={() => toggle('features')}>
@@ -1409,7 +1440,7 @@ export default function EditorShell({ store, from }: Props) {
                   </Suspense>
                 </WishlistProvider>
               </CartProvider>
-              <ElementOverlay containerRef={previewRef} editMode={editMode} elementOverrides={elementOverrides} onElementOverride={handleElementOverride} />
+              <ElementOverlay containerRef={previewRef} editMode={editMode} elementOverrides={elementOverrides} onElementOverride={handleElementOverride} onTextElementSelected={handleTextElementSelected} />
             </div>
           </div>
         </main>

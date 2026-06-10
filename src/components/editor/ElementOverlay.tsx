@@ -129,6 +129,8 @@ interface ElementOverlayProps {
   elementOverrides?: Record<string, ElementStyleOverride>;
   /** Called after each resize/move drag with the new override for that element */
   onElementOverride?: (selector: string, styles: ElementStyleOverride) => void;
+  /** Called when a text element is selected, with field name to edit (e.g. "heroTitle", "heroSubtitle") */
+  onTextElementSelected?: (fieldName: string | null) => void;
 }
 
 /** Build a stable selector key for an element: "tagName|className" */
@@ -278,7 +280,31 @@ interface MoveState {
   useInlineOffset: boolean;
 }
 
-export default function ElementOverlay({ containerRef, editMode, elementOverrides, onElementOverride }: ElementOverlayProps) {
+/** Identify which store field a text element corresponds to */
+function mapElementToField(el: Element): string | null {
+  const text = el.textContent?.trim() || '';
+
+  // Hero section
+  if (text === 'Form Follows Feeling.' || text.includes('Form Follows')) return 'heroTitle';
+  if (text.includes('Scandinavian-crafted furniture') || text.includes('built with sustainable')) return 'heroSubtitle';
+  if (text === 'Explore the Collection' || text === 'Explore ↓') return 'ctaText';
+
+  // Promo bar
+  if (text.includes('Free white-glove delivery')) return 'promoBar';
+
+  // Brand story
+  if (el.closest('[data-editor-section="brandStory"]') && (el.tagName === 'P' || el.tagName === 'DIV')) return 'brandStory';
+
+  // Newsletter
+  if (el.closest('[data-editor-section="newsletter"]')) {
+    if (text.includes('Stay in the loop') || text.includes('Subscribe')) return 'newsletter.headline';
+    if (text.includes('Subscribe for exclusive')) return 'newsletter.subtext';
+  }
+
+  return null;
+}
+
+export default function ElementOverlay({ containerRef, editMode, elementOverrides, onElementOverride, onTextElementSelected }: ElementOverlayProps) {
   const [hovered,       setHovered]       = useState<HoverInfo | null>(null);
   const [selected,      setSelected]      = useState<HoverInfo | null>(null);
   const [overlayHeight, setOverlayHeight] = useState(0);
@@ -1060,11 +1086,16 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
       lastSelectedEl.current = el;
       setSelected({ rect: getRelativeRect(el, container), label: getLabel(el), elType: getElType(el) });
+
+      // Call callback with field name for text editing
+      const fieldName = mapElementToField(el);
+      onTextElementSelected?.(fieldName);
     };
 
     const handleDocClick = (e: MouseEvent) => {
       if (!container.contains(e.target as Node)) {
         setSelected(null); lastSelectedEl.current = null;
+        onTextElementSelected?.(null);
       }
     };
 
