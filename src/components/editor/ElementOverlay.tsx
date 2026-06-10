@@ -709,7 +709,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         shadowOutlineRef.current.style.width  = `${startRelRect.width}px`;
         shadowOutlineRef.current.style.height = `${startRelRect.height}px`;
         // Highlight shadow when snap-to-original is active (close to original position)
-        shadowOutlineRef.current.style.backgroundColor = (dx === 0 && dy === 0) ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.02)';
+        shadowOutlineRef.current.style.backgroundColor = (dx === 0 && dy === 0) ? 'rgba(59,130,246,0.20)' : 'rgba(59,130,246,0.12)';
         shadowOutlineRef.current.style.display = 'block';
       }
     };
