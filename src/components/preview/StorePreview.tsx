@@ -1929,10 +1929,9 @@ function FAQSection({ faq, primaryColor, device, dark = false, elegant = false, 
                   ? { borderColor: tt.surfaceBorder, background: tt.surfaceBg }
                   : { borderColor: tt.divider, background: tt.surfaceBg }}>
               <button onClick={() => !editMode && setOpenIndex(openIndex === i ? null : i)} className="w-full flex items-center justify-between px-5 py-4 text-left">
-                <span className="text-sm font-semibold pr-4"
-                  style={{ color: dark ? '#fff' : elegant ? '#2a2420' : tt.textPrimary }}>
-                  <EditSpan field={`faq.${i}.q`} value={item.q} editMode={editMode} onFieldChange={onFieldChange} singleLine />
-                </span>
+                <EditSpan field={`faq.${i}.q`} value={item.q} editMode={editMode} onFieldChange={onFieldChange} singleLine
+                  className="text-sm font-semibold pr-4"
+                  style={{ color: dark ? '#fff' : elegant ? '#2a2420' : tt.textPrimary }} />
                 {!editMode && <span className="text-xl flex-shrink-0 transition-transform duration-200 font-light" style={{ color: primaryColor, display: 'inline-block', transform: openIndex === i ? 'rotate(45deg)' : 'none' }}>+</span>}
               </button>
               {(editMode || openIndex === i) && (
@@ -6376,7 +6375,8 @@ function FaqSection({ faq, tt, primaryColor, device, sectionPy, variant, editMod
               style={{ background: tt.surfaceBg, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.surfaceRadius }}>
               <button onClick={editMode ? undefined : () => setOpenIndex(openIndex === i ? null : i)}
                 className="w-full flex items-center justify-between px-5 py-4 text-left gap-4">
-                <span className="text-sm font-semibold" style={{ color: tt.textPrimary }}><EditSpan field={`faq.${i}.q`} value={item.q} editMode={editMode} onFieldChange={onFieldChange} singleLine /></span>
+                <EditSpan field={`faq.${i}.q`} value={item.q} editMode={editMode} onFieldChange={onFieldChange} singleLine
+                  className="text-sm font-semibold" style={{ color: tt.textPrimary }} />
                 <span className="text-lg flex-shrink-0 transition-transform duration-200 font-light"
                   style={{ color: pc, display: 'inline-block', transform: openIndex === i ? 'rotate(45deg)' : 'none' }}>+</span>
               </button>
