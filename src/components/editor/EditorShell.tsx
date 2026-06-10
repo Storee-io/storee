@@ -1357,6 +1357,23 @@ export default function EditorShell({ store, from }: Props) {
                   <Field label="Story"><Textarea value={brandStory} onChange={setBrandStory} placeholder="Tell your brand's story..." rows={5} dataField="brandStory" /></Field>
                   <p className="text-xs text-slate-400">Leave empty to hide.</p>
                 </Section>
+
+                <Section icon={Type} title="Stats" open={openSection === 'stats'} onToggle={() => toggle('stats')}>
+                  {stats.map((s, i) => (
+                    <div key={i} className="p-3 bg-slate-50 rounded-xl space-y-2.5 relative group">
+                      <button onClick={() => setStats(stats.filter((_, idx) => idx !== i))}
+                        className="absolute top-2 right-2 p-1 rounded text-slate-300 hover:text-red-400 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <Field label={`Stat ${i + 1} Value`}><Input value={s.value} onChange={v => setStats(stats.map((x, idx) => idx === i ? { ...x, value: v } : x))} dataField={`stats.${i}.value`} /></Field>
+                      <Field label="Label"><Input value={s.label} onChange={v => setStats(stats.map((x, idx) => idx === i ? { ...x, label: v } : x))} dataField={`stats.${i}.label`} /></Field>
+                    </div>
+                  ))}
+                  <button onClick={() => setStats([...stats, { value: '', label: '' }])}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-emerald-600 border border-dashed border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors">
+                    <Plus className="w-3.5 h-3.5" /> Add Stat
+                  </button>
+                </Section>
               </motion.div>
             ) : null}
           </AnimatePresence>
