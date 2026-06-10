@@ -730,6 +730,10 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     const startInlineTop  = useInlineOffset ? (parseFloat(el.style.top)  || 0) : 0;
     const startInlineLeft = useInlineOffset ? (parseFloat(el.style.left) || 0) : 0;
 
+    let lastCachedRect = startRelRect;
+    let lastCachedTime = 0;
+    const RECT_CACHE_MS = 16; // ~1 frame at 60fps
+
     moveRef.current = {
       startX: e.clientX, startY: e.clientY,
       startTranslateX, startTranslateY,
@@ -793,13 +797,19 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         applyPosition(el, dx, dy, moveRef.current);
         updateGuides(dx, dy, snapV, snapH, axisLock);
 
-        // Use pure delta math for smooth 60fps drag (no getBoundingClientRect per frame)
-        // This keeps motion smooth without expensive reflow operations
+        // Smart rect caching: refresh actual rect every ~16ms (1 frame), use cached value otherwise
+        // This balances smooth motion with accurate selection border alignment
+        const now = performance.now();
+        if (now - lastCachedTime > RECT_CACHE_MS) {
+          lastCachedRect = getRelativeRect(el, containerRef.current);
+          lastCachedTime = now;
+        }
+
         updateSelectionDOM({
-          top:    startRelRect.top  + dy,
-          left:   startRelRect.left + dx,
-          width:  startRelRect.width,
-          height: startRelRect.height,
+          top:    lastCachedRect.top,
+          left:   lastCachedRect.left,
+          width:  lastCachedRect.width,
+          height: lastCachedRect.height,
         }, true /* skipHeightUpdate */);
       });
     };
