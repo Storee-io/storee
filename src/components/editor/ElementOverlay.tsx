@@ -793,13 +793,13 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         applyPosition(el, dx, dy, moveRef.current);
         updateGuides(dx, dy, snapV, snapH, axisLock);
 
-        // Get actual element rect after positioning applied (ensures selection border matches visual position)
-        const actualRect = getRelativeRect(el, containerRef.current);
+        // Use pure delta math for smooth 60fps drag (no getBoundingClientRect per frame)
+        // This keeps motion smooth without expensive reflow operations
         updateSelectionDOM({
-          top:    actualRect.top,
-          left:   actualRect.left,
-          width:  actualRect.width,
-          height: actualRect.height,
+          top:    startRelRect.top  + dy,
+          left:   startRelRect.left + dx,
+          width:  startRelRect.width,
+          height: startRelRect.height,
         }, true /* skipHeightUpdate */);
       });
     };
