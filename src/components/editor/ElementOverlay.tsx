@@ -702,8 +702,41 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
         // Apply final position synchronously — rAF may have been cancelled
         // constrainFinal: grid snap applied once on release (not during drag)
-        const { dx, dy } = constrainFinal(lastClientX - startX, lastClientY - startY);
+        const { dx, dy, snapV, snapH } = constrainFinal(lastClientX - startX, lastClientY - startY);
         applyPosition(el, dx, dy, moveRef.current);
+
+        // ── Apply centering style when snapped to center ──────────────────────
+        // snapV = horizontal center snap, snapH = vertical center snap
+        if (snapV) {
+          // Horizontal center: apply margin centering
+          el.style.marginLeft = 'auto';
+          el.style.marginRight = 'auto';
+          // Clear transform X component if needed
+          const t = el.style.transform || '';
+          if (t.startsWith('translate(')) {
+            const m = t.match(/translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)/);
+            if (m) {
+              const translateY = parseFloat(m[2]);
+              el.style.transform = translateY !== 0 ? `translate(0px, ${translateY}px)` : 'none';
+            }
+          }
+        }
+        if (snapH) {
+          // Vertical center: apply margin centering (if parent has flex/grid)
+          // For vertical centering with margins, typically need flex parent
+          // For now just set margin-top/bottom: auto
+          el.style.marginTop = 'auto';
+          el.style.marginBottom = 'auto';
+          // Clear transform Y component if needed
+          const t = el.style.transform || '';
+          if (t.startsWith('translate(')) {
+            const m = t.match(/translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)/);
+            if (m) {
+              const translateX = parseFloat(m[1]);
+              el.style.transform = translateX !== 0 ? `translate(${translateX}px, 0px)` : 'none';
+            }
+          }
+        }
 
         const rect = getRelativeRect(el, containerRef.current);
         setSelected(prev => prev ? { ...prev, rect } : null);
