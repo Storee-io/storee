@@ -839,17 +839,37 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         data-overlay="true"
         style={{ position: 'absolute', top: 0, left: 0, right: 0, height: overlayHeight || '100%', pointerEvents: 'none', zIndex: 40, overflow: 'visible' }}
       >
-        {/* Hover outline */}
+        {/* Hover outline — click/drag to select */}
         {hovered && hovered.rect.width > 0 && (() => {
           const c = TYPE_COLORS[hovered.elType];
+
+          const handleHoverMouseDown = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            e.preventDefault();
+
+            // Select the hovered element
+            if (lastHoveredEl.current && containerRef.current) {
+              const el = lastHoveredEl.current;
+              lastSelectedEl.current = el;
+              setSelected({
+                rect: getRelativeRect(el, containerRef.current),
+                label: getLabel(el),
+                elType: getElType(el),
+              });
+            }
+          };
+
           return (
-            <div style={{
-              position: 'absolute',
-              top: hovered.rect.top, left: hovered.rect.left,
-              width: hovered.rect.width, height: hovered.rect.height,
-              background: c.hover, outline: `1px solid ${c.outline}`,
-              borderRadius: 2, pointerEvents: 'none',
-            }}>
+            <div
+              data-overlay="true"
+              onMouseDown={handleHoverMouseDown}
+              style={{
+                position: 'absolute',
+                top: hovered.rect.top, left: hovered.rect.left,
+                width: hovered.rect.width, height: hovered.rect.height,
+                background: c.hover, outline: `1px solid ${c.outline}`,
+                borderRadius: 2, pointerEvents: 'auto', cursor: 'pointer',
+              }}>
               <span style={{
                 position: 'absolute', top: -20, left: 0,
                 background: c.label + '22', color: c.label,
