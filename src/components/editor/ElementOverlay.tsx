@@ -793,12 +793,13 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         applyPosition(el, dx, dy, moveRef.current);
         updateGuides(dx, dy, snapV, snapH, axisLock);
 
-        // Pure delta math — no getBoundingClientRect, no scrollHeight per frame
+        // Get actual element rect after positioning applied (ensures selection border matches visual position)
+        const actualRect = getRelativeRect(el, containerRef.current);
         updateSelectionDOM({
-          top:    startRelRect.top  + dy,
-          left:   startRelRect.left + dx,
-          width:  startRelRect.width,
-          height: startRelRect.height,
+          top:    actualRect.top,
+          left:   actualRect.left,
+          width:  actualRect.width,
+          height: actualRect.height,
         }, true /* skipHeightUpdate */);
       });
     };
