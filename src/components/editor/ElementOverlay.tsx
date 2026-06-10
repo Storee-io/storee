@@ -1045,11 +1045,10 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
           const color = c.label;
           return (
             <>
-              {/* Draggable selection border (move) */}
+              {/* Visual selection border (pointerEvents: none to allow child interaction) */}
               <div
                 ref={selectionBorderRef}
                 data-overlay="true"
-                onMouseDown={handleMoveStart}
                 style={{
                   position: 'absolute',
                   top: rect.top, left: rect.left,
@@ -1059,7 +1058,20 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
                   pointerEvents: 'none',
                   boxSizing: 'border-box',
                 }}
-              >
+              />
+              {/* Invisible drag-capture overlay (only on top border for easier dragging) */}
+              <div
+                data-overlay="true"
+                onMouseDown={handleMoveStart}
+                style={{
+                  position: 'absolute',
+                  top: rect.top - 8, left: rect.left,
+                  width: rect.width, height: 16,
+                  pointerEvents: 'auto',
+                  cursor: 'grab',
+                  zIndex: 42,
+                }}
+              />
                 {/* Element label */}
                 <span style={{
                   position: 'absolute', top: -22, left: -2,
