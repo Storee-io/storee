@@ -451,6 +451,34 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
   }, [onElementOverride]);
 
   // ── Double-click text edit ────────────────────────────────────────────────
+  const finishEditingElement = useCallback((save: boolean = true) => {
+    if (!editingEl || !editInputRef.current) return;
+
+    const newText = editInputRef.current.textContent || '';
+
+    if (save && newText !== editingText) {
+      (editingEl as HTMLElement).textContent = newText;
+
+      if (onElementOverride) {
+        const styles: ElementStyleOverride = {
+          humanLabel: buildHumanLabel(editingEl as HTMLElement),
+          textContent: newText,
+        };
+        onElementOverride(buildSelector(editingEl as HTMLElement), styles);
+      }
+    }
+
+    try {
+      editInputRef.current.remove();
+    } catch (e) {
+      // Element might have been removed already
+    }
+
+    editInputRef.current = null;
+    setEditingEl(null);
+    setEditingText('');
+  }, [editingEl, editingText, onElementOverride]);
+
   const startEditingElement = useCallback((el: HTMLElement) => {
     if (!containerRef.current) return;
     const container = containerRef.current;
@@ -519,35 +547,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
     editDiv.addEventListener('keydown', handleKeyDown);
     editDiv.addEventListener('blur', handleBlur);
-  }, [containerRef]);
-
-  const finishEditingElement = useCallback((save: boolean = true) => {
-    if (!editingEl || !editInputRef.current) return;
-
-    const newText = editInputRef.current.textContent || '';
-
-    if (save && newText !== editingText) {
-      (editingEl as HTMLElement).textContent = newText;
-
-      if (onElementOverride) {
-        const styles: ElementStyleOverride = {
-          humanLabel: buildHumanLabel(editingEl as HTMLElement),
-          textContent: newText,
-        };
-        onElementOverride(buildSelector(editingEl as HTMLElement), styles);
-      }
-    }
-
-    try {
-      editInputRef.current.remove();
-    } catch (e) {
-      // Element might have been removed already
-    }
-
-    editInputRef.current = null;
-    setEditingEl(null);
-    setEditingText('');
-  }, [editingEl, editingText, onElementOverride]);
+  }, [containerRef, finishEditingElement]);
 
   // ── RESIZE drag ───────────────────────────────────────────────────────────
   const handleResizeStart = useCallback((e: React.MouseEvent, handle: HandlePos) => {
