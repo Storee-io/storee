@@ -294,8 +294,10 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
   const overlayRootRef    = useRef<HTMLDivElement | null>(null);
   const selectionBorderRef = useRef<HTMLDivElement | null>(null);
   const handleElsRef      = useRef<(HTMLDivElement | null)[]>([]);
-  const guideHRef         = useRef<HTMLDivElement | null>(null); // horizontal guide line
-  const guideVRef         = useRef<HTMLDivElement | null>(null); // vertical guide line
+  const guideHRef         = useRef<HTMLDivElement | null>(null); // horizontal guide line (center snap)
+  const guideVRef         = useRef<HTMLDivElement | null>(null); // vertical guide line (center snap)
+  const guideHDefaultRef  = useRef<HTMLDivElement | null>(null); // horizontal default position line
+  const guideVDefaultRef  = useRef<HTMLDivElement | null>(null); // vertical default position line
 
   // ── Apply / clear overrides on load and undo/redo ──────────────────────────
   useEffect(() => {
@@ -584,13 +586,14 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
     /** Update guide line DOM positions + visibility — zero re-renders */
     const updateGuides = (dx: number, dy: number, snapV: boolean, snapH: boolean, axisLock: 'h' | 'v' | null) => {
-      const ACTIVE   = '#06b6d4';          // bright cyan
-      const INACTIVE = 'rgba(6,182,212,0.35)'; // dim cyan
+      const ACTIVE   = '#06b6d4';          // bright cyan (center snap)
+      const INACTIVE = 'rgba(6,182,212,0.35)'; // dim cyan (center snap)
+      const DEFAULT  = 'rgba(100,116,139,0.4)'; // gray (default position)
 
+      // ── Center snap guides ────────────────────────────────────────────────
       if (guideHRef.current) {
-        // Horizontal guide: sits at a Y position, spans section (full page) width
         const y = axisLock === 'h'
-          ? startRelRect.top + startRelRect.height / 2 + dy  // track element center
+          ? startRelRect.top + startRelRect.height / 2 + dy
           : parentCenterY;
         guideHRef.current.style.top    = `${y}px`;
         guideHRef.current.style.left   = `${snapRefRect.left}px`;
@@ -600,9 +603,8 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         guideHRef.current.style.display = 'block';
       }
       if (guideVRef.current) {
-        // Vertical guide: sits at an X position, spans section height
         const x = axisLock === 'v'
-          ? startRelRect.left + startRelRect.width / 2 + dx  // track element center
+          ? startRelRect.left + startRelRect.width / 2 + dx
           : parentCenterX;
         guideVRef.current.style.left   = `${x}px`;
         guideVRef.current.style.top    = `${snapRefRect.top}px`;
@@ -611,10 +613,32 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         guideVRef.current.style.opacity = '1';
         guideVRef.current.style.display = 'block';
       }
+
+      // ── Default position guides (untuk reset ke posisi awal) ─────────────
+      if (guideHDefaultRef.current) {
+        const defaultY = startRelRect.top + startRelRect.height / 2;
+        guideHDefaultRef.current.style.top    = `${defaultY}px`;
+        guideHDefaultRef.current.style.left   = `${snapRefRect.left}px`;
+        guideHDefaultRef.current.style.width  = `${snapRefRect.width}px`;
+        guideHDefaultRef.current.style.borderTopColor = DEFAULT;
+        guideHDefaultRef.current.style.opacity = '0.6';
+        guideHDefaultRef.current.style.display = 'block';
+      }
+      if (guideVDefaultRef.current) {
+        const defaultX = startRelRect.left + startRelRect.width / 2;
+        guideVDefaultRef.current.style.left   = `${defaultX}px`;
+        guideVDefaultRef.current.style.top    = `${snapRefRect.top}px`;
+        guideVDefaultRef.current.style.height = `${snapRefRect.height}px`;
+        guideVDefaultRef.current.style.borderLeftColor = DEFAULT;
+        guideVDefaultRef.current.style.opacity = '0.6';
+        guideVDefaultRef.current.style.display = 'block';
+      }
     };
     const hideGuides = () => {
       if (guideHRef.current) guideHRef.current.style.display = 'none';
       if (guideVRef.current) guideVRef.current.style.display = 'none';
+      if (guideHDefaultRef.current) guideHDefaultRef.current.style.display = 'none';
+      if (guideVDefaultRef.current) guideVDefaultRef.current.style.display = 'none';
     };
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -961,16 +985,28 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
         {/* ── Guide lines (shown during move drag) ─────────────────────── */}
         {/* Horizontal guide — sits at a Y position */}
+        {/* Center snap guides */}
         <div ref={guideHRef} style={{
           display: 'none', position: 'absolute', height: 0,
           borderTop: '1px dashed rgba(6,182,212,0.35)',
           pointerEvents: 'none', zIndex: 50,
         }} />
-        {/* Vertical guide — sits at an X position */}
         <div ref={guideVRef} style={{
           display: 'none', position: 'absolute', width: 0,
           borderLeft: '1px dashed rgba(6,182,212,0.35)',
           pointerEvents: 'none', zIndex: 50,
+        }} />
+
+        {/* Default position guides — help user reset to original position */}
+        <div ref={guideHDefaultRef} style={{
+          display: 'none', position: 'absolute', height: 0,
+          borderTop: '1px dashed rgba(100,116,139,0.4)',
+          pointerEvents: 'none', zIndex: 49,
+        }} />
+        <div ref={guideVDefaultRef} style={{
+          display: 'none', position: 'absolute', width: 0,
+          borderLeft: '1px dashed rgba(100,116,139,0.4)',
+          pointerEvents: 'none', zIndex: 49,
         }} />
       </div>
     </>
