@@ -560,12 +560,12 @@ export default function EditorShell({ store, from }: Props) {
       }
       return false;
     };
-    // 250ms: React re-render + 180ms animation + buffer
+    // 400ms: React re-render + 180ms animation + extra buffer
     setTimeout(() => {
       if (!focusField(fieldName)) {
-        setTimeout(() => focusField(fieldName), 200);
+        setTimeout(() => focusField(fieldName), 300);
       }
-    }, 250);
+    }, 400);
   }, []);
 
   const handleArrayReorder = useCallback((field: string, newItems: unknown[]) => {
