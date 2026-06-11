@@ -256,9 +256,6 @@ export default function EditorShell({ store, from }: Props) {
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [canvasPage, setCanvasPage] = useState<string>('/');
   const canvasNavigateRef = useRef<((path: string) => void) | null>(null);
-  // Pending Properties-panel focus timers — cancelled when inline edit starts so the
-  // panel's input.focus()/select() retries don't steal focus from the contentEditable.
-  const propFocusTimersRef = useRef<{ raf: number | null; timers: ReturnType<typeof setTimeout>[] }>({ raf: null, timers: [] });
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialMountRef = useRef(true);
   const persistStoreRef = useRef<(() => Promise<void>) | null>(null);
@@ -503,93 +500,11 @@ export default function EditorShell({ store, from }: Props) {
     setSaved(false);
   }, []);
 
-  const handleTextElementSelected = useCallback((fieldName: string | null) => {
-    // Cancel any pending Properties-panel focus retries from a previous selection.
-    // Crucial for double-click inline edit: the click that precedes the dblclick
-    // schedules focus retries; without this they fire later and steal focus from
-    // the contentEditable, aborting the inline edit. handleDblClick calls this with
-    // null, which lands here and clears the timers.
-    const pending = propFocusTimersRef.current;
-    if (pending.raf !== null) { cancelAnimationFrame(pending.raf); pending.raf = null; }
-    pending.timers.forEach(clearTimeout);
-    pending.timers = [];
-
-    if (!fieldName) return;
-
-    // Switch to Properties tab
-    setSidebarTab('properties');
-
-    // Parse field name (could be "heroTitle" or "features.0.title")
-    const isArrayField = fieldName.includes('.');
-    const sectionMap: Record<string, string> = {
-      'tagline': 'general',
-      'storeName': 'general',
-      'navLinks': 'navigation',
-      'heroTitle': 'hero',
-      'heroSubtitle': 'hero',
-      'ctaText': 'hero',
-      'promoBar': 'promoBar',
-      'brandStory': 'brandStory',
-      'newsletter': 'newsletter',
-      'features': 'features',
-      'testimonials': 'testimonials',
-      'trustBadges': 'trust',
-      'stats': 'stats',
-      'faq': 'faq',
-      'collections': 'collections',
-      'products': 'products',
-      'sectionHeadings': 'features', // default, overridden below
-    };
-
-    // Determine which section to open
-    let section = 'general';
-    // Exact match first
-    if (sectionMap[fieldName]) {
-      section = sectionMap[fieldName];
-    } else {
-      // Prefix match for array fields and dotted fields
-      for (const [key, val] of Object.entries(sectionMap)) {
-        if (fieldName.startsWith(key)) {
-          section = val;
-          break;
-        }
-      }
-    }
-    // Special: sectionHeadings.X → open that section
-    const shMatch = fieldName.match(/^sectionHeadings\.(\w+)$/);
-    if (shMatch) section = shMatch[1];
-
-    setOpenSection(section);
-
-    // Auto-focus by data-field attribute — wait for React re-render + section animation
-    const focusField = (fieldName: string) => {
-      const input = document.querySelector(
-        `[data-field="${fieldName}"]`
-      ) as HTMLInputElement | HTMLTextAreaElement | null;
-      if (input && input.offsetParent !== null) { // Check element is visible
-        input.focus();
-        input.select?.();
-        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return true;
-      }
-      return false;
-    };
-
-    // Use requestAnimationFrame + setTimeout for reliable timing after state update.
-    // Track every timer/raf id so an incoming inline-edit (null selection) can cancel
-    // them before they steal focus from the contentEditable.
-    const pendingTimers = propFocusTimersRef.current;
-    pendingTimers.raf = requestAnimationFrame(() => {
-      pendingTimers.raf = null;
-      pendingTimers.timers.push(setTimeout(() => {
-        if (!focusField(fieldName)) {
-          // Retry multiple times with increasing delays
-          pendingTimers.timers.push(setTimeout(() => focusField(fieldName), 100));
-          pendingTimers.timers.push(setTimeout(() => focusField(fieldName), 300));
-          pendingTimers.timers.push(setTimeout(() => focusField(fieldName), 600));
-        }
-      }, 100));
-    });
+  const handleTextElementSelected = useCallback((_fieldName: string | null) => {
+    // Intentionally a no-op. Single-click selects the element on the canvas (border +
+    // handles, handled by ElementOverlay) but no longer auto-switches the sidebar to
+    // Properties / opens a section / focuses the matching input. The Properties tab is
+    // still available manually; inline text editing is done via double-click.
   }, []);
 
   const handleArrayReorder = useCallback((field: string, newItems: unknown[]) => {
