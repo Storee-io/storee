@@ -7607,7 +7607,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
           products: (
             <section key="products" ref={productsRef} data-editor-section="products" className="max-w-7xl mx-auto px-6" style={{ paddingTop: isMobile ? '2.5rem' : `${sectionPy}px`, paddingBottom: isMobile ? '2.5rem' : `${sectionPy}px` }}>
               <div className="flex items-end justify-between mb-8">
-                <h2 className="font-black tracking-tight" style={{ ...headingStyle(tt, isMobile ? 1.1 : 1.35), color: tt.textPrimary }}>Featured</h2>
+                <h2 className="font-black tracking-tight" style={{ ...headingStyle(tt, isMobile ? 1.1 : 1.35), color: tt.textPrimary }}><EditSpan field="sectionHeadings.products" value={sectionHeadings?.products ?? 'Featured Products'} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h2>
                 <button onClick={scrollToProducts} className="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 hover:gap-3 transition-all" style={{ color: pc }}>
                   View all <ArrowRight className="w-3.5 h-3.5" />
                 </button>
