@@ -548,12 +548,12 @@ export default function EditorShell({ store, from }: Props) {
 
     setOpenSection(section);
 
-    // Auto-focus by data-field attribute — wait for React re-render + section animation (180ms)
+    // Auto-focus by data-field attribute — wait for React re-render + section animation
     const focusField = (fieldName: string) => {
       const input = document.querySelector(
-        `input[data-field="${fieldName}"], textarea[data-field="${fieldName}"]`
+        `[data-field="${fieldName}"]`
       ) as HTMLInputElement | HTMLTextAreaElement | null;
-      if (input) {
+      if (input && input.offsetParent !== null) { // Check element is visible
         input.focus();
         input.select?.();
         input.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -561,12 +561,18 @@ export default function EditorShell({ store, from }: Props) {
       }
       return false;
     };
-    // 400ms: React re-render + 180ms animation + extra buffer
-    setTimeout(() => {
-      if (!focusField(fieldName)) {
-        setTimeout(() => focusField(fieldName), 300);
-      }
-    }, 400);
+
+    // Use requestAnimationFrame + setTimeout for reliable timing after state update
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (!focusField(fieldName)) {
+          // Retry multiple times with increasing delays
+          setTimeout(() => focusField(fieldName), 100);
+          setTimeout(() => focusField(fieldName), 300);
+          setTimeout(() => focusField(fieldName), 600);
+        }
+      }, 100);
+    });
   }, []);
 
   const handleArrayReorder = useCallback((field: string, newItems: unknown[]) => {
