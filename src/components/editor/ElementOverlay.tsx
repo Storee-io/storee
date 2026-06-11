@@ -408,7 +408,6 @@ function mapElementToField(el: Element): string | null {
   // TESTIMONIALS — find card DIV (has 2+ div siblings), then P position within it
   if (sectionType === 'testimonials') {
     if (tag === 'p') {
-      console.log('[Testimonials Debug] Clicked P element:', el.textContent?.substring(0, 40));
       // Walk up to find the card container (outer div with multiple div siblings)
       let cardEl: Element | null = el.parentElement;
       while (cardEl && cardEl !== section) {
@@ -422,28 +421,19 @@ function mapElementToField(el: Element): string | null {
       }
 
       if (cardEl && cardEl !== section) {
-        // Found card DIV, now find P index within it
-        const cardPList = Array.from(cardEl.querySelectorAll('p'));
-        const pIdx = cardPList.indexOf(el as HTMLParagraphElement);
-        console.log('[Testimonials Debug] Card found, P index:', pIdx, 'out of', cardPList.length);
-        if (pIdx === 0) {
-          // First P = review text
-          const cardIdx = Array.from(section!.querySelectorAll('.rounded-3xl')).indexOf(cardEl);
-          console.log('[Testimonials Debug] Returning testimonials.', cardIdx, '.text');
-          return cardIdx >= 0 ? `testimonials.${cardIdx}.text` : null;
+        // Found card DIV, get its index within parent grid
+        const parent = cardEl.parentElement;
+        if (parent) {
+          const cardIdx = Array.from(parent.children).indexOf(cardEl);
+
+          // Find P index within this card
+          const cardPList = Array.from(cardEl.querySelectorAll('p'));
+          const pIdx = cardPList.indexOf(el as HTMLParagraphElement);
+
+          if (pIdx === 0) return cardIdx >= 0 ? `testimonials.${cardIdx}.text` : null;
+          if (pIdx === 1) return cardIdx >= 0 ? `testimonials.${cardIdx}.author` : null;
+          if (pIdx === 2) return cardIdx >= 0 ? `testimonials.${cardIdx}.role` : null;
         }
-        if (pIdx === 1) {
-          const cardIdx = Array.from(section!.querySelectorAll('.rounded-3xl')).indexOf(cardEl);
-          console.log('[Testimonials Debug] Returning testimonials.', cardIdx, '.author');
-          return cardIdx >= 0 ? `testimonials.${cardIdx}.author` : null;
-        }
-        if (pIdx === 2) {
-          const cardIdx = Array.from(section!.querySelectorAll('.rounded-3xl')).indexOf(cardEl);
-          console.log('[Testimonials Debug] Returning testimonials.', cardIdx, '.role');
-          return cardIdx >= 0 ? `testimonials.${cardIdx}.role` : null;
-        }
-      } else {
-        console.log('[Testimonials Debug] Card NOT found, returning null');
       }
     }
   }
