@@ -287,32 +287,52 @@ function mapElementToField(el: Element): string | null {
   const sectionType = section?.getAttribute('data-editor-section');
   const tag = el.tagName.toLowerCase();
 
-  // HEADER/FOOTER — Store Name (appears in both)
-  // Search for closest header or footer, check if contains storeName
-  const headerOrFooter = el.closest('header, footer');
-  if (headerOrFooter && tag === 'span') {
-    const headerContainer = headerOrFooter.querySelector('span[style*="tracking"]');
-    if (headerContainer && headerContainer.contains(el)) {
-      return 'storeName';
+  // HEADER/FOOTER — Walk up to find header/footer, then identify field by element position/context
+  const header = el.closest('header');
+  const footer = el.closest('footer');
+
+  if (header) {
+    // Store Name: any span in header top area (before nav) = storeName
+    const nav = header.querySelector('nav');
+    if (tag === 'span' || tag === 'a') {
+      // If element is before nav, it's probably storeName
+      if (!nav || !nav.contains(el)) {
+        // Must be storeName (first/only span in header outside nav)
+        return 'storeName';
+      }
+      // Otherwise it's in nav = navLink
+      if (nav && nav.contains(el)) {
+        const allLinks = Array.from(nav.querySelectorAll('a'));
+        for (let i = 0; i < allLinks.length; i++) {
+          if (allLinks[i] === el || allLinks[i].contains(el)) {
+            return `navLinks.${i}`;
+          }
+        }
+      }
     }
   }
 
-  // NAV LINKS — appears in header nav
-  if (tag === 'a' && el.closest('nav')) {
-    const nav = el.closest('nav');
-    const allLinks = nav ? Array.from(nav.querySelectorAll('a')) : [];
-    const idx = allLinks.indexOf(el as HTMLAnchorElement);
-    if (idx >= 0) return `navLinks.${idx}`;
-  }
+  if (footer) {
+    // Footer has 3 text elements: storeName (span), tagline (p), footerNote (p)
+    const allSpans = Array.from(footer.querySelectorAll('span'));
+    const allP = Array.from(footer.querySelectorAll('p'));
 
-  // FOOTER NOTE — appears in footer
-  if (tag === 'p' && el.closest('footer')) {
-    const footer = el.closest('footer');
-    const allP = footer ? Array.from(footer.querySelectorAll('p')) : [];
-    const idx = allP.indexOf(el as HTMLParagraphElement);
-    // Footer has: tagline (first p), footerNote (second p)
-    if (idx === 1) return 'footerNote';
-    if (idx === 0) return 'tagline'; // tagline also in footer
+    // Check if element is in first span = storeName
+    if (allSpans.length > 0) {
+      if (allSpans[0] === el || allSpans[0].contains(el)) {
+        return 'storeName';
+      }
+    }
+
+    // Check P elements by order: first = tagline, second = footerNote
+    if (tag === 'p' || el.closest('p')) {
+      const pEl = el.tagName === 'P' ? el : el.closest('p');
+      if (pEl) {
+        const pIdx = allP.indexOf(pEl as HTMLParagraphElement);
+        if (pIdx === 0) return 'tagline';
+        if (pIdx === 1) return 'footerNote';
+      }
+    }
   }
 
   // Generic helper: find card index by walking up to find
