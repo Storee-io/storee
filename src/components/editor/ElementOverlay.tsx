@@ -1329,10 +1329,29 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       }
     };
 
+    // DOUBLE-CLICK → inline text edit. Resolve the real element under the cursor
+    // (seeing *through* the selection border via resolveUnderlyingEl), map it to a
+    // store field, then hand off to the matching EditSpan via a CustomEvent. The
+    // selection border is cleared so it no longer covers the now-editable element.
+    const handleDblClick = (e: MouseEvent) => {
+      if (dragRef.current || moveRef.current) return;
+      const rawEl = resolveUnderlyingEl(e);
+      if (!rawEl) return;
+      if ((rawEl as HTMLElement).isContentEditable) return;
+      if (rawEl.closest('[contenteditable]')) return;
+      const field = mapElementToField(rawEl);
+      if (!field) return;
+      // Clear selection so the border/handles don't sit on top of the editable text.
+      setSelected(null); lastSelectedEl.current = null;
+      onTextElementSelected?.(null);
+      window.dispatchEvent(new CustomEvent('storee:edit-field', { detail: { field, el: rawEl } }));
+    };
+
     document.addEventListener('mousemove', handleMouseMove);
     container.addEventListener('mouseleave', handleMouseLeave);
     document.addEventListener('click', handleClick, true);
     document.addEventListener('click', handleDocClick);
+    document.addEventListener('dblclick', handleDblClick, true);
     container.addEventListener('scroll', updateSelectedRect);
     window.addEventListener('resize', updateSelectedRect);
 
@@ -1341,6 +1360,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       container.removeEventListener('mouseleave', handleMouseLeave);
       document.removeEventListener('click', handleClick, true);
       document.removeEventListener('click', handleDocClick);
+      document.removeEventListener('dblclick', handleDblClick, true);
       container.removeEventListener('scroll', updateSelectedRect);
       window.removeEventListener('resize', updateSelectedRect);
     };

@@ -242,10 +242,84 @@ function EditSpan({
     else { if (el.textContent !== decodedValue) el.textContent = decodedValue; }
   }, [value, isEditing, isHtml, decodedValue]);
 
-  // In edit mode, only allow component hover & selection (no text editing)
-  // Display text as read-only with ElementOverlay for selection
-  if (isHtml) return <span className={className} style={spanStyle} dangerouslySetInnerHTML={{ __html: value }} />;
-  return <span className={className} style={spanStyle}>{decodedValue}</span>;
+  // ── Inline edit: enter on double-click (dispatched by ElementOverlay) ───────
+  // ElementOverlay resolves the element under the cursor (seeing through the
+  // selection border) and fires `storee:edit-field` with the field + target el.
+  // Only the EditSpan whose own DOM node matches enters edit — avoids duplicate
+  // instances of the same field (e.g. storeName in header & footer) all editing.
+  useEffect(() => {
+    if (!editMode) return;
+    const onEditField = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { field?: string; el?: Element } | undefined;
+      if (!detail || detail.field !== field) return;
+      const me = spanRef.current;
+      const target = detail.el;
+      if (!me || !target) return;
+      // Match when the dispatched element is, contains, or is contained by this span.
+      if (me === target || me.contains(target) || target.contains(me)) {
+        setIsEditing(true);
+      }
+    };
+    window.addEventListener('storee:edit-field', onEditField);
+    return () => window.removeEventListener('storee:edit-field', onEditField);
+  }, [editMode, field]);
+
+  // On entering edit: seed content directly into the DOM (not via React children,
+  // so reconciliation never resets the caret), focus, and select-all.
+  useEffect(() => {
+    if (!isEditing || !spanRef.current) return;
+    const el = spanRef.current;
+    if (isHtml) el.innerHTML = value; else el.textContent = decodedValue;
+    el.focus();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  // Run once per edit session — value/decodedValue intentionally excluded.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditing]);
+
+  const commitEdit = () => {
+    const el = spanRef.current;
+    if (el) {
+      const next = isHtml ? el.innerHTML : (el.textContent ?? '');
+      const current = isHtml ? value : decodedValue;
+      if (next !== current) onFieldChange?.(field, next);
+    }
+    setIsEditing(false);
+  };
+  const cancelEdit = () => {
+    const el = spanRef.current;
+    if (el) { if (isHtml) el.innerHTML = value; else el.textContent = decodedValue; }
+    setIsEditing(false);
+  };
+  const onEditKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
+    else if (e.key === 'Enter' && (singleLine || !e.shiftKey)) { e.preventDefault(); commitEdit(); }
+  };
+
+  if (isEditing) {
+    // No React-managed children — content is seeded imperatively in the effect above.
+    return (
+      <span
+        ref={spanRef}
+        className={className}
+        style={{ ...spanStyle, outline: 'none', cursor: 'text', whiteSpace: singleLine ? 'nowrap' : 'pre-wrap' }}
+        data-editor-field={field}
+        contentEditable
+        suppressContentEditableWarning
+        onBlur={commitEdit}
+        onKeyDown={onEditKeyDown}
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      />
+    );
+  }
+
+  // Read-only display — ElementOverlay handles hover/selection on this element.
+  if (isHtml) return <span ref={spanRef} className={className} style={spanStyle} dangerouslySetInnerHTML={{ __html: value }} />;
+  return <span ref={spanRef} className={className} style={spanStyle}>{decodedValue}</span>;
 }
 
 type StorePage = 'home' | 'product' | 'cart' | 'checkout' | 'success' | 'myorders' | 'wishlist';
