@@ -75,11 +75,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
 
     // Listen for sign-in / sign-out / token-refresh events
+    // Wrap in silent error handler — token refresh failures are non-critical (session persists via localStorage)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ? supabaseUserToLocal(session.user) : null);
+      try {
+        setUser(session?.user ? supabaseUserToLocal(session.user) : null);
+      } catch {
+        // Ignore state update errors (stale component unmount, etc)
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      try {
+        subscription.unsubscribe();
+      } catch {
+        // Ignore unsubscribe errors
+      }
+    };
   }, []);
 
   // Silently sign in anonymously — if anonymous auth is disabled, fall back gracefully
