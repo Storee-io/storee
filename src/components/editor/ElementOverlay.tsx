@@ -1233,12 +1233,19 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       // Try normal findTarget first
       let el = findTarget(target, container);
 
-      // If findTarget returns selected element, try to find child instead
-      // This ensures child elements are detected even when parent is selected
+      // CHILD HOVER: when parent is selected, drill into child for hover feedback
+      // User can see what elements are inside parent before clicking to select
       if (el === lastSelectedEl.current && lastSelectedEl.current && lastSelectedEl.current.contains(target)) {
-        const childEl = findTarget(target, lastSelectedEl.current);
+        // Try to find a deeper child using the same drill-down pattern as click
+        const childEl = findChildToSelect(lastSelectedEl.current, target);
         if (childEl && childEl !== lastSelectedEl.current) {
           el = childEl;
+        } else {
+          // No deeper child found — still try findTarget as fallback
+          const fallbackChild = findTarget(target, lastSelectedEl.current);
+          if (fallbackChild && fallbackChild !== lastSelectedEl.current) {
+            el = fallbackChild;
+          }
         }
       }
 
