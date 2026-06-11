@@ -305,7 +305,17 @@ function EditSpan({
       <span
         ref={spanRef}
         className={className}
-        style={{ ...spanStyle, outline: 'none', cursor: 'text', whiteSpace: singleLine ? 'nowrap' : 'pre-wrap' }}
+        style={{
+          ...spanStyle,
+          // Blue edit border — use box-shadow (not outline/border): globals.css forces
+          // `outline: none !important` on [data-editor-field], and border would shift
+          // inline layout. box-shadow renders a 2px ring with zero reflow.
+          boxShadow: '0 0 0 2px #3b82f6',
+          borderRadius: 2,
+          background: 'rgba(59,130,246,0.06)',
+          cursor: 'text',
+          whiteSpace: singleLine ? 'nowrap' : 'pre-wrap',
+        }}
         data-editor-field={field}
         contentEditable
         suppressContentEditableWarning
