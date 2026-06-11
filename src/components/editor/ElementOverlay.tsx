@@ -1217,6 +1217,9 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
     const handleMouseMove = (e: MouseEvent) => {
       if (dragRef.current || moveRef.current) return;
+      // Skip hover updates while user is selecting text (prevents overlay flicker during drag-select)
+      const selection = window.getSelection();
+      if (selection && selection.toString().length > 0) return;
       let target = getTarget(e);
 
       // If getTarget fails (overlay blocking), use elementsFromPoint to see *through*
