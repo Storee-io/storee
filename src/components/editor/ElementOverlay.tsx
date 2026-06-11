@@ -1254,11 +1254,15 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     // Resolve the real content element under the cursor, seeing *through* the
     // selection overlay (border + handles). When the overlay intercepts the click,
     // elementsFromPoint lets us reach the actual child beneath it.
-    const resolveUnderlyingEl = (e: MouseEvent): Element | null => {
+    // For click/select: require element be inside container (canvas area).
+    // For dblclick/edit: allow any element with a store field (navbar/header/footer).
+    const resolveUnderlyingEl = (e: MouseEvent, allowOutside = false): Element | null => {
       const direct = e.target;
       // Guard against non-Element targets (document, window) which lack .closest()
-      if (direct instanceof Element && !direct.closest('[data-overlay]') && container.contains(direct)) {
-        return direct;
+      if (direct instanceof Element && !direct.closest('[data-overlay]')) {
+        if (allowOutside || container.contains(direct)) {
+          return direct;
+        }
       }
       if (typeof document.elementsFromPoint === 'function') {
         const stack = document.elementsFromPoint(e.clientX, e.clientY);
@@ -1266,7 +1270,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
           if (!(node instanceof Element)) continue;
           if (node === container) continue;
           if (node.closest('[data-overlay]')) continue;
-          if (container.contains(node)) return node;
+          if (allowOutside || container.contains(node)) return node;
         }
       }
       return null;
@@ -1335,7 +1339,9 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     // selection border is cleared so it no longer covers the now-editable element.
     const handleDblClick = (e: MouseEvent) => {
       if (dragRef.current || moveRef.current) return;
-      const rawEl = resolveUnderlyingEl(e);
+      // Allow dblclick on elements outside container (navbar, header, footer, etc.)
+      // as long as they map to a store field.
+      const rawEl = resolveUnderlyingEl(e, true);
       if (!rawEl) return;
       if ((rawEl as HTMLElement).isContentEditable) return;
       if (rawEl.closest('[contenteditable]')) return;
