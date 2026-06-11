@@ -7538,7 +7538,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
           style={{ background: tt.headerBg + 'e8', borderBottom: `1px solid ${tt.divider}`, height: '52px' }}>
           <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
             {/* Brand */}
-            <span className="text-sm font-black tracking-wider uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{storeName}</span>
+            <span className="text-sm font-black tracking-wider uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}><EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine /></span>
 
             {/* Nav — desktop only */}
             {!isMobile && (
