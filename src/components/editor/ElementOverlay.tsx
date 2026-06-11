@@ -1205,8 +1205,9 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     updateOverlayHeight();
 
     const getTarget = (e: MouseEvent): Element | null => {
-      const target = e.target as Element;
-      if (!target) return null;
+      const target = e.target;
+      // Guard against non-Element targets (document, window, text nodes) which lack .closest()
+      if (!(target instanceof Element)) return null;
       if (target.closest('[data-overlay]')) return null;
       return target;
     };
@@ -1261,8 +1262,9 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     // selection overlay (border + handles). When the overlay intercepts the click,
     // elementsFromPoint lets us reach the actual child beneath it.
     const resolveUnderlyingEl = (e: MouseEvent): Element | null => {
-      const direct = e.target as Element | null;
-      if (direct && !direct.closest('[data-overlay]') && container.contains(direct)) {
+      const direct = e.target;
+      // Guard against non-Element targets (document, window) which lack .closest()
+      if (direct instanceof Element && !direct.closest('[data-overlay]') && container.contains(direct)) {
         return direct;
       }
       if (typeof document.elementsFromPoint === 'function') {
