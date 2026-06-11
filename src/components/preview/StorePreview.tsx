@@ -314,7 +314,9 @@ function EditSpan({
           borderRadius: 2,
           background: 'rgba(59,130,246,0.06)',
           cursor: 'text',
-          whiteSpace: singleLine ? 'nowrap' : 'pre-wrap',
+          // No whiteSpace override — keep identical wrapping/layout to the read-only
+          // span so the element doesn't change shape on edit. `singleLine` governs
+          // keyboard behaviour (Enter commits) only, not CSS.
         }}
         data-editor-field={field}
         contentEditable
