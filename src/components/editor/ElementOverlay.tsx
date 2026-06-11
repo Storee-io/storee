@@ -1339,7 +1339,15 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       if (!rawEl) return;
       if ((rawEl as HTMLElement).isContentEditable) return;
       if (rawEl.closest('[contenteditable]')) return;
-      const field = mapElementToField(rawEl);
+      // Resolve the store field. mapElementToField sometimes expects the block element
+      // (p/h3), but the cursor often lands on the inner EditSpan <span>. Walk up from
+      // the target until a field resolves (stop at the section boundary).
+      let field = mapElementToField(rawEl);
+      let n: Element | null = rawEl.parentElement;
+      while (!field && n && !n.hasAttribute('data-editor-section')) {
+        field = mapElementToField(n);
+        n = n.parentElement;
+      }
       if (!field) return;
       // Clear selection so the border/handles don't sit on top of the editable text.
       setSelected(null); lastSelectedEl.current = null;

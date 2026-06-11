@@ -7626,8 +7626,8 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
                     <div key={i} className="flex flex-col gap-3">
                       <div className="h-px w-12" style={{ background: pc }} />
                       <EmojiIcon emoji={f.icon} size={28} color={pc} strokeWidth={1.5} />
-                      <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: tt.textPrimary }}>{f.title}</h3>
-                      <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}>{f.description}</p>
+                      <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: tt.textPrimary }}><EditSpan field={`features.${i}.title`} value={f.title} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h3>
+                      <p className="text-xs leading-relaxed" style={{ color: tt.textSecondary }}><EditSpan field={`features.${i}.description`} value={f.description} editMode={editMode} onFieldChange={onFieldChange} /></p>
                     </div>
                     )}
                   </DraggableList>
@@ -7645,10 +7645,10 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
                     {(t, i) => (
                     <div key={i} className="flex flex-col gap-3">
                       <Stars n={t.rating} />
-                      <p className="text-sm leading-relaxed italic flex-1" style={{ color: tt.textSecondary }}>{t.text}</p>
+                      <p className="text-sm leading-relaxed italic flex-1" style={{ color: tt.textSecondary }}><EditSpan field={`testimonials.${i}.text`} value={t.text} editMode={editMode} onFieldChange={onFieldChange} /></p>
                       <div className="h-px" style={{ background: tt.divider }} />
-                      <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}>{t.author}</p>
-                      <p className="text-[10px]" style={{ color: tt.textMuted }}>{t.role}</p>
+                      <p className="text-xs font-black uppercase tracking-wide" style={{ color: tt.textPrimary }}><EditSpan field={`testimonials.${i}.author`} value={t.author} editMode={editMode} onFieldChange={onFieldChange} singleLine /></p>
+                      <p className="text-[10px]" style={{ color: tt.textMuted }}><EditSpan field={`testimonials.${i}.role`} value={t.role} editMode={editMode} onFieldChange={onFieldChange} singleLine /></p>
                     </div>
                     )}
                   </DraggableList>
@@ -7661,7 +7661,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
             <section key="brandStory" data-editor-section="brandStory" style={{ background: tt.surfaceBg, borderTop: `1px solid ${tt.divider}` }}>
               <div className="max-w-3xl mx-auto px-6 text-center" style={{ paddingTop: isMobile ? '2.5rem' : '5rem', paddingBottom: isMobile ? '2.5rem' : '5rem' }}>
                 <p className="text-4xl mb-6 opacity-20" style={{ color: pc, fontFamily: tt.headingFont }}>&ldquo;</p>
-                <p className="text-base leading-relaxed italic font-medium" style={{ color: tt.textSecondary }}>{brandStory}</p>
+                <p className="text-base leading-relaxed italic font-medium" style={{ color: tt.textSecondary }}><EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} /></p>
               </div>
             </section>
           ) : null,
