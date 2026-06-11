@@ -15,6 +15,31 @@ export const supabase = createClient(url, anonKey, {
   },
 });
 
+// ── Dev-only: silence transient Supabase "Failed to fetch" console noise ───────
+// In Next.js/Turbopack dev, in-flight auth requests get aborted on HMR remounts
+// (and React StrictMode double-mount). Supabase's internal `retryable` logic logs
+// each aborted attempt via console.error — one abort balloons into ~10 lines that
+// clutter the dev overlay. The session itself is unaffected (refresh returns 200).
+// Filter ONLY this specific GoTrue fetch-failure noise, in dev, in the browser.
+if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+  const origError = console.error.bind(console);
+  console.error = (...args: unknown[]) => {
+    const isSupabaseFetchNoise = args.some(a => {
+      const msg = a instanceof Error ? `${a.message}\n${a.stack ?? ''}` : String(a);
+      return (
+        msg.includes('Failed to fetch') &&
+        (msg.includes('SupabaseAuthClient') ||
+          msg.includes('_callRefreshToken') ||
+          msg.includes('_refreshAccessToken') ||
+          msg.includes('_handleRequest') ||
+          msg.includes('_request'))
+      );
+    });
+    if (isSupabaseFetchNoise) return; // drop only this known, non-critical noise
+    origError(...args);
+  };
+}
+
 export function createServerClient() {
   const serviceKey = process.env.SUPABASE_SECRET_KEY ?? anonKey;
   return createClient(url, serviceKey);
