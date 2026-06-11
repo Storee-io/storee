@@ -315,28 +315,31 @@ function mapElementToField(el: Element): string | null {
   const sectionType = section?.getAttribute('data-editor-section');
   const tag = el.tagName.toLowerCase();
 
-  // HEADER/FOOTER — Walk up to find header/footer, then identify field by element position/context
+  // HEADER/FOOTER + GENERIC NAV — Walk up to find context, then identify field
   const header = el.closest('header');
   const footer = el.closest('footer');
+  const nav = el.closest('nav');
+
+  // Generic nav resolution (anywhere on page, not just header/footer)
+  if (nav && (tag === 'span' || tag === 'a')) {
+    const allLinks = Array.from(nav.querySelectorAll('a'));
+    for (let i = 0; i < allLinks.length; i++) {
+      if (allLinks[i] === el || allLinks[i].contains(el)) {
+        return `navLinks.${i}`;
+      }
+    }
+  }
 
   if (header) {
     // Store Name: any span in header top area (before nav) = storeName
-    const nav = header.querySelector('nav');
+    const headerNav = header.querySelector('nav');
     if (tag === 'span' || tag === 'a') {
       // If element is before nav, it's probably storeName
-      if (!nav || !nav.contains(el)) {
+      if (!headerNav || !headerNav.contains(el)) {
         // Must be storeName (first/only span in header outside nav)
         return 'storeName';
       }
-      // Otherwise it's in nav = navLink
-      if (nav && nav.contains(el)) {
-        const allLinks = Array.from(nav.querySelectorAll('a'));
-        for (let i = 0; i < allLinks.length; i++) {
-          if (allLinks[i] === el || allLinks[i].contains(el)) {
-            return `navLinks.${i}`;
-          }
-        }
-      }
+      // Otherwise it's in nav = navLink (already handled by generic nav above)
     }
   }
 
