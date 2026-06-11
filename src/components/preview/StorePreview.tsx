@@ -7543,9 +7543,9 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
             {/* Nav — desktop only */}
             {!isMobile && (
               <nav className="flex gap-8">
-                {navLinks.map(l => (
-                  <a key={l} onClick={scrollToProducts} className="text-xs uppercase tracking-widest font-medium cursor-pointer transition-opacity hover:opacity-50"
-                    style={{ color: tt.textSecondary, letterSpacing: '0.1em' }}>{l}</a>
+                {navLinks.map((l, li) => (
+                  <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-xs uppercase tracking-widest font-medium cursor-pointer transition-opacity hover:opacity-50"
+                    style={{ color: tt.textSecondary, letterSpacing: '0.1em' }}><EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine /></a>
                 ))}
               </nav>
             )}
@@ -8099,10 +8099,10 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
         <div className="flex items-center gap-1 pointer-events-auto">
           {!isMobile && (
             <nav className="flex gap-6 mr-3">
-              {navLinks.slice(0, 4).map(l => (
-                <a key={l} onClick={() => scrollToSlide(1)}
+              {navLinks.slice(0, 4).map((l, li) => (
+                <a key={li} onClick={editMode ? undefined : () => scrollToSlide(1)}
                   className="text-xs uppercase tracking-widest font-medium cursor-pointer transition-opacity hover:opacity-60"
-                  style={{ color: isDarkBg ? 'rgba(255,255,255,0.7)' : tt.textSecondary }}>{l}</a>
+                  style={{ color: isDarkBg ? 'rgba(255,255,255,0.7)' : tt.textSecondary }}><EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine /></a>
               ))}
             </nav>
           )}
