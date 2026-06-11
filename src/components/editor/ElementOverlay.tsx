@@ -287,6 +287,34 @@ function mapElementToField(el: Element): string | null {
   const sectionType = section?.getAttribute('data-editor-section');
   const tag = el.tagName.toLowerCase();
 
+  // HEADER/FOOTER — Store Name (appears in both)
+  // Search for closest header or footer, check if contains storeName
+  const headerOrFooter = el.closest('header, footer');
+  if (headerOrFooter && tag === 'span') {
+    const headerContainer = headerOrFooter.querySelector('span[style*="tracking"]');
+    if (headerContainer && headerContainer.contains(el)) {
+      return 'storeName';
+    }
+  }
+
+  // NAV LINKS — appears in header nav
+  if (tag === 'a' && el.closest('nav')) {
+    const nav = el.closest('nav');
+    const allLinks = nav ? Array.from(nav.querySelectorAll('a')) : [];
+    const idx = allLinks.indexOf(el as HTMLAnchorElement);
+    if (idx >= 0) return `navLinks.${idx}`;
+  }
+
+  // FOOTER NOTE — appears in footer
+  if (tag === 'p' && el.closest('footer')) {
+    const footer = el.closest('footer');
+    const allP = footer ? Array.from(footer.querySelectorAll('p')) : [];
+    const idx = allP.indexOf(el as HTMLParagraphElement);
+    // Footer has: tagline (first p), footerNote (second p)
+    if (idx === 1) return 'footerNote';
+    if (idx === 0) return 'tagline'; // tagline also in footer
+  }
+
   // Generic helper: find card index by walking up to find
   // an ancestor that is one of several siblings (i.e., it's an item in a list)
   const getCardIndex = (): number => {
