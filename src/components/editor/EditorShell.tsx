@@ -9,7 +9,7 @@ import {
   BookOpen, Megaphone, Layers, Plus, Trash2,
   Star, HelpCircle, Type, Eye, Lock,
   Edit2, GripVertical, MousePointer, MousePointerClick, Layout, Pencil,
-  LayoutDashboard, Undo2, Redo2, History, Navigation,
+  LayoutDashboard, Undo2, Redo2, History, Compass,
 } from 'lucide-react';
 import { useHistory } from '../../hooks/useHistory';
 import HistoryPanel from './HistoryPanel';
@@ -1251,7 +1251,7 @@ export default function EditorShell({ store, from }: Props) {
                   <Field label="Accent Color"><ColorInput value={accentColor} onChange={setAccentColor} /></Field>
                 </Section>
 
-                <Section icon={Navigation} title="Navigation" open={openSection === 'navigation'} onToggle={() => toggle('navigation')}>
+                <Section icon={Compass} title="Navigation" open={openSection === 'navigation'} onToggle={() => toggle('navigation')}>
                   {navLinks.map((link, i) => (
                     <div key={i} className="p-3 bg-slate-50 rounded-xl space-y-2.5 relative group">
                       <button onClick={() => setNavLinks(navLinks.filter((_, idx) => idx !== i))}

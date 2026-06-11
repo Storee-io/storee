@@ -240,6 +240,34 @@ function findTarget(startEl: Element, container: Element): Element | null {
   return firstMatch;
 }
 
+/** Whether an element is selectable on its own (mirrors findTarget's predicate). */
+function isSelectableEl(el: Element): boolean {
+  const tag = el.tagName.toLowerCase();
+  if (shouldSkip(el)) return false;
+  return tag === 'span' || tag === 'a' || tag === 'strong' || tag === 'em' || isBlockEl(el);
+}
+
+/**
+ * Drill one level deeper: return the outermost selectable element that is strictly
+ * inside `parent` and contains (or is) `target`. Returns null when there is no
+ * deeper selectable child — used to select a child when its parent is already selected.
+ */
+function findChildToSelect(parent: Element, target: Element): Element | null {
+  const chain: Element[] = [];
+  let n: Element | null = target;
+  while (n && n !== parent) {
+    if ((n as HTMLElement).dataset?.editorField !== undefined) return null; // don't cross edit fields
+    chain.push(n);
+    n = n.parentElement;
+  }
+  if (n !== parent) return null;        // target is not inside parent
+  chain.reverse();                       // outermost (closest to parent) first
+  for (const c of chain) {
+    if (isSelectableEl(c)) return c;
+  }
+  return null;
+}
+
 // ── Drag state for resize ─────────────────────────────────────────────────────
 interface DragState {
   handle: HandlePos;
@@ -1044,7 +1072,16 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         cancelAnimationFrame(moveRafRef.current);
         moveRafRef.current = null;
       }
-      if (moveRef.current && containerRef.current) {
+      // Distinguish a real drag from a plain click on the selection border.
+      // A click (no meaningful movement) must fall through to handleClick so it can
+      // drill into a child element — only a genuine drag commits a move override.
+      let didMove = false;
+      if (moveRef.current) {
+        const { startX, startY, lastClientX, lastClientY } = moveRef.current;
+        didMove = Math.abs(lastClientX - startX) > 3 || Math.abs(lastClientY - startY) > 3;
+      }
+
+      if (didMove && moveRef.current && containerRef.current) {
         const { el, startX, startY, lastClientX, lastClientY } = moveRef.current;
 
         // Apply final position synchronously — rAF may have been cancelled
@@ -1117,7 +1154,8 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       el.style.userSelect = savedUserSelect;
       savedChildSelects.forEach(([child, saved]) => { child.style.userSelect = saved; });
       moveRef.current = null;
-      didDragRef.current = true;
+      // Only swallow the click when an actual drag happened; a plain click drills into a child.
+      didDragRef.current = didMove;
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
       document.removeEventListener('mousemove', onMouseMove);
@@ -1212,58 +1250,66 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
     const handleMouseLeave = () => { setHovered(null); lastHoveredEl.current = null; };
 
+    // Resolve the real content element under the cursor, seeing *through* the
+    // selection overlay (border + handles). When the overlay intercepts the click,
+    // elementsFromPoint lets us reach the actual child beneath it.
+    const resolveUnderlyingEl = (e: MouseEvent): Element | null => {
+      const direct = e.target as Element | null;
+      if (direct && !direct.closest('[data-overlay]') && container.contains(direct)) {
+        return direct;
+      }
+      if (typeof document.elementsFromPoint === 'function') {
+        const stack = document.elementsFromPoint(e.clientX, e.clientY);
+        for (const node of stack) {
+          if (!(node instanceof Element)) continue;
+          if (node === container) continue;
+          if (node.closest('[data-overlay]')) continue;
+          if (container.contains(node)) return node;
+        }
+      }
+      return null;
+    };
+
     const handleClick = (e: MouseEvent) => {
       if (dragRef.current || moveRef.current) return;
       if (didDragRef.current) { didDragRef.current = false; return; }
       // Prevent selection change if any mouse button is still held
       if (e.buttons !== 0) return;
-      let target = getTarget(e);
 
-      // Allow element selection even when another element is selected
-      // If getTarget returns null (overlay), check if click is within container
-      if (!target) {
-        const rawTarget = e.target as Element;
-        const clientX = e.clientX;
-        const clientY = e.clientY;
+      const rawEl = resolveUnderlyingEl(e);
+      if (!rawEl) return;
+      if ((rawEl as HTMLElement).isContentEditable) return;
+      if (rawEl.closest('[contenteditable]')) return;
 
-        // Check if click is within selected element (child selection)
-        if (selected && lastSelectedEl.current) {
-          const rect = lastSelectedEl.current.getBoundingClientRect();
-          if (clientX >= rect.left && clientX <= rect.right &&
-              clientY >= rect.top && clientY <= rect.bottom) {
-            target = rawTarget;
-          }
-        }
+      const cur = lastSelectedEl.current;
+      let el: Element | null = null;
 
-        // Check if click is within container but outside selected (other element selection)
-        if (!target && container) {
-          const containerRect = container.getBoundingClientRect();
-          if (clientX >= containerRect.left && clientX <= containerRect.right &&
-              clientY >= containerRect.top && clientY <= containerRect.bottom) {
-            target = rawTarget;
-          }
+      // DRILL-DOWN: clicking inside the already-selected element selects a deeper child
+      // (e.g. select a card first, then click again to select the heading/image inside).
+      if (cur && cur !== rawEl && cur.contains(rawEl)) {
+        const child = findChildToSelect(cur, rawEl);
+        if (child && child !== cur) {
+          el = child;
+        } else {
+          // Nothing deeper to select — keep the current selection as-is.
+          return;
         }
       }
 
-      if (!target) return;
-      if ((target as HTMLElement).isContentEditable) return;
-      if (target.closest('[contenteditable]')) return;
-
-      let el = findTarget(target, container);
-      if (!el) { setSelected(null); lastSelectedEl.current = null; return; }
-
-      // If selected element is parent of found element, prefer child selection
-      // This allows selecting child elements when parent is already selected
-      if (lastSelectedEl.current && el === lastSelectedEl.current && lastSelectedEl.current.contains(target)) {
-        // Try to find innermost selectable child instead of parent
-        const childEl = findTarget(target, lastSelectedEl.current);
-        if (childEl && childEl !== lastSelectedEl.current) {
-          el = childEl;
+      // NORMAL: nothing selected yet, or click landed outside the current selection.
+      if (!el) {
+        el = findTarget(rawEl, container);
+        if (!el) {
+          setSelected(null); lastSelectedEl.current = null;
+          onTextElementSelected?.(null);
+          return;
         }
-      }
-
-      if (el === lastSelectedEl.current) {
-        setSelected(null); lastSelectedEl.current = null; return;
+        // Re-clicking the same top-level block toggles selection off.
+        if (el === cur) {
+          setSelected(null); lastSelectedEl.current = null;
+          onTextElementSelected?.(null);
+          return;
+        }
       }
 
       lastSelectedEl.current = el;
