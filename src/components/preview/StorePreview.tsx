@@ -7619,7 +7619,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
           features: features.length > 0 ? (
             <section key="features" data-editor-section="features" style={{ borderTop: `1px solid ${tt.divider}`, background: tt.surfaceBg }}>
               <div className="max-w-7xl mx-auto px-6" style={{ paddingTop: isMobile ? '2.5rem' : '5rem', paddingBottom: isMobile ? '2.5rem' : '5rem' }}>
-                <h2 className="font-black tracking-tight mb-10" style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '1.25rem' : '1.75rem' }}>Why us</h2>
+                <h2 className="font-black tracking-tight mb-10" style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '1.25rem' : '1.75rem' }}><EditSpan field="sectionHeadings.features" value={sectionHeadings?.features ?? 'Why us'} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h2>
                 <div className={`grid ${isMobile ? 'grid-cols-1 gap-6' : 'grid-cols-3 gap-10'}`}>
                   <DraggableList items={features} field="features" editMode={editMode}>
                     {(f, i) => (
@@ -7639,7 +7639,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
           testimonials: testimonials.length > 0 ? (
             <section key="testimonials" data-editor-section="testimonials" style={{ borderTop: `1px solid ${tt.divider}` }}>
               <div className="max-w-7xl mx-auto px-6" style={{ paddingTop: isMobile ? '2.5rem' : '5rem', paddingBottom: isMobile ? '2.5rem' : '5rem' }}>
-                <h2 className="font-black tracking-tight mb-10 text-center" style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '1.25rem' : '1.75rem' }}>What they say</h2>
+                <h2 className="font-black tracking-tight mb-10 text-center" style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '1.25rem' : '1.75rem' }}><EditSpan field="sectionHeadings.testimonials" value={sectionHeadings?.testimonials ?? 'What they say'} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h2>
                 <div className={`grid ${isMobile ? 'grid-cols-1 gap-5' : 'grid-cols-3 gap-8'}`}>
                   <DraggableList items={testimonials} field="testimonials" editMode={editMode}>
                     {(t, i) => (
