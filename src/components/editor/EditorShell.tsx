@@ -256,6 +256,9 @@ export default function EditorShell({ store, from }: Props) {
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [canvasPage, setCanvasPage] = useState<string>('/');
   const canvasNavigateRef = useRef<((path: string) => void) | null>(null);
+  // Pending Properties-panel focus timers — cancelled when inline edit starts so the
+  // panel's input.focus()/select() retries don't steal focus from the contentEditable.
+  const propFocusTimersRef = useRef<{ raf: number | null; timers: ReturnType<typeof setTimeout>[] }>({ raf: null, timers: [] });
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialMountRef = useRef(true);
   const persistStoreRef = useRef<(() => Promise<void>) | null>(null);
@@ -501,6 +504,16 @@ export default function EditorShell({ store, from }: Props) {
   }, []);
 
   const handleTextElementSelected = useCallback((fieldName: string | null) => {
+    // Cancel any pending Properties-panel focus retries from a previous selection.
+    // Crucial for double-click inline edit: the click that precedes the dblclick
+    // schedules focus retries; without this they fire later and steal focus from
+    // the contentEditable, aborting the inline edit. handleDblClick calls this with
+    // null, which lands here and clears the timers.
+    const pending = propFocusTimersRef.current;
+    if (pending.raf !== null) { cancelAnimationFrame(pending.raf); pending.raf = null; }
+    pending.timers.forEach(clearTimeout);
+    pending.timers = [];
+
     if (!fieldName) return;
 
     // Switch to Properties tab
@@ -562,16 +575,20 @@ export default function EditorShell({ store, from }: Props) {
       return false;
     };
 
-    // Use requestAnimationFrame + setTimeout for reliable timing after state update
-    requestAnimationFrame(() => {
-      setTimeout(() => {
+    // Use requestAnimationFrame + setTimeout for reliable timing after state update.
+    // Track every timer/raf id so an incoming inline-edit (null selection) can cancel
+    // them before they steal focus from the contentEditable.
+    const pendingTimers = propFocusTimersRef.current;
+    pendingTimers.raf = requestAnimationFrame(() => {
+      pendingTimers.raf = null;
+      pendingTimers.timers.push(setTimeout(() => {
         if (!focusField(fieldName)) {
           // Retry multiple times with increasing delays
-          setTimeout(() => focusField(fieldName), 100);
-          setTimeout(() => focusField(fieldName), 300);
-          setTimeout(() => focusField(fieldName), 600);
+          pendingTimers.timers.push(setTimeout(() => focusField(fieldName), 100));
+          pendingTimers.timers.push(setTimeout(() => focusField(fieldName), 300));
+          pendingTimers.timers.push(setTimeout(() => focusField(fieldName), 600));
         }
-      }, 100);
+      }, 100));
     });
   }, []);
 
