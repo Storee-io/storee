@@ -266,16 +266,16 @@ function EditSpan({
 
   // On entering edit: seed content directly into the DOM (not via React children,
   // so reconciliation never resets the caret), focus, and select-all.
+  // Use rAF + execCommand for reliable selection on contentEditable.
   useEffect(() => {
     if (!isEditing || !spanRef.current) return;
     const el = spanRef.current;
     if (isHtml) el.innerHTML = value; else el.textContent = decodedValue;
     el.focus();
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    const sel = window.getSelection();
-    sel?.removeAllRanges();
-    sel?.addRange(range);
+    // Delay selection until contentEditable is fully ready and layout settled
+    requestAnimationFrame(() => {
+      document.execCommand('selectAll', false);
+    });
   // Run once per edit session — value/decodedValue intentionally excluded.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing]);
