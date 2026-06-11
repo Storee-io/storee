@@ -2945,7 +2945,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
       {/* Products */}
       <section ref={productsRef} className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-14'}`}>
         <div className="flex items-end justify-between mb-8">
-          <h2 className={`font-black text-white tracking-tight uppercase ${isMobile ? 'text-2xl' : 'text-3xl'}`}>New Drops</h2>
+          <h2 className={`font-black text-white tracking-tight uppercase ${isMobile ? 'text-2xl' : 'text-3xl'}`}><EditSpan field="sectionHeadings.products" value={sectionHeadings?.products ?? 'New Drops'} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h2>
           <button onClick={scrollToProducts} className="text-xs font-black uppercase tracking-widest flex items-center gap-1.5 hover:gap-3 transition-all" style={{ color: primaryColor }}>
             View All <ArrowRight className="w-3.5 h-3.5" />
           </button>
@@ -3180,7 +3180,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
       <section ref={productsRef} className={`max-w-6xl mx-auto px-6 ${isMobile ? 'py-8' : 'py-16'}`}>
         <div className={`text-center ${isMobile ? 'mb-7' : 'mb-12'}`}>
           <p className="text-[10px] tracking-[0.38em] mb-3" style={{ color: primaryColor, fontFamily: 'system-ui' }}>CURATED SELECTION</p>
-          <h2 className="text-2xl font-bold tracking-wide" style={{ color: '#2a2420' }}>New Arrivals</h2>
+          <h2 className="text-2xl font-bold tracking-wide" style={{ color: '#2a2420' }}><EditSpan field="sectionHeadings.products" value={sectionHeadings?.products ?? 'New Arrivals'} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h2>
           <div className="w-10 h-px mx-auto mt-4" style={{ background: primaryColor }} />
         </div>
         <div className={`grid ${gridCols(device)} gap-6`}>
@@ -3727,7 +3727,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
       <section ref={productsRef} className={`max-w-6xl mx-auto px-5 ${isMobile ? 'py-8' : 'py-12'}`}>
         <div className="flex items-end justify-between mb-7">
           <div>
-            <h2 className="text-2xl font-black" style={{ color: tt.textPrimary }}>{collections[0]?.emoji} Our Picks</h2>
+            <h2 className="text-2xl font-black" style={{ color: tt.textPrimary }}>{collections[0]?.emoji} <EditSpan field="sectionHeadings.products" value={sectionHeadings?.products ?? 'Our Picks'} editMode={editMode} onFieldChange={onFieldChange} singleLine /></h2>
             <p className="text-sm mt-1" style={{ color: tt.textMuted }}>{tagline}</p>
           </div>
           <button onClick={scrollToProducts} className="text-sm font-black flex items-center gap-1.5 hover:gap-2.5 transition-all" style={{ color: primaryColor }}>
