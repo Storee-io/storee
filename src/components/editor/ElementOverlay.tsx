@@ -1216,16 +1216,15 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       if (dragRef.current || moveRef.current) return;
       let target = getTarget(e);
 
-      // If getTarget fails (overlay blocking), use elementFromPoint to find actual element
-      // This bypasses overlay blocking and gets the true element under cursor
-      if (!target && container && document.elementFromPoint) {
-        const element = document.elementFromPoint(e.clientX, e.clientY);
-
-        // Verify element is within container and not an overlay
-        if (element && element !== container && container.contains(element)) {
-          if (!element.closest('[data-overlay]')) {
-            target = element;
-          }
+      // If getTarget fails (overlay blocking), use elementsFromPoint to see *through*
+      // the selection border (pointerEvents:auto) and find the real content element beneath.
+      if (!target && container && typeof document.elementsFromPoint === 'function') {
+        const stack = document.elementsFromPoint(e.clientX, e.clientY);
+        for (const node of stack) {
+          if (!(node instanceof Element)) continue;
+          if (node === container) continue;
+          if (node.closest('[data-overlay]')) continue;
+          if (container.contains(node)) { target = node; break; }
         }
       }
 
