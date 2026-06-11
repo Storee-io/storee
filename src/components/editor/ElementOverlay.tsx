@@ -66,6 +66,8 @@ const TEXT_TAGS = new Set(['p','h1','h2','h3','h4','h5','h6','span','a','strong'
 function shouldSkip(el: Element): boolean {
   const tag = el.tagName.toLowerCase();
   if (tag === 'path' || tag === 'circle' || tag === 'g' || tag === 'rect' || tag === 'polyline') return true;
+  // Skip EditSpan fields (wrapper spans for inline editing)
+  if ((el as HTMLElement).dataset?.editorField !== undefined) return true;
   const rect = el.getBoundingClientRect();
   if (rect.width < 8 || rect.height < 8) return true;
   return false;
