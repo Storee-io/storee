@@ -213,9 +213,9 @@ function findTarget(startEl: Element, container: Element): Element | null {
 
     const tag = el.tagName.toLowerCase();
 
-    // Skip EditSpan fields: don't set as firstMatch, but continue up to find parent
-    const isEditField = (el as HTMLElement).dataset?.editorField !== undefined || el.closest('[data-editor-field]');
-    if (isEditField) {
+    // Skip EditSpan fields: if this element itself is marked as an editor field,
+    // skip it and continue up the tree to find the parent selectable element
+    if ((el as HTMLElement).dataset?.editorField !== undefined) {
       el = el.parentElement;
       continue;
     }
