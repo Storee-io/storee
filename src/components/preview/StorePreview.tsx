@@ -1919,7 +1919,7 @@ function PromoBar({ text, primaryColor, editMode, onFieldChange }: { text: strin
   if (!text || dismissed) return null;
   const dark = isDark(primaryColor);
   return (
-    <div className="flex items-center justify-center gap-3 px-8 py-2.5 relative" style={{ background: primaryColor }}>
+    <div data-editor-section="promoBar" className="flex items-center justify-center gap-3 px-8 py-2.5 relative" style={{ background: primaryColor }}>
       <p className="text-xs font-semibold text-center" style={{ color: dark ? '#fff' : '#111' }}>
         <EditSpan field="promoBar" value={text} editMode={editMode} onFieldChange={onFieldChange} singleLine />
       </p>
