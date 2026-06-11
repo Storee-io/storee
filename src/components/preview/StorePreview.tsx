@@ -330,8 +330,9 @@ function EditSpan({
   }
 
   // Read-only display — ElementOverlay handles hover/selection on this element.
-  if (isHtml) return <span ref={spanRef} className={className} style={spanStyle} dangerouslySetInnerHTML={{ __html: value }} />;
-  return <span ref={spanRef} className={className} style={spanStyle}>{decodedValue}</span>;
+  // Mark with data-editor-field so drill-down logic skips the span and selects parent instead
+  if (isHtml) return <span ref={spanRef} className={className} style={spanStyle} data-editor-field={field} dangerouslySetInnerHTML={{ __html: value }} />;
+  return <span ref={spanRef} className={className} style={spanStyle} data-editor-field={field}>{decodedValue}</span>;
 }
 
 type StorePage = 'home' | 'product' | 'cart' | 'checkout' | 'success' | 'myorders' | 'wishlist';
