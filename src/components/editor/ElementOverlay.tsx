@@ -209,11 +209,17 @@ function findTarget(startEl: Element, container: Element): Element | null {
   let firstMatch: Element | null = null;
 
   while (el && el !== container) {
-    if ((el as HTMLElement).dataset?.editorField !== undefined) return null;
-    if (el.closest('[data-editor-field]')) return null;
     if (isInExcludedSection(el)) return null;
 
     const tag = el.tagName.toLowerCase();
+
+    // Skip EditSpan fields: don't set as firstMatch, but continue up to find parent
+    const isEditField = (el as HTMLElement).dataset?.editorField !== undefined || el.closest('[data-editor-field]');
+    if (isEditField) {
+      el = el.parentElement;
+      continue;
+    }
+
     const isSelectable = !shouldSkip(el) && (tag === 'span' || tag === 'a' || tag === 'strong' || tag === 'em' || isBlockEl(el));
 
     if (isSelectable) {
