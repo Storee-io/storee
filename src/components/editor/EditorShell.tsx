@@ -9,7 +9,7 @@ import {
   BookOpen, Megaphone, Layers, Plus, Trash2,
   Star, HelpCircle, Type, Eye, Lock,
   Edit2, GripVertical, MousePointer, MousePointerClick, Layout, Pencil,
-  LayoutDashboard, Undo2, Redo2, History,
+  LayoutDashboard, Undo2, Redo2, History, Navigation,
 } from 'lucide-react';
 import { useHistory } from '../../hooks/useHistory';
 import HistoryPanel from './HistoryPanel';
@@ -511,6 +511,7 @@ export default function EditorShell({ store, from }: Props) {
     const sectionMap: Record<string, string> = {
       'tagline': 'general',
       'storeName': 'general',
+      'navLinks': 'navigation',
       'heroTitle': 'hero',
       'heroSubtitle': 'hero',
       'ctaText': 'hero',
@@ -1242,6 +1243,22 @@ export default function EditorShell({ store, from }: Props) {
                   <Field label="Tagline"><Input value={tagline} onChange={setTagline} placeholder="Short brand tagline" dataField="tagline" /></Field>
                   <Field label="Primary Color"><ColorInput value={primaryColor} onChange={setPrimaryColor} /></Field>
                   <Field label="Accent Color"><ColorInput value={accentColor} onChange={setAccentColor} /></Field>
+                </Section>
+
+                <Section icon={Navigation} title="Navigation" open={openSection === 'navigation'} onToggle={() => toggle('navigation')}>
+                  {navLinks.map((link, i) => (
+                    <div key={i} className="p-3 bg-slate-50 rounded-xl space-y-2.5 relative group">
+                      <button onClick={() => setNavLinks(navLinks.filter((_, idx) => idx !== i))}
+                        className="absolute top-2 right-2 p-1 rounded text-slate-300 hover:text-red-400 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <Field label={`Link ${i + 1}`}><Input value={link} onChange={v => setNavLinks(navLinks.map((x, idx) => idx === i ? v : x))} placeholder="e.g., Catalog" dataField={`navLinks.${i}`} /></Field>
+                    </div>
+                  ))}
+                  <button onClick={() => setNavLinks([...navLinks, ''])}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-emerald-600 border border-dashed border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors">
+                    <Plus className="w-3.5 h-3.5" /> Add Link
+                  </button>
                 </Section>
 
                 <Section icon={Megaphone} title="Promo Bar" open={openSection === 'promoBar'} onToggle={() => toggle('promoBar')}>
