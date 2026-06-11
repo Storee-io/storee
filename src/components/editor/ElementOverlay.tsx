@@ -1231,22 +1231,16 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
       if (!target) { setHovered(null); lastHoveredEl.current = null; return; }
 
-      // Try normal findTarget first
+      // Resolve the exact element under the cursor (same heuristic as independent hover).
       let el = findTarget(target, container);
 
-      // CHILD HOVER: when parent is selected, drill into child for hover feedback
-      // User can see what elements are inside parent before clicking to select
-      if (el === lastSelectedEl.current && lastSelectedEl.current && lastSelectedEl.current.contains(target)) {
-        // Try to find a deeper child using the same drill-down pattern as click
-        const childEl = findChildToSelect(lastSelectedEl.current, target);
+      // CHILD HOVER: when the parent is selected, findTarget resolves up to that parent.
+      // Re-run findTarget bounded by the parent so hover highlights the precise child
+      // under the cursor — identical precision to hovering an element independently.
+      if (el === lastSelectedEl.current && lastSelectedEl.current && lastSelectedEl.current.contains(target) && target !== lastSelectedEl.current) {
+        const childEl = findTarget(target, lastSelectedEl.current);
         if (childEl && childEl !== lastSelectedEl.current) {
           el = childEl;
-        } else {
-          // No deeper child found — still try findTarget as fallback
-          const fallbackChild = findTarget(target, lastSelectedEl.current);
-          if (fallbackChild && fallbackChild !== lastSelectedEl.current) {
-            el = fallbackChild;
-          }
         }
       }
 
