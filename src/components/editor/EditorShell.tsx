@@ -549,27 +549,33 @@ export default function EditorShell({ store, from }: Props) {
     setOpenSection(section);
 
     // Auto-focus by data-field attribute — wait for React re-render + section animation
-    const focusField = (fieldName: string) => {
+    const focusField = (fieldName: string, attempt: number = 0) => {
+      console.log(`[Focus Debug ${attempt}] Trying to focus [data-field="${fieldName}"]`);
       const input = document.querySelector(
         `[data-field="${fieldName}"]`
       ) as HTMLInputElement | HTMLTextAreaElement | null;
+      console.log(`[Focus Debug ${attempt}] Found element:`, input ? input.tagName : 'NOT FOUND');
+      if (input) console.log(`[Focus Debug ${attempt}] offsetParent:`, input.offsetParent, 'visible?', input.offsetParent !== null);
       if (input && input.offsetParent !== null) { // Check element is visible
         input.focus();
         input.select?.();
         input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        console.log(`[Focus Debug ${attempt}] SUCCESS - focused and scrolled`);
         return true;
       }
+      console.log(`[Focus Debug ${attempt}] FAILED - element not found or hidden`);
       return false;
     };
 
+    console.log('[Focus Debug] handleTextElementSelected called with fieldName:', fieldName);
     // Use requestAnimationFrame + setTimeout for reliable timing after state update
     requestAnimationFrame(() => {
       setTimeout(() => {
-        if (!focusField(fieldName)) {
+        if (!focusField(fieldName, 0)) {
           // Retry multiple times with increasing delays
-          setTimeout(() => focusField(fieldName), 100);
-          setTimeout(() => focusField(fieldName), 300);
-          setTimeout(() => focusField(fieldName), 600);
+          setTimeout(() => focusField(fieldName, 1), 100);
+          setTimeout(() => focusField(fieldName, 2), 300);
+          setTimeout(() => focusField(fieldName, 3), 600);
         }
       }, 100);
     });
