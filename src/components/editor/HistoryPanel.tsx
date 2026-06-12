@@ -108,11 +108,10 @@ export default function HistoryPanel({ snapshots, currentIndex, onRevert, onClos
                   )}
                 </div>
 
-                {/* Content — reserves 2 lines of height so the hover truncation
-                    never shifts the row layout. Includes gradient overlay behind Revert button. */}
-                <div className="flex-1 min-w-0 transition-[padding] group-hover:pr-[68px] relative">
+                {/* Content — fixed 2-line clamp, never changes on hover */}
+                <div className="flex-1 min-w-0">
                   <p
-                    className={`text-xs font-medium break-words line-clamp-2 group-hover:line-clamp-1 ${
+                    className={`text-xs font-medium break-words line-clamp-2 ${
                       isCurrent ? 'text-emerald-700' : 'text-slate-700'
                     }`}
                     style={{ minHeight: '2rem' }}
@@ -124,18 +123,6 @@ export default function HistoryPanel({ snapshots, currentIndex, onRevert, onClos
                     {' · '}
                     {formatTime(snap.metadata.timestamp)}
                   </p>
-
-                  {/* Gradient fade overlay behind Revert button — only visible on hover */}
-                  {!isCurrent && (
-                    <div
-                      className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-r from-transparent to-white group-hover:to-slate-50 transition-colors opacity-0 group-hover:opacity-100 pointer-events-none"
-                      style={{
-                        backgroundImage: isCurrent
-                          ? 'linear-gradient(to right, transparent, rgb(240, 253, 250))'
-                          : 'linear-gradient(to right, transparent, rgb(255, 255, 255))',
-                      }}
-                    />
-                  )}
                 </div>
 
                 {/* Current indicator */}
@@ -143,19 +130,29 @@ export default function HistoryPanel({ snapshots, currentIndex, onRevert, onClos
                   <CheckCircle2 className="absolute right-3 top-3 w-4 h-4 text-emerald-500 flex-shrink-0" />
                 )}
 
-                {/* Revert button — absolute overlay, fades in on hover with zero reflow */}
+                {/* Gradient + Revert button — absolute overlay, zero reflow */}
                 {!isCurrent && (
-                  <button
-                    onClick={() => {
-                      // Convert reversed index back to original index
-                      const originalIndex = snapshots.length - 1 - revIdx;
-                      onRevert(originalIndex);
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold text-slate-600 bg-white shadow-sm border border-slate-200 hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all opacity-0 group-hover:opacity-100"
-                  >
-                    <RotateCcw className="w-2.5 h-2.5" />
-                    Revert
-                  </button>
+                  <>
+                    {/* Gradient fade so text behind button stays readable */}
+                    <div
+                      className="absolute right-0 top-0 bottom-0 w-24 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{
+                        background: isCurrent
+                          ? 'linear-gradient(to right, transparent, rgb(240 253 250))'
+                          : 'linear-gradient(to right, transparent, rgb(249 250 251))',
+                      }}
+                    />
+                    <button
+                      onClick={() => {
+                        const originalIndex = snapshots.length - 1 - revIdx;
+                        onRevert(originalIndex);
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold text-slate-600 bg-white shadow-sm border border-slate-200 hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all opacity-0 group-hover:opacity-100"
+                    >
+                      <RotateCcw className="w-2.5 h-2.5" />
+                      Revert
+                    </button>
+                  </>
                 )}
               </div>
             );
