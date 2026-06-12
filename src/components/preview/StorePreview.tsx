@@ -351,23 +351,15 @@ function EditSpan({
     const added: string[] = [];
     const removed: string[] = [];
 
-    const hadBold = /<strong>|<b>/i.test(oldHtml);
-    const hasBold = /<strong>|<b>/i.test(newHtml);
-    const hadItalic = /<em>|<i>/i.test(oldHtml);
-    const hasItalic = /<em>|<i>/i.test(newHtml);
-    const hadUnderline = /<u>/i.test(oldHtml);
-    const hasUnderline = /<u>/i.test(newHtml);
-    const hadStrike = /<s>|<strike>|text-decoration:[^;]*line-through/i.test(oldHtml);
-    const hasStrike = /<s>|<strike>|text-decoration:[^;]*line-through/i.test(newHtml);
-
-    const oldAlign = (oldHtml.match(/text-align:\s*(\w+)/i) || [])[1] || '';
-    const newAlign = (newHtml.match(/text-align:\s*(\w+)/i) || [])[1] || '';
-    const oldSize = (oldHtml.match(/font-size:\s*([\d.]+)/i) || [])[1] || '';
-    const newSize = (newHtml.match(/font-size:\s*([\d.]+)/i) || [])[1] || '';
-    const oldFont = (oldHtml.match(/font-family:\s*([^;'"]+)/i) || [])[1]?.trim() || '';
-    const newFont = (newHtml.match(/font-family:\s*([^;'"]+)/i) || [])[1]?.trim() || '';
-    const oldColor = (oldHtml.match(/(?:^|[^-])color:\s*(#[0-9a-f]+|rgb[^;]+)/i) || [])[1] || '';
-    const newColor = (newHtml.match(/(?:^|[^-])color:\s*(#[0-9a-f]+|rgb[^;]+)/i) || [])[1] || '';
+    // Inline formatting tags
+    const hadBold = /<strong[\s>]|<b[\s>]/i.test(oldHtml);
+    const hasBold = /<strong[\s>]|<b[\s>]/i.test(newHtml);
+    const hadItalic = /<em[\s>]|<i[\s>]/i.test(oldHtml);
+    const hasItalic = /<em[\s>]|<i[\s>]/i.test(newHtml);
+    const hadUnderline = /<u[\s>]/i.test(oldHtml);
+    const hasUnderline = /<u[\s>]/i.test(newHtml);
+    const hadStrike = /<s[\s>]|<strike[\s>]|text-decoration:[^;"]*line-through/i.test(oldHtml);
+    const hasStrike = /<s[\s>]|<strike[\s>]|text-decoration:[^;"]*line-through/i.test(newHtml);
 
     if (!hadBold && hasBold) added.push('bold');
     else if (hadBold && !hasBold) removed.push('bold');
@@ -378,20 +370,75 @@ function EditSpan({
     if (!hadStrike && hasStrike) added.push('strikethrough');
     else if (hadStrike && !hasStrike) removed.push('strikethrough');
 
-    if (newAlign && newAlign !== oldAlign) {
-      const alignLabel = newAlign === 'left' ? 'align left' : newAlign === 'right' ? 'align right' : newAlign === 'center' ? 'align center' : `align ${newAlign}`;
-      added.push(alignLabel);
+    // Text alignment
+    const oldAlign = (oldHtml.match(/text-align:\s*(\w+)/i) || [])[1] || '';
+    const newAlign = (newHtml.match(/text-align:\s*(\w+)/i) || [])[1] || '';
+    if (newAlign !== oldAlign) {
+      if (newAlign) added.push(`align ${newAlign}`);
     }
-    if (newSize && newSize !== oldSize) added.push(`font size ${newSize}px`);
-    if (newFont && newFont !== oldFont) {
-      const fontName = newFont.split(',')[0].replace(/['"]/g, '').trim();
-      added.push(`font ${fontName}`);
+
+    // Font size
+    const allOldSizes = [...oldHtml.matchAll(/font-size:\s*([\d.]+)px/gi)].map(m => m[1]);
+    const allNewSizes = [...newHtml.matchAll(/font-size:\s*([\d.]+)px/gi)].map(m => m[1]);
+    const oldSizeStr = [...new Set(allOldSizes)].sort().join(',');
+    const newSizeStr = [...new Set(allNewSizes)].sort().join(',');
+    if (newSizeStr !== oldSizeStr && allNewSizes.length > 0) {
+      const sizes = [...new Set(allNewSizes)];
+      added.push(`font size ${sizes.length === 1 ? sizes[0] + 'px' : sizes.join('/') + 'px'}`);
     }
-    if (newColor && newColor !== oldColor) added.push('text color');
+
+    // Font family
+    const extractFont = (html: string) => {
+      const m = html.match(/font-family:\s*([^;'"<]+)/i);
+      return m ? m[1].split(',')[0].replace(/['"]/g, '').trim() : '';
+    };
+    const oldFont = extractFont(oldHtml);
+    const newFont = extractFont(newHtml);
+    if (newFont && newFont !== oldFont) added.push(`font: ${newFont}`);
+
+    // Line height
+    const allOldLH = [...oldHtml.matchAll(/line-height:\s*([\d.]+)/gi)].map(m => m[1]);
+    const allNewLH = [...newHtml.matchAll(/line-height:\s*([\d.]+)/gi)].map(m => m[1]);
+    const oldLHStr = [...new Set(allOldLH)].sort().join(',');
+    const newLHStr = [...new Set(allNewLH)].sort().join(',');
+    if (newLHStr !== oldLHStr && allNewLH.length > 0) {
+      const lhs = [...new Set(allNewLH)];
+      added.push(`line height ${lhs.length === 1 ? lhs[0] : lhs.join('/')}`);
+    }
+
+    // Text color — match `color:` but not `background-color:`
+    const extractColors = (html: string) =>
+      [...html.matchAll(/(?<![a-z-])color:\s*(#[0-9a-fA-F]{3,8}|rgb\([^)]+\)|[a-z]+)/gi)]
+        .map(m => m[1].toLowerCase());
+    const oldColors = extractColors(oldHtml).sort().join(',');
+    const newColors = extractColors(newHtml).sort().join(',');
+    if (newColors !== oldColors && newColors) added.push(`text color`);
+
+    // Background color
+    const extractBg = (html: string) =>
+      [...html.matchAll(/background-color:\s*(#[0-9a-fA-F]{3,8}|rgb\([^)]+\)|[a-z]+)/gi)]
+        .map(m => m[1].toLowerCase());
+    const oldBg = extractBg(oldHtml).sort().join(',');
+    const newBg = extractBg(newHtml).sort().join(',');
+    if (newBg !== oldBg && newBg) added.push(`highlight color`);
+
+    // Hyperlink added/removed
+    const hadLink = /<a\s[^>]*href/i.test(oldHtml);
+    const hasLink = /<a\s[^>]*href/i.test(newHtml);
+    if (!hadLink && hasLink) added.push('hyperlink');
+    else if (hadLink && !hasLink) removed.push('hyperlink');
+
+    // Block-level style tag (h1–h4, p)
+    const oldBlock = (oldHtml.match(/^<(h[1-4]|p)[\s>]/i) || [])[1]?.toLowerCase() || '';
+    const newBlock = (newHtml.match(/^<(h[1-4]|p)[\s>]/i) || [])[1]?.toLowerCase() || '';
+    if (newBlock && newBlock !== oldBlock) {
+      const blockLabel: Record<string, string> = { h1: 'Heading 1', h2: 'Heading 2', h3: 'Heading 3', h4: 'Heading 4', p: 'Normal' };
+      added.push(`style: ${blockLabel[newBlock] ?? newBlock}`);
+    }
 
     if (added.length > 0) return `Applied ${added.join(', ')}`;
     if (removed.length > 0) return `Removed ${removed.join(', ')}`;
-    return 'Text modified';
+    return 'Formatting changed';
   };
 
   const commitEdit = (fromBlur = false) => {
