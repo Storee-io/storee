@@ -537,6 +537,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
   const moveRef        = useRef<MoveState | null>(null);  // move
   const didDragRef     = useRef(false);
   const moveRafRef     = useRef<number | null>(null);     // rAF id for move throttle
+  const isTextEditingRef = useRef(false);                  // track editing state for closure
 
   // Direct DOM refs — zero re-renders during drag/move
   const overlayRootRef    = useRef<HTMLDivElement | null>(null);
@@ -1217,6 +1218,11 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     };
   }, []);
 
+  // Update ref whenever isTextEditing state changes (so closure always has latest value)
+  useEffect(() => {
+    isTextEditingRef.current = isTextEditing;
+  }, [isTextEditing]);
+
   // ── Mouse events (hover + click to select) ────────────────────────────────
   useEffect(() => {
     if (!editMode) {
@@ -1241,7 +1247,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     const handleMouseMove = (e: MouseEvent) => {
       if (dragRef.current || moveRef.current) return;
       // Disable hover when text is being edited
-      if (isTextEditing) return;
+      if (isTextEditingRef.current) return;
       // Skip hover updates while user is selecting text (prevents overlay flicker during drag-select)
       const selection = window.getSelection();
       if (selection && selection.toString().length > 0) return;
@@ -1309,7 +1315,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
     const handleClick = (e: MouseEvent) => {
       if (dragRef.current || moveRef.current) return;
-      if (isTextEditing) return;
+      if (isTextEditingRef.current) return;
       if (didDragRef.current) { didDragRef.current = false; return; }
       // Prevent selection change if any mouse button is still held
       if (e.buttons !== 0) return;
