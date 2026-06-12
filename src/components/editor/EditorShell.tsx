@@ -223,6 +223,10 @@ function EditModeCss({ active }: { active: boolean }) {
         line-height: 1 !important;
         vertical-align: middle;
       }
+      .is-editing-text {
+        box-shadow: inset 0 0 0 2px #3b82f6 !important;
+        border-radius: 4px;
+      }
     `}</style>
   );
 }

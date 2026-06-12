@@ -280,6 +280,18 @@ function EditSpan({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing]);
 
+  // Add/remove editing indicator class on parent element
+  useEffect(() => {
+    if (!spanRef.current) return;
+    const parent = spanRef.current.parentElement;
+    if (!parent) return;
+    if (isEditing) {
+      parent.classList.add('is-editing-text');
+    } else {
+      parent.classList.remove('is-editing-text');
+    }
+  }, [isEditing]);
+
   const commitEdit = () => {
     const el = spanRef.current;
     if (el) {
