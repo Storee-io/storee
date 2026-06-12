@@ -223,11 +223,6 @@ function EditModeCss({ active }: { active: boolean }) {
         line-height: 1 !important;
         vertical-align: middle;
       }
-      [data-editor-field]:focus,
-      [data-editor-field][data-ce] {
-        box-shadow: inset 0 0 0 2px #059669 !important;
-        background: rgba(16, 185, 129, 0.06) !important;
-      }
     `}</style>
   );
 }
