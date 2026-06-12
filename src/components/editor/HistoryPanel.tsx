@@ -109,8 +109,8 @@ export default function HistoryPanel({ snapshots, currentIndex, onRevert, onClos
                 </div>
 
                 {/* Content — reserves 2 lines of height so the hover truncation
-                    never shifts the row layout */}
-                <div className="flex-1 min-w-0 transition-[padding] group-hover:pr-[68px]">
+                    never shifts the row layout. Includes gradient overlay behind Revert button. */}
+                <div className="flex-1 min-w-0 transition-[padding] group-hover:pr-[68px] relative">
                   <p
                     className={`text-xs font-medium break-words line-clamp-2 group-hover:line-clamp-1 ${
                       isCurrent ? 'text-emerald-700' : 'text-slate-700'
@@ -124,6 +124,18 @@ export default function HistoryPanel({ snapshots, currentIndex, onRevert, onClos
                     {' · '}
                     {formatTime(snap.metadata.timestamp)}
                   </p>
+
+                  {/* Gradient fade overlay behind Revert button — only visible on hover */}
+                  {!isCurrent && (
+                    <div
+                      className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-r from-transparent to-white group-hover:to-slate-50 transition-colors opacity-0 group-hover:opacity-100 pointer-events-none"
+                      style={{
+                        backgroundImage: isCurrent
+                          ? 'linear-gradient(to right, transparent, rgb(240, 253, 250))'
+                          : 'linear-gradient(to right, transparent, rgb(255, 255, 255))',
+                      }}
+                    />
+                  )}
                 </div>
 
                 {/* Current indicator */}
