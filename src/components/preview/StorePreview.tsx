@@ -297,8 +297,9 @@ function EditSpan({
   const commitEdit = () => {
     const el = spanRef.current;
     if (el) {
-      const next = isHtml ? el.innerHTML : (el.textContent ?? '');
-      const current = isHtml ? value : decodedValue;
+      // Always use innerHTML to preserve any formatting applied via toolbar
+      const next = el.innerHTML;
+      const current = value;
       if (next !== current) onFieldChange?.(field, next);
     }
     setIsEditing(false);
