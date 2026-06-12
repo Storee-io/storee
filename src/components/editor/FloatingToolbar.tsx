@@ -75,18 +75,28 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
   const colorInputRef = useRef<HTMLInputElement>(null);
   const bgColorInputRef = useRef<HTMLInputElement>(null);
   const savedRangeRef = useRef<Range | null>(null);
+  const savedEditorRef = useRef<HTMLElement | null>(null);
   const linkInputRef = useRef<HTMLInputElement>(null);
 
   const saveRange = useCallback(() => {
     const sel = window.getSelection();
     if (sel && sel.rangeCount > 0) {
       savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+      // Also save which contentEditable had focus so we can restore it
+      const active = document.activeElement as HTMLElement;
+      if (active?.isContentEditable) {
+        savedEditorRef.current = active;
+      }
     }
   }, []);
 
   const restoreRange = useCallback(() => {
     const range = savedRangeRef.current;
     if (!range) return;
+    // Focus the editor first so the selection lands in the right context
+    if (savedEditorRef.current && document.activeElement !== savedEditorRef.current) {
+      savedEditorRef.current.focus();
+    }
     const sel = window.getSelection();
     sel?.removeAllRanges();
     sel?.addRange(range);
