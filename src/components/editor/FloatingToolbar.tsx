@@ -367,6 +367,13 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       return;
     }
 
+    // Only show toolbar if the contentEditable element is currently focused
+    const activeEl = document.activeElement as HTMLElement;
+    if (!activeEl?.isContentEditable || !el.closest('[data-editor-field]')?.contains(activeEl)) {
+      setPos(null);
+      return;
+    }
+
     const r = range.getBoundingClientRect();
     const toolbarH = 44;
     const gap = 28;
