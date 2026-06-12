@@ -255,13 +255,17 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
     const gap = 28;
     const centerX = r.left + r.width / 2;
 
+    // Get actual toolbar width from DOM if available, else estimate
+    const toolbarW = toolbarRef.current?.offsetWidth || 600;
+    const minMargin = Math.max(16, (toolbarW + 32) / 2);
+
     // If there's not enough room above, flip toolbar to below the selection
     const spaceAbove = r.top;
     const below = spaceAbove < toolbarH + gap + 16;
 
     setPos({
       top: below ? r.bottom + gap : r.top - toolbarH - gap,
-      left: Math.min(Math.max(centerX, 240), window.innerWidth - 240),
+      left: Math.max(minMargin, Math.min(centerX, window.innerWidth - minMargin)),
       below,
     });
 
