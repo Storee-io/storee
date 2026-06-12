@@ -348,18 +348,49 @@ function EditSpan({
       return 'Text updated';
     }
 
-    const hasBold = newHtml.includes('<strong>') || newHtml.includes('<b>');
-    const hasItalic = newHtml.includes('<em>') || newHtml.includes('<i>');
-    const hasUnderline = newHtml.includes('<u>');
+    const added: string[] = [];
+    const removed: string[] = [];
 
-    const formatting = [];
-    if (hasBold) formatting.push('bold');
-    if (hasItalic) formatting.push('italic');
-    if (hasUnderline) formatting.push('underline');
+    const hadBold = /<strong>|<b>/i.test(oldHtml);
+    const hasBold = /<strong>|<b>/i.test(newHtml);
+    const hadItalic = /<em>|<i>/i.test(oldHtml);
+    const hasItalic = /<em>|<i>/i.test(newHtml);
+    const hadUnderline = /<u>/i.test(oldHtml);
+    const hasUnderline = /<u>/i.test(newHtml);
+    const hadStrike = /<s>|<strike>|text-decoration:[^;]*line-through/i.test(oldHtml);
+    const hasStrike = /<s>|<strike>|text-decoration:[^;]*line-through/i.test(newHtml);
 
-    if (formatting.length > 0) {
-      return `Applied ${formatting.join('/')}`;
+    const oldAlign = (oldHtml.match(/text-align:\s*(\w+)/i) || [])[1] || '';
+    const newAlign = (newHtml.match(/text-align:\s*(\w+)/i) || [])[1] || '';
+    const oldSize = (oldHtml.match(/font-size:\s*([\d.]+)/i) || [])[1] || '';
+    const newSize = (newHtml.match(/font-size:\s*([\d.]+)/i) || [])[1] || '';
+    const oldFont = (oldHtml.match(/font-family:\s*([^;'"]+)/i) || [])[1]?.trim() || '';
+    const newFont = (newHtml.match(/font-family:\s*([^;'"]+)/i) || [])[1]?.trim() || '';
+    const oldColor = (oldHtml.match(/(?:^|[^-])color:\s*(#[0-9a-f]+|rgb[^;]+)/i) || [])[1] || '';
+    const newColor = (newHtml.match(/(?:^|[^-])color:\s*(#[0-9a-f]+|rgb[^;]+)/i) || [])[1] || '';
+
+    if (!hadBold && hasBold) added.push('bold');
+    else if (hadBold && !hasBold) removed.push('bold');
+    if (!hadItalic && hasItalic) added.push('italic');
+    else if (hadItalic && !hasItalic) removed.push('italic');
+    if (!hadUnderline && hasUnderline) added.push('underline');
+    else if (hadUnderline && !hasUnderline) removed.push('underline');
+    if (!hadStrike && hasStrike) added.push('strikethrough');
+    else if (hadStrike && !hasStrike) removed.push('strikethrough');
+
+    if (newAlign && newAlign !== oldAlign) {
+      const alignLabel = newAlign === 'left' ? 'align left' : newAlign === 'right' ? 'align right' : newAlign === 'center' ? 'align center' : `align ${newAlign}`;
+      added.push(alignLabel);
     }
+    if (newSize && newSize !== oldSize) added.push(`font size ${newSize}px`);
+    if (newFont && newFont !== oldFont) {
+      const fontName = newFont.split(',')[0].replace(/['"]/g, '').trim();
+      added.push(`font ${fontName}`);
+    }
+    if (newColor && newColor !== oldColor) added.push('text color');
+
+    if (added.length > 0) return `Applied ${added.join(', ')}`;
+    if (removed.length > 0) return `Removed ${removed.join(', ')}`;
     return 'Text modified';
   };
 
