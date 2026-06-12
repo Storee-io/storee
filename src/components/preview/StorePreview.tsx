@@ -294,7 +294,11 @@ function EditSpan({
     }
   }, [isEditing]);
 
-  const commitEdit = () => {
+  const commitEdit = (fromBlur = false) => {
+    // If blur event, check if focus moved to formatting toolbar - if so, keep editing
+    if (fromBlur && document.activeElement?.tagName === 'BUTTON') {
+      return;
+    }
     const el = spanRef.current;
     if (el) {
       // Always use innerHTML to preserve any formatting applied via toolbar
@@ -330,7 +334,7 @@ function EditSpan({
         data-editor-field={field}
         contentEditable
         suppressContentEditableWarning
-        onBlur={commitEdit}
+        onBlur={() => commitEdit(true)}
         onKeyDown={onEditKeyDown}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
