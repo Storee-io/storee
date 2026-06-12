@@ -111,7 +111,7 @@ export default function HistoryPanel({ snapshots, currentIndex, onRevert, onClos
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <p className={`text-xs font-medium whitespace-normal break-words group-hover:truncate ${isCurrent ? 'text-emerald-700' : 'text-slate-700'}`}>
                         {isInitial ? 'Initial state' : (snap.metadata.label ?? 'Updated')}
                       </p>
