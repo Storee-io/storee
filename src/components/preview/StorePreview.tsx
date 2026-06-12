@@ -402,8 +402,9 @@ function EditSpan({
     if (newFont && newFont !== oldFont) added.push(`font: ${newFont}`);
 
     // Line height
-    const allOldLH = [...oldHtml.matchAll(/line-height:\s*([\d.]+)/gi)].map(m => m[1]);
-    const allNewLH = [...newHtml.matchAll(/line-height:\s*([\d.]+)/gi)].map(m => m[1]);
+    // Line height — ignore value "1" which is injected as a side-effect by the font-size handler
+    const allOldLH = [...oldHtml.matchAll(/line-height:\s*([\d.]+)/gi)].map(m => m[1]).filter(v => v !== '1');
+    const allNewLH = [...newHtml.matchAll(/line-height:\s*([\d.]+)/gi)].map(m => m[1]).filter(v => v !== '1');
     const oldLHStr = [...new Set(allOldLH)].sort().join(',');
     const newLHStr = [...new Set(allNewLH)].sort().join(',');
     if (newLHStr !== oldLHStr && allNewLH.length > 0) {
