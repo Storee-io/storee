@@ -223,9 +223,6 @@ function EditModeCss({ active }: { active: boolean }) {
         line-height: 1 !important;
         vertical-align: middle;
       }
-      [data-editor-field]:hover {
-        box-shadow: inset 0 0 0 2px #10b981 !important;
-      }
       [data-editor-field]:focus,
       [data-editor-field][data-ce] {
         box-shadow: inset 0 0 0 2px #059669 !important;
