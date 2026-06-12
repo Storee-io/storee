@@ -288,6 +288,19 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
     return () => document.removeEventListener('selectionchange', refresh);
   }, [refresh]);
 
+  // Refresh toolbar position on container scroll
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      refresh();
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [refresh, containerRef]);
+
   useEffect(() => { if (!editMode) setPos(null); }, [editMode]);
 
   // Monitor showLink state changes
