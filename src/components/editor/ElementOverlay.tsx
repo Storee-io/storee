@@ -529,6 +529,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
   const [hovered,       setHovered]       = useState<HoverInfo | null>(null);
   const [selected,      setSelected]      = useState<HoverInfo | null>(null);
   const [overlayHeight, setOverlayHeight] = useState(0);
+  const [isTextEditing, setIsTextEditing] = useState(false);
 
   const lastHoveredEl  = useRef<Element | null>(null);
   const lastSelectedEl = useRef<Element | null>(null);
@@ -1202,6 +1203,20 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     }
   }
 
+  // Listen for text editing start/end events to disable/enable hover
+  useEffect(() => {
+    const handleEditStart = () => setIsTextEditing(true);
+    const handleEditEnd = () => setIsTextEditing(false);
+
+    window.addEventListener('storee:text-editing-start', handleEditStart);
+    window.addEventListener('storee:text-editing-end', handleEditEnd);
+
+    return () => {
+      window.removeEventListener('storee:text-editing-start', handleEditStart);
+      window.removeEventListener('storee:text-editing-end', handleEditEnd);
+    };
+  }, []);
+
   // ── Mouse events (hover + click to select) ────────────────────────────────
   useEffect(() => {
     if (!editMode) {
@@ -1225,6 +1240,8 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
     const handleMouseMove = (e: MouseEvent) => {
       if (dragRef.current || moveRef.current) return;
+      // Disable hover when text is being edited
+      if (isTextEditing) return;
       // Skip hover updates while user is selecting text (prevents overlay flicker during drag-select)
       const selection = window.getSelection();
       if (selection && selection.toString().length > 0) return;
@@ -1292,6 +1309,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
 
     const handleClick = (e: MouseEvent) => {
       if (dragRef.current || moveRef.current) return;
+      if (isTextEditing) return;
       if (didDragRef.current) { didDragRef.current = false; return; }
       // Prevent selection change if any mouse button is still held
       if (e.buttons !== 0) return;
