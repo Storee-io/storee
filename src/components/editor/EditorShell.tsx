@@ -255,6 +255,7 @@ export default function EditorShell({ store, from }: Props) {
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialMountRef = useRef(true);
   const persistStoreRef = useRef<(() => Promise<void>) | null>(null);
+  const lastFieldLabelRef = useRef<string | undefined>(undefined);
 
   // Live store from props (URL param is source of truth for this editor page)
   // Don't fall back to activeStore from context, as it might be a different store
@@ -518,7 +519,10 @@ export default function EditorShell({ store, from }: Props) {
     // Snapshot is taken by autosave - no explicit push needed here
   }, [testimonials, features, trustBadges, stats, faq]);
 
-  const handleFieldChange = useCallback((field: string, value: string) => {
+  const handleFieldChange = useCallback((field: string, value: string, label?: string) => {
+    // Track field label for version history
+    if (label) lastFieldLabelRef.current = label;
+
     if (field === 'heroTitle')           { setHeroTitle(value); return; }
     if (field === 'heroSubtitle')        { setHeroSubtitle(value); return; }
     if (field === 'ctaText')             { setCtaText(value); return; }
@@ -785,7 +789,7 @@ export default function EditorShell({ store, from }: Props) {
         sectionOrder: sectionItems.map(i => i.type),
         elementOverrides: Object.keys(elementOverrides).length ? elementOverrides : undefined,
       } as StoreDesign;
-      pushSnapshot(currentDesign, storeName, primaryColor);
+      pushSnapshot(currentDesign, storeName, primaryColor, lastFieldLabelRef.current);
     }, 5000);
 
     return () => { if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current); };

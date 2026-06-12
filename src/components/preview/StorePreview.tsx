@@ -294,6 +294,29 @@ function EditSpan({
     }
   }, [isEditing]);
 
+  const getChangeDescription = (oldHtml: string, newHtml: string): string => {
+    const plainOld = oldHtml.replace(/<[^>]*>/g, '');
+    const plainNew = newHtml.replace(/<[^>]*>/g, '');
+
+    if (plainOld !== plainNew) {
+      return 'Text updated';
+    }
+
+    const hasBold = newHtml.includes('<strong>') || newHtml.includes('<b>');
+    const hasItalic = newHtml.includes('<em>') || newHtml.includes('<i>');
+    const hasUnderline = newHtml.includes('<u>');
+
+    const formatting = [];
+    if (hasBold) formatting.push('bold');
+    if (hasItalic) formatting.push('italic');
+    if (hasUnderline) formatting.push('underline');
+
+    if (formatting.length > 0) {
+      return `Applied ${formatting.join('/')}`;
+    }
+    return 'Text modified';
+  };
+
   const commitEdit = (fromBlur = false) => {
     // If blur event, check if focus moved to formatting toolbar - if so, keep editing
     if (fromBlur && document.activeElement?.tagName === 'BUTTON') {
@@ -304,7 +327,11 @@ function EditSpan({
       // Always use innerHTML to preserve any formatting applied via toolbar
       const next = el.innerHTML;
       const current = value;
-      if (next !== current) onFieldChange?.(field, next);
+      if (next !== current) {
+        const description = getChangeDescription(current, next);
+        // Pass description to onFieldChange for version history tracking
+        onFieldChange?.(field, next, description);
+      }
     }
     setIsEditing(false);
   };
@@ -8360,7 +8387,7 @@ interface StorePreviewProps {
   /** Pass true from PreviewShell so overlays (sidebar, toast) are clipped inside
    *  the mock browser frame via absolute positioning instead of portaling to body. */
   previewShell?: boolean;
-  onFieldChange?: (field: string, value: string) => void;
+  onFieldChange?: (field: string, value: string, label?: string) => void;
   onFieldPositionChange?: (field: string, offset: { x: number; y: number }) => void;
   onArrayReorder?: (field: string, newItems: unknown[]) => void;
   onPageChange?: (path: string) => void;
