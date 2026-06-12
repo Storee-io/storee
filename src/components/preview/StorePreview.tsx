@@ -377,20 +377,25 @@ function EditSpan({
       if (newAlign) added.push(`align ${newAlign}`);
     }
 
-    // Font size
-    const allOldSizes = [...oldHtml.matchAll(/font-size:\s*([\d.]+)px/gi)].map(m => m[1]);
-    const allNewSizes = [...newHtml.matchAll(/font-size:\s*([\d.]+)px/gi)].map(m => m[1]);
-    const oldSizeStr = [...new Set(allOldSizes)].sort().join(',');
-    const newSizeStr = [...new Set(allNewSizes)].sort().join(',');
-    if (newSizeStr !== oldSizeStr && allNewSizes.length > 0) {
-      const sizes = [...new Set(allNewSizes)];
+    // Font size — style="font-size: Npx" (custom handler) or <font size="N"> (execCommand)
+    const extractFontSizes = (html: string) => {
+      const styleSizes = [...html.matchAll(/font-size:\s*([\d.]+)px/gi)].map(m => m[1]);
+      return styleSizes;
+    };
+    const oldSizeStr = [...new Set(extractFontSizes(oldHtml))].sort().join(',');
+    const newSizeStr = [...new Set(extractFontSizes(newHtml))].sort().join(',');
+    if (newSizeStr !== oldSizeStr && newSizeStr) {
+      const sizes = [...new Set(extractFontSizes(newHtml))];
       added.push(`font size ${sizes.length === 1 ? sizes[0] + 'px' : sizes.join('/') + 'px'}`);
     }
 
-    // Font family
+    // Font family — style="font-family:..." OR <font face="...">
     const extractFont = (html: string) => {
-      const m = html.match(/font-family:\s*([^;'"<]+)/i);
-      return m ? m[1].split(',')[0].replace(/['"]/g, '').trim() : '';
+      const styleMatch = html.match(/font-family:\s*([^;'"<]+)/i);
+      if (styleMatch) return styleMatch[1].split(',')[0].replace(/['"]/g, '').trim();
+      const faceMatch = html.match(/<font[^>]*\sface=["']?([^"',>]+)/i);
+      if (faceMatch) return faceMatch[1].trim();
+      return '';
     };
     const oldFont = extractFont(oldHtml);
     const newFont = extractFont(newHtml);
