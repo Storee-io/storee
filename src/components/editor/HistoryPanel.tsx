@@ -92,53 +92,59 @@ export default function HistoryPanel({ snapshots, currentIndex, onRevert, onClos
               <div
                 key={snap.metadata.timestamp}
                 ref={isCurrent ? currentItemRef : undefined}
-                className={`group relative flex items-start gap-3 px-4 py-2.5 transition-colors cursor-default ${
+                className={`group relative flex items-stretch gap-3 px-4 py-2.5 transition-colors cursor-default ${
                   isCurrent
                     ? 'bg-emerald-50'
                     : 'hover:bg-slate-50'
                 }`}
               >
-                {/* Timeline dot */}
-                <div className="flex flex-col items-center flex-shrink-0 mt-0.5">
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-0.5 ${
-                    isCurrent ? 'bg-emerald-500' : 'bg-slate-200'
+                {/* Timeline dot + connecting line */}
+                <div className="flex flex-col items-center flex-shrink-0">
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-1 ${
+                    isCurrent ? 'bg-emerald-500' : 'bg-slate-300'
                   }`} />
                   {revIdx < reversedSnapshots.length - 1 && (
-                    <div className="w-px flex-1 bg-slate-100 mt-1" style={{ minHeight: 12 }} />
+                    <div className="w-px flex-1 bg-slate-200 mt-1" />
                   )}
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-xs font-medium whitespace-normal break-words group-hover:truncate ${isCurrent ? 'text-emerald-700' : 'text-slate-700'}`}>
-                        {isInitial ? 'Initial state' : (snap.metadata.label ?? 'Updated')}
-                      </p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">
-                        {formatRelativeTime(snap.metadata.timestamp)}
-                        {' · '}
-                        {formatTime(snap.metadata.timestamp)}
-                      </p>
-                    </div>
-
-                    {isCurrent ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    ) : (
-                      <button
-                        onClick={() => {
-                          // Convert reversed index back to original index
-                          const originalIndex = snapshots.length - 1 - revIdx;
-                          onRevert(originalIndex);
-                        }}
-                        className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold text-slate-500 bg-white border border-slate-200 hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
-                      >
-                        <RotateCcw className="w-2.5 h-2.5" />
-                        Revert
-                      </button>
-                    )}
-                  </div>
+                {/* Content — reserves 2 lines of height so the hover truncation
+                    never shifts the row layout */}
+                <div className="flex-1 min-w-0 transition-[padding] group-hover:pr-[68px]">
+                  <p
+                    className={`text-xs font-medium break-words line-clamp-2 group-hover:line-clamp-1 ${
+                      isCurrent ? 'text-emerald-700' : 'text-slate-700'
+                    }`}
+                    style={{ minHeight: '2rem' }}
+                  >
+                    {isInitial ? 'Initial state' : (snap.metadata.label ?? 'Updated')}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    {formatRelativeTime(snap.metadata.timestamp)}
+                    {' · '}
+                    {formatTime(snap.metadata.timestamp)}
+                  </p>
                 </div>
+
+                {/* Current indicator */}
+                {isCurrent && (
+                  <CheckCircle2 className="absolute right-3 top-3 w-4 h-4 text-emerald-500 flex-shrink-0" />
+                )}
+
+                {/* Revert button — absolute overlay, fades in on hover with zero reflow */}
+                {!isCurrent && (
+                  <button
+                    onClick={() => {
+                      // Convert reversed index back to original index
+                      const originalIndex = snapshots.length - 1 - revIdx;
+                      onRevert(originalIndex);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold text-slate-600 bg-white shadow-sm border border-slate-200 hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all opacity-0 group-hover:opacity-100"
+                  >
+                    <RotateCcw className="w-2.5 h-2.5" />
+                    Revert
+                  </button>
+                )}
               </div>
             );
           })
