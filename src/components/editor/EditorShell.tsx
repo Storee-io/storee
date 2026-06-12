@@ -227,6 +227,10 @@ function EditModeCss({ active }: { active: boolean }) {
         box-shadow: inset 0 0 0 2px #3b82f6 !important;
         border-radius: 4px;
       }
+      [contenteditable] {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+      }
     `}</style>
   );
 }
