@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useReducer } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, RotateCcw, X, CheckCircle2 } from 'lucide-react';
+import { Clock, RotateCcw, X, Flag } from 'lucide-react';
 import type { HistorySnapshot } from '../../types/history';
 
 interface Props {
@@ -29,24 +29,46 @@ function formatTime(timestamp: number): string {
   return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+// Labels are stored as "Section — Action description" (see EditSpan commitEdit).
+// Split them so the section renders as a scannable badge.
+function parseLabel(label: string): { section: string | null; action: string } {
+  const sep = label.indexOf(' — ');
+  if (sep === -1) return { section: null, action: label };
+  return { section: label.slice(0, sep), action: label.slice(sep + 3) };
+}
+
 export default function HistoryPanel({ snapshots, currentIndex, onRevert, onClose }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const currentItemRef = useRef<HTMLDivElement>(null);
+
+  // Re-render every 30s so the relative timestamps ("2m ago") stay accurate
+  const [, tick] = useReducer((x: number) => x + 1, 0);
+  useEffect(() => {
+    const id = setInterval(tick, 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   // Scroll current item into view on open
   useEffect(() => {
     currentItemRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }, []);
 
-  // Close on click outside
+  // Close on click outside or Escape
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
         onClose();
       }
     };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
     document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
   }, [onClose]);
 
   // Show snapshots newest-first
@@ -68,6 +90,9 @@ export default function HistoryPanel({ snapshots, currentIndex, onRevert, onClos
         <div className="flex items-center gap-2">
           <Clock className="w-3.5 h-3.5 text-slate-400" />
           <span className="text-xs font-bold text-slate-700 uppercase tracking-widest">Version History</span>
+          <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded-full px-1.5 py-0.5 leading-none">
+            {snapshots.length}
+          </span>
         </div>
         <button
           onClick={onClose}
@@ -87,6 +112,9 @@ export default function HistoryPanel({ snapshots, currentIndex, onRevert, onClos
           reversedSnapshots.map((snap, revIdx) => {
             const isCurrent = revIdx === reversedCurrentIndex;
             const isInitial = revIdx === reversedSnapshots.length - 1;
+            const { section, action } = isInitial
+              ? { section: null, action: 'Initial state' }
+              : parseLabel(snap.metadata.label ?? 'Updated');
 
             return (
               <div
@@ -108,27 +136,34 @@ export default function HistoryPanel({ snapshots, currentIndex, onRevert, onClos
                   )}
                 </div>
 
-                {/* Content — fixed 2-line clamp, never changes on hover */}
+                {/* Content — natural height, max 2 lines for the action text */}
                 <div className="flex-1 min-w-0">
-                  <p
-                    className={`text-xs font-medium break-words line-clamp-2 ${
-                      isCurrent ? 'text-emerald-700' : 'text-slate-700'
-                    }`}
-                    style={{ minHeight: '2rem' }}
-                  >
-                    {isInitial ? 'Initial state' : (snap.metadata.label ?? 'Updated')}
+                  {section && (
+                    <span className={`inline-block text-[9px] font-semibold uppercase tracking-wide rounded px-1.5 py-0.5 leading-none mb-1 ${
+                      isCurrent ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {section}
+                    </span>
+                  )}
+                  <p className={`text-xs font-medium break-words ${
+                    isInitial ? 'flex items-center gap-1' : 'line-clamp-2'
+                  } ${isCurrent ? 'text-emerald-700' : 'text-slate-700'}`}>
+                    {isInitial && <Flag className="w-2.5 h-2.5 text-slate-400 flex-shrink-0" />}
+                    {action}
                   </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">
-                    {formatRelativeTime(snap.metadata.timestamp)}
-                    {' · '}
-                    {formatTime(snap.metadata.timestamp)}
+                  <p className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
+                    {isCurrent && (
+                      <span className="text-[9px] font-semibold uppercase tracking-wide text-emerald-600 bg-emerald-100 rounded px-1 py-px leading-none">
+                        Current
+                      </span>
+                    )}
+                    <span>
+                      {formatRelativeTime(snap.metadata.timestamp)}
+                      {' · '}
+                      {formatTime(snap.metadata.timestamp)}
+                    </span>
                   </p>
                 </div>
-
-                {/* Current indicator */}
-                {isCurrent && (
-                  <CheckCircle2 className="absolute right-3 top-3 w-4 h-4 text-emerald-500 flex-shrink-0" />
-                )}
 
                 {/* Gradient + Revert button — absolute overlay, zero reflow */}
                 {!isCurrent && (
