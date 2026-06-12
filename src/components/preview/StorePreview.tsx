@@ -406,10 +406,14 @@ function EditSpan({
       added.push(`line height ${lhs.length === 1 ? lhs[0] : lhs.join('/')}`);
     }
 
-    // Text color — match `color:` but not `background-color:`
-    const extractColors = (html: string) =>
-      [...html.matchAll(/(?<![a-z-])color:\s*(#[0-9a-fA-F]{3,8}|rgb\([^)]+\)|[a-z]+)/gi)]
+    // Text color — match style="color:" OR <font color="...">
+    const extractColors = (html: string) => {
+      const styleColors = [...html.matchAll(/(?<![a-z-])color:\s*(#[0-9a-fA-F]{3,8}|rgb\([^)]+\)|[a-z]+)/gi)]
         .map(m => m[1].toLowerCase());
+      const fontColors = [...html.matchAll(/<font[^>]*\scolor=["']?([^"'\s>]+)/gi)]
+        .map(m => m[1].toLowerCase());
+      return [...styleColors, ...fontColors];
+    };
     const oldColors = extractColors(oldHtml).sort().join(',');
     const newColors = extractColors(newHtml).sort().join(',');
     if (newColors !== oldColors && newColors) added.push(`text color`);
