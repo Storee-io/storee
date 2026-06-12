@@ -376,7 +376,7 @@ function EditSpan({
       if (next !== current) {
         const changeType = getChangeDescription(current, next);
         const sectionName = getFieldSectionName(field);
-        const label = `${sectionName} - ${changeType}`;
+        const label = `${sectionName} — ${changeType}`;
         // Pass label to onFieldChange for version history tracking
         onFieldChange?.(field, next, label);
       }
