@@ -294,6 +294,52 @@ function EditSpan({
     }
   }, [isEditing]);
 
+  const getFieldSectionName = (fieldName: string): string => {
+    // Convert field name to readable section name
+    const mapping: Record<string, string> = {
+      heroTitle: 'Hero',
+      heroSubtitle: 'Hero',
+      ctaText: 'Hero',
+      promoBar: 'Promo Bar',
+      brandStory: 'Brand Story',
+      'newsletter.headline': 'Newsletter',
+      'newsletter.subtext': 'Newsletter',
+      footerNote: 'Footer',
+      tagline: 'Tagline',
+      storeName: 'Store Name',
+    };
+
+    // Handle array field names like features.1.title, testimonials.0.text, etc.
+    const arrayMatch = fieldName.match(/^(\w+)\.\d+\./);
+    if (arrayMatch) {
+      const arrayType = arrayMatch[1];
+      const sectionMap: Record<string, string> = {
+        features: 'Features',
+        testimonials: 'Testimonials',
+        navLinks: 'Nav Links',
+        trustBadges: 'Trust Badges',
+        stats: 'Stats',
+        faq: 'FAQ',
+      };
+      return sectionMap[arrayType] || arrayType;
+    }
+
+    // Handle section heading fields
+    if (fieldName.startsWith('sectionHeadings.')) {
+      const section = fieldName.split('.')[1];
+      const sectionMap: Record<string, string> = {
+        features: 'Features',
+        testimonials: 'Testimonials',
+        products: 'Products',
+        faq: 'FAQ',
+        newsletter: 'Newsletter',
+      };
+      return sectionMap[section] || section;
+    }
+
+    return mapping[fieldName] || fieldName;
+  };
+
   const getChangeDescription = (oldHtml: string, newHtml: string): string => {
     const plainOld = oldHtml.replace(/<[^>]*>/g, '');
     const plainNew = newHtml.replace(/<[^>]*>/g, '');
@@ -328,9 +374,11 @@ function EditSpan({
       const next = el.innerHTML;
       const current = value;
       if (next !== current) {
-        const description = getChangeDescription(current, next);
-        // Pass description to onFieldChange for version history tracking
-        onFieldChange?.(field, next, description);
+        const changeType = getChangeDescription(current, next);
+        const sectionName = getFieldSectionName(field);
+        const label = `${sectionName} - ${changeType}`;
+        // Pass label to onFieldChange for version history tracking
+        onFieldChange?.(field, next, label);
       }
     }
     setIsEditing(false);
