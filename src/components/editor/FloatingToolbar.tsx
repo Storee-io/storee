@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Bold, Italic, Underline, Strikethrough,
   AlignLeft, AlignCenter, AlignRight,
-  List, ListOrdered, Eraser, Link, Link2Off,
+  List, ListOrdered, Eraser, Link, Link2Off, ChevronDown,
 } from 'lucide-react';
 
 interface Props {
@@ -62,12 +62,89 @@ function Divider() {
   return <div className="w-px h-5 bg-slate-200 mx-0.5 flex-shrink-0" />;
 }
 
+interface DropdownOption { label: string; value: string }
+
+/**
+ * Custom dropdown that NEVER steals the contentEditable text selection.
+ * Every interactive element uses onMouseDown + preventDefault (the same trick
+ * the Bold/Italic buttons rely on), so the editor keeps focus and the selection
+ * survives — unlike a native <select>, whose dropdown re-render closes mid-pick
+ * and drops the selection.
+ */
+function ToolbarDropdown({
+  title, value, options, onOpen, onSelect, width = 'auto', menuWidth = 120, align = 'left',
+}: {
+  title: string;
+  value: string;
+  options: DropdownOption[];
+  onOpen: () => void;
+  onSelect: (value: string) => void;
+  width?: string;
+  menuWidth?: number;
+  align?: 'left' | 'right';
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocDown);
+    return () => document.removeEventListener('mousedown', onDocDown);
+  }, [open]);
+
+  const current = options.find(o => o.value === value);
+  const label = current ? current.label : '—';
+
+  return (
+    <div ref={ref} className="relative" title={title} style={{ minWidth: width }}>
+      <button
+        type="button"
+        onMouseDown={e => { e.preventDefault(); onOpen(); setOpen(o => !o); }}
+        className="flex items-center gap-0.5 text-xs text-slate-600 hover:bg-slate-100 rounded px-1.5 py-1 whitespace-nowrap"
+      >
+        <span className="truncate" style={{ maxWidth: width === 'auto' ? undefined : width }}>{label}</span>
+        <ChevronDown className="w-3 h-3 text-slate-400 flex-shrink-0" />
+      </button>
+      {open && (
+        <div
+          className="absolute z-[60] mt-1 max-h-64 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg py-1"
+          style={{ top: '100%', [align]: 0, width: menuWidth }}
+          onMouseDown={e => e.preventDefault()}
+        >
+          {options.map(o => (
+            <button
+              key={o.value || '__default__'}
+              type="button"
+              onMouseDown={e => {
+                e.preventDefault();
+                onSelect(o.value);
+                setOpen(false);
+              }}
+              className={`w-full text-left px-3 py-1.5 text-xs hover:bg-slate-100 ${
+                o.value === value ? 'text-emerald-600 font-semibold bg-emerald-50' : 'text-slate-700'
+              }`}
+              style={{ fontFamily: o.value && o.value.includes(',') ? o.value : undefined }}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b981' }: Props) {
   const [pos, setPos] = useState<{ top: number; left: number; below: boolean } | null>(null);
   const [fmt, setFmt] = useState<Record<FmtKey, boolean>>({
     bold: false, italic: false, underline: false, strikeThrough: false,
   });
   const [currentFontSize, setCurrentFontSize] = useState('16');
+  const [currentFontFamily, setCurrentFontFamily] = useState('');
+  const [currentLineHeight, setCurrentLineHeight] = useState('');
   const [showLink, setShowLink] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [isSelectedTextLink, setIsSelectedTextLink] = useState(false);
@@ -145,6 +222,8 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
     const sel = window.getSelection();
     if (!sel || !sel.rangeCount) {
       setCurrentFontSize('16');
+      setCurrentFontFamily('');
+      setCurrentLineHeight('');
       return;
     }
 
@@ -156,7 +235,35 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
 
     if (!el) {
       setCurrentFontSize('16');
+      setCurrentFontFamily('');
+      setCurrentLineHeight('');
       return;
+    }
+
+    // --- Detect current font family (from computed style, mapped to an option) ---
+    const elForStyle = (el.nodeType === Node.ELEMENT_NODE ? el : el.parentElement) as HTMLElement | null;
+    if (elForStyle) {
+      const computedFam = window.getComputedStyle(elForStyle).fontFamily.toLowerCase();
+      const matchedFam = FONT_FAMILIES.find(f => {
+        if (!f.value) return false;
+        const first = f.value.split(',')[0].replace(/['"]/g, '').trim().toLowerCase();
+        return computedFam.includes(first);
+      });
+      setCurrentFontFamily(matchedFam ? matchedFam.value : '');
+
+      // --- Detect current line height (explicit inline value only; ignore the
+      // technical line-height:1 injected by the font-size handler) ---
+      let lhFound = '';
+      let walk: HTMLElement | null = elForStyle;
+      while (walk && !lhFound) {
+        const inlineLh = walk.style?.lineHeight;
+        if (inlineLh && inlineLh !== '1' && inlineLh !== 'normal') {
+          lhFound = String(parseFloat(inlineLh));
+        }
+        if (walk.hasAttribute?.('data-editor-field')) break;
+        walk = walk.parentElement;
+      }
+      setCurrentLineHeight(LINE_HEIGHTS.some(l => l.value === lhFound) ? lhFound : '');
     }
 
     // Collect all unique font sizes from the selection
@@ -673,7 +780,6 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
   const active = (on: boolean) =>
     `p-1.5 rounded-lg transition-all ${on ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`;
   const plain = 'p-1.5 rounded-lg transition-all text-slate-600 hover:bg-slate-100';
-  const selectCls = 'text-xs text-slate-600 border-0 outline-none bg-transparent cursor-pointer hover:bg-slate-100 rounded px-1 py-1';
 
   const baseStyle: React.CSSProperties = {
     position: 'fixed',
@@ -803,47 +909,26 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       <Divider />
 
       {/* Font family */}
-      <select
+      <ToolbarDropdown
         title="Font family"
-        defaultValue=""
-        tabIndex={-1}
-        onMouseDown={e => saveRange()}
-        onChange={e => {
-          restoreRange();
-          handleFontFamily(e.target.value);
-          // Reset to allow re-selecting same value
-          (e.target as HTMLSelectElement).value = '';
-        }}
-        onBlur={() => restoreRange()}
-        className={selectCls + ' max-w-[72px]'}
-      >
-        {FONT_FAMILIES.map(f => (
-          <option key={f.value} value={f.value}>{f.label}</option>
-        ))}
-      </select>
+        value={currentFontFamily}
+        options={FONT_FAMILIES}
+        width="64px"
+        menuWidth={150}
+        onOpen={saveRange}
+        onSelect={(v) => { restoreRange(); handleFontFamily(v); }}
+      />
 
       {/* Font size */}
-      <select
+      <ToolbarDropdown
         title="Font size"
         value={currentFontSize}
-        tabIndex={-1}
-        onMouseDown={e => saveRange()}
-        onChange={e => {
-          console.log('Font size changed to:', e.target.value);
-          restoreRange();
-          if (e.target.value) {
-            handleFontSize(Number(e.target.value));
-          }
-          // Let updateCurrentFontSize handle the state update via refresh
-        }}
-        onBlur={() => restoreRange()}
-        className={selectCls + ' w-[46px]'}
-      >
-        <option value="">---</option>
-        {FONT_SIZES.map(s => (
-          <option key={s} value={String(s)}>{s}</option>
-        ))}
-      </select>
+        options={FONT_SIZES.map(s => ({ label: String(s), value: String(s) }))}
+        width="34px"
+        menuWidth={64}
+        onOpen={saveRange}
+        onSelect={(v) => { restoreRange(); if (v) handleFontSize(Number(v)); }}
+      />
 
       <Divider />
 
@@ -914,24 +999,16 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       <Divider />
 
       {/* Line height */}
-      <select
+      <ToolbarDropdown
         title="Line height"
-        defaultValue="1.5"
-        tabIndex={-1}
-        onMouseDown={e => saveRange()}
-        onChange={e => {
-          restoreRange();
-          handleLineHeight(e.target.value);
-          // Reset to allow re-selecting same value
-          (e.target as HTMLSelectElement).value = '1.5';
-        }}
-        onBlur={() => restoreRange()}
-        className={selectCls + ' w-[48px]'}
-      >
-        {LINE_HEIGHTS.map(l => (
-          <option key={l.value} value={l.value}>{l.label}</option>
-        ))}
-      </select>
+        value={currentLineHeight}
+        options={LINE_HEIGHTS}
+        width="34px"
+        menuWidth={64}
+        align="right"
+        onOpen={saveRange}
+        onSelect={(v) => { restoreRange(); handleLineHeight(v); }}
+      />
 
       <Divider />
 
