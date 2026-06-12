@@ -147,7 +147,8 @@ export default function HistoryPanel({ snapshots, currentIndex, onRevert, onClos
                         const originalIndex = snapshots.length - 1 - revIdx;
                         onRevert(originalIndex);
                       }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold text-slate-600 bg-white shadow-sm border border-slate-200 hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all opacity-0 group-hover:opacity-100"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold text-slate-600 bg-white border border-slate-200 hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all opacity-0 group-hover:opacity-100"
+                      style={{ boxShadow: '-12px 0 16px 8px white' }}
                     >
                       <RotateCcw className="w-2.5 h-2.5" />
                       Revert
