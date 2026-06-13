@@ -145,6 +145,8 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
   const [currentFontSize, setCurrentFontSize] = useState('16');
   const [currentFontFamily, setCurrentFontFamily] = useState('');
   const [currentLineHeight, setCurrentLineHeight] = useState('');
+  const [currentTextColor, setCurrentTextColor] = useState('#000000');
+  const [currentHighlightColor, setCurrentHighlightColor] = useState('#fef08a');
   const [showLink, setShowLink] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [isSelectedTextLink, setIsSelectedTextLink] = useState(false);
@@ -215,6 +217,85 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
 
       setIsSelectedTextLink(false);
       console.log('[FloatingToolbar] Link removed');
+    }
+  }, []);
+
+  const updateCurrentColors = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) {
+      setCurrentTextColor('#000000');
+      setCurrentHighlightColor('#fef08a');
+      return;
+    }
+
+    const range = sel.getRangeAt(0);
+    const node = range.commonAncestorContainer;
+    let el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+
+    if (!el) {
+      setCurrentTextColor('#000000');
+      setCurrentHighlightColor('#fef08a');
+      return;
+    }
+
+    // Get computed styles
+    const elForStyle = (el.nodeType === Node.ELEMENT_NODE ? el : el.parentElement) as HTMLElement | null;
+    if (elForStyle) {
+      const computedStyle = window.getComputedStyle(elForStyle);
+
+      // Extract text color
+      let textColor = '#000000';
+      const colorValue = computedStyle.color;
+      if (colorValue) {
+        // Convert rgb(r, g, b) to hex
+        const match = colorValue.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+        if (match) {
+          const r = parseInt(match[1]).toString(16).padStart(2, '0');
+          const g = parseInt(match[2]).toString(16).padStart(2, '0');
+          const b = parseInt(match[3]).toString(16).padStart(2, '0');
+          textColor = `#${r}${g}${b}`;
+        }
+      }
+
+      // Check for inline style color or font tag
+      let walk: HTMLElement | null = elForStyle;
+      while (walk) {
+        const inlineColor = walk.style?.color;
+        if (inlineColor) {
+          const match = inlineColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+          if (match) {
+            const r = parseInt(match[1]).toString(16).padStart(2, '0');
+            const g = parseInt(match[2]).toString(16).padStart(2, '0');
+            const b = parseInt(match[3]).toString(16).padStart(2, '0');
+            textColor = `#${r}${g}${b}`;
+            break;
+          }
+        }
+        const fontTag = walk.closest('font[color]') as HTMLFontElement | null;
+        if (fontTag?.color) {
+          textColor = fontTag.color.startsWith('#') ? fontTag.color : `#${fontTag.color}`;
+          break;
+        }
+        if (walk.hasAttribute?.('data-editor-field')) break;
+        walk = walk.parentElement;
+      }
+
+      setCurrentTextColor(textColor);
+
+      // Extract background/highlight color
+      let highlightColor = '#fef08a';
+      const bgColorValue = computedStyle.backgroundColor;
+      if (bgColorValue && bgColorValue !== 'rgba(0, 0, 0, 0)') {
+        const match = bgColorValue.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+        if (match) {
+          const r = parseInt(match[1]).toString(16).padStart(2, '0');
+          const g = parseInt(match[2]).toString(16).padStart(2, '0');
+          const b = parseInt(match[3]).toString(16).padStart(2, '0');
+          highlightColor = `#${r}${g}${b}`;
+        }
+      }
+
+      setCurrentHighlightColor(highlightColor);
     }
   }, []);
 
@@ -405,7 +486,8 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
     setIsSelectedTextLink(isLink);
 
     updateCurrentFontSize();
-  }, [editMode, containerRef, updateCurrentFontSize, showLink, checkIfSelectedTextIsLink]);
+    updateCurrentColors();
+  }, [editMode, containerRef, updateCurrentFontSize, updateCurrentColors, showLink, checkIfSelectedTextIsLink]);
 
   useEffect(() => {
     document.addEventListener('selectionchange', refresh);
@@ -885,11 +967,11 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
         onMouseDown={e => { e.preventDefault(); saveRange(); colorInputRef.current?.click(); }}
         className={plain + ' relative'}
       >
-        <span className="text-sm font-bold leading-none text-slate-800" style={{ fontFamily: 'serif', textDecoration: 'underline', textDecorationColor: '#ef4444', textUnderlineOffset: '2px' }}>A</span>
+        <span className="text-sm font-bold leading-none text-slate-800" style={{ fontFamily: 'serif', textDecoration: 'underline', textDecorationColor: currentTextColor, textUnderlineOffset: '2px' }}>A</span>
         <input
           ref={colorInputRef}
           type="color"
-          defaultValue="#000000"
+          value={currentTextColor}
           onChange={e => { restoreRange(); exec('foreColor', e.target.value); }}
           className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
           tabIndex={-1}
@@ -902,11 +984,11 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
         onMouseDown={e => { e.preventDefault(); saveRange(); bgColorInputRef.current?.click(); }}
         className={plain + ' relative'}
       >
-        <span className="w-3.5 h-3.5 rounded-sm block border border-slate-200" style={{ background: 'linear-gradient(135deg, #fef08a 50%, #fdba74 50%)' }} />
+        <span className="w-3.5 h-3.5 rounded-sm block border border-slate-200" style={{ background: currentHighlightColor }} />
         <input
           ref={bgColorInputRef}
           type="color"
-          defaultValue="#fef08a"
+          value={currentHighlightColor}
           onChange={e => { restoreRange(); exec('hiliteColor', e.target.value); }}
           className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
           tabIndex={-1}
