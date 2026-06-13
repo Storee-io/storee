@@ -967,7 +967,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
         onMouseDown={e => { e.preventDefault(); saveRange(); colorInputRef.current?.click(); }}
         className={plain + ' relative'}
       >
-        <span className="text-sm font-bold leading-none text-slate-800" style={{ fontFamily: 'serif', textDecoration: 'underline', textDecorationColor: currentTextColor, textUnderlineOffset: '2px' }}>A</span>
+        <span className="text-sm font-bold leading-none text-slate-800" style={{ fontFamily: 'serif', textDecoration: 'underline', textDecorationColor: currentTextColor, textUnderlineOffset: '2px', textDecorationThickness: '2.5px' }}>A</span>
         <input
           ref={colorInputRef}
           type="color"
