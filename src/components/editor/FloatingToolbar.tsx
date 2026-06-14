@@ -776,121 +776,54 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
   const applyLink = useCallback(() => {
     try {
       const url = linkUrl.trim();
-      if (!url) {
-        console.log('[FloatingToolbar] URL empty');
-        cancelLink();
+      if (!url || !linkText) {
+        console.log('[FloatingToolbar] URL or linkText empty');
+        setShowLink(false);
+        setLinkText('');
         return;
       }
 
       const editor = savedEditorRef.current;
-      const range = savedRangeRef.current;
-
       if (!editor) {
         console.log('[FloatingToolbar] No editor');
-        cancelLink();
+        setShowLink(false);
+        setLinkText('');
         return;
       }
 
-      const sel = window.getSelection();
-      if (!sel) {
-        console.error('[FloatingToolbar] Cannot get selection');
-        cancelLink();
-        return;
-      }
-
-      editor.focus();
-
-      let rangeValid = false;
-      if (range) {
-        try {
-          // Check if range node is still in document
-          const startContainer = range.startContainer;
-          if (startContainer && startContainer.ownerDocument === document && editor.contains(startContainer)) {
-            sel.removeAllRanges();
-            sel.addRange(range);
-            const text = sel.toString();
-            if (text && text.length > 0) {
-              rangeValid = true;
-              console.log('[FloatingToolbar] Restored valid range:', text.substring(0, 30));
-            }
-          } else {
-            console.log('[FloatingToolbar] Range node not in editor, searching for linkText');
-          }
-        } catch (e) {
-          console.log('[FloatingToolbar] Range restore failed:', e);
-        }
-      }
-
-      // If range invalid, try to select linkText
-      if (!rangeValid && linkText) {
-        const innerHTML = editor.innerHTML;
-        if (innerHTML.includes(linkText)) {
-          // Find and select the text using range
-          const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null);
-          let node;
-          while (node = walker.nextNode()) {
-            const index = node.textContent?.indexOf(linkText);
-            if (index !== undefined && index >= 0) {
-              try {
-                const r = document.createRange();
-                r.setStart(node, index);
-                r.setEnd(node, index + linkText.length);
-                sel.removeAllRanges();
-                sel.addRange(r);
-                rangeValid = true;
-                console.log('[FloatingToolbar] Found and selected linkText');
-                break;
-              } catch (e) {
-                console.log('[FloatingToolbar] Could not select linkText:', e);
-              }
-            }
-          }
-        }
-      }
-
-      if (!rangeValid) {
-        console.log('[FloatingToolbar] Could not establish valid range/selection');
-        cancelLink();
-        return;
-      }
-
-      // Create link
       const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-      console.log('[FloatingToolbar] Creating link:', fullUrl, 'for text:', sel.toString().substring(0, 30));
+      const linkRegex = new RegExp(`(${linkText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'g');
 
-      const result = document.execCommand('createLink', false, fullUrl);
-      console.log('[FloatingToolbar] execCommand result:', result);
+      // Use innerHTML manipulation to wrap text with <a> tag
+      let innerHTML = editor.innerHTML;
+      const linkHtml = `<a href="${fullUrl}" style="color: ${primaryColor}; text-decoration: underline;">$1</a>`;
+      const newHtml = innerHTML.replace(linkRegex, linkHtml);
 
-      // Style links
-      const links = editor.querySelectorAll('a[href]');
-      links.forEach(link => {
-        const a = link as HTMLAnchorElement;
-        a.style.color = primaryColor;
-        a.style.textDecoration = 'underline';
-      });
+      if (newHtml !== innerHTML) {
+        editor.innerHTML = newHtml;
+        console.log('[FloatingToolbar] Link created:', fullUrl, 'for text:', linkText);
+      } else {
+        console.log('[FloatingToolbar] Could not find text to link:', linkText);
+      }
 
-      console.log('[FloatingToolbar] Styled', links.length, 'links');
-
-      // Save and refresh - blur then focus to trigger onBlur
+      // Save the change
       editor.blur();
 
-      // Close link dialog first
+      // Close dialog and refresh
       setShowLink(false);
       setLinkText('');
 
-      // Then refocus and refresh (refresh will update isSelectedTextLink)
       setTimeout(() => {
         editor.focus();
-        // Trigger selectionchange event to update toolbar
         document.dispatchEvent(new Event('selectionchange'));
-      }, 50);
+      }, 0);
 
     } catch (err) {
       console.error('[FloatingToolbar] Error in applyLink:', err);
       setShowLink(false);
       setLinkText('');
     }
-  }, [linkUrl, linkText, primaryColor, refresh, cancelLink]);
+  }, [linkUrl, linkText, primaryColor]);
 
   if (!pos) return null;
 
