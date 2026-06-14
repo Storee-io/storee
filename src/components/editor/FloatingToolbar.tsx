@@ -785,16 +785,12 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       const editor = savedEditorRef.current;
       const range = savedRangeRef.current;
 
-      if (!editor || !range) {
-        console.log('[FloatingToolbar] No editor or range');
+      if (!editor) {
+        console.log('[FloatingToolbar] No editor');
         cancelLink();
         return;
       }
 
-      // Ensure editor is focused
-      editor.focus();
-
-      // Check if range is still valid by trying to add it
       const sel = window.getSelection();
       if (!sel) {
         console.error('[FloatingToolbar] Cannot get selection');
@@ -802,55 +798,93 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
         return;
       }
 
-      try {
-        // Try to restore the saved range
-        sel.removeAllRanges();
-        sel.addRange(range);
+      editor.focus();
 
-        const selectedText = sel.toString();
-        console.log('[FloatingToolbar] Restored selection:', selectedText.substring(0, 30));
-
-        if (!selectedText || selectedText.length === 0) {
-          console.log('[FloatingToolbar] Selection empty after restore');
-          cancelLink();
-          return;
-        }
-
-        // Now create the link using execCommand
-        const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-        console.log('[FloatingToolbar] Executing createLink with URL:', fullUrl);
-
-        const result = document.execCommand('createLink', false, fullUrl);
-        console.log('[FloatingToolbar] execCommand result:', result);
-
-        // Style the created links
-        const links = editor.querySelectorAll('a[href]');
-        links.forEach(link => {
-          const a = link as HTMLAnchorElement;
-          if (a.href) {
-            a.style.color = primaryColor;
-            a.style.textDecoration = 'underline';
+      let rangeValid = false;
+      if (range) {
+        try {
+          // Check if range node is still in document
+          const startContainer = range.startContainer;
+          if (startContainer && startContainer.ownerDocument === document && editor.contains(startContainer)) {
+            sel.removeAllRanges();
+            sel.addRange(range);
+            const text = sel.toString();
+            if (text && text.length > 0) {
+              rangeValid = true;
+              console.log('[FloatingToolbar] Restored valid range:', text.substring(0, 30));
+            }
+          } else {
+            console.log('[FloatingToolbar] Range node not in editor, searching for linkText');
           }
-        });
-
-        console.log('[FloatingToolbar] Link created, styled', links.length, 'links');
-
-        // Save via blur
-        editor.blur();
-        setTimeout(() => editor.focus(), 0);
-
-      } catch (rangeErr) {
-        console.error('[FloatingToolbar] Range error:', rangeErr);
-        cancelLink();
+        } catch (e) {
+          console.log('[FloatingToolbar] Range restore failed:', e);
+        }
       }
+
+      // If range invalid, try to select linkText
+      if (!rangeValid && linkText) {
+        const innerHTML = editor.innerHTML;
+        if (innerHTML.includes(linkText)) {
+          // Find and select the text using range
+          const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null);
+          let node;
+          while (node = walker.nextNode()) {
+            const index = node.textContent?.indexOf(linkText);
+            if (index !== undefined && index >= 0) {
+              try {
+                const r = document.createRange();
+                r.setStart(node, index);
+                r.setEnd(node, index + linkText.length);
+                sel.removeAllRanges();
+                sel.addRange(r);
+                rangeValid = true;
+                console.log('[FloatingToolbar] Found and selected linkText');
+                break;
+              } catch (e) {
+                console.log('[FloatingToolbar] Could not select linkText:', e);
+              }
+            }
+          }
+        }
+      }
+
+      if (!rangeValid) {
+        console.log('[FloatingToolbar] Could not establish valid range/selection');
+        cancelLink();
+        return;
+      }
+
+      // Create link
+      const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+      console.log('[FloatingToolbar] Creating link:', fullUrl, 'for text:', sel.toString().substring(0, 30));
+
+      const result = document.execCommand('createLink', false, fullUrl);
+      console.log('[FloatingToolbar] execCommand result:', result);
+
+      // Style links
+      const links = editor.querySelectorAll('a[href]');
+      links.forEach(link => {
+        const a = link as HTMLAnchorElement;
+        a.style.color = primaryColor;
+        a.style.textDecoration = 'underline';
+      });
+
+      console.log('[FloatingToolbar] Styled', links.length, 'links');
+
+      // Save
+      editor.blur();
+      setTimeout(() => {
+        editor.focus();
+        setTimeout(refresh, 0);
+      }, 0);
+
     } catch (err) {
       console.error('[FloatingToolbar] Error in applyLink:', err);
     } finally {
       setShowLink(false);
       setLinkText('');
-      setTimeout(refresh, 0);
     }
-  }, [linkUrl, primaryColor, refresh, cancelLink]);
+  }, [linkUrl, linkText, primaryColor, refresh, cancelLink]);
 
   if (!pos) return null;
 
