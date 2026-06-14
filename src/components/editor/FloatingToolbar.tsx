@@ -776,69 +776,73 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
   const applyLink = useCallback(() => {
     try {
       const url = linkUrl.trim();
-      if (!url || !linkText) {
-        console.log('[FloatingToolbar] URL or linkText empty');
+      if (!url) {
+        console.log('[FloatingToolbar] URL empty');
         cancelLink();
         return;
       }
 
       const editor = savedEditorRef.current;
-      if (!editor) {
-        console.log('[FloatingToolbar] No saved editor');
+      const range = savedRangeRef.current;
+
+      if (!editor || !range) {
+        console.log('[FloatingToolbar] No editor or range');
         cancelLink();
         return;
       }
 
+      // Ensure editor is focused
       editor.focus();
 
-      // Search for the linkText in the editor and wrap it with <a> tag
-      const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null);
-      const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-      let found = false;
+      // Check if range is still valid by trying to add it
+      const sel = window.getSelection();
+      if (!sel) {
+        console.error('[FloatingToolbar] Cannot get selection');
+        cancelLink();
+        return;
+      }
 
-      let textNode;
-      while (textNode = walker.nextNode()) {
-        const idx = textNode.textContent?.indexOf(linkText);
-        if (idx !== undefined && idx >= 0) {
-          // Create the link element
-          const a = document.createElement('a');
-          a.href = fullUrl;
-          a.style.color = primaryColor;
-          a.style.textDecoration = 'underline';
+      try {
+        // Try to restore the saved range
+        sel.removeAllRanges();
+        sel.addRange(range);
 
-          // Split the text node and wrap the target text
-          const before = textNode.textContent!.substring(0, idx);
-          const after = textNode.textContent!.substring(idx + linkText.length);
+        const selectedText = sel.toString();
+        console.log('[FloatingToolbar] Restored selection:', selectedText.substring(0, 30));
 
-          // Create text nodes for before and after
-          if (before) {
-            textNode.parentNode?.insertBefore(document.createTextNode(before), textNode);
-          }
-
-          // Add the linkText to the link
-          a.textContent = linkText;
-          textNode.parentNode?.insertBefore(a, textNode);
-
-          if (after) {
-            textNode.parentNode?.insertBefore(document.createTextNode(after), textNode);
-          }
-
-          // Remove the original text node
-          textNode.parentNode?.removeChild(textNode);
-
-          found = true;
-          console.log('[FloatingToolbar] Link created:', fullUrl);
-          break;
+        if (!selectedText || selectedText.length === 0) {
+          console.log('[FloatingToolbar] Selection empty after restore');
+          cancelLink();
+          return;
         }
-      }
 
-      if (!found) {
-        console.warn('[FloatingToolbar] Could not find text in editor:', linkText);
-      }
+        // Now create the link using execCommand
+        const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+        console.log('[FloatingToolbar] Executing createLink with URL:', fullUrl);
 
-      // Save the change
-      editor.blur();
-      setTimeout(() => editor.focus(), 0);
+        const result = document.execCommand('createLink', false, fullUrl);
+        console.log('[FloatingToolbar] execCommand result:', result);
+
+        // Style the created links
+        const links = editor.querySelectorAll('a[href]');
+        links.forEach(link => {
+          const a = link as HTMLAnchorElement;
+          if (a.href) {
+            a.style.color = primaryColor;
+            a.style.textDecoration = 'underline';
+          }
+        });
+
+        console.log('[FloatingToolbar] Link created, styled', links.length, 'links');
+
+        // Save via blur
+        editor.blur();
+        setTimeout(() => editor.focus(), 0);
+
+      } catch (rangeErr) {
+        console.error('[FloatingToolbar] Range error:', rangeErr);
+        cancelLink();
+      }
     } catch (err) {
       console.error('[FloatingToolbar] Error in applyLink:', err);
     } finally {
@@ -846,7 +850,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       setLinkText('');
       setTimeout(refresh, 0);
     }
-  }, [linkUrl, linkText, primaryColor, refresh, cancelLink]);
+  }, [linkUrl, primaryColor, refresh, cancelLink]);
 
   if (!pos) return null;
 
