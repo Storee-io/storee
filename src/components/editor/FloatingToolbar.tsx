@@ -149,6 +149,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
   const [currentHighlightColor, setCurrentHighlightColor] = useState('#fef08a');
   const [showLink, setShowLink] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
+  const [linkText, setLinkText] = useState(''); // Store selected text when link dialog opens
   const [isSelectedTextLink, setIsSelectedTextLink] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const colorInputRef = useRef<HTMLInputElement>(null);
@@ -735,9 +736,11 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
         }
       } else {
         // Open link input dialog if text is not a link
-        console.log('[FloatingToolbar] Selected text is not a link, opening dialog');
+        const sel = window.getSelection();
+        const selectedText = sel?.toString() || '';
+        console.log('[FloatingToolbar] Selected text is not a link, opening dialog with text:', selectedText);
         saveRange();
-        console.log('[FloatingToolbar] saveRange completed, savedRangeRef:', savedRangeRef.current);
+        setLinkText(selectedText);
         setLinkUrl('');
         setShowLink(true);
         console.log('[FloatingToolbar] setShowLink(true) called');
@@ -775,88 +778,101 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       console.log('[FloatingToolbar] applyLink called with linkUrl:', linkUrl);
 
       const url = linkUrl.trim();
-      console.log('[FloatingToolbar] Trimmed URL:', url);
-
       if (!url) {
         console.log('[FloatingToolbar] URL is empty, canceling');
         cancelLink();
         return;
       }
 
-      // Get the saved range and editor
-      const range = savedRangeRef.current;
       const editor = savedEditorRef.current;
-
-      console.log('[FloatingToolbar] Saved range exists:', !!range, 'Saved editor exists:', !!editor);
-
-      if (!range || !editor) {
-        console.log('[FloatingToolbar] No saved range/editor found, canceling');
+      if (!editor) {
+        console.log('[FloatingToolbar] No saved editor found');
         cancelLink();
         return;
       }
 
-      // Focus the editor first before restoring selection
-      console.log('[FloatingToolbar] Focusing editor field');
-      editor.focus();
-
-      // Restore selection
+      // First try: restore saved range if it's still valid
       const sel = window.getSelection();
       if (!sel) {
-        console.log('[FloatingToolbar] Cannot get selection object');
+        console.error('[FloatingToolbar] Cannot get selection');
         cancelLink();
         return;
       }
 
-      sel.removeAllRanges();
-      sel.addRange(range);
-      console.log('[FloatingToolbar] Selection restored:', sel.toString().substring(0, 30));
+      editor.focus();
 
-      // Create link using execCommand
+      let hasSelection = false;
+      const savedRange = savedRangeRef.current;
+
+      if (savedRange) {
+        try {
+          sel.removeAllRanges();
+          sel.addRange(savedRange);
+          hasSelection = sel.toString().length > 0;
+          console.log('[FloatingToolbar] Restored saved range, has selection:', hasSelection);
+        } catch (e) {
+          console.log('[FloatingToolbar] Saved range is invalid, will try to find text');
+        }
+      }
+
+      // If no selection or saved range failed, try to find and select the linkText
+      if (!hasSelection && linkText) {
+        console.log('[FloatingToolbar] Searching for text:', linkText);
+        const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null);
+        let textNode;
+        while (textNode = walker.nextNode()) {
+          if (textNode.textContent?.includes(linkText)) {
+            const range = document.createRange();
+            const index = textNode.textContent.indexOf(linkText);
+            range.setStart(textNode, index);
+            range.setEnd(textNode, index + linkText.length);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            hasSelection = true;
+            console.log('[FloatingToolbar] Found and selected text');
+            break;
+          }
+        }
+      }
+
+      if (!hasSelection) {
+        console.error('[FloatingToolbar] No valid selection found');
+        cancelLink();
+        return;
+      }
+
+      // Create link
       const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-      console.log('[FloatingToolbar] About to execute createLink with URL:', fullUrl);
-      console.log('[FloatingToolbar] Selection before execCommand:', sel.toString().substring(0, 30));
+      console.log('[FloatingToolbar] Creating link with URL:', fullUrl);
 
       const result = document.execCommand('createLink', false, fullUrl);
-      console.log('[FloatingToolbar] execCommand("createLink") returned:', result);
+      console.log('[FloatingToolbar] execCommand result:', result);
 
       if (!result) {
-        console.error('[FloatingToolbar] createLink failed - selection may be invalid');
-        cancelLink();
-        return;
+        console.warn('[FloatingToolbar] createLink returned false, but may have worked');
       }
 
-      // Check if link was actually created and apply styling
-      console.log('[FloatingToolbar] Checking if link was created');
-      const linkElements = editor.querySelectorAll('a[href]');
-      console.log('[FloatingToolbar] Found', linkElements.length, 'link elements');
-
-      // Apply primary color and underline styling to all links
-      linkElements.forEach(link => {
+      // Style any newly created links
+      const links = editor.querySelectorAll('a[href]');
+      links.forEach(link => {
         const a = link as HTMLAnchorElement;
         a.style.color = primaryColor;
         a.style.textDecoration = 'underline';
       });
 
-      // Trigger onBlur to save the new content with link to parent
-      console.log('[FloatingToolbar] Triggering blur to save content with link');
+      // Save the change
       editor.blur();
+      setTimeout(() => editor.focus(), 0);
 
-      // Re-focus to allow further editing
-      setTimeout(() => {
-        editor.focus();
-        console.log('[FloatingToolbar] Re-focused editor field after save');
-      }, 0);
-
-      console.log('[FloatingToolbar] Link operation completed');
+      console.log('[FloatingToolbar] Link created successfully');
     } catch (err) {
       console.error('[FloatingToolbar] Error in applyLink:', err);
-      console.error('[FloatingToolbar] Error stack:', err instanceof Error ? err.stack : 'N/A');
     } finally {
-      console.log('[FloatingToolbar] applyLink finally: closing link mode and refreshing');
       setShowLink(false);
+      setLinkText('');
       setTimeout(refresh, 0);
     }
-  }, [linkUrl, refresh, cancelLink]);
+  }, [linkUrl, linkText, refresh, cancelLink]);
 
   if (!pos) return null;
 
