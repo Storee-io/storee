@@ -775,96 +775,70 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
 
   const applyLink = useCallback(() => {
     try {
-      console.log('[FloatingToolbar] applyLink called with linkUrl:', linkUrl);
-
       const url = linkUrl.trim();
-      if (!url) {
-        console.log('[FloatingToolbar] URL is empty, canceling');
+      if (!url || !linkText) {
+        console.log('[FloatingToolbar] URL or linkText empty');
         cancelLink();
         return;
       }
 
       const editor = savedEditorRef.current;
       if (!editor) {
-        console.log('[FloatingToolbar] No saved editor found');
-        cancelLink();
-        return;
-      }
-
-      // First try: restore saved range if it's still valid
-      const sel = window.getSelection();
-      if (!sel) {
-        console.error('[FloatingToolbar] Cannot get selection');
+        console.log('[FloatingToolbar] No saved editor');
         cancelLink();
         return;
       }
 
       editor.focus();
 
-      let hasSelection = false;
-      const savedRange = savedRangeRef.current;
-
-      if (savedRange) {
-        try {
-          sel.removeAllRanges();
-          sel.addRange(savedRange);
-          hasSelection = sel.toString().length > 0;
-          console.log('[FloatingToolbar] Restored saved range, has selection:', hasSelection);
-        } catch (e) {
-          console.log('[FloatingToolbar] Saved range is invalid, will try to find text');
-        }
-      }
-
-      // If no selection or saved range failed, try to find and select the linkText
-      if (!hasSelection && linkText) {
-        console.log('[FloatingToolbar] Searching for text:', linkText);
-        const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null);
-        let textNode;
-        while (textNode = walker.nextNode()) {
-          if (textNode.textContent?.includes(linkText)) {
-            const range = document.createRange();
-            const index = textNode.textContent.indexOf(linkText);
-            range.setStart(textNode, index);
-            range.setEnd(textNode, index + linkText.length);
-            sel.removeAllRanges();
-            sel.addRange(range);
-            hasSelection = true;
-            console.log('[FloatingToolbar] Found and selected text');
-            break;
-          }
-        }
-      }
-
-      if (!hasSelection) {
-        console.error('[FloatingToolbar] No valid selection found');
-        cancelLink();
-        return;
-      }
-
-      // Create link
+      // Search for the linkText in the editor and wrap it with <a> tag
+      const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null);
       const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-      console.log('[FloatingToolbar] Creating link with URL:', fullUrl);
+      let found = false;
 
-      const result = document.execCommand('createLink', false, fullUrl);
-      console.log('[FloatingToolbar] execCommand result:', result);
+      let textNode;
+      while (textNode = walker.nextNode()) {
+        const idx = textNode.textContent?.indexOf(linkText);
+        if (idx !== undefined && idx >= 0) {
+          // Create the link element
+          const a = document.createElement('a');
+          a.href = fullUrl;
+          a.style.color = primaryColor;
+          a.style.textDecoration = 'underline';
 
-      if (!result) {
-        console.warn('[FloatingToolbar] createLink returned false, but may have worked');
+          // Split the text node and wrap the target text
+          const before = textNode.textContent!.substring(0, idx);
+          const after = textNode.textContent!.substring(idx + linkText.length);
+
+          // Create text nodes for before and after
+          if (before) {
+            textNode.parentNode?.insertBefore(document.createTextNode(before), textNode);
+          }
+
+          // Add the linkText to the link
+          a.textContent = linkText;
+          textNode.parentNode?.insertBefore(a, textNode);
+
+          if (after) {
+            textNode.parentNode?.insertBefore(document.createTextNode(after), textNode);
+          }
+
+          // Remove the original text node
+          textNode.parentNode?.removeChild(textNode);
+
+          found = true;
+          console.log('[FloatingToolbar] Link created:', fullUrl);
+          break;
+        }
       }
 
-      // Style any newly created links
-      const links = editor.querySelectorAll('a[href]');
-      links.forEach(link => {
-        const a = link as HTMLAnchorElement;
-        a.style.color = primaryColor;
-        a.style.textDecoration = 'underline';
-      });
+      if (!found) {
+        console.warn('[FloatingToolbar] Could not find text in editor:', linkText);
+      }
 
       // Save the change
       editor.blur();
       setTimeout(() => editor.focus(), 0);
-
-      console.log('[FloatingToolbar] Link created successfully');
     } catch (err) {
       console.error('[FloatingToolbar] Error in applyLink:', err);
     } finally {
@@ -872,7 +846,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       setLinkText('');
       setTimeout(refresh, 0);
     }
-  }, [linkUrl, linkText, refresh, cancelLink]);
+  }, [linkUrl, linkText, primaryColor, refresh, cancelLink]);
 
   if (!pos) return null;
 
