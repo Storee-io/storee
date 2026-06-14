@@ -783,73 +783,67 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
         return;
       }
 
-      // Try to restore saved range first
-      console.log('[FloatingToolbar] Attempting to restore saved range');
-      restoreRange();
+      // Get the saved range and editor
+      const range = savedRangeRef.current;
+      const editor = savedEditorRef.current;
 
-      // Get current selection after restore
+      console.log('[FloatingToolbar] Saved range exists:', !!range, 'Saved editor exists:', !!editor);
+
+      if (!range || !editor) {
+        console.log('[FloatingToolbar] No saved range/editor found, canceling');
+        cancelLink();
+        return;
+      }
+
+      // Focus the editor first before restoring selection
+      console.log('[FloatingToolbar] Focusing editor field');
+      editor.focus();
+
+      // Restore selection
       const sel = window.getSelection();
-      console.log('[FloatingToolbar] Current selection after restore:', sel?.toString(), 'rangeCount:', sel?.rangeCount);
-
-      if (!sel || !sel.rangeCount) {
-        console.log('[FloatingToolbar] No selection found after restore, canceling');
+      if (!sel) {
+        console.log('[FloatingToolbar] Cannot get selection object');
         cancelLink();
         return;
       }
 
-      const range = sel.getRangeAt(0);
-      console.log('[FloatingToolbar] Got range from selection');
-
-      const container = range.commonAncestorContainer;
-      const el = container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
-      const editorField = el?.closest('[data-editor-field]') as HTMLElement;
-
-      console.log('[FloatingToolbar] Found editor field:', !!editorField, 'el:', el?.tagName);
-
-      if (!editorField) {
-        console.log('[FloatingToolbar] No editor field found, canceling');
-        cancelLink();
-        return;
-      }
-
-      // Ensure focus and selection are ready
-      console.log('[FloatingToolbar] Focusing editor field and ensuring selection');
-      editorField.focus();
-
-      // Ensure selection is still valid
       sel.removeAllRanges();
       sel.addRange(range);
-      console.log('[FloatingToolbar] Selection re-applied');
+      console.log('[FloatingToolbar] Selection restored:', sel.toString().substring(0, 30));
 
       // Create link using execCommand
       const fullUrl = url.startsWith('http') ? url : `https://${url}`;
       console.log('[FloatingToolbar] About to execute createLink with URL:', fullUrl);
-      console.log('[FloatingToolbar] Selection before execCommand:', sel.toString());
+      console.log('[FloatingToolbar] Selection before execCommand:', sel.toString().substring(0, 30));
 
       const result = document.execCommand('createLink', false, fullUrl);
       console.log('[FloatingToolbar] execCommand("createLink") returned:', result);
 
+      if (!result) {
+        console.error('[FloatingToolbar] createLink failed - selection may be invalid');
+        cancelLink();
+        return;
+      }
+
       // Check if link was actually created and apply styling
       console.log('[FloatingToolbar] Checking if link was created');
-      const linkElements = editorField.querySelectorAll('a[href]');
+      const linkElements = editor.querySelectorAll('a[href]');
       console.log('[FloatingToolbar] Found', linkElements.length, 'link elements');
 
-      // Apply primary color and underline styling to newly created links
+      // Apply primary color and underline styling to all links
       linkElements.forEach(link => {
         const a = link as HTMLAnchorElement;
-        // Apply primary color and text decoration
         a.style.color = primaryColor;
         a.style.textDecoration = 'underline';
-        console.log('[FloatingToolbar] Styled link with color:', primaryColor);
       });
 
       // Trigger onBlur to save the new content with link to parent
       console.log('[FloatingToolbar] Triggering blur to save content with link');
-      editorField.blur();
+      editor.blur();
 
       // Re-focus to allow further editing
       setTimeout(() => {
-        editorField.focus();
+        editor.focus();
         console.log('[FloatingToolbar] Re-focused editor field after save');
       }, 0);
 
@@ -862,7 +856,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       setShowLink(false);
       setTimeout(refresh, 0);
     }
-  }, [restoreRange, linkUrl, refresh, cancelLink]);
+  }, [linkUrl, refresh, cancelLink]);
 
   if (!pos) return null;
 
