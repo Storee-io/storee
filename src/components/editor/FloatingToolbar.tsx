@@ -871,16 +871,22 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
 
       console.log('[FloatingToolbar] Styled', links.length, 'links');
 
-      // Save
+      // Save and refresh - blur then focus to trigger onBlur
       editor.blur();
+
+      // Close link dialog first
+      setShowLink(false);
+      setLinkText('');
+
+      // Then refocus and refresh (refresh will update isSelectedTextLink)
       setTimeout(() => {
         editor.focus();
-        setTimeout(refresh, 0);
-      }, 0);
+        // Trigger selectionchange event to update toolbar
+        document.dispatchEvent(new Event('selectionchange'));
+      }, 50);
 
     } catch (err) {
       console.error('[FloatingToolbar] Error in applyLink:', err);
-    } finally {
       setShowLink(false);
       setLinkText('');
     }
