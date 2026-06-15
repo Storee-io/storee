@@ -499,10 +499,17 @@ function EditSpan({
         suppressContentEditableWarning
         onBlur={() => commitEdit(true)}
         onKeyDown={onEditKeyDown}
-        onMouseDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          // Prevent link navigation in edit mode - intercept before navigation happens
+          const target = e.target as HTMLElement;
+          if (target.tagName === 'A') {
+            e.preventDefault();
+          }
+        }}
         onClick={(e) => {
           e.stopPropagation();
-          // Prevent link navigation in edit mode
+          // Also prevent click on links
           if ((e.target as HTMLElement).tagName === 'A') {
             e.preventDefault();
           }
