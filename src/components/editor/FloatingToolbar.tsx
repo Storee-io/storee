@@ -792,16 +792,63 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       }
 
       const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-      const linkRegex = new RegExp(`(${linkText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'g');
 
-      // Use innerHTML manipulation to wrap text with <a> tag
+      // Try exact match first
+      let linkRegex = new RegExp(`(${linkText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'g');
       let innerHTML = editor.innerHTML;
-      const linkHtml = `<a href="${fullUrl}" style="color: ${primaryColor}; text-decoration: underline;">$1</a>`;
-      const newHtml = innerHTML.replace(linkRegex, linkHtml);
+      let newHtml = innerHTML.replace(linkRegex, `<a href="${fullUrl}" style="color: ${primaryColor}; text-decoration: underline;">$1</a>`);
+
+      // If exact match fails, try case-insensitive
+      if (newHtml === innerHTML) {
+        console.log('[FloatingToolbar] Exact match failed, trying case-insensitive');
+        linkRegex = new RegExp(`(${linkText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        newHtml = innerHTML.replace(linkRegex, `<a href="${fullUrl}" style="color: ${primaryColor}; text-decoration: underline;">$1</a>`);
+      }
+
+      // If still no match, try finding partial text in innerText
+      if (newHtml === innerHTML) {
+        console.log('[FloatingToolbar] Case-insensitive match failed, checking innerText');
+        const innerText = editor.innerText;
+        if (innerText.toLowerCase().includes(linkText.toLowerCase())) {
+          console.log('[FloatingToolbar] Text found in innerText, using text node manipulation');
+          // Find and wrap using text nodes
+          const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null);
+          let node;
+          const lowerLinkText = linkText.toLowerCase();
+          while (node = walker.nextNode()) {
+            if (node.textContent.toLowerCase().includes(lowerLinkText)) {
+              const text = node.textContent;
+              const idx = text.toLowerCase().indexOf(lowerLinkText);
+              if (idx >= 0) {
+                const before = text.substring(0, idx);
+                const matched = text.substring(idx, idx + linkText.length);
+                const after = text.substring(idx + linkText.length);
+
+                const span = document.createElement('span');
+                if (before) span.appendChild(document.createTextNode(before));
+
+                const a = document.createElement('a');
+                a.href = fullUrl;
+                a.style.color = primaryColor;
+                a.style.textDecoration = 'underline';
+                a.textContent = matched;
+                span.appendChild(a);
+
+                if (after) span.appendChild(document.createTextNode(after));
+
+                node.parentNode?.replaceChild(span, node);
+                newHtml = editor.innerHTML;
+                console.log('[FloatingToolbar] Link created via text node manipulation');
+                break;
+              }
+            }
+          }
+        }
+      }
 
       if (newHtml !== innerHTML) {
         editor.innerHTML = newHtml;
-        console.log('[FloatingToolbar] Link created:', fullUrl, 'for text:', linkText);
+        console.log('[FloatingToolbar] Link created:', fullUrl);
       } else {
         console.log('[FloatingToolbar] Could not find text to link:', linkText);
       }
