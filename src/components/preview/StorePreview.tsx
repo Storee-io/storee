@@ -500,7 +500,13 @@ function EditSpan({
         onBlur={() => commitEdit(true)}
         onKeyDown={onEditKeyDown}
         onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          // Prevent link navigation in edit mode
+          if ((e.target as HTMLElement).tagName === 'A') {
+            e.preventDefault();
+          }
+        }}
       />
     );
   }
