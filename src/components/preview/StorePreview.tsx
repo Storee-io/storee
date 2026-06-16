@@ -481,6 +481,21 @@ function EditSpan({
     else if (e.key === 'Enter' && (singleLine || !e.shiftKey)) { e.preventDefault(); commitEdit(); }
   };
 
+  // Prevent link navigation in edit mode
+  useEffect(() => {
+    if (!isEditing) return;
+    const handleLinkClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const link = target.tagName === 'A' ? target : target.closest('a');
+      if (link && spanRef.current?.contains(target)) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    document.addEventListener('click', handleLinkClick, true);
+    return () => document.removeEventListener('click', handleLinkClick, true);
+  }, [isEditing]);
+
   if (isEditing) {
     // No React-managed children — content is seeded imperatively in the effect above.
     return (
