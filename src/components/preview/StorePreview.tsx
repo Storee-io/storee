@@ -481,14 +481,18 @@ function EditSpan({
     else if (e.key === 'Enter' && (singleLine || !e.shiftKey)) { e.preventDefault(); commitEdit(); }
   };
 
-  // Disable link navigation in edit mode using CSS
+  // Prevent link navigation in edit mode
   useEffect(() => {
     if (!isEditing) return;
-    // Add style to disable links while editing
-    const style = document.createElement('style');
-    style.textContent = `[data-editor-field] a { pointer-events: none; cursor: text !important; }`;
-    document.head.appendChild(style);
-    return () => style.remove();
+
+    const handleMouseDown = (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest('a')) {
+        e.preventDefault();
+      }
+    };
+
+    spanRef.current?.addEventListener('mousedown', handleMouseDown, true);
+    return () => spanRef.current?.removeEventListener('mousedown', handleMouseDown, true);
   }, [isEditing]);
 
   if (isEditing) {
