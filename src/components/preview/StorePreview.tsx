@@ -501,16 +501,29 @@ function EditSpan({
         onKeyDown={onEditKeyDown}
         onMouseDown={(e) => {
           e.stopPropagation();
-          // Prevent link navigation in edit mode - intercept before navigation happens
+          // Prevent link navigation in edit mode - check if target or parent is link
           const target = e.target as HTMLElement;
-          if (target.tagName === 'A') {
+          const link = target.tagName === 'A' ? target : target.closest('a');
+          if (link) {
             e.preventDefault();
+            console.log('[EditSpan] Prevented link navigation on mousedown');
           }
         }}
         onClick={(e) => {
           e.stopPropagation();
           // Also prevent click on links
-          if ((e.target as HTMLElement).tagName === 'A') {
+          const target = e.target as HTMLElement;
+          const link = target.tagName === 'A' ? target : target.closest('a');
+          if (link) {
+            e.preventDefault();
+            console.log('[EditSpan] Prevented link navigation on click');
+          }
+        }}
+        onAuxClick={(e) => {
+          // Prevent middle/right-click navigation on links
+          const target = e.target as HTMLElement;
+          const link = target.tagName === 'A' ? target : target.closest('a');
+          if (link) {
             e.preventDefault();
           }
         }}
