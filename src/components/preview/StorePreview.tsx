@@ -481,19 +481,14 @@ function EditSpan({
     else if (e.key === 'Enter' && (singleLine || !e.shiftKey)) { e.preventDefault(); commitEdit(); }
   };
 
-  // Prevent link navigation in edit mode
+  // Disable link navigation in edit mode using CSS
   useEffect(() => {
     if (!isEditing) return;
-    const handleLinkClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const link = target.tagName === 'A' ? target : target.closest('a');
-      if (link && spanRef.current?.contains(target)) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
-    document.addEventListener('click', handleLinkClick, true);
-    return () => document.removeEventListener('click', handleLinkClick, true);
+    // Add style to disable links while editing
+    const style = document.createElement('style');
+    style.textContent = `[data-editor-field] a { pointer-events: none; cursor: text !important; }`;
+    document.head.appendChild(style);
+    return () => style.remove();
   }, [isEditing]);
 
   if (isEditing) {
