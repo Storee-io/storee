@@ -494,6 +494,17 @@ function EditSpan({
           // span so the element doesn't change shape on edit. `singleLine` governs
           // keyboard behaviour (Enter commits) only, not CSS.
         }}
+        suppressHydrationWarning
+        onMouseDownCapture={(e) => {
+          // Disable link navigation at capture phase - before any child handlers
+          const target = e.target as HTMLElement;
+          const link = target.tagName === 'A' ? target : target.closest('a');
+          if (link) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('[EditSpan] Prevented link navigation at capture phase');
+          }
+        }}
         data-editor-field={field}
         contentEditable
         suppressContentEditableWarning
