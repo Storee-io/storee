@@ -264,6 +264,25 @@ function EditSpan({
     return () => window.removeEventListener('storee:edit-field', onEditField);
   }, [editMode, field]);
 
+  // While a field is being edited we must NOT let its links navigate — but the link
+  // text still has to be fully selectable/editable like ordinary text. The bullet-proof
+  // way (works in the preview harness AND in production, regardless of event ordering)
+  // is to neuter the anchors: move `href` into `data-href` so there is simply nothing
+  // to navigate to, then restore it when editing ends so the saved value keeps the link.
+  const stripLinkHrefs = (root: HTMLElement) => {
+    root.querySelectorAll('a[href]').forEach((a) => {
+      a.setAttribute('data-href', a.getAttribute('href') ?? '');
+      a.removeAttribute('href');
+    });
+  };
+  const restoreLinkHrefs = (root: HTMLElement) => {
+    root.querySelectorAll('a[data-href]').forEach((a) => {
+      const href = a.getAttribute('data-href') ?? '';
+      if (href) a.setAttribute('href', href);
+      a.removeAttribute('data-href');
+    });
+  };
+
   // On entering edit: seed content directly into the DOM (not via React children,
   // so reconciliation never resets the caret), focus, and select-all.
   // Use rAF + execCommand for reliable selection on contentEditable.
@@ -271,6 +290,8 @@ function EditSpan({
     if (!isEditing || !spanRef.current) return;
     const el = spanRef.current;
     if (isHtml) el.innerHTML = value; else el.textContent = decodedValue;
+    // Disable link navigation for the duration of the edit (restored on commit).
+    stripLinkHrefs(el);
     el.focus();
     // Delay selection until contentEditable is fully ready and layout settled
     requestAnimationFrame(() => {
@@ -458,6 +479,8 @@ function EditSpan({
     }
     const el = spanRef.current;
     if (el) {
+      // Re-attach any hrefs we stripped on edit-enter so the saved markup keeps links.
+      restoreLinkHrefs(el);
       // Always use innerHTML to preserve any formatting applied via toolbar
       const next = el.innerHTML;
       const current = value;

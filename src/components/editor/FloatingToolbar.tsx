@@ -190,8 +190,9 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
     const container = range.commonAncestorContainer;
     const el = container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
 
-    // Check if element is or is inside an <a> tag
-    const linkElement = el?.closest('a[href]') as HTMLAnchorElement | null;
+    // Check if element is or is inside an <a> tag. During editing the EditSpan strips
+    // `href` into `data-href` (so links can't navigate), so match both forms.
+    const linkElement = el?.closest('a[href], a[data-href]') as HTMLAnchorElement | null;
     return { isLink: !!linkElement, linkElement };
   }, []);
 
@@ -202,7 +203,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
     const range = sel.getRangeAt(0);
     const container = range.commonAncestorContainer;
     const el = container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
-    const linkElement = el?.closest('a[href]') as HTMLAnchorElement | null;
+    const linkElement = el?.closest('a[href], a[data-href]') as HTMLAnchorElement | null;
 
     if (linkElement) {
       console.log('[FloatingToolbar] Removing link:', linkElement.href);
