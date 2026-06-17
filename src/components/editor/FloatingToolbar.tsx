@@ -778,7 +778,6 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
     try {
       const url = linkUrl.trim();
       if (!url || !linkText) {
-        console.log('[FloatingToolbar] URL or linkText empty');
         setShowLink(false);
         setLinkText('');
         return;
@@ -786,7 +785,6 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
 
       const editor = savedEditorRef.current;
       if (!editor) {
-        console.log('[FloatingToolbar] No editor');
         setShowLink(false);
         setLinkText('');
         return;
@@ -794,80 +792,110 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
 
       const fullUrl = url.startsWith('http') ? url : `https://${url}`;
 
-      // Try exact match first
-      let linkRegex = new RegExp(`(${linkText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'g');
-      let innerHTML = editor.innerHTML;
-      let newHtml = innerHTML.replace(linkRegex, `<a href="${fullUrl}" style="color: ${primaryColor}; text-decoration: underline;">$1</a>`);
-
-      // If exact match fails, try case-insensitive
-      if (newHtml === innerHTML) {
-        console.log('[FloatingToolbar] Exact match failed, trying case-insensitive');
-        linkRegex = new RegExp(`(${linkText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-        newHtml = innerHTML.replace(linkRegex, `<a href="${fullUrl}" style="color: ${primaryColor}; text-decoration: underline;">$1</a>`);
-      }
-
-      // If still no match, try finding partial text in innerText
-      if (newHtml === innerHTML) {
-        console.log('[FloatingToolbar] Case-insensitive match failed, checking innerText');
-        const innerText = editor.innerText;
-        if (innerText.toLowerCase().includes(linkText.toLowerCase())) {
-          console.log('[FloatingToolbar] Text found in innerText, using text node manipulation');
-          // Find and wrap using text nodes
-          const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null);
-          let node;
-          const lowerLinkText = linkText.toLowerCase();
-          while (node = walker.nextNode()) {
-            if (node.textContent.toLowerCase().includes(lowerLinkText)) {
-              const text = node.textContent;
-              const idx = text.toLowerCase().indexOf(lowerLinkText);
-              if (idx >= 0) {
-                const before = text.substring(0, idx);
-                const matched = text.substring(idx, idx + linkText.length);
-                const after = text.substring(idx + linkText.length);
-
-                const span = document.createElement('span');
-                if (before) span.appendChild(document.createTextNode(before));
-
-                const a = document.createElement('a');
-                a.href = fullUrl;
-                a.style.color = primaryColor;
-                a.style.textDecoration = 'underline';
-                a.textContent = matched;
-                span.appendChild(a);
-
-                if (after) span.appendChild(document.createTextNode(after));
-
-                node.parentNode?.replaceChild(span, node);
-                newHtml = editor.innerHTML;
-                console.log('[FloatingToolbar] Link created via text node manipulation');
-                break;
-              }
-            }
+      // Resolve the target range. Prefer the selection saved when the dialog opened
+      // (edit mode is kept alive, so it's still valid); otherwise locate linkText.
+      // NOTE: the editor's selection can't be relied on here (focus was on the dialog
+      // input), so we operate on the Range/DOM directly rather than via execCommand.
+      let range: Range | null = null;
+      const saved = savedRangeRef.current;
+      if (
+        saved &&
+        editor.contains(saved.startContainer) &&
+        editor.contains(saved.endContainer) &&
+        saved.toString().length > 0
+      ) {
+        range = saved;
+      } else if (linkText) {
+        const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null);
+        let node: Node | null;
+        const lower = linkText.toLowerCase();
+        while ((node = walker.nextNode())) {
+          const idx = (node.textContent ?? '').toLowerCase().indexOf(lower);
+          if (idx >= 0) {
+            range = document.createRange();
+            range.setStart(node, idx);
+            range.setEnd(node, idx + linkText.length);
+            break;
           }
         }
       }
+      if (!range) { setShowLink(false); setLinkText(''); return; }
 
-      if (newHtml !== innerHTML) {
-        editor.innerHTML = newHtml;
-        console.log('[FloatingToolbar] Link created:', fullUrl);
-      } else {
-        console.log('[FloatingToolbar] Could not find text to link:', linkText);
-      }
+      // Record the plain-text offset of the selection within the editor. Unwrapping
+      // (below) changes tags but not text, so we can re-locate the exact span after.
+      const charOffsetOf = (container: Node, offset: number): number => {
+        let count = 0;
+        const w = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null);
+        let n: Node | null;
+        while ((n = w.nextNode())) {
+          if (n === container) return count + offset;
+          count += (n.textContent ?? '').length;
+        }
+        return count + offset;
+      };
+      const startChar = charOffsetOf(range.startContainer, range.startOffset);
+      const len = range.toString().length || linkText.length;
 
-      // Close the link dialog
+      // Remove any existing links that overlap the selection FIRST. Wrapping a range
+      // that sits inside an <a> would otherwise nest anchors (<a><a>…</a></a>); the
+      // browser then mangles the invalid markup and the link "disappears". Unwrapping
+      // makes the text flat so the new link is a clean, single, non-nested anchor.
+      [...editor.querySelectorAll('a')]
+        .filter((a) => range!.intersectsNode(a))
+        .forEach((a) => {
+          const p = a.parentNode;
+          if (!p) return;
+          while (a.firstChild) p.insertBefore(a.firstChild, a);
+          p.removeChild(a);
+        });
+      editor.normalize();
+
+      // Re-locate the recorded span in the now-flat text and wrap it in a fresh anchor.
+      const findAt = (target: number): { node: Text; offset: number } | null => {
+        let count = 0;
+        const w = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null);
+        let n: Node | null;
+        while ((n = w.nextNode())) {
+          const l = (n.textContent ?? '').length;
+          if (count + l >= target) return { node: n as Text, offset: target - count };
+          count += l;
+        }
+        return null;
+      };
+      const startPos = findAt(startChar);
+      const endPos = findAt(startChar + len);
+      if (!startPos || !endPos) { setShowLink(false); setLinkText(''); return; }
+
+      const wrapRange = document.createRange();
+      wrapRange.setStart(startPos.node, startPos.offset);
+      wrapRange.setEnd(endPos.node, endPos.offset);
+      const frag = wrapRange.extractContents();
+      // Defensive: drop any stray anchors inside the fragment so we never nest.
+      frag.querySelectorAll?.('a').forEach((a) => {
+        const p = a.parentNode;
+        if (!p) return;
+        while (a.firstChild) p.insertBefore(a.firstChild, a);
+        p.removeChild(a);
+      });
+      const anchor = document.createElement('a');
+      // Use data-href while editing so the link can't navigate; commitEdit's
+      // restoreLinkHrefs converts it back to a real href when the edit is saved.
+      anchor.setAttribute('data-href', fullUrl);
+      anchor.style.color = primaryColor;
+      anchor.style.textDecoration = 'underline';
+      anchor.appendChild(frag);
+      wrapRange.insertNode(anchor);
+
       setShowLink(false);
       setLinkText('');
 
-      // Persist the link to React state. The editor is NOT focused here (focus was on
-      // the URL input / Apply button), so a blur-based commit is unreliable and the
-      // <a> tag survives only as a manual DOM mutation that the next render wipes out.
-      // Dispatch `storee:commit-field` so the owning EditSpan commits its current DOM
-      // (including the new link) into the field value, making it round-trip on re-edit.
+      // Persist to React state via the owning EditSpan (commit-field listener). The
+      // editor isn't reliably blur-committed here, so a manual DOM change would be lost
+      // on the next render without this.
       const fld = editor.getAttribute('data-editor-field');
       if (fld) {
         window.dispatchEvent(new CustomEvent('storee:commit-field', { detail: { field: fld } }));
       }
-
     } catch (err) {
       console.error('[FloatingToolbar] Error in applyLink:', err);
       setShowLink(false);
