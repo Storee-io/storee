@@ -1310,7 +1310,13 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
     const resolveUnderlyingEl = (e: MouseEvent, allowOutside = false): Element | null => {
       const direct = e.target;
       // Guard against non-Element targets (document, window) which lack .closest()
-      if (direct instanceof Element && !direct.closest('[data-overlay]')) {
+      const isOverlay = (el: Element) => {
+        return el.hasAttribute('data-overlay') ||
+               el.closest('[data-overlay]') ||
+               (el instanceof HTMLElement && el.classList.contains('pointer-events-none'));
+      };
+
+      if (direct instanceof Element && !isOverlay(direct)) {
         if (allowOutside || container.contains(direct)) {
           return direct;
         }
@@ -1320,7 +1326,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         for (const node of stack) {
           if (!(node instanceof Element)) continue;
           if (node === container) continue;
-          if (node.closest('[data-overlay]')) continue;
+          if (isOverlay(node)) continue;
           if (allowOutside || container.contains(node)) return node;
         }
       }
