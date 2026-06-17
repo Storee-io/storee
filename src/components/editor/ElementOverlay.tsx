@@ -1419,7 +1419,9 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
       // Clear selection so the border/handles don't sit on top of the editable text.
       setSelected(null); lastSelectedEl.current = null;
       onTextElementSelected?.(null);
-      window.dispatchEvent(new CustomEvent('storee:edit-field', { detail: { field, el: rawEl } }));
+      // Pass the EditSpan element (with data-editor-field) so the listener can match it correctly
+      const editSpan = rawEl.closest('[data-editor-field]') || rawEl;
+      window.dispatchEvent(new CustomEvent('storee:edit-field', { detail: { field, el: editSpan } }));
     };
 
     document.addEventListener('mousemove', handleMouseMove);
