@@ -910,6 +910,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
     return (
       <div
         ref={toolbarRef}
+        data-floating-toolbar="1"
         style={baseStyle}
         className="relative flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl shadow-lg px-2.5 py-1.5 select-none"
       >
@@ -962,6 +963,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
   return (
     <div
       ref={toolbarRef}
+      data-floating-toolbar="1"
       onMouseDown={e => {
         // Don't prevent default for select elements (they need mousedown to open dropdown)
         if ((e.target as HTMLElement).tagName !== 'SELECT') {

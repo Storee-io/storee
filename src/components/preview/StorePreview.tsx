@@ -473,9 +473,16 @@ function EditSpan({
   };
 
   const commitEdit = (fromBlur = false) => {
-    // If blur event, check if focus moved to formatting toolbar - if so, keep editing
-    if (fromBlur && document.activeElement?.tagName === 'BUTTON') {
-      return;
+    // If blur was caused by focus moving into the FloatingToolbar (a format button,
+    // a dropdown, or the link-URL <input> which autofocuses), DON'T commit/exit edit.
+    // Committing here would end the edit session mid-interaction; in the link case it
+    // unregisters the commit-field listener before applyLink fires, so the new link is
+    // never persisted and the next render wipes it. Stay in edit until the toolbar is done.
+    if (fromBlur) {
+      const ae = document.activeElement as HTMLElement | null;
+      if (ae?.tagName === 'BUTTON' || ae?.closest('[data-floating-toolbar]')) {
+        return;
+      }
     }
     const el = spanRef.current;
     if (el) {
