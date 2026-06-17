@@ -264,12 +264,14 @@ function findChildToSelect(parent: Element, target: Element): Element | null {
   const chain: Element[] = [];
   let n: Element | null = target;
   while (n && n !== parent) {
-    if ((n as HTMLElement).dataset?.editorField !== undefined) return null; // don't cross edit fields
-    chain.push(n);
+    // Skip EditSpan wrappers but keep going; collect other elements
+    if ((n as HTMLElement).dataset?.editorField === undefined) {
+      chain.push(n);
+    }
     n = n.parentElement;
   }
   if (n !== parent) return null;        // target is not inside parent
-  chain.reverse();                       // outermost (closest to parent) first
+  // Don't reverse — keep innermost first so we select the deepest selectable element
   for (const c of chain) {
     if (isSelectableEl(c)) return c;
   }
@@ -1346,6 +1348,9 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         const child = findChildToSelect(cur, rawEl);
         if (child && child !== cur) {
           el = child;
+        } else if (child === null && isSelectableEl(rawEl)) {
+          // rawEl itself is selectable, even though findChildToSelect didn't find it
+          el = rawEl;
         } else {
           // Nothing deeper to select — keep the current selection as-is.
           return;
