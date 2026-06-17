@@ -7459,7 +7459,9 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
                 {[{ name: 'All', emoji: '✨' }, ...collections].map((c, i) => (
                   <button key={i} onClick={() => setSelectedCol(i)} className="flex flex-col items-center gap-1 flex-shrink-0 min-w-[56px]">
                     <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl" style={{ background: selectedCol === i ? pc : tt.pageBg, border: `2px solid ${selectedCol === i ? pc : tt.divider}` }}>{c.emoji}</div>
-                    <span className="text-[10px] font-medium text-center truncate max-w-[56px]" style={{ color: selectedCol === i ? pc : tt.textMuted }}>{c.name}</span>
+                    <span className="text-[10px] font-medium text-center truncate max-w-[56px]" style={{ color: selectedCol === i ? pc : tt.textMuted }}>
+                      {i === 0 ? c.name : <EditSpan field={`collections.${i - 1}.name`} value={c.name} editMode={editMode} onFieldChange={onFieldChange} singleLine />}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -7470,25 +7472,29 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
             <div key="products" ref={productsRef} data-editor-section="products" style={{ background: tt.pageBg }}>
               {dt?.personality?.includes('spotify') ? (
                 <div className="px-4 py-3 space-y-2">
-                  {displayed.map(p => (
+                  {displayed.map(p => { const pi = products.indexOf(p); return (
                     <div key={p.id} className="flex items-center gap-3 py-2 cursor-pointer group" onClick={() => onProductClick(p)}>
                       <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
                         <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+                        <p className="text-sm font-semibold truncate" style={{ color: tt.textPrimary }}>
+                          {pi >= 0 ? <EditSpan field={`products.${pi}.name`} value={p.name} editMode={editMode} onFieldChange={onFieldChange} singleLine /> : p.name}
+                        </p>
                         <p className="text-xs" style={{ color: tt.textMuted }}>{p.category}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-black" style={{ color: pc }}>{fmtPrice(p.price)}</span>
+                        <span className="text-sm font-black" style={{ color: pc }}>
+                          {pi >= 0 ? <EditSpan field={`products.${pi}.price`} value={fmtPrice(p.price)} editMode={editMode} onFieldChange={onFieldChange} singleLine /> : fmtPrice(p.price)}
+                        </span>
                         <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }} className="w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000' }}>+</button>
                       </div>
                     </div>
-                  ))}
+                  ); })}
                 </div>
               ) : (
                 <div className={`grid gap-3 p-3 ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                  {displayed.map(p => (
+                  {displayed.map(p => { const pi = products.indexOf(p); return (
                     <div key={p.id} className="cursor-pointer" onClick={() => onProductClick(p)}>
                       <div className="relative overflow-hidden" style={{ aspectRatio: '1/1', borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
                         <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
@@ -7498,14 +7504,18 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
                         </button>
                       </div>
                       <div className="mt-2 px-0.5">
-                        <p className="text-xs font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+                        <p className="text-xs font-semibold truncate" style={{ color: tt.textPrimary }}>
+                          {pi >= 0 ? <EditSpan field={`products.${pi}.name`} value={p.name} editMode={editMode} onFieldChange={onFieldChange} singleLine /> : p.name}
+                        </p>
                         <div className="flex items-center justify-between mt-1">
-                          <span className="text-sm font-black" style={{ color: pc }}>{fmtPrice(p.price)}</span>
+                          <span className="text-sm font-black" style={{ color: pc }}>
+                            {pi >= 0 ? <EditSpan field={`products.${pi}.price`} value={fmtPrice(p.price)} editMode={editMode} onFieldChange={onFieldChange} singleLine /> : fmtPrice(p.price)}
+                          </span>
                           <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }} className="w-6 h-6 flex items-center justify-center rounded-full text-sm font-bold" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000' }}>+</button>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  ); })}
                 </div>
               )}
             </div>

@@ -277,6 +277,8 @@ export default function EditorShell({ store, from }: Props) {
   const [accentColor,   setAccentColor]   = useState(d?.accentColor ?? '#06b6d4');
   const [brandStory,    setBrandStory]    = useState(d?.brandStory ?? '');
   const [features,      setFeatures]      = useState(d?.features ?? []);
+  const [products,      setProducts]      = useState(d?.products ?? []);
+  const [collections,   setCollections]   = useState(d?.collections ?? []);
   const [testimonials,  setTestimonials]  = useState(d?.testimonials ?? []);
   const [faq,           setFaq]           = useState(d?.faq ?? []);
   const [newsletter,    setNewsletter]    = useState(d?.newsletter ?? { headline: '', subtext: '' });
@@ -542,6 +544,30 @@ export default function EditorShell({ store, from }: Props) {
       setFeatures(prev => prev.map((f, i) => i === idx ? { ...f, [key]: value } : f));
       return;
     }
+    // Products (app/grid layouts). Price is edited as formatted text → parse digits back to a number.
+    const prodM = field.match(/^products\.(\d+)\.(name|price)$/);
+    if (prodM) {
+      const idx = parseInt(prodM[1]);
+      const key = prodM[2] as 'name' | 'price';
+      setProducts(prev => prev.map((p, i) => {
+        if (i !== idx) return p;
+        if (key === 'price') {
+          // All supported currencies format with 0 decimals (USD '$1,234', IDR 'Rp1.234',
+          // EUR '1.234 €'). Separators differ ('.' vs ','), so strip every non-digit rather
+          // than trusting one separator — parseFloat('5.000.000') would wrongly yield 5.
+          const num = parseInt(value.replace(/[^0-9]/g, ''), 10) || 0;
+          return { ...p, price: num };
+        }
+        return { ...p, name: value };
+      }));
+      return;
+    }
+    const colM = field.match(/^collections\.(\d+)\.name$/);
+    if (colM) {
+      const idx = parseInt(colM[1]);
+      setCollections(prev => prev.map((c, i) => i === idx ? { ...c, name: value } : c));
+      return;
+    }
     const testM = field.match(/^testimonials\.(\d+)\.(text|author|role)$/);
     if (testM) {
       const idx = parseInt(testM[1]);
@@ -629,6 +655,8 @@ export default function EditorShell({ store, from }: Props) {
       accentColor,
       brandStory: brandStory || undefined,
       features,
+      products,
+      collections,
       testimonials,
       faq: faq.length ? faq : undefined,
       newsletter: newsletter.headline ? newsletter : undefined,
