@@ -287,6 +287,7 @@ export default function EditorShell({ store, from }: Props) {
   const [stats,         setStats]         = useState<Array<{ value: string; label: string }>>(d?.stats ?? []);
   const [sectionHeadings, setSectionHeadings] = useState<{ testimonials?: string; features?: string; products?: string; faq?: string; newsletter?: string }>(d?.sectionHeadings ?? {});
   const [footerNote,      setFooterNote]      = useState(d?.footerNote ?? '');
+  const [appNav,          setAppNav]          = useState<{ home?: string; catalog?: string; cart?: string; profile?: string }>(d?.appNav ?? {});
 
   // Element size overrides from drag-resize (persisted in design.elementOverrides)
   // Also backed up to localStorage to prevent loss on reload
@@ -610,6 +611,12 @@ export default function EditorShell({ store, from }: Props) {
       return;
     }
     if (field === 'footerNote') { setFooterNote(value); return; }
+    const navLabelM = field.match(/^appNav\.(home|catalog|cart|profile)$/);
+    if (navLabelM) {
+      const key = navLabelM[1] as 'home' | 'catalog' | 'cart' | 'profile';
+      setAppNav(prev => ({ ...prev, [key]: value }));
+      return;
+    }
   }, []);
 
   // â"€â"€ Build preview store â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
@@ -664,6 +671,7 @@ export default function EditorShell({ store, from }: Props) {
       trustBadges,
       stats,
       sectionHeadings,
+      appNav: Object.keys(appNav).length ? appNav : undefined,
       footerNote: footerNote || undefined,
       sectionOrder: effectiveSectionOrder,
       elementOverrides: Object.keys(elementOverrides).length ? elementOverrides : undefined,
@@ -747,13 +755,14 @@ export default function EditorShell({ store, from }: Props) {
       promoBar: promoBar || undefined,
       accentColor,
       brandStory: brandStory || undefined,
-      features, testimonials,
+      features, products, collections, testimonials,
       faq: faq.length ? faq : undefined,
       newsletter: newsletter.headline ? newsletter : undefined,
       navLinks,
       trustBadges,
       stats,
       sectionHeadings,
+      appNav: Object.keys(appNav).length ? appNav : undefined,
       footerNote: footerNote || undefined,
       sectionOrder: effectiveSectionOrder,
       elementOverrides: Object.keys(elementOverrides).length ? elementOverrides : undefined,
@@ -771,8 +780,8 @@ export default function EditorShell({ store, from }: Props) {
     setSaved(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveContextStore, storeName, primaryColor, tagline, heroTitle, heroSubtitle, ctaText,
-      promoBar, accentColor, brandStory, features, testimonials, faq, newsletter,
-      navLinks, trustBadges, stats, sectionHeadings, footerNote,
+      promoBar, accentColor, brandStory, features, products, collections, testimonials, faq, newsletter,
+      navLinks, trustBadges, stats, sectionHeadings, appNav, footerNote,
       sectionItems, elementOverrides, updateActiveStore, isSaving]);
 
   // Keep ref in sync so autosave always calls the latest version

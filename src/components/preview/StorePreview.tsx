@@ -7385,7 +7385,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
   const tt: TokenTheme = dt ? getTokenThemeV2(dt, primaryColor) : getDefaultTokenTheme(primaryColor);
 
   const { products = [], collections = [], features = [], testimonials = [],
-          tagline, promoBar, trustBadges = [], brandStory, heroTitle, heroSubtitle, ctaText } = design;
+          tagline, promoBar, trustBadges = [], brandStory, heroTitle, heroSubtitle, ctaText, appNav } = design;
 
   const isMobile = device === 'mobile';
   const [selectedCol, setSelectedCol] = useState(0);
@@ -7595,7 +7595,11 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
                       <span className="absolute -top-1 -right-1 w-3.5 h-3.5 text-[8px] font-bold text-white rounded-full flex items-center justify-center" style={{ background: pc }}>{item.badge}</span>
                     )}
                   </div>
-                  <span className="text-[9px] font-semibold">{item.label}</span>
+                  <span className="text-[9px] font-semibold">
+                    {editMode
+                      ? <EditSpan field={`appNav.${item.id}`} value={appNav?.[item.id as 'home' | 'catalog' | 'cart' | 'profile'] ?? item.label} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                      : (appNav?.[item.id as 'home' | 'catalog' | 'cart' | 'profile'] ?? item.label)}
+                  </span>
                 </button>
               ))}
             </nav>
