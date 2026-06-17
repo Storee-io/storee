@@ -8941,9 +8941,15 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
         className="relative overflow-hidden"
         onClickCapture={editMode ? (e) => {
           const target = e.target as HTMLElement;
+          // Never interfere with the text currently being edited.
           if (target.closest('[contenteditable]')) return;
+          // In edit mode the store is a design canvas, not a live site: neutralize
+          // EVERY navigation/interactive side-effect — product links, scroll-to-section,
+          // CTA buttons, anchor hrefs, accordion toggles, etc. stopPropagation prevents
+          // the deeper React onClick handlers (onProductClick/scrollToProducts/…) from
+          // firing; preventDefault cancels native anchor navigation.
           const interactive = target.closest('a, button, [role="button"], [role="link"]');
-          if (interactive) e.stopPropagation();
+          if (interactive) { e.preventDefault(); e.stopPropagation(); }
         } : undefined}
       >
         {content}
