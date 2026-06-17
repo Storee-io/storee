@@ -495,6 +495,24 @@ function EditSpan({
     return () => spanRef.current?.removeEventListener('mousedown', handleMouseDown, true);
   }, [isEditing]);
 
+  // Commit-on-demand from the FloatingToolbar (e.g. after inserting a link).
+  // The toolbar mutates this contentEditable's innerHTML directly, but the editor
+  // is not focused at that point (focus is on the toolbar), so a blur-based commit
+  // never fires and the change is lost on the next render. The toolbar dispatches
+  // `storee:commit-field` so we can persist the current DOM into React state here.
+  useEffect(() => {
+    if (!isEditing) return;
+    const onCommitField = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { field?: string } | undefined;
+      if (!detail || detail.field !== field) return;
+      commitEdit();
+    };
+    window.addEventListener('storee:commit-field', onCommitField);
+    return () => window.removeEventListener('storee:commit-field', onCommitField);
+    // commitEdit closes over `value`/`field`; re-bind when those change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditing, field, value]);
+
   if (isEditing) {
     // No React-managed children — content is seeded imperatively in the effect above.
     return (

@@ -853,17 +853,19 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
         console.log('[FloatingToolbar] Could not find text to link:', linkText);
       }
 
-      // Save the change
-      editor.blur();
-
-      // Close dialog and refresh
+      // Close the link dialog
       setShowLink(false);
       setLinkText('');
 
-      setTimeout(() => {
-        editor.focus();
-        document.dispatchEvent(new Event('selectionchange'));
-      }, 0);
+      // Persist the link to React state. The editor is NOT focused here (focus was on
+      // the URL input / Apply button), so a blur-based commit is unreliable and the
+      // <a> tag survives only as a manual DOM mutation that the next render wipes out.
+      // Dispatch `storee:commit-field` so the owning EditSpan commits its current DOM
+      // (including the new link) into the field value, making it round-trip on re-edit.
+      const fld = editor.getAttribute('data-editor-field');
+      if (fld) {
+        window.dispatchEvent(new CustomEvent('storee:commit-field', { detail: { field: fld } }));
+      }
 
     } catch (err) {
       console.error('[FloatingToolbar] Error in applyLink:', err);
