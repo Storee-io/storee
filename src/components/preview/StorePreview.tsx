@@ -574,7 +574,13 @@ function EditSpan({
   // Mark with data-editor-field so drill-down logic skips the span and selects parent instead.
   // In edit mode, cancel link navigation on click so a single click never leaves the editor
   // (double-click still enters text editing via ElementOverlay).
-  if (isHtml) return <span ref={spanRef} className={className} style={spanStyle} data-editor-field={field} onClickCapture={preventLinkNav} onAuxClickCapture={preventLinkNav} dangerouslySetInnerHTML={{ __html: value }} />;
+  // Defense in depth: if `value` still carries `data-href` (e.g. a link committed
+  // before the edit-mode neutering/restore logic was fully wired), normalize it to
+  // a real `href` for read-only display. Otherwise the anchor renders but seed-on-edit
+  // never sees a `href` to strip, and any sync that re-writes `value` would leave the
+  // link broken. The same effect on enter-edit (stripLinkHrefs) keeps things safe.
+  const normalizedValue = isHtml ? value.replace(/\bdata-href=/g, 'href=') : value;
+  if (isHtml) return <span ref={spanRef} className={className} style={spanStyle} data-editor-field={field} onClickCapture={preventLinkNav} onAuxClickCapture={preventLinkNav} dangerouslySetInnerHTML={{ __html: normalizedValue }} />;
   return <span ref={spanRef} className={className} style={spanStyle} data-editor-field={field}>{decodedValue}</span>;
 }
 
