@@ -320,17 +320,23 @@ interface MoveState {
 
 /** Identify which store field a text element corresponds to */
 function mapElementToField(el: Element): string | null {
-  // Authoritative shortcut: if the element (or its only child) carries an
-  // EditSpan's `data-editor-field`, trust it. The structural heuristics below
-  // (h3 = title, p = description, etc.) misfire when a layout uses a different
-  // wrapper tag — e.g. AppLikeLayout wraps the feature title in <p>, which the
-  // tag-based rules map to `description`, so dblclick on the title would open
-  // the description for edit. Reading the attribute avoids that whole class of
-  // false matches.
-  const directField = el.getAttribute?.('data-editor-field');
-  if (directField) return directField;
+  // Authoritative source: an EditSpan tags itself with the exact field via
+  // data-editor-field. Trust it before the tag/section heuristics below — those
+  // guess title vs description by tag (h3 = title, p = description), which misfires
+  // when a layout uses a different wrapper (e.g. AppLikeLayout wraps the feature
+  // title in <p>, mapping it to `description` so dblclick opens the wrong field).
+  // Cover all positions of `el` relative to the tagged span: el IS the span or sits
+  // inside it (closest → self + ancestors), or el is the block wrapping it (child span).
+  const tagged = el.closest?.('[data-editor-field]');
+  if (tagged) {
+    const f = tagged.getAttribute('data-editor-field');
+    if (f) return f;
+  }
   const innerSpan = el.querySelector?.(':scope > span[data-editor-field]');
-  if (innerSpan) return innerSpan.getAttribute('data-editor-field');
+  if (innerSpan) {
+    const f = innerSpan.getAttribute('data-editor-field');
+    if (f) return f;
+  }
 
   const text = el.textContent?.trim() || '';
   const section = el.closest('[data-editor-section]');
