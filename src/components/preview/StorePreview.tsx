@@ -481,19 +481,18 @@ function EditSpan({
     else if (e.key === 'Enter' && (singleLine || !e.shiftKey)) { e.preventDefault(); commitEdit(); }
   };
 
-  // Prevent link navigation in edit mode
-  useEffect(() => {
-    if (!isEditing) return;
-
-    const handleMouseDown = (e: MouseEvent) => {
-      if ((e.target as HTMLElement).closest('a')) {
-        e.preventDefault();
-      }
-    };
-
-    spanRef.current?.addEventListener('mousedown', handleMouseDown, true);
-    return () => spanRef.current?.removeEventListener('mousedown', handleMouseDown, true);
-  }, [isEditing]);
+  // Stop links from navigating while in edit mode WITHOUT breaking text editing.
+  // Anchor navigation is the default action of the `click` event, so cancelling it
+  // there is enough. We deliberately do NOT touch `mousedown` — the browser places
+  // the caret and starts text selection on mousedown, so preventing it would make
+  // the link's text impossible to select or edit. With this, a link behaves like
+  // normal text in edit mode (selectable/editable) but never navigates.
+  const preventLinkNav = useCallback((e: React.MouseEvent) => {
+    if (!editMode) return;
+    if ((e.target as HTMLElement).closest('a')) {
+      e.preventDefault();
+    }
+  }, [editMode]);
 
   // Commit-on-demand from the FloatingToolbar (e.g. after inserting a link).
   // The toolbar mutates this contentEditable's innerHTML directly, but the editor
@@ -531,41 +530,21 @@ function EditSpan({
         suppressContentEditableWarning
         onBlur={() => commitEdit(true)}
         onKeyDown={onEditKeyDown}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          // Prevent link navigation in edit mode - check if target or parent is link
-          const target = e.target as HTMLElement;
-          const link = target.tagName === 'A' ? target : target.closest('a');
-          if (link) {
-            e.preventDefault();
-            console.log('[EditSpan] Prevented link navigation on mousedown');
-          }
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          // Also prevent click on links
-          const target = e.target as HTMLElement;
-          const link = target.tagName === 'A' ? target : target.closest('a');
-          if (link) {
-            e.preventDefault();
-            console.log('[EditSpan] Prevented link navigation on click');
-          }
-        }}
-        onAuxClick={(e) => {
-          // Prevent middle/right-click navigation on links
-          const target = e.target as HTMLElement;
-          const link = target.tagName === 'A' ? target : target.closest('a');
-          if (link) {
-            e.preventDefault();
-          }
-        }}
+        // Keep mousedown free of preventDefault so the caret lands and text
+        // selection works normally inside links. Only stop propagation so the
+        // overlay doesn't hijack the interaction.
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); preventLinkNav(e); }}
+        onAuxClick={preventLinkNav}
       />
     );
   }
 
   // Read-only display — ElementOverlay handles hover/selection on this element.
-  // Mark with data-editor-field so drill-down logic skips the span and selects parent instead
-  if (isHtml) return <span ref={spanRef} className={className} style={spanStyle} data-editor-field={field} dangerouslySetInnerHTML={{ __html: value }} />;
+  // Mark with data-editor-field so drill-down logic skips the span and selects parent instead.
+  // In edit mode, cancel link navigation on click so a single click never leaves the editor
+  // (double-click still enters text editing via ElementOverlay).
+  if (isHtml) return <span ref={spanRef} className={className} style={spanStyle} data-editor-field={field} onClickCapture={preventLinkNav} onAuxClickCapture={preventLinkNav} dangerouslySetInnerHTML={{ __html: value }} />;
   return <span ref={spanRef} className={className} style={spanStyle} data-editor-field={field}>{decodedValue}</span>;
 }
 
