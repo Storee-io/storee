@@ -285,7 +285,7 @@ export default function EditorShell({ store, from }: Props) {
   const [navLinks,      setNavLinks]      = useState<string[]>(d?.navLinks ?? []);
   const [trustBadges,   setTrustBadges]   = useState<Array<{ icon: string; text: string }>>(d?.trustBadges ?? []);
   const [stats,         setStats]         = useState<Array<{ value: string; label: string }>>(d?.stats ?? []);
-  const [sectionHeadings, setSectionHeadings] = useState<{ testimonials?: string; features?: string; products?: string; faq?: string; newsletter?: string }>(d?.sectionHeadings ?? {});
+  const [sectionHeadings, setSectionHeadings] = useState<{ testimonials?: string; features?: string; products?: string; faq?: string; newsletter?: string; brandStory?: string }>(d?.sectionHeadings ?? {});
   const [footerNote,      setFooterNote]      = useState(d?.footerNote ?? '');
   const [appNav,          setAppNav]          = useState<{ home?: string; catalog?: string; cart?: string; profile?: string }>(d?.appNav ?? {});
 
@@ -546,10 +546,10 @@ export default function EditorShell({ store, from }: Props) {
       return;
     }
     // Products (app/grid layouts). Price is edited as formatted text → parse digits back to a number.
-    const prodM = field.match(/^products\.(\d+)\.(name|price)$/);
+    const prodM = field.match(/^products\.(\d+)\.(name|price|badge|category)$/);
     if (prodM) {
       const idx = parseInt(prodM[1]);
-      const key = prodM[2] as 'name' | 'price';
+      const key = prodM[2] as 'name' | 'price' | 'badge' | 'category';
       setProducts(prev => prev.map((p, i) => {
         if (i !== idx) return p;
         if (key === 'price') {
@@ -559,7 +559,7 @@ export default function EditorShell({ store, from }: Props) {
           const num = parseInt(value.replace(/[^0-9]/g, ''), 10) || 0;
           return { ...p, price: num };
         }
-        return { ...p, name: value };
+        return { ...p, [key]: value };
       }));
       return;
     }
@@ -604,7 +604,7 @@ export default function EditorShell({ store, from }: Props) {
       setStats(prev => prev.map((s, i) => i === idx ? { ...s, [key]: value } : s));
       return;
     }
-    const shM = field.match(/^sectionHeadings\.(testimonials|features|products|faq|newsletter)$/);
+    const shM = field.match(/^sectionHeadings\.(testimonials|features|products|faq|newsletter|brandStory)$/);
     if (shM) {
       const key = shM[1] as keyof typeof sectionHeadings;
       setSectionHeadings(prev => ({ ...prev, [key]: value }));

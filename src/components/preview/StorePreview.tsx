@@ -7385,7 +7385,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
   const tt: TokenTheme = dt ? getTokenThemeV2(dt, primaryColor) : getDefaultTokenTheme(primaryColor);
 
   const { products = [], collections = [], features = [], testimonials = [],
-          tagline, promoBar, trustBadges = [], brandStory, heroTitle, heroSubtitle, ctaText, appNav } = design;
+          tagline, promoBar, trustBadges = [], brandStory, heroTitle, heroSubtitle, ctaText, appNav, sectionHeadings } = design;
 
   const isMobile = device === 'mobile';
   const [selectedCol, setSelectedCol] = useState(0);
@@ -7481,7 +7481,9 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
                         <p className="text-sm font-semibold truncate" style={{ color: tt.textPrimary }}>
                           {pi >= 0 ? <EditSpan field={`products.${pi}.name`} value={p.name} editMode={editMode} onFieldChange={onFieldChange} singleLine /> : p.name}
                         </p>
-                        <p className="text-xs" style={{ color: tt.textMuted }}>{p.category}</p>
+                        <p className="text-xs" style={{ color: tt.textMuted }}>
+                          {pi >= 0 ? <EditSpan field={`products.${pi}.category`} value={p.category} editMode={editMode} onFieldChange={onFieldChange} singleLine /> : p.category}
+                        </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-black" style={{ color: pc }}>
@@ -7498,7 +7500,9 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
                     <div key={p.id} className="cursor-pointer" onClick={() => onProductClick(p)}>
                       <div className="relative overflow-hidden" style={{ aspectRatio: '1/1', borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
                         <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
-                        {p.badge && <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: '999px' }}>{p.badge}</span>}
+                        {p.badge && <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: '999px' }}>
+                          {pi >= 0 ? <EditSpan field={`products.${pi}.badge`} value={p.badge} editMode={editMode} onFieldChange={onFieldChange} singleLine /> : p.badge}
+                        </span>}
                         <button data-wishlist-btn="" onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }} className="absolute top-2 right-2 w-6 h-6 bg-white/80 backdrop-blur flex items-center justify-center rounded-full">
                           <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
                         </button>
@@ -7559,7 +7563,9 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
 
             brandStory: brandStory ? (
               <div key="brandStory" data-editor-section="brandStory" className="px-4 py-5" style={{ borderTop: `4px solid ${tt.divider}`, background: tt.surfaceBg }}>
-                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: pc }}>Our Story</p>
+                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: pc }}>
+                  <EditSpan field="sectionHeadings.brandStory" value={sectionHeadings?.brandStory ?? 'Our Story'} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                </p>
                 <p className="text-sm leading-relaxed" style={{ color: tt.textSecondary }}>
                   <EditSpan field="brandStory" value={brandStory} editMode={editMode} onFieldChange={onFieldChange} />
                 </p>

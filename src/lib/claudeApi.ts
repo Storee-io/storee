@@ -289,7 +289,7 @@ export interface StoreDesign {
   newsletter?: { headline: string; subtext: string };
   trustBadges?: Array<{ icon: string; text: string }>;
   brandStory?: string;
-  sectionHeadings?: { testimonials?: string; features?: string; products?: string; faq?: string; newsletter?: string };
+  sectionHeadings?: { testimonials?: string; features?: string; products?: string; faq?: string; newsletter?: string; brandStory?: string };
   /** Bottom-nav labels for the app-like layout (editable UI chrome). Falls back to defaults. */
   appNav?: { home?: string; catalog?: string; cart?: string; profile?: string };
   footerNote?: string;
