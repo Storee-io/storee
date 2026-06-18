@@ -347,75 +347,45 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       setCurrentLineHeight(LINE_HEIGHTS.some(l => l.value === lhFound) ? lhFound : '');
     }
 
-    // Collect all unique font sizes from the selection
+    // Walk every text node inside the selection and collect distinct computed font sizes.
+    // Using computed style (not just inline style) handles inherited sizes correctly.
+    const selRange = sel.getRangeAt(0);
     const fontSizes = new Set<string>();
 
-    // Check the current element first
-    if (el.nodeType === Node.ELEMENT_NODE) {
-      const inlineStyle = (el as HTMLElement).style?.fontSize;
-      if (inlineStyle) {
-        const match = inlineStyle.match(/(\d+)/);
-        if (match) {
-          fontSizes.add(match[1]);
-        }
-      }
+    const walker = document.createTreeWalker(
+      selRange.commonAncestorContainer.nodeType === Node.TEXT_NODE
+        ? selRange.commonAncestorContainer.parentElement!
+        : (selRange.commonAncestorContainer as HTMLElement),
+      NodeFilter.SHOW_TEXT,
+      null
+    );
+
+    let textNode: Node | null;
+    while ((textNode = walker.nextNode())) {
+      // Skip text nodes outside the selection range
+      if (!selRange.intersectsNode(textNode)) continue;
+      const parent = textNode.parentElement;
+      if (!parent) continue;
+      const px = window.getComputedStyle(parent).fontSize;
+      const m = px.match(/^(\d+(?:\.\d+)?)/);
+      if (m) fontSizes.add(String(Math.round(parseFloat(m[1]))));
     }
 
-    // Check all child elements of the selected element for font sizes
-    const collectFontSizes = (parent: Node) => {
-      for (let i = 0; i < parent.childNodes.length; i++) {
-        const child = parent.childNodes[i];
-
-        if (child.nodeType === Node.ELEMENT_NODE) {
-          const childEl = child as HTMLElement;
-          const inlineStyle = childEl.style?.fontSize;
-
-          if (inlineStyle) {
-            const match = inlineStyle.match(/(\d+)/);
-            if (match) {
-              fontSizes.add(match[1]);
-            }
-          }
-
-          // Recursively check children
-          collectFontSizes(child);
-        }
-      }
-    };
-
-    collectFontSizes(el);
-
-    // If we found font sizes
-    if (fontSizes.size > 0) {
-      if (fontSizes.size === 1) {
-        // Single font size - show it
-        const size = Array.from(fontSizes)[0];
-        if (FONT_SIZES.includes(Number(size))) {
-          setCurrentFontSize(size);
-          return;
-        }
-      } else {
-        // Multiple different font sizes - show empty/mixed indicator
-        setCurrentFontSize('');
-        return;
-      }
+    // If the range covers a single element with no text children, fall back to that element
+    if (fontSizes.size === 0) {
+      const px = window.getComputedStyle(el as HTMLElement).fontSize;
+      const m = px.match(/^(\d+(?:\.\d+)?)/);
+      if (m) fontSizes.add(String(Math.round(parseFloat(m[1]))));
     }
 
-    // No inline styles found, use computed font size
-    const computedStyle = window.getComputedStyle(el as HTMLElement);
-    const fontSize = computedStyle.fontSize;
-
-    // Extract the number from "24px"
-    const sizeMatch = fontSize.match(/(\d+)/);
-    if (sizeMatch) {
-      const size = sizeMatch[1];
-      // Only update if it's in our FONT_SIZES array
-      if (FONT_SIZES.includes(Number(size))) {
-        setCurrentFontSize(size);
-      } else {
-        // Computed size not in our list, show default
-        setCurrentFontSize('16');
-      }
+    if (fontSizes.size === 1) {
+      const size = Array.from(fontSizes)[0];
+      setCurrentFontSize(FONT_SIZES.includes(Number(size)) ? size : '');
+    } else if (fontSizes.size > 1) {
+      // Multiple different sizes — show mixed indicator
+      setCurrentFontSize('');
+    } else {
+      setCurrentFontSize('16');
     }
   }, []);
 
