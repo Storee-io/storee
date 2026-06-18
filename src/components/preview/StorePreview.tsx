@@ -289,7 +289,11 @@ function EditSpan({
   useEffect(() => {
     if (!isEditing || !spanRef.current) return;
     const el = spanRef.current;
-    if (isHtml) el.innerHTML = value; else el.textContent = decodedValue;
+    // Preserve link HTML created by FloatingToolbar: only set content if empty,
+    // otherwise keep existing (which may have link with data-href from toolbar).
+    if (!el.innerHTML.trim()) {
+      if (isHtml) el.innerHTML = value; else el.textContent = decodedValue;
+    }
     // Disable link navigation for the duration of the edit (restored on commit).
     stripLinkHrefs(el);
     el.focus();
