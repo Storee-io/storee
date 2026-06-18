@@ -855,6 +855,16 @@ export default function EditorShell({ store, from }: Props) {
       publishedDomain,
     }).catch(console.error);
     setShowPublishModal(false);
+
+    // Confirm success — the modal closes immediately, so without this the popup just
+    // vanishes with no feedback. `subdomain` arrives as the full domain (e.g.
+    // "name.storee.io"); build the absolute URL for the "View site" action.
+    const wasPublished = !!liveContextStore.publishedDomain || liveContextStore.status === 'Published';
+    const liveUrl = `https://${subdomain}`;
+    toast.success(wasPublished ? 'Changes published!' : 'Store published!', {
+      description: wasPublished ? 'Your live store has been updated.' : 'Your store is now live.',
+      action: { label: 'View site', onClick: () => window.open(liveUrl, '_blank', 'noopener') },
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [updateActiveStore, addStore, liveContextStore]);
 
