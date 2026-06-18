@@ -500,8 +500,8 @@ function EditSpan({
         const changeType = getChangeDescription(current, next);
         const sectionName = getFieldSectionName(field);
         const label = `${sectionName} — ${changeType}`;
-        // Pass label to onFieldChange for version history tracking
-        onFieldChange?.(field, next, label);
+        // Pass change to onFieldChange
+        onFieldChange?.(field, next);
       }
     }
     setIsEditing(false);

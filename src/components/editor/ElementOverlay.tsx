@@ -399,7 +399,7 @@ function mapElementToField(el: Element): string | null {
   const getCardIndex = (): number => {
     let node: Element | null = el;
     while (node && node.parentElement && node.parentElement !== section) {
-      const parent = node.parentElement;
+      const parent: Element = node.parentElement;
       const siblings = Array.from(parent.children);
       // If parent has 2+ children of the same tag → node is a list item
       const sameTagSiblings = siblings.filter(s => s.tagName === node!.tagName);
@@ -1086,7 +1086,7 @@ export default function ElementOverlay({ containerRef, editMode, elementOverride
         // Smart rect caching: refresh actual rect every ~16ms (1 frame), use cached value otherwise
         // This balances smooth motion with accurate selection border alignment
         const now = performance.now();
-        if (now - lastCachedTime > RECT_CACHE_MS) {
+        if (now - lastCachedTime > RECT_CACHE_MS && containerRef.current) {
           lastCachedRect = getRelativeRect(el, containerRef.current);
           lastCachedTime = now;
         }
