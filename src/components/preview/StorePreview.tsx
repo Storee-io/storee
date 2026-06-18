@@ -480,7 +480,12 @@ function EditSpan({
     // never persisted and the next render wipes it. Stay in edit until the toolbar is done.
     if (fromBlur) {
       const ae = document.activeElement as HTMLElement | null;
-      if (ae?.tagName === 'BUTTON' || ae?.closest('[data-floating-toolbar]')) {
+      // Only suppress the commit when focus moved INTO the FloatingToolbar (its root
+      // carries data-floating-toolbar, so every toolbar button/input/dropdown is covered).
+      // A previous `ae?.tagName === 'BUTTON'` clause was too broad: clicking ANY button —
+      // notably "Publish" — skipped the commit, silently dropping the just-typed text so it
+      // never reached the published design while toolbar styling (committed earlier) did.
+      if (ae?.closest('[data-floating-toolbar]')) {
         return;
       }
     }
