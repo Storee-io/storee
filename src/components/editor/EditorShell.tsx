@@ -1005,7 +1005,12 @@ export default function EditorShell({ store, from }: Props) {
           {/* Publish — unified button for first publish & updates */}
           <Tip label={isPublished ? 'Publish changes to live store' : 'Make your store live'}>
             <button
-              onClick={() => setShowPublishModal(true)}
+              onClick={async () => {
+                // Persist the draft first so the saved store stays in sync with what
+                // we're about to publish (publish itself sends previewStore directly).
+                try { await persistStore(); } catch { /* publish can still proceed */ }
+                setShowPublishModal(true);
+              }}
               className="flex items-center gap-1.5 px-3.5 py-1.5 gradient-bg text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all shadow-md"
             >
               <Rocket className="w-4 h-4 flex-shrink-0" />
@@ -1521,7 +1526,11 @@ export default function EditorShell({ store, from }: Props) {
       <AnimatePresence>
         {showPublishModal && (
           <PublishModal
-            store={liveContextStore}
+            // Publish the live-edited store (previewStore = liveContextStore + all
+            // canvas edits from local state), NOT the original liveContextStore —
+            // otherwise published_stores receives the pre-edit design and canvas
+            // changes never reach the live site.
+            store={previewStore}
             onPublish={handlePublishComplete}
             onClose={() => setShowPublishModal(false)}
             {...((isPublished || hasPublishedBefore) && liveContextStore.publishedDomain
