@@ -206,7 +206,6 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
     const linkElement = el?.closest('a[href], a[data-href]') as HTMLAnchorElement | null;
 
     if (linkElement) {
-      console.log('[FloatingToolbar] Removing link:', linkElement.href);
       // Replace link element with its text content
       const textNode = document.createTextNode(linkElement.textContent ?? '');
       linkElement.parentNode?.replaceChild(textNode, linkElement);
@@ -218,7 +217,6 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       sel.addRange(newRange);
 
       setIsSelectedTextLink(false);
-      console.log('[FloatingToolbar] Link removed');
     }
   }, []);
 
@@ -424,7 +422,6 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
   const refresh = useCallback(() => {
     // Don't update pos when link input is active - preserve toolbar position
     if (showLink) {
-      console.log('[FloatingToolbar] refresh called but showLink is true, skipping pos update');
       return;
     }
 
@@ -511,20 +508,13 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
 
   useEffect(() => { if (!editMode) setPos(null); }, [editMode]);
 
-  // Monitor showLink state changes
-  useEffect(() => {
-    console.log('[FloatingToolbar] showLink state changed to:', showLink);
-  }, [showLink]);
-
   // Explicitly focus link input when link mode is activated
   useEffect(() => {
     if (showLink && linkInputRef.current) {
-      console.log('[FloatingToolbar] useEffect: showLink is true, focusing input');
       setTimeout(() => {
         if (linkInputRef.current) {
           linkInputRef.current.focus();
           linkInputRef.current.select();
-          console.log('[FloatingToolbar] Link input focused and selected');
         }
       }, 0);
     }
@@ -551,8 +541,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       sel.addRange(range);
 
       // Execute command
-      const success = document.execCommand(cmd, false, value);
-      console.log(`execCommand(${cmd}, ${value}):`, success);
+      document.execCommand(cmd, false, value);
     } catch (err) {
       console.error(`Error in exec(${cmd}):`, err);
     }
@@ -560,11 +549,9 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
   }, [refresh, restoreRange]);
 
   const handleFontSize = useCallback((size: number) => {
-    console.log('handleFontSize called with size:', size);
     restoreRange();
     const sel = window.getSelection();
     if (!sel || !sel.rangeCount) {
-      console.log('No selection');
       return;
     }
 
@@ -574,7 +561,6 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
     const editorField = el?.closest('[data-editor-field]') as HTMLElement;
 
     if (!editorField) {
-      console.log('No editor field');
       return;
     }
 
@@ -658,7 +644,6 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
     restoreRange();
     const sel = window.getSelection();
     if (!sel || !sel.rangeCount) {
-      console.log('No selection for line height');
       return;
     }
 
@@ -668,36 +653,25 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
     const editorField = el?.closest('[data-editor-field]') as HTMLElement;
 
     if (!editorField) {
-      console.log('No editor field found for line height');
       return;
     }
 
     try {
-      // Focus field first
       editorField.focus();
-      console.log('Field focused for line height');
 
-      // Restore selection after focus
       sel.removeAllRanges();
       sel.addRange(range);
 
       const span = document.createElement('span');
       span.style.lineHeight = lh;
-      console.log('Created span with lineHeight:', lh);
 
       try {
-        console.log('Trying surroundContents...');
         range.surroundContents(span);
-        console.log('surroundContents succeeded');
       } catch (e) {
-        console.log('surroundContents failed, trying extractContents fallback...');
-        // If surroundContents fails (e.g., selection crosses elements), use insertNode
         const contents = range.extractContents();
         span.appendChild(contents);
         range.insertNode(span);
-        console.log('extractContents fallback succeeded');
       }
-      console.log('Line height applied:', lh);
     } catch (err) {
       console.error('Line height error:', err);
     }
@@ -715,11 +689,8 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
   const handleLink = useCallback(() => {
     try {
       const { isLink } = checkIfSelectedTextIsLink();
-      console.log('[FloatingToolbar] handleLink called, isLink:', isLink);
 
       if (isLink) {
-        // Remove link if text is already a link
-        console.log('[FloatingToolbar] Selected text is a link, removing it');
         removeLink();
         // Trigger blur to save changes
         const sel = window.getSelection();
@@ -739,12 +710,10 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
         // Open link input dialog if text is not a link
         const sel = window.getSelection();
         const selectedText = sel?.toString() || '';
-        console.log('[FloatingToolbar] Selected text is not a link, opening dialog with text:', selectedText);
         saveRange();
         setLinkText(selectedText);
         setLinkUrl('');
         setShowLink(true);
-        console.log('[FloatingToolbar] setShowLink(true) called');
       }
     } catch (err) {
       console.error('[FloatingToolbar] Error in handleLink:', err);
@@ -753,22 +722,17 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
 
   // Cancel link input and restore focus + selection to editor field
   const cancelLink = useCallback(() => {
-    console.log('[FloatingToolbar] cancelLink called');
     setShowLink(false);
     const range = savedRangeRef.current;
-    console.log('[FloatingToolbar] savedRangeRef.current:', range);
     if (range) {
       const container = range.commonAncestorContainer;
       const el = container.nodeType === Node.TEXT_NODE ? container.parentElement : (container as Element);
       const editorField = el?.closest('[data-editor-field]') as HTMLElement | null;
       if (editorField) {
-        console.log('[FloatingToolbar] Restoring focus to editor field');
         editorField.focus();
         const sel = window.getSelection();
         sel?.removeAllRanges();
         sel?.addRange(range);
-        console.log('[FloatingToolbar] Selection restored');
-        // Manually trigger refresh after restoring selection
         setTimeout(() => refresh(), 0);
       }
     }
@@ -894,7 +858,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       // on the next render without this.
       const fld = editor.getAttribute('data-editor-field');
       if (fld) {
-        window.dispatchEvent(new CustomEvent('storee:commit-field', { detail: { field: fld } }));
+        window.dispatchEvent(new CustomEvent('storee:commit-field', { detail: { field: fld, html: editor.innerHTML } }));
       }
     } catch (err) {
       console.error('[FloatingToolbar] Error in applyLink:', err);
@@ -934,7 +898,6 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
 
   // Link input mode
   if (showLink) {
-    console.log('[FloatingToolbar] Rendering link input mode');
     return (
       <div
         ref={toolbarRef}
@@ -948,10 +911,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
           autoFocus
           ref={linkInputRef}
           value={linkUrl}
-          onChange={e => {
-            console.log('[FloatingToolbar] Input onChange:', e.target.value);
-            setLinkUrl(e.target.value);
-          }}
+          onChange={e => setLinkUrl(e.target.value)}
           onKeyDown={e => {
             if (e.key === 'Enter') {
               applyLink();
@@ -962,17 +922,13 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
               e.preventDefault();
             }
           }}
-          onFocus={() => console.log('[FloatingToolbar] Input focused')}
           placeholder="https://..."
           className="text-sm outline-none border-none w-48 text-slate-700 placeholder:text-slate-300 bg-transparent"
           style={{ display: 'block', visibility: 'visible' }}
         />
         <button
           onMouseDown={e => e.preventDefault()}
-          onClick={e => {
-            console.log('[FloatingToolbar] Apply button clicked');
-            applyLink();
-          }}
+          onClick={() => applyLink()}
           className="text-xs text-emerald-600 font-semibold hover:text-emerald-700 px-1"
         >
           Apply
@@ -1102,11 +1058,8 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       <button
         title={isSelectedTextLink ? "Remove link" : "Insert link (Ctrl+K)"}
         onMouseDown={e => {
-          console.log('[FloatingToolbar] Link button onMouseDown fired, isSelectedTextLink:', isSelectedTextLink);
           e.preventDefault();
           e.stopPropagation();
-          const sel = window.getSelection();
-          console.log('[FloatingToolbar] Current selection before handleLink:', sel?.toString());
           if (!isSelectedTextLink) {
             saveRange();
           }

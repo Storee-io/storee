@@ -476,43 +476,44 @@ function EditSpan({
     return 'Formatting changed';
   };
 
-  const commitEdit = (fromBlur = false) => {
-    // If blur was caused by focus moving into the FloatingToolbar (a format button,
-    // a dropdown, or the link-URL <input> which autofocuses), DON'T commit/exit edit.
-    // Committing here would end the edit session mid-interaction; in the link case it
-    // unregisters the commit-field listener before applyLink fires, so the new link is
-    // never persisted and the next render wipes it. Stay in edit until the toolbar is done.
+  // `overrideHtml` is the authoritative markup captured by the FloatingToolbar from
+  // the exact DOM node it mutated. When provided, bypass spanRef (which points to a
+  // different node) and use this value directly.
+  const commitEdit = (fromBlur = false, overrideHtml?: string) => {
     if (fromBlur) {
       const ae = document.activeElement as HTMLElement | null;
-      // Only suppress the commit when focus moved INTO the FloatingToolbar (its root
-      // carries data-floating-toolbar, so every toolbar button/input/dropdown is covered).
-      // A previous `ae?.tagName === 'BUTTON'` clause was too broad: clicking ANY button —
-      // notably "Publish" — skipped the commit, silently dropping the just-typed text so it
-      // never reached the published design while toolbar styling (committed earlier) did.
       if (ae?.closest('[data-floating-toolbar]')) {
         return;
       }
     }
+
+    if (overrideHtml != null) {
+      // Normalize data-href → href so stored markup has real links
+      const next = overrideHtml.replace(/\bdata-href=/g, 'href=');
+      // Sync spanRef so the DOM matches saved state before we exit edit mode
+      if (spanRef.current && spanRef.current.innerHTML !== next) {
+        spanRef.current.innerHTML = next;
+      }
+      const current = value;
+      if (next !== current) {
+        const changeType = getChangeDescription(current, next);
+        const sectionName = getFieldSectionName(field);
+        onFieldChange?.(field, next, `${sectionName} — ${changeType}`);
+      }
+      setIsEditing(false);
+      return;
+    }
+
     const el = spanRef.current;
     if (el) {
-      // Always capture innerHTML before any mutations
       const editedHtml = el.innerHTML;
-
-      // Re-attach any hrefs we stripped on edit-enter so the saved markup keeps links.
       restoreLinkHrefs(el);
-
-      // Get the final HTML after href restoration
       const next = el.innerHTML;
       const current = value;
-
-      // Always call onFieldChange if there's ANY difference (including formatting or link additions)
-      // Don't rely on string comparison because links may be added via toolbar
       if (next !== current || editedHtml.includes('<a')) {
         const changeType = getChangeDescription(current, next);
         const sectionName = getFieldSectionName(field);
-        const label = `${sectionName} — ${changeType}`;
-        // Pass change to onFieldChange with label for version history
-        onFieldChange?.(field, next, label);
+        onFieldChange?.(field, next, `${sectionName} — ${changeType}`);
       }
     }
     setIsEditing(false);
@@ -548,9 +549,9 @@ function EditSpan({
   useEffect(() => {
     if (!isEditing) return;
     const onCommitField = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { field?: string } | undefined;
+      const detail = (e as CustomEvent).detail as { field?: string; html?: string } | undefined;
       if (!detail || detail.field !== field) return;
-      commitEdit();
+      commitEdit(false, detail.html);
     };
     window.addEventListener('storee:commit-field', onCommitField);
     return () => window.removeEventListener('storee:commit-field', onCommitField);
@@ -574,7 +575,12 @@ function EditSpan({
         data-editor-field={field}
         contentEditable
         suppressContentEditableWarning
-        onBlur={() => commitEdit(true)}
+        onBlur={() => {
+          // Defer by one tick so document.activeElement settles on the newly
+          // focused element (e.g. the FloatingToolbar's URL input) before
+          // we check whether the blur should suppress the commit.
+          setTimeout(() => commitEdit(true), 0);
+        }}
         onKeyDown={onEditKeyDown}
         // Keep mousedown free of preventDefault so the caret lands and text
         // selection works normally inside links. Only stop propagation so the
