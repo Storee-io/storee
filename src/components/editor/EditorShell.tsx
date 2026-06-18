@@ -1005,7 +1005,10 @@ export default function EditorShell({ store, from }: Props) {
 
           {/* Preview */}
           <button
-            onClick={() => router.push(`/preview/${liveContextStore.id}`)}
+            onClick={() => {
+              pushSnapshot(previewStore.design!, storeName, primaryColor, 'Viewed in preview');
+              router.push(`/preview/${liveContextStore.id}`);
+            }}
             className="flex items-center gap-1.5 px-3.5 py-1.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors"
           >
             <Eye className="w-4 h-4 flex-shrink-0" />
@@ -1016,6 +1019,8 @@ export default function EditorShell({ store, from }: Props) {
           <Tip label={isPublished ? 'Publish changes to live store' : 'Make your store live'}>
             <button
               onClick={async () => {
+                // Save current state to version history before publishing
+                pushSnapshot(previewStore.design!, storeName, primaryColor, isPublished ? 'Published changes' : 'Published store');
                 // Persist the draft first so the saved store stays in sync with what
                 // we're about to publish (publish itself sends previewStore directly).
                 try { await persistStore(); } catch { /* publish can still proceed */ }
