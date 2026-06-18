@@ -146,7 +146,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
   const [currentFontFamily, setCurrentFontFamily] = useState('');
   const [currentLineHeight, setCurrentLineHeight] = useState('');
   const [currentTextColor, setCurrentTextColor] = useState('#000000');
-  const [currentHighlightColor, setCurrentHighlightColor] = useState('#fef08a');
+  const [currentHighlightColor, setCurrentHighlightColor] = useState('');
   const [showLink, setShowLink] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkText, setLinkText] = useState(''); // Store selected text when link dialog opens
@@ -224,7 +224,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
     const sel = window.getSelection();
     if (!sel || !sel.rangeCount) {
       setCurrentTextColor('#000000');
-      setCurrentHighlightColor('#fef08a');
+      setCurrentHighlightColor('');
       return;
     }
 
@@ -234,7 +234,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
 
     if (!el) {
       setCurrentTextColor('#000000');
-      setCurrentHighlightColor('#fef08a');
+      setCurrentHighlightColor('');
       return;
     }
 
@@ -283,7 +283,7 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
       setCurrentTextColor(textColor);
 
       // Extract background/highlight color
-      let highlightColor = '#fef08a';
+      let highlightColor = '';
       const bgColorValue = computedStyle.backgroundColor;
       if (bgColorValue && bgColorValue !== 'rgba(0, 0, 0, 0)') {
         const match = bgColorValue.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
@@ -981,11 +981,17 @@ export function FloatingToolbar({ editMode, containerRef, primaryColor = '#10b98
         onMouseDown={e => { e.preventDefault(); saveRange(); bgColorInputRef.current?.click(); }}
         className={plain + ' relative'}
       >
-        <span className="w-3.5 h-3.5 rounded-sm block border border-slate-200" style={{ background: currentHighlightColor }} />
+        <span
+          className="w-3.5 h-3.5 rounded-sm block border border-slate-200"
+          style={currentHighlightColor
+            ? { background: currentHighlightColor }
+            : { backgroundImage: 'linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%), linear-gradient(45deg, #ccc 25%, #fff 25%, #fff 75%, #ccc 75%)', backgroundSize: '6px 6px', backgroundPosition: '0 0, 3px 3px' }
+          }
+        />
         <input
           ref={bgColorInputRef}
           type="color"
-          value={currentHighlightColor}
+          value={currentHighlightColor || '#ffffff'}
           onChange={e => { restoreRange(); exec('hiliteColor', e.target.value); }}
           className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
           tabIndex={-1}
