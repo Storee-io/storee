@@ -529,7 +529,6 @@ export default function EditorShell({ store, from }: Props) {
   const handleFieldChange = useCallback((field: string, value: string, label?: string) => {
     // Track field label for version history
     if (label) lastFieldLabelRef.current = label;
-    console.log(`[handleFieldChange] field=${field}, label=${label}, hasLink=${value.includes('<a')}, valueLen=${value.length}`);
 
     if (field === 'heroTitle')           { setHeroTitle(value); return; }
     if (field === 'heroSubtitle')        { setHeroSubtitle(value); return; }
@@ -809,11 +808,9 @@ export default function EditorShell({ store, from }: Props) {
     setSaved(false);
     if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
     autosaveTimerRef.current = setTimeout(async () => {
-      console.log(`[autosave] triggering 5s after change. lastFieldLabel=${lastFieldLabelRef.current}`);
       // MUST await persist before recording version history
       // Otherwise link may not be saved to database but version history records it
       await persistStoreRef.current?.();
-      console.log(`[autosave] persist completed, now pushing snapshot`);
 
       // Push to history after successful save
       const currentDesign = {
@@ -836,9 +833,6 @@ export default function EditorShell({ store, from }: Props) {
         sectionOrder: sectionItems.map(i => i.type),
         elementOverrides: Object.keys(elementOverrides).length ? elementOverrides : undefined,
       } as StoreDesign;
-      // Check if any feature has link
-      const hasAnyLink = features.some(f => f.title.includes('<a') || f.description?.includes('<a'));
-      console.log(`[autosave] pushing snapshot. hasAnyLink=${hasAnyLink}, label=${lastFieldLabelRef.current}`);
       pushSnapshot(currentDesign, storeName, primaryColor, lastFieldLabelRef.current);
     }, 5000);
 

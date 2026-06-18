@@ -497,7 +497,6 @@ function EditSpan({
     if (el) {
       // Always capture innerHTML before any mutations
       const editedHtml = el.innerHTML;
-      console.log(`[commitEdit] BEFORE restoreLinkHrefs: field=${field}, editedHtml=`, editedHtml);
 
       // Re-attach any hrefs we stripped on edit-enter so the saved markup keeps links.
       restoreLinkHrefs(el);
@@ -505,9 +504,6 @@ function EditSpan({
       // Get the final HTML after href restoration
       const next = el.innerHTML;
       const current = value;
-      console.log(`[commitEdit] AFTER restoreLinkHrefs: next=`, next);
-      console.log(`[commitEdit] current value=`, current);
-      console.log(`[commitEdit] hasLink=${editedHtml.includes('<a')}, different=${next !== current}`);
 
       // Always call onFieldChange if there's ANY difference (including formatting or link additions)
       // Don't rely on string comparison because links may be added via toolbar
@@ -516,10 +512,7 @@ function EditSpan({
         const sectionName = getFieldSectionName(field);
         const label = `${sectionName} — ${changeType}`;
         // Pass change to onFieldChange with label for version history
-        console.log(`[commitEdit] CALLING onFieldChange with: field=${field}, hasLink=${next.includes('<a')}, label=${label}`);
         onFieldChange?.(field, next, label);
-      } else {
-        console.log(`[commitEdit] SKIPPING onFieldChange (no changes detected)`);
       }
     }
     setIsEditing(false);
