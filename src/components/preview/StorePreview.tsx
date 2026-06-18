@@ -495,17 +495,24 @@ function EditSpan({
     }
     const el = spanRef.current;
     if (el) {
+      // Always capture innerHTML before any mutations
+      const editedHtml = el.innerHTML;
+
       // Re-attach any hrefs we stripped on edit-enter so the saved markup keeps links.
       restoreLinkHrefs(el);
-      // Always use innerHTML to preserve any formatting applied via toolbar
+
+      // Get the final HTML after href restoration
       const next = el.innerHTML;
       const current = value;
-      if (next !== current) {
+
+      // Always call onFieldChange if there's ANY difference (including formatting or link additions)
+      // Don't rely on string comparison because links may be added via toolbar
+      if (next !== current || editedHtml.includes('<a')) {
         const changeType = getChangeDescription(current, next);
         const sectionName = getFieldSectionName(field);
         const label = `${sectionName} — ${changeType}`;
-        // Pass change to onFieldChange
-        onFieldChange?.(field, next);
+        // Pass change to onFieldChange with label for version history
+        onFieldChange?.(field, next, label);
       }
     }
     setIsEditing(false);
