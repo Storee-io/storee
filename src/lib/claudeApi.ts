@@ -20,6 +20,7 @@ export interface RichProduct {
   categoryHtml?: string;
   descriptionHtml?: string;
   badgeHtml?: string;
+  priceHtml?: string;
 }
 
 // ── Design Tokens — Claude-as-Designer (v2: raw CSS values) ─────────────────

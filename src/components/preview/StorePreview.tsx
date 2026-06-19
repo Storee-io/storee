@@ -6222,7 +6222,7 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
             </div>
             <div className="flex items-center justify-between mt-3 gap-3">
               <div className="flex items-center gap-2">
-                <span className="text-base font-black" style={{ color: tt.primary }}>{fmtPrice(p.price)}</span>
+                <span className="text-base font-black" style={{ color: tt.primary }}><StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /></span>
                 {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
               </div>
               <div className="flex items-center gap-2">
@@ -6233,6 +6233,7 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
                   onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
                   className="px-4 py-2 text-xs font-bold flex-shrink-0"
                   style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}
+                  title={editMode ? 'Button text can be customized in Theme settings' : undefined}
                 >
                   Add to Cart
                 </button>
