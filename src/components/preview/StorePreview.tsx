@@ -722,6 +722,7 @@ function StyleOnlySpan({
             background: 'rgba(15,23,42,0.92)', color: '#fff', fontSize: '12px', fontWeight: 500,
             padding: '7px 16px', borderRadius: '8px', pointerEvents: 'none', zIndex: 9999,
             whiteSpace: 'nowrap', boxShadow: '0 4px 16px rgba(0,0,0,0.3)', letterSpacing: '0.01em',
+            textTransform: 'none',
           }}>
             Product text can only be edited in the Dashboard
           </span>
