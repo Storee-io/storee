@@ -618,9 +618,7 @@ function StyleOnlySpan({
   className?: string; style?: React.CSSProperties;
 }) {
   const [isStyling, setIsStyling] = useState(false);
-  const [showTip, setShowTip] = useState(false);
   const spanRef = useRef<HTMLSpanElement>(null);
-  const tipTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   const displayVal = htmlValue || value;
   const isHtml = /<[a-z]/i.test(displayVal);
@@ -687,47 +685,28 @@ function StyleOnlySpan({
     setIsStyling(false);
   };
 
-  const flashTip = () => {
-    setShowTip(true);
-    clearTimeout(tipTimerRef.current);
-    tipTimerRef.current = setTimeout(() => setShowTip(false), 2200);
-  };
-
   if (isStyling) {
     return (
-      <>
-        <span
-          ref={spanRef}
-          contentEditable
-          suppressContentEditableWarning
-          data-floating-toolbar-field={field}
-          className={className}
-          style={spanStyle}
-          onKeyDown={e => {
-            const isModifier = e.ctrlKey || e.metaKey;
-            const navKeys = ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','PageUp','PageDown'];
-            if (e.key === 'Escape') { e.preventDefault(); commit(); return; }
-            if (isModifier && ['b','i','u','a','z','y','c','x'].includes(e.key.toLowerCase())) return;
-            if (navKeys.includes(e.key)) return;
-            if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter' || e.key.length === 1) {
-              e.preventDefault();
-              flashTip();
-            }
-          }}
-          onBlur={() => { setTimeout(commit, 0); }}
-        />
-        {showTip && (
-          <span style={{
-            position: 'fixed', bottom: '88px', left: '50%', transform: 'translateX(-50%)',
-            background: 'rgba(15,23,42,0.92)', color: '#fff', fontSize: '12px', fontWeight: 500,
-            padding: '7px 16px', borderRadius: '8px', pointerEvents: 'none', zIndex: 9999,
-            whiteSpace: 'nowrap', boxShadow: '0 4px 16px rgba(0,0,0,0.3)', letterSpacing: '0.01em',
-            textTransform: 'none',
-          }}>
-            Product text can only be edited in the Dashboard
-          </span>
-        )}
-      </>
+      <span
+        ref={spanRef}
+        contentEditable
+        suppressContentEditableWarning
+        data-floating-toolbar-field={field}
+        className={className}
+        style={spanStyle}
+        title="Product text can only be edited in the Dashboard"
+        onKeyDown={e => {
+          const isModifier = e.ctrlKey || e.metaKey;
+          const navKeys = ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','PageUp','PageDown'];
+          if (e.key === 'Escape') { e.preventDefault(); commit(); return; }
+          if (isModifier && ['b','i','u','a','z','y','c','x'].includes(e.key.toLowerCase())) return;
+          if (navKeys.includes(e.key)) return;
+          if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter' || e.key.length === 1) {
+            e.preventDefault();
+          }
+        }}
+        onBlur={() => { setTimeout(commit, 0); }}
+      />
     );
   }
 
