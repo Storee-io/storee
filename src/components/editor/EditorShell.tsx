@@ -563,6 +563,13 @@ export default function EditorShell({ store, from }: Props) {
       }));
       return;
     }
+    const prodHtmlM = field.match(/^products\.([^.]+)\.(nameHtml|categoryHtml|descriptionHtml|badgeHtml)$/);
+    if (prodHtmlM) {
+      const id = prodHtmlM[1];
+      const key = prodHtmlM[2] as 'nameHtml' | 'categoryHtml' | 'descriptionHtml' | 'badgeHtml';
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, [key]: value } : p));
+      return;
+    }
     const colM = field.match(/^collections\.(\d+)\.name$/);
     if (colM) {
       const idx = parseInt(colM[1]);

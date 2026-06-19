@@ -606,6 +606,139 @@ function EditSpan({
   return <span ref={spanRef} className={className} style={spanStyle} data-editor-field={field}>{decodedValue}</span>;
 }
 
+// ── StyleOnlySpan — select & style dynamic text, but block text editing ───────
+// Used for product fields (name, category, description) so users can apply
+// bold/italic/color via FloatingToolbar without changing the actual text.
+// Tooltip appears when user tries to type, explaining text is edit-only via Dashboard.
+function StyleOnlySpan({
+  field, value, htmlValue, editMode, onFieldChange, className, style,
+}: {
+  field: string; value: string; htmlValue?: string;
+  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  className?: string; style?: React.CSSProperties;
+}) {
+  const [isStyling, setIsStyling] = useState(false);
+  const [showTip, setShowTip] = useState(false);
+  const spanRef = useRef<HTMLSpanElement>(null);
+  const tipTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const displayVal = htmlValue || value;
+  const isHtml = /<[a-z]/i.test(displayVal);
+  const spanStyle: React.CSSProperties = { ...style, lineHeight: 'inherit', verticalAlign: 'middle', display: 'inline' };
+
+  // Sync DOM when not in styling mode
+  useEffect(() => {
+    if (!spanRef.current || isStyling) return;
+    const el = spanRef.current;
+    if (isHtml) { if (el.innerHTML !== displayVal) el.innerHTML = displayVal; }
+    else { if (el.textContent !== value) el.textContent = value; }
+  }, [displayVal, value, isStyling, isHtml]);
+
+  // Enter styling mode via storee:edit-field event (same mechanism as EditSpan)
+  useEffect(() => {
+    if (!editMode) return;
+    const onEditField = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { field?: string; el?: Element } | undefined;
+      if (!detail || detail.field !== field) return;
+      const me = spanRef.current;
+      const target = detail.el;
+      if (!me || !target) return;
+      if (me === target || me.contains(target) || target.contains(me)) setIsStyling(true);
+    };
+    window.addEventListener('storee:edit-field', onEditField);
+    return () => window.removeEventListener('storee:edit-field', onEditField);
+  }, [editMode, field]);
+
+  // Seed content and focus when entering styling mode
+  useEffect(() => {
+    if (!isStyling || !spanRef.current) return;
+    const el = spanRef.current;
+    if (isHtml) el.innerHTML = displayVal; else el.textContent = value;
+    el.focus();
+    requestAnimationFrame(() => { document.execCommand('selectAll', false); });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStyling]);
+
+  // Notify FloatingToolbar of editing state
+  useEffect(() => {
+    if (!spanRef.current) return;
+    const parent = spanRef.current.parentElement;
+    if (!parent) return;
+    if (isStyling) {
+      parent.classList.add('is-editing-text');
+      window.dispatchEvent(new CustomEvent('storee:text-editing-start'));
+    } else {
+      parent.classList.remove('is-editing-text');
+      window.dispatchEvent(new CustomEvent('storee:text-editing-end'));
+    }
+  }, [isStyling]);
+
+  const commit = () => {
+    if (!spanRef.current) { setIsStyling(false); return; }
+    const el = spanRef.current;
+    const currentText = el.textContent ?? '';
+    if (currentText === value) {
+      const html = el.innerHTML;
+      if (html !== displayVal) onFieldChange?.(field, html);
+    } else {
+      // Text was changed — revert to original
+      if (isHtml) el.innerHTML = displayVal; else el.textContent = value;
+    }
+    setIsStyling(false);
+  };
+
+  const flashTip = () => {
+    setShowTip(true);
+    clearTimeout(tipTimerRef.current);
+    tipTimerRef.current = setTimeout(() => setShowTip(false), 2200);
+  };
+
+  if (isStyling) {
+    return (
+      <>
+        <span
+          ref={spanRef}
+          contentEditable
+          suppressContentEditableWarning
+          data-floating-toolbar-field={field}
+          className={className}
+          style={spanStyle}
+          onKeyDown={e => {
+            const isModifier = e.ctrlKey || e.metaKey;
+            const navKeys = ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','PageUp','PageDown'];
+            if (e.key === 'Escape') { e.preventDefault(); commit(); return; }
+            if (isModifier && ['b','i','u','a','z','y','c','x'].includes(e.key.toLowerCase())) return;
+            if (navKeys.includes(e.key)) return;
+            if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter' || e.key.length === 1) {
+              e.preventDefault();
+              flashTip();
+            }
+          }}
+          onBlur={() => { setTimeout(commit, 0); }}
+        />
+        {showTip && (
+          <span style={{
+            position: 'fixed', bottom: '88px', left: '50%', transform: 'translateX(-50%)',
+            background: 'rgba(15,23,42,0.92)', color: '#fff', fontSize: '12px', fontWeight: 500,
+            padding: '7px 16px', borderRadius: '8px', pointerEvents: 'none', zIndex: 9999,
+            whiteSpace: 'nowrap', boxShadow: '0 4px 16px rgba(0,0,0,0.3)', letterSpacing: '0.01em',
+          }}>
+            Teks produk hanya dapat diedit di Dashboard
+          </span>
+        )}
+      </>
+    );
+  }
+
+  if (!editMode) {
+    if (isHtml) return <span ref={spanRef} className={className} style={spanStyle} dangerouslySetInnerHTML={{ __html: displayVal }} />;
+    return <span ref={spanRef} className={className} style={spanStyle}>{value}</span>;
+  }
+
+  if (isHtml) return <span ref={spanRef} className={className} style={spanStyle} data-editor-field={field} dangerouslySetInnerHTML={{ __html: displayVal }} />;
+  return <span ref={spanRef} className={className} style={spanStyle} data-editor-field={field}>{value}</span>;
+}
+
 type StorePage = 'home' | 'product' | 'cart' | 'checkout' | 'success' | 'myorders' | 'wishlist';
 
 interface BuyerUser { id: string; email: string; }
@@ -5728,10 +5861,11 @@ function TkHeroFashion({ design, tt, primaryColor, device, onScrollToProducts, h
 // ── Layout Mutation: STAGGERED ────────────────────────────────────────────────
 // Cards offset vertically in alternating rhythm — visual flow, not static grid
 
-function TkGridStaggered({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
+function TkGridStaggered({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice, editMode, onFieldChange }: {
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
+  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const cols = isMobile ? 2 : 3;
@@ -5759,8 +5893,8 @@ function TkGridStaggered({ products, tt, primaryColor, device, onProductClick, o
             </div>
           </div>
           <div style={tt.cardStyle ? { padding: '0 10px 10px' } : undefined}>
-            <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
-            <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+            <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tt.textMuted }}><StyleOnlySpan field={`products.${p.id}.categoryHtml`} value={p.category} htmlValue={p.categoryHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
+            <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}><StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-sm font-black" style={{ color: primaryColor }}>{fmtPrice(p.price)}</span>
               {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
@@ -5775,10 +5909,11 @@ function TkGridStaggered({ products, tt, primaryColor, device, onProductClick, o
 // ── Layout Mutation: OVERLAPPING ──────────────────────────────────────────────
 // Cards overlap each other with z-index depth layers — premium layered feel
 
-function TkGridOverlapping({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
+function TkGridOverlapping({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice, editMode, onFieldChange }: {
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
+  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
@@ -5813,7 +5948,7 @@ function TkGridOverlapping({ products, tt, primaryColor, device, onProductClick,
                 {p.badge && <span className="absolute top-3 left-3 text-[10px] font-black uppercase px-2.5 py-1 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>{p.badge}</span>}
                 {/* Bottom overlay */}
                 <div className="absolute bottom-0 left-0 right-0 p-4" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }}>
-                  <p className="text-white text-xs font-bold truncate">{p.name}</p>
+                  <p className="text-white text-xs font-bold truncate"><StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
                   <div className="flex items-center justify-between mt-1.5">
                     <span className="text-white text-sm font-black">{fmtPrice(p.price)}</span>
                     <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
@@ -5833,10 +5968,11 @@ function TkGridOverlapping({ products, tt, primaryColor, device, onProductClick,
 // ── Layout Mutation: ASYMMETRIC ───────────────────────────────────────────────
 // Unequal column widths — 60/40 alternating, editorial rhythm
 
-function TkGridAsymmetric({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
+function TkGridAsymmetric({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice, editMode, onFieldChange }: {
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
+  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
@@ -5858,8 +5994,8 @@ function TkGridAsymmetric({ products, tt, primaryColor, device, onProductClick, 
             style={{ background: primaryColor, borderRadius: tt.btnRadius }}>+ Add</button>
         </div>
       </div>
-      <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: tt.textMuted }}>{p.category}</p>
-      <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+      <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: tt.textMuted }}><StyleOnlySpan field={`products.${p.id}.categoryHtml`} value={p.category} htmlValue={p.categoryHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
+      <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}><StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
       <span className="text-sm font-black" style={{ color: primaryColor }}>{fmtPrice(p.price)}</span>
     </div>
   );
@@ -5887,10 +6023,11 @@ function TkGridAsymmetric({ products, tt, primaryColor, device, onProductClick, 
 
 // ── Product grid: STANDARD (3-col) ────────────────────────────────────────────
 
-function TkGridStandard({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
+function TkGridStandard({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice, editMode, onFieldChange }: {
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
+  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const arch = getAnimArchetype(tt.personality, tt.motion, tt.styleMix);
@@ -5942,10 +6079,10 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
             </button>
           </div>
           <div className={dv.cardPadY} style={hasCardWrapper ? { paddingLeft: '12px', paddingRight: '12px' } : undefined}>
-            {dv.showCategory && <p className={`${dv.fontSize} font-medium mb-0.5`} style={{ color: tt.textMuted, textTransform: cv.categoryTransform, letterSpacing: cv.labelTracking }}>{p.category}</p>}
-            <p className={`${dv.fontSize} font-bold truncate ${dv.infoGap}`} style={{ color: tt.textPrimary }}>{p.name}</p>
+            {dv.showCategory && <p className={`${dv.fontSize} font-medium mb-0.5`} style={{ color: tt.textMuted, textTransform: cv.categoryTransform, letterSpacing: cv.labelTracking }}><StyleOnlySpan field={`products.${p.id}.categoryHtml`} value={p.category} htmlValue={p.categoryHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>}
+            <p className={`${dv.fontSize} font-bold truncate ${dv.infoGap}`} style={{ color: tt.textPrimary }}><StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
             {dv.showDesc && p.description && (
-              <p className="text-[11px] line-clamp-2 mt-0.5" style={{ color: tt.textSecondary }}>{p.description}</p>
+              <p className="text-[11px] line-clamp-2 mt-0.5" style={{ color: tt.textSecondary }}><StyleOnlySpan field={`products.${p.id}.descriptionHtml`} value={p.description} htmlValue={p.descriptionHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
             )}
             <div className={`flex items-center gap-2 ${dv.infoGap}`}>
               <span className={`${dv.fontSize} font-black`} style={{ color: tt.primary }}>{fmtPrice(p.price)}</span>
@@ -5960,10 +6097,11 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
 
 // ── Product grid: MAGAZINE (first product featured) ───────────────────────────
 
-function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
+function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice, editMode, onFieldChange }: {
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
+  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const [featured, ...rest] = products;
@@ -5985,8 +6123,8 @@ function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, on
           </span>
         )}
         <div className="absolute bottom-0 inset-x-0 p-5">
-          <p className="text-[10px] uppercase tracking-widest text-white/60 mb-1">{featured.category}</p>
-          <p className="text-lg font-black text-white mb-1" style={{ fontFamily: tt.headingFont }}>{featured.name}</p>
+          <p className="text-[10px] uppercase tracking-widest text-white/60 mb-1"><StyleOnlySpan field={`products.${featured.id}.categoryHtml`} value={featured.category} htmlValue={featured.categoryHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
+          <p className="text-lg font-black text-white mb-1" style={{ fontFamily: tt.headingFont }}><StyleOnlySpan field={`products.${featured.id}.nameHtml`} value={featured.name} htmlValue={featured.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
           <div className="flex items-center justify-between">
             <span className="text-base font-black" style={{ color: primaryColor }}>{fmtPrice(featured.price)}</span>
             <button
@@ -6025,8 +6163,8 @@ function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, on
             </button>
           </div>
           <div style={tt.cardStyle ? { paddingLeft: '10px', paddingRight: '10px', paddingBottom: '10px' } : undefined}>
-            <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: tt.textMuted }}>{p.category}</p>
-            <p className="text-xs font-bold truncate mb-1" style={{ color: tt.textPrimary }}>{p.name}</p>
+            <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: tt.textMuted }}><StyleOnlySpan field={`products.${p.id}.categoryHtml`} value={p.category} htmlValue={p.categoryHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
+            <p className="text-xs font-bold truncate mb-1" style={{ color: tt.textPrimary }}><StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-black" style={{ color: tt.primary }}>{fmtPrice(p.price)}</span>
               <button
@@ -6044,10 +6182,11 @@ function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, on
 
 // ── Product grid: LIST ────────────────────────────────────────────────────────
 
-function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
+function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice, editMode, onFieldChange }: {
   products: RichProduct[]; tt: TokenTheme; primaryColor: string;
   onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
+  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
   const dv = getDensityVars(tt.density);
@@ -6073,12 +6212,12 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
             <div>
               {p.badge && (
                 <span className="inline-block text-[9px] font-black uppercase tracking-wider px-2 py-0.5 mb-2 text-white" style={{ background: primaryColor, borderRadius: tt.btnRadius }}>
-                  {p.badge}
+                  <StyleOnlySpan field={`products.${p.id}.badgeHtml`} value={p.badge} htmlValue={p.badgeHtml} editMode={editMode} onFieldChange={onFieldChange} />
                 </span>
               )}
-              {dv.showCategory && <p className={`${dv.fontSize} font-medium mb-1`} style={{ color: tt.textMuted, textTransform: cv.categoryTransform, letterSpacing: cv.labelTracking }}>{p.category}</p>}
-              <p className={`${dv.fontSize} font-bold truncate`} style={{ color: tt.textPrimary }}>{p.name}</p>
-              {(dv.showDesc || tt.density === 'normal') && <p className="text-xs leading-relaxed mt-1 line-clamp-2" style={{ color: tt.textSecondary }}>{p.description}</p>}
+              {dv.showCategory && <p className={`${dv.fontSize} font-medium mb-1`} style={{ color: tt.textMuted, textTransform: cv.categoryTransform, letterSpacing: cv.labelTracking }}><StyleOnlySpan field={`products.${p.id}.categoryHtml`} value={p.category} htmlValue={p.categoryHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>}
+              <p className={`${dv.fontSize} font-bold truncate`} style={{ color: tt.textPrimary }}><StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
+              {(dv.showDesc || tt.density === 'normal') && <p className="text-xs leading-relaxed mt-1 line-clamp-2" style={{ color: tt.textSecondary }}><StyleOnlySpan field={`products.${p.id}.descriptionHtml`} value={p.description} htmlValue={p.descriptionHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>}
             </div>
             <div className="flex items-center justify-between mt-3 gap-3">
               <div className="flex items-center gap-2">
@@ -6109,10 +6248,11 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
 // ── Product grid: CAROUSEL ────────────────────────────────────────────────────
 // Horizontal scroll snap carousel — one card at a time on mobile, peek on desktop
 
-function TkGridCarousel({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
+function TkGridCarousel({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice, editMode, onFieldChange }: {
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
+  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
@@ -6145,8 +6285,8 @@ function TkGridCarousel({ products, tt, primaryColor, device, onProductClick, on
               </div>
             </div>
             <div style={tt.cardStyle ? { padding: '0 10px 10px' } : undefined}>
-              <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
-              <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+              <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tt.textMuted }}><StyleOnlySpan field={`products.${p.id}.categoryHtml`} value={p.category} htmlValue={p.categoryHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
+              <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}><StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-sm font-black" style={{ color: primaryColor }}>{fmtPrice(p.price)}</span>
                 {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
@@ -6164,10 +6304,11 @@ function TkGridCarousel({ products, tt, primaryColor, device, onProductClick, on
 // ── Product grid: SPOTLIGHT ───────────────────────────────────────────────────
 // Featured big card + 4-col mini grid — editorial/premium feel
 
-function TkGridSpotlight({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice }: {
+function TkGridSpotlight({ products, tt, primaryColor, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice, editMode, onFieldChange }: {
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
+  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
@@ -6192,8 +6333,8 @@ function TkGridSpotlight({ products, tt, primaryColor, device, onProductClick, o
           </button>
           <div className="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between">
             <div>
-              <p className="text-white/70 text-[10px] uppercase tracking-wider mb-1">{featured.category}</p>
-              <p className="text-white font-bold text-lg leading-tight">{featured.name}</p>
+              <p className="text-white/70 text-[10px] uppercase tracking-wider mb-1"><StyleOnlySpan field={`products.${featured.id}.categoryHtml`} value={featured.category} htmlValue={featured.categoryHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
+              <p className="text-white font-bold text-lg leading-tight"><StyleOnlySpan field={`products.${featured.id}.nameHtml`} value={featured.name} htmlValue={featured.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
               <div className="flex items-center gap-2 mt-1.5">
                 <span className="text-white font-black text-base">{fmtPrice(featured.price)}</span>
                 {featured.originalPrice && <span className="text-white/50 text-xs line-through">{fmtPrice(featured.originalPrice)}</span>}
@@ -6221,7 +6362,7 @@ function TkGridSpotlight({ products, tt, primaryColor, device, onProductClick, o
                 style={{ background: primaryColor }}>+</button>
             </div>
             <div style={tt.cardStyle ? { padding: '6px 8px 8px' } : undefined}>
-              <p className="text-xs font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+              <p className="text-xs font-bold truncate" style={{ color: tt.textPrimary }}><StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
               <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{fmtPrice(p.price)}</p>
             </div>
           </motion.div>
@@ -7789,10 +7930,10 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
 
   // Product grid: switch based on productGrid token
   const renderProductsGrid = () => {
-    const sharedProps = { products: displayed, tt, primaryColor: pc, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice };
+    const sharedProps = { products: displayed, tt, primaryColor: pc, device, onProductClick, onAddToCart, onToggleWishlist, wishlist, fmtPrice, editMode, onFieldChange };
     switch (productGrid) {
       case 'magazine':  return <TkGridMagazine  {...sharedProps} />;
-      case 'list':      return <TkGridList      products={displayed} tt={tt} primaryColor={pc} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} fmtPrice={fmtPrice} />;
+      case 'list':      return <TkGridList      {...sharedProps} />;
       case 'carousel':  return <TkGridCarousel  {...sharedProps} />;
       case 'spotlight': return <TkGridSpotlight {...sharedProps} />;
       case 'standard':  return <TkGridStandard  {...sharedProps} />;
@@ -7800,17 +7941,17 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
         return isMobile ? (
           <div className="grid grid-cols-2 gap-3">
             {displayed.map(p => (
-              <EditorialProductCard key={p.id} p={p} tt={tt} pc={pc} fmtPrice={fmtPrice} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} cardVars={cardVars} hoverMotion={hoverMotion} />
+              <EditorialProductCard key={p.id} p={p} tt={tt} pc={pc} fmtPrice={fmtPrice} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} cardVars={cardVars} hoverMotion={hoverMotion} editMode={editMode} onFieldChange={onFieldChange} />
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-5">
             {displayed.map((p, idx) => idx === 0 ? (
               <div key={p.id} className="col-span-2 row-span-1">
-                <EditorialProductCard p={p} tt={tt} pc={pc} fmtPrice={fmtPrice} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} featured cardVars={cardVars} hoverMotion={hoverMotion} />
+                <EditorialProductCard p={p} tt={tt} pc={pc} fmtPrice={fmtPrice} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} featured cardVars={cardVars} hoverMotion={hoverMotion} editMode={editMode} onFieldChange={onFieldChange} />
               </div>
             ) : (
-              <EditorialProductCard key={p.id} p={p} tt={tt} pc={pc} fmtPrice={fmtPrice} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} cardVars={cardVars} hoverMotion={hoverMotion} />
+              <EditorialProductCard key={p.id} p={p} tt={tt} pc={pc} fmtPrice={fmtPrice} onProductClick={onProductClick} onAddToCart={onAddToCart} onToggleWishlist={onToggleWishlist} wishlist={wishlist} cardVars={cardVars} hoverMotion={hoverMotion} editMode={editMode} onFieldChange={onFieldChange} />
             ))}
           </div>
         );
@@ -7999,7 +8140,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
 }
 
 // Editorial product card helper — token-aware (cardVars + hoverMotion)
-function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart, onToggleWishlist, wishlist, featured = false, cardVars, hoverMotion }: {
+function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart, onToggleWishlist, wishlist, featured = false, cardVars, hoverMotion, editMode, onFieldChange }: {
   p: RichProduct; tt: TokenTheme; pc: string; fmtPrice: (n: number) => string; featured?: boolean;
   cardVars?: CardStyleVars;
   hoverMotion?: import('framer-motion').TargetAndTransition;
@@ -8007,6 +8148,7 @@ function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart
   onAddToCart: (p: RichProduct, rect?: DOMRect) => void;
   onToggleWishlist: (id: string) => void;
   wishlist: Set<string>;
+  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   const cv = cardVars ?? { background: 'transparent', border: 'none', boxShadow: 'none' };
   const wh = hoverMotion ?? { y: -2 };
@@ -8041,8 +8183,8 @@ function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart
         </div>
       </div>
       <div className="mt-3 px-0.5">
-        <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
-        <p className={`font-bold truncate ${featured ? 'text-base' : 'text-sm'}`} style={{ color: tt.textPrimary }}>{p.name}</p>
+        <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: tt.textMuted }}><StyleOnlySpan field={`products.${p.id}.categoryHtml`} value={p.category} htmlValue={p.categoryHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
+        <p className={`font-bold truncate ${featured ? 'text-base' : 'text-sm'}`} style={{ color: tt.textPrimary }}><StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /></p>
         <div className="flex items-center gap-2 mt-1">
           <span className="text-sm font-black" style={{ color: tt.textPrimary }}>{fmtPrice(p.price)}</span>
           {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}

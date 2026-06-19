@@ -15,6 +15,11 @@ export interface RichProduct {
   category: string;
   badge?: string;
   description: string;
+  /** Styled HTML for product name (set when user applies text styling in canvas editor) */
+  nameHtml?: string;
+  categoryHtml?: string;
+  descriptionHtml?: string;
+  badgeHtml?: string;
 }
 
 // ── Design Tokens — Claude-as-Designer (v2: raw CSS values) ─────────────────
