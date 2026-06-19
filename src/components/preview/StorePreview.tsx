@@ -705,7 +705,7 @@ function StyleOnlySpan({
           ref={spanRef}
           contentEditable
           suppressContentEditableWarning
-          data-floating-toolbar-field={field}
+          data-editor-field={field}
           className={className}
           style={spanStyle}
           onKeyDown={e => {
