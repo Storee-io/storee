@@ -3,38 +3,36 @@
 import { useState } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import type { Collection } from '../../../data/storeDataGenerator';
 
-interface Catalog {
-  id: string;
-  name: string;
-}
-
-interface CatalogModalProps {
+interface CollectionModalProps {
   isOpen: boolean;
-  catalogs: Catalog[];
-  selectedCatalog?: string;
+  collections: Collection[];
+  selectedCollection?: string;
   onClose: () => void;
-  onSelect: (catalogId: string) => void;
-  onAddCatalog: (name: string) => void;
-  onDeleteCatalog: (id: string) => void;
+  onSelect: (collectionId: string) => void;
+  onAddCollection: (name: string, emoji: string) => void;
+  onDeleteCollection: (id: string) => void;
 }
 
-export function CatalogModal({
+export function CollectionModal({
   isOpen,
-  catalogs,
-  selectedCatalog,
+  collections,
+  selectedCollection,
   onClose,
   onSelect,
-  onAddCatalog,
-  onDeleteCatalog,
-}: CatalogModalProps) {
-  const [newCatalogName, setNewCatalogName] = useState('');
+  onAddCollection,
+  onDeleteCollection,
+}: CollectionModalProps) {
+  const [newCollectionName, setNewCollectionName] = useState('');
+  const [newCollectionEmoji, setNewCollectionEmoji] = useState('✨');
   const [showAddForm, setShowAddForm] = useState(false);
 
-  const handleAddCatalog = () => {
-    if (newCatalogName.trim()) {
-      onAddCatalog(newCatalogName);
-      setNewCatalogName('');
+  const handleAddCollection = () => {
+    if (newCollectionName.trim()) {
+      onAddCollection(newCollectionName, newCollectionEmoji);
+      setNewCollectionName('');
+      setNewCollectionEmoji('✨');
       setShowAddForm(false);
     }
   };
@@ -61,7 +59,7 @@ export function CatalogModal({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50">
-          <h2 className="text-lg font-bold text-slate-900">Select Catalog</h2>
+          <h2 className="text-lg font-bold text-slate-900">Select Collection</h2>
           <button
             onClick={onClose}
             className="p-1 hover:bg-slate-200 rounded-lg transition-colors"
@@ -72,33 +70,34 @@ export function CatalogModal({
 
         {/* Content */}
         <div className="p-6 max-h-96 overflow-y-auto">
-          {/* Catalogs List */}
+          {/* Collections List */}
           <div className="space-y-2 mb-6">
-            {catalogs.length === 0 ? (
-              <p className="text-sm text-slate-400 py-4 text-center">No catalogs yet</p>
+            {collections.length === 0 ? (
+              <p className="text-sm text-slate-400 py-4 text-center">No collections yet</p>
             ) : (
-              catalogs.map(catalog => (
+              collections.map(collection => (
                 <div
-                  key={catalog.id}
-                  onClick={() => onSelect(catalog.id)}
+                  key={collection.id}
+                  onClick={() => onSelect(collection.id)}
                   className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${
-                    selectedCatalog === catalog.id
+                    selectedCollection === collection.id
                       ? 'bg-emerald-50 border border-emerald-300'
                       : 'bg-slate-50 border border-slate-200 hover:border-slate-300'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    {selectedCatalog === catalog.id && (
+                    {selectedCollection === collection.id && (
                       <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
                         <span className="text-white text-xs font-bold">✓</span>
                       </div>
                     )}
-                    <span className="text-sm font-medium text-slate-900">{catalog.name}</span>
+                    <span className="text-xl">{collection.emoji}</span>
+                    <span className="text-sm font-medium text-slate-900">{collection.name}</span>
                   </div>
                   <button
                     onClick={e => {
                       e.stopPropagation();
-                      onDeleteCatalog(catalog.id);
+                      onDeleteCollection(collection.id);
                     }}
                     className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
                   >
@@ -109,36 +108,46 @@ export function CatalogModal({
             )}
           </div>
 
-          {/* Add New Catalog */}
+          {/* Add New Collection */}
           {!showAddForm ? (
             <button
               onClick={() => setShowAddForm(true)}
               className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-emerald-600 border border-dashed border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Add New Catalog
+              Add New Collection
             </button>
           ) : (
             <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
-              <input
-                type="text"
-                value={newCatalogName}
-                onChange={e => setNewCatalogName(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') handleAddCatalog();
-                  if (e.key === 'Escape') {
-                    setShowAddForm(false);
-                    setNewCatalogName('');
-                  }
-                }}
-                placeholder="Catalog name"
-                autoFocus
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newCollectionEmoji}
+                  onChange={e => setNewCollectionEmoji(e.target.value.slice(0, 2))}
+                  maxLength={2}
+                  className="w-14 text-center text-xl px-2 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                />
+                <input
+                  type="text"
+                  value={newCollectionName}
+                  onChange={e => setNewCollectionName(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleAddCollection();
+                    if (e.key === 'Escape') {
+                      setShowAddForm(false);
+                      setNewCollectionName('');
+                      setNewCollectionEmoji('✨');
+                    }
+                  }}
+                  placeholder="Collection name"
+                  autoFocus
+                  className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                />
+              </div>
               <div className="flex gap-2">
                 <button
-                  onClick={handleAddCatalog}
-                  disabled={!newCatalogName.trim()}
+                  onClick={handleAddCollection}
+                  disabled={!newCollectionName.trim()}
                   className="flex-1 py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-lg transition-colors"
                 >
                   Add
@@ -146,7 +155,8 @@ export function CatalogModal({
                 <button
                   onClick={() => {
                     setShowAddForm(false);
-                    setNewCatalogName('');
+                    setNewCollectionName('');
+                    setNewCollectionEmoji('✨');
                   }}
                   className="flex-1 py-2 text-sm font-semibold bg-slate-200 hover:bg-slate-300 text-slate-900 rounded-lg transition-colors"
                 >

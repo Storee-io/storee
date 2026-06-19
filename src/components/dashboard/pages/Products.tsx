@@ -12,9 +12,8 @@ import { makePriceFmt } from '../../../lib/formatCurrency';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CatalogModal } from '../modals/CatalogModal';
-import type { DashboardProduct } from '../../../data/storeDataGenerator';
-import type { Catalog } from '../../../data/storeDataGenerator';
+import { CollectionModal } from '../modals/CollectionModal';
+import type { DashboardProduct, Collection } from '../../../data/storeDataGenerator';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -120,8 +119,8 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
   const [stock, setStock] = useState(String(product.stock));
   const [category, setCategory] = useState(product.category);
   const [badge, setBadge] = useState(product.badge ?? '');
-  const [selectedCatalog, setSelectedCatalog] = useState(product.catalog ?? '');
-  const [showCatalogModal, setShowCatalogModal] = useState(false);
+  const [selectedCollection, setSelectedCollection] = useState(product.collectionId ?? '');
+  const [showCollectionModal, setShowCollectionModal] = useState(false);
 
   const level = stockLevel(product.stock);
   const { dot, label: stockLabel, badge: stockBadge } = STOCK_CONFIG[level];
@@ -134,34 +133,35 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
       stock: Math.max(0, Number(stock) || product.stock),
       category: category.trim() || product.category,
       badge: badge.trim() || undefined,
-      catalog: selectedCatalog || undefined,
+      collectionId: selectedCollection || undefined,
       status,
     };
   }
 
-  const handleSelectCatalog = (catalogId: string) => {
-    setSelectedCatalog(catalogId);
-    setShowCatalogModal(false);
+  const handleSelectCollection = (collectionId: string) => {
+    setSelectedCollection(collectionId);
+    setShowCollectionModal(false);
   };
 
-  const handleAddCatalog = (name: string) => {
-    const newCatalog: Catalog = {
-      id: `cat-${Date.now()}`,
+  const handleAddCollection = (name: string, emoji: string) => {
+    const newCollection: Collection = {
+      id: `col-${Date.now()}`,
       name,
+      emoji,
     };
     setStoreData(prev => ({
       ...prev,
-      catalogs: [...(prev?.catalogs || []), newCatalog],
+      collections: [...(prev?.collections || []), newCollection],
     }));
   };
 
-  const handleDeleteCatalog = (id: string) => {
+  const handleDeleteCollection = (id: string) => {
     setStoreData(prev => ({
       ...prev,
-      catalogs: (prev?.catalogs || []).filter(c => c.id !== id),
+      collections: (prev?.collections || []).filter(c => c.id !== id),
     }));
-    if (selectedCatalog === id) {
-      setSelectedCatalog('');
+    if (selectedCollection === id) {
+      setSelectedCollection('');
     }
   };
 
@@ -302,23 +302,26 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
             </div>
           </div>
 
-          {/* Catalog Section */}
+          {/* Collection Section */}
           <div className="bg-white rounded-2xl border border-slate-100 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Catalog</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Collection</p>
                 <p className="text-sm text-slate-600">
-                  {selectedCatalog
-                    ? storeData?.catalogs?.find(c => c.id === selectedCatalog)?.name || 'Unknown'
-                    : 'No catalog assigned'}
+                  {selectedCollection
+                    ? (() => {
+                        const col = storeData?.collections?.find(c => c.id === selectedCollection);
+                        return col ? `${col.emoji} ${col.name}` : 'Unknown';
+                      })()
+                    : 'No collection assigned'}
                 </p>
               </div>
               <button
-                onClick={() => setShowCatalogModal(true)}
+                onClick={() => setShowCollectionModal(true)}
                 className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg font-semibold transition-colors"
               >
                 <Layers className="w-4 h-4" />
-                Select Catalog
+                Select Collection
               </button>
             </div>
           </div>
@@ -357,15 +360,15 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
         </div>
       </div>
 
-      {/* Catalog Modal */}
-      <CatalogModal
-        isOpen={showCatalogModal}
-        catalogs={storeData?.catalogs || []}
-        selectedCatalog={selectedCatalog}
-        onClose={() => setShowCatalogModal(false)}
-        onSelect={handleSelectCatalog}
-        onAddCatalog={handleAddCatalog}
-        onDeleteCatalog={handleDeleteCatalog}
+      {/* Collection Modal */}
+      <CollectionModal
+        isOpen={showCollectionModal}
+        collections={storeData?.collections || []}
+        selectedCollection={selectedCollection}
+        onClose={() => setShowCollectionModal(false)}
+        onSelect={handleSelectCollection}
+        onAddCollection={handleAddCollection}
+        onDeleteCollection={handleDeleteCollection}
       />
     </div>
   );
