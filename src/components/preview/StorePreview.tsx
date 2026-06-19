@@ -618,7 +618,7 @@ function StyleOnlySpan({
   className?: string; style?: React.CSSProperties;
 }) {
   const [isStyling, setIsStyling] = useState(false);
-  const [showTip, setShowTip] = useState(false);
+  const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
   const spanRef = useRef<HTMLSpanElement>(null);
   const tipTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -688,14 +688,17 @@ function StyleOnlySpan({
   };
 
   const flashTip = () => {
-    setShowTip(true);
+    if (spanRef.current) {
+      const r = spanRef.current.getBoundingClientRect();
+      setTipPos({ x: r.left + r.width / 2, y: r.top });
+    }
     clearTimeout(tipTimerRef.current);
-    tipTimerRef.current = setTimeout(() => setShowTip(false), 2200);
+    tipTimerRef.current = setTimeout(() => setTipPos(null), 2200);
   };
 
   if (isStyling) {
     return (
-      <span style={{ position: 'relative', display: 'inline' }}>
+      <>
         <span
           ref={spanRef}
           contentEditable
@@ -716,19 +719,21 @@ function StyleOnlySpan({
           }}
           onBlur={() => { setTimeout(commit, 0); }}
         />
-        {showTip && (
+        {tipPos && typeof document !== 'undefined' && createPortal(
           <span style={{
-            position: 'absolute', bottom: 'calc(100% + 6px)', left: '50%',
-            transform: 'translateX(-50%)',
+            position: 'fixed',
+            left: tipPos.x, top: tipPos.y - 8,
+            transform: 'translate(-50%, -100%)',
             background: 'rgba(15,23,42,0.92)', color: '#fff', fontSize: '12px', fontWeight: 500,
-            padding: '6px 12px', borderRadius: '6px', pointerEvents: 'none', zIndex: 9999,
+            padding: '6px 12px', borderRadius: '6px', pointerEvents: 'none', zIndex: 99999,
             whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
             textTransform: 'none', letterSpacing: '0.01em',
           }}>
             Product text can only be edited in the Dashboard
-          </span>
+          </span>,
+          document.body
         )}
-      </span>
+      </>
     );
   }
 
