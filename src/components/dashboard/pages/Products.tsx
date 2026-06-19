@@ -5,14 +5,16 @@ import {
   Search, Plus, Edit3, Trash2, Copy, ChevronUp, ChevronDown,
   ChevronsUpDown, Package, TrendingUp, DollarSign, AlertTriangle,
   ChevronLeft, ChevronRight, Save, ArrowLeft, BarChart2, Tag,
-  ShoppingCart, Archive,
+  ShoppingCart, Archive, Layers,
 } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
 import { makePriceFmt } from '../../../lib/formatCurrency';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CatalogModal } from '../modals/CatalogModal';
 import type { DashboardProduct } from '../../../data/storeDataGenerator';
+import type { Catalog } from '../../../data/storeDataGenerator';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -112,11 +114,14 @@ interface ProductDetailProps {
 }
 
 function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps) {
+  const { storeData, setStoreData } = useStore();
   const [name, setName] = useState(product.name);
   const [price, setPrice] = useState(String(product.price));
   const [stock, setStock] = useState(String(product.stock));
   const [category, setCategory] = useState(product.category);
   const [badge, setBadge] = useState(product.badge ?? '');
+  const [selectedCatalog, setSelectedCatalog] = useState(product.catalog ?? '');
+  const [showCatalogModal, setShowCatalogModal] = useState(false);
 
   const level = stockLevel(product.stock);
   const { dot, label: stockLabel, badge: stockBadge } = STOCK_CONFIG[level];
@@ -129,9 +134,36 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
       stock: Math.max(0, Number(stock) || product.stock),
       category: category.trim() || product.category,
       badge: badge.trim() || undefined,
+      catalog: selectedCatalog || undefined,
       status,
     };
   }
+
+  const handleSelectCatalog = (catalogId: string) => {
+    setSelectedCatalog(catalogId);
+    setShowCatalogModal(false);
+  };
+
+  const handleAddCatalog = (name: string) => {
+    const newCatalog: Catalog = {
+      id: `cat-${Date.now()}`,
+      name,
+    };
+    setStoreData(prev => ({
+      ...prev,
+      catalogs: [...(prev?.catalogs || []), newCatalog],
+    }));
+  };
+
+  const handleDeleteCatalog = (id: string) => {
+    setStoreData(prev => ({
+      ...prev,
+      catalogs: (prev?.catalogs || []).filter(c => c.id !== id),
+    }));
+    if (selectedCatalog === id) {
+      setSelectedCatalog('');
+    }
+  };
 
   const isActive = product.status === 'Active';
 
@@ -270,6 +302,27 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
             </div>
           </div>
 
+          {/* Catalog Section */}
+          <div className="bg-white rounded-2xl border border-slate-100 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Catalog</p>
+                <p className="text-sm text-slate-600">
+                  {selectedCatalog
+                    ? storeData?.catalogs?.find(c => c.id === selectedCatalog)?.name || 'Unknown'
+                    : 'No catalog assigned'}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowCatalogModal(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg font-semibold transition-colors"
+              >
+                <Layers className="w-4 h-4" />
+                Select Catalog
+              </button>
+            </div>
+          </div>
+
           {/* Bottom spacer */}
           <div className="h-4" />
         </div>
@@ -303,6 +356,17 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
           </Button>
         </div>
       </div>
+
+      {/* Catalog Modal */}
+      <CatalogModal
+        isOpen={showCatalogModal}
+        catalogs={storeData?.catalogs || []}
+        selectedCatalog={selectedCatalog}
+        onClose={() => setShowCatalogModal(false)}
+        onSelect={handleSelectCatalog}
+        onAddCatalog={handleAddCatalog}
+        onDeleteCatalog={handleDeleteCatalog}
+      />
     </div>
   );
 }
