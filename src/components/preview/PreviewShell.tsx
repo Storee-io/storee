@@ -11,6 +11,7 @@ const StorePreview = lazy(() => import('./StorePreview'));
 import ElementOverlay from '../editor/ElementOverlay';
 import PublishModal from './PublishModal';
 import { generateStoreWithClaude } from '../../lib/claudeApiClient';
+import { decodeHtmlEntities } from '../../lib/claudeApi';
 import { getGuestId } from '../../lib/guestId';
 import GeneratingOverlay from '../GeneratingOverlay';
 import type { Store } from '../../context/StoreContext';
@@ -323,7 +324,7 @@ export default function PreviewShell({ store, from = null }: Props) {
             </button>
           </Tip>
           <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
-          <span className="font-semibold text-slate-900 text-sm sm:text-base truncate">{store.name}</span>
+          <span className="font-semibold text-slate-900 text-sm sm:text-base truncate">{decodeHtmlEntities(store.name)}</span>
           {isPublished
             ? <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />

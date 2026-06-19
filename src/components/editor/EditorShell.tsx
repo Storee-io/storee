@@ -20,6 +20,7 @@ const StorePreview = lazy(() => import('../preview/StorePreview'));
 import PublishModal from '../preview/PublishModal';
 import type { Store } from '../../context/StoreContext';
 import type { StoreDesign } from '../../lib/claudeApi';
+import { decodeHtmlEntities } from '../../lib/claudeApi';
 import { toast } from 'sonner';
 import { Tip } from '@/components/ui/tip';
 import { FloatingToolbar } from './FloatingToolbar';
@@ -910,7 +911,7 @@ export default function EditorShell({ store, from }: Props) {
             </button>
           </Tip>
           <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
-          <span className="font-semibold text-slate-900 text-sm sm:text-base truncate">{storeName}</span>
+          <span className="font-semibold text-slate-900 text-sm sm:text-base truncate">{decodeHtmlEntities(storeName)}</span>
           {isPublished
             ? <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />

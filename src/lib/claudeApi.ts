@@ -468,7 +468,7 @@ export function buildStoreConfig(parsed: ClaudeStoreResponse): GeneratedStoreCon
 
 // ── Decode HTML entities ─────────────────────────────────────────────────────
 
-function decodeHtmlEntities(text: string): string {
+export function decodeHtmlEntities(text: string): string {
   if (typeof document !== 'undefined' && document.createElement) {
     const textarea = document.createElement('textarea');
     textarea.innerHTML = text;

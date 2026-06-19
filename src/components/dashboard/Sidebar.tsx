@@ -12,6 +12,7 @@ import {
 import Image from 'next/image';
 import { useStore } from '../../context/StoreContext';
 import { useAuth } from '../../context/AuthContext';
+import { decodeHtmlEntities } from '../../lib/claudeApi';
 
 interface NavItem {
   icon: React.ElementType;
@@ -180,9 +181,9 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                   >
                     <div className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
                       style={{ background: store.primaryColor }}>
-                      {store.name[0]}
+                      {decodeHtmlEntities(store.name)[0]}
                     </div>
-                    <span className="text-sm font-medium truncate flex-1">{store.name}</span>
+                    <span className="text-sm font-medium truncate flex-1">{decodeHtmlEntities(store.name)}</span>
                     {store.status === 'Published' && (
                       <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 flex-shrink-0">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
