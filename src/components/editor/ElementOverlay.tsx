@@ -34,14 +34,10 @@ function getHandlePosition(pos: HandlePos, rect: Rect) {
   return map[pos];
 }
 
-function toCamel(cls: string): string {
-  return cls.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
-}
-
 function getLabel(el: Element): string {
   const tag = el.tagName.toLowerCase();
   const cls = (el.getAttribute('class') || '').split(' ').find(c => c.length > 0 && c.length < 20);
-  return cls ? `${tag}.${toCamel(cls)}` : tag;
+  return cls ? `${tag}.${cls}` : tag;
 }
 
 function getRelativeRect(el: Element, container: Element): Rect {
