@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 
 export default function Collections() {
   const { storeData, setStoreData } = useStore();
-  const [collections, setCollections] = useState(storeData.design.collections || []);
+  const [collections, setCollections] = useState(storeData?.design?.collections || []);
   const [saved, setSaved] = useState(false);
 
   const handleAddCollection = () => {
@@ -29,7 +29,7 @@ export default function Collections() {
     setStoreData(prev => ({
       ...prev,
       design: {
-        ...prev.design,
+        ...(prev?.design || {}),
         collections,
       }
     }));
