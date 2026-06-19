@@ -137,7 +137,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           {!isCollapsed && (
             <>
               <div className="flex-1 text-left min-w-0">
-                <p className="text-sm font-semibold text-slate-900 truncate">{activeStore?.name || 'My Store'}</p>
+                <p className="text-sm font-semibold text-slate-900 truncate">{activeStore?.name ? decodeHtmlEntities(activeStore.name) : 'My Store'}</p>
                 {activeStore?.status === 'Published' && activeStore.domain
                   ? <p className="text-xs text-slate-500 truncate">{activeStore.domain}</p>
                   : <p className="text-xs text-amber-500 font-medium">Draft</p>
@@ -165,9 +165,9 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                 <div className="px-3 py-2 flex items-center gap-3">
                   <div className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
                     style={{ background: activeStore.primaryColor }}>
-                    {activeStore.name[0]}
+                    {decodeHtmlEntities(activeStore.name)[0]}
                   </div>
-                  <span className="text-sm font-medium text-slate-600 truncate flex-1">{activeStore.name}</span>
+                  <span className="text-sm font-medium text-slate-600 truncate flex-1">{decodeHtmlEntities(activeStore.name)}</span>
                   <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full flex-shrink-0">Demo</span>
                 </div>
               ) : (
