@@ -12,6 +12,7 @@ export interface DashboardProduct {
   stock: number;
   sales: number;
   status: 'Active' | 'Draft';
+  catalog?: string;
 }
 
 export interface DashboardOrder {
@@ -53,12 +54,18 @@ export interface TopProduct {
   stock: number;
 }
 
+export interface Catalog {
+  id: string;
+  name: string;
+}
+
 export interface StoreData {
   products: DashboardProduct[];
   orders: DashboardOrder[];
   customers: DashboardCustomer[];
   revenueChart: ChartDataPoint[];
   topProducts: TopProduct[];
+  catalogs: Catalog[];
 }
 
 // ── Seeded deterministic RNG ─────────────────────────────────────────────────
@@ -224,7 +231,13 @@ export function generateStoreData(store: Store): StoreData {
       stock: p.stock,
     }));
 
-  return { products, orders, customers, revenueChart, topProducts };
+  const catalogs: Catalog[] = [
+    { id: 'cat-1', name: 'Featured' },
+    { id: 'cat-2', name: 'Best Sellers' },
+    { id: 'cat-3', name: 'New Arrivals' },
+  ];
+
+  return { products, orders, customers, revenueChart, topProducts, catalogs };
 }
 
 function emptyStoreData(): StoreData {
@@ -234,5 +247,6 @@ function emptyStoreData(): StoreData {
     customers: [],
     revenueChart: CHART_MONTHS.map(month => ({ month, revenue: 0, orders: 0 })),
     topProducts: [],
+    catalogs: [],
   };
 }
