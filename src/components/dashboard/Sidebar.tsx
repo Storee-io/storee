@@ -78,8 +78,18 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const realStores = stores.filter(s => !DEMO_IDS.has(s.id));
   const { openUpgradeModal } = useAuth();
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const pathname = usePathname();
   const router = useRouter();
+
+  const toggleExpand = (label: string) => {
+    setExpandedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  };
 
   // Badge: orders Processing/Shipped = belum selesai; products dengan badge 'New'
   const pendingOrders = storeData.orders.filter(o => o.status === 'Processing').length;
@@ -226,34 +236,105 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
               </p>
             )}
             <div className="space-y-1">
-              {section.items.map(item => (
-                <Link
-                  key={item.label}
-                  href={item.path || '#'}
-                  className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
-                    isActive(item.path || '')
-                      ? 'bg-emerald-50 text-emerald-700'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
-                >
-                  <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive(item.path || '') ? 'text-emerald-600' : 'text-slate-500 group-hover:text-slate-700'}`} />
-                  {!isCollapsed && (
-                    <>
-                      <span className="flex-1 text-sm font-medium">{item.label}</span>
-                      {item.badge && (
-                        <span className="px-2 py-0.5 text-xs font-bold bg-emerald-500 text-white rounded-full">
-                          {item.badge}
-                        </span>
-                      )}
-                    </>
-                  )}
-                  {isCollapsed && item.badge && (
-                    <span className="absolute top-0.5 right-0.5 w-4 h-4 text-xs font-bold bg-emerald-500 text-white rounded-full flex items-center justify-center">
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              ))}
+              {section.items.map(item => {
+                const hasChildren = item.children && item.children.length > 0;
+                const isExpanded = expandedItems.has(item.label);
+                const isItemActive = isActive(item.path || '');
+                const hasActiveChild = item.children?.some(child => isActive(child.path));
+
+                if (hasChildren) {
+                  return (
+                    <div key={item.label}>
+                      <button
+                        onClick={() => toggleExpand(item.label)}
+                        className={`w-full relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
+                          isExpanded || hasActiveChild
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        }`}
+                      >
+                        <item.icon className={`w-5 h-5 flex-shrink-0 ${isExpanded || hasActiveChild ? 'text-emerald-600' : 'text-slate-500 group-hover:text-slate-700'}`} />
+                        {!isCollapsed && (
+                          <>
+                            <span className="flex-1 text-sm font-medium text-left">{item.label}</span>
+                            {item.badge && (
+                              <span className="px-2 py-0.5 text-xs font-bold bg-emerald-500 text-white rounded-full">
+                                {item.badge}
+                              </span>
+                            )}
+                            <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          </>
+                        )}
+                        {isCollapsed && item.badge && (
+                          <span className="absolute top-0.5 right-0.5 w-4 h-4 text-xs font-bold bg-emerald-500 text-white rounded-full flex items-center justify-center">
+                            {item.badge}
+                          </span>
+                        )}
+                      </button>
+                      <AnimatePresence>
+                        {isExpanded && !isCollapsed && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="space-y-1 py-1 pl-8 pr-2">
+                              {item.children!.map(child => (
+                                <Link
+                                  key={child.label}
+                                  href={child.path}
+                                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
+                                    isActive(child.path)
+                                      ? 'bg-emerald-100 text-emerald-700 font-medium'
+                                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                  }`}
+                                >
+                                  {child.label}
+                                  {child.badge && (
+                                    <span className="ml-auto px-1.5 py-0.5 text-xs font-bold bg-emerald-500 text-white rounded-full">
+                                      {child.badge}
+                                    </span>
+                                  )}
+                                </Link>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.path || '#'}
+                    className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
+                      isItemActive
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                  >
+                    <item.icon className={`w-5 h-5 flex-shrink-0 ${isItemActive ? 'text-emerald-600' : 'text-slate-500 group-hover:text-slate-700'}`} />
+                    {!isCollapsed && (
+                      <>
+                        <span className="flex-1 text-sm font-medium">{item.label}</span>
+                        {item.badge && (
+                          <span className="px-2 py-0.5 text-xs font-bold bg-emerald-500 text-white rounded-full">
+                            {item.badge}
+                          </span>
+                        )}
+                      </>
+                    )}
+                    {isCollapsed && item.badge && (
+                      <span className="absolute top-0.5 right-0.5 w-4 h-4 text-xs font-bold bg-emerald-500 text-white rounded-full flex items-center justify-center">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         ))}
