@@ -478,7 +478,7 @@ export default function CanvasShell({ store, from }: Props) {
 
         {/* Left — back + store name */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <Tip label="Back to Preview">
+          <Tip label="Back to preview">
             <button
               onClick={() => { toast('Going back...', { duration: 1200 }); router.push(backHref); }}
               className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 transition-colors flex-shrink-0"
@@ -521,7 +521,7 @@ export default function CanvasShell({ store, from }: Props) {
 
           {/* Edit / Preview toggle */}
           <div className="flex items-center bg-slate-100 rounded-xl h-8 px-[3px] gap-0.5">
-            <Tip label="Preview mode">
+            <Tip label="Preview mode (read-only)">
               <button
                 onClick={() => setEditMode(false)}
                 className={`flex items-center gap-1.5 px-1.5 py-[3px] rounded-lg text-sm font-medium transition-all ${!editMode ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}

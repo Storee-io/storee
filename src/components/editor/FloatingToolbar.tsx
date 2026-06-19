@@ -24,7 +24,7 @@ const INLINE: { cmd: FmtKey; Icon: React.ElementType; label: string }[] = [
 
 const ALIGN: { cmd: string; Icon: React.ElementType; label: string }[] = [
   { cmd: 'justifyLeft',   Icon: AlignLeft,   label: 'Align left' },
-  { cmd: 'justifyCenter', Icon: AlignCenter, label: 'Center' },
+  { cmd: 'justifyCenter', Icon: AlignCenter, label: 'Align center' },
   { cmd: 'justifyRight',  Icon: AlignRight,  label: 'Align right' },
 ];
 
