@@ -57,7 +57,9 @@ export interface TopProduct {
 export interface Collection {
   id: string;
   name: string;
+  nameHtml?: string;
   emoji: string;
+  emojiHtml?: string;
 }
 
 export interface StoreData {

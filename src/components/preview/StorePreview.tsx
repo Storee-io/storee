@@ -3104,7 +3104,8 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
           {collections.map((c, i) => (
             <button key={i} onClick={() => setSelectedCol(i)} className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold tracking-wide uppercase transition-all"
               style={selectedCol === i ? { background: primaryColor, color: btnText } : { background: '#f3f2ef', color: '#555' }}>
-              <span>{c.emoji}</span> <span>{c.name}</span>
+              <span>{editMode ? <StyleOnlySpan field={`collections.${i}.emojiHtml`} value={c.emoji} htmlValue={c.emojiHtml} editMode={editMode} onFieldChange={onFieldChange} /> : c.emoji}</span>
+              <span>{editMode ? <StyleOnlySpan field={`collections.${i}.nameHtml`} value={c.name} htmlValue={c.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : c.name}</span>
             </button>
           ))}
         </div>
@@ -3349,7 +3350,8 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
           {collections.map((c, i) => (
             <button key={i} onClick={() => setSelectedCol(i)} className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all"
               style={selectedCol === i ? { background: primaryColor, color: '#000' } : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>
-              <span>{c.emoji}</span> <span>{c.name}</span>
+              <span>{editMode ? <StyleOnlySpan field={`collections.${i}.emojiHtml`} value={c.emoji} htmlValue={c.emojiHtml} editMode={editMode} onFieldChange={onFieldChange} /> : c.emoji}</span>
+              <span>{editMode ? <StyleOnlySpan field={`collections.${i}.nameHtml`} value={c.name} htmlValue={c.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : c.name}</span>
             </button>
           ))}
         </div>
@@ -3838,7 +3840,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
               <div className="flex flex-wrap gap-2">
                 {collections.map((c, i) => (
                   <span key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium" style={{ background: tt.surfaceBg, color: tt.textSecondary }}>
-                    {c.emoji} {c.name}
+                    {editMode ? <><StyleOnlySpan field={`collections.${i}.emojiHtml`} value={c.emoji} htmlValue={c.emojiHtml} editMode={editMode} onFieldChange={onFieldChange} /> <StyleOnlySpan field={`collections.${i}.nameHtml`} value={c.name} htmlValue={c.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /></> : `${c.emoji} ${c.name}`}
                   </span>
                 ))}
               </div>
@@ -5592,7 +5594,7 @@ function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts, h
             {collections.slice(0, 2).map(c => (
               <span key={c.name} className="text-xs font-semibold px-3 py-1.5 rounded-full"
                 style={{ background: alpha(primaryColor, 0.1), color: primaryColor }}>
-                {c.emoji} {c.name}
+                {editMode ? <><StyleOnlySpan field={`collections.${i}.emojiHtml`} value={c.emoji} htmlValue={c.emojiHtml} editMode={editMode} onFieldChange={onFieldChange} /> <StyleOnlySpan field={`collections.${i}.nameHtml`} value={c.name} htmlValue={c.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /></> : `${c.emoji} ${c.name}`}
               </span>
             ))}
           </div>
@@ -7359,7 +7361,8 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
               {[{ name: 'All', emoji: '✨' }, ...collections].map((c, i) => (
                 <button key={i} onClick={() => setSelectedCol(i)} className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 text-xs font-semibold tracking-wide uppercase transition-all"
                   style={selectedCol === i ? { background: primaryColor, color: isDark(primaryColor) ? '#fff' : '#000', borderRadius: tt.btnRadius } : { background: tt.surfaceBg, color: tt.textSecondary, borderRadius: tt.btnRadius }}>
-                  <span>{c.emoji}</span> <span>{c.name}</span>
+                  <span>{editMode ? <StyleOnlySpan field={`collections.${i}.emojiHtml`} value={c.emoji} htmlValue={c.emojiHtml} editMode={editMode} onFieldChange={onFieldChange} /> : c.emoji}</span>
+              <span>{editMode ? <StyleOnlySpan field={`collections.${i}.nameHtml`} value={c.name} htmlValue={c.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : c.name}</span>
                 </button>
               ))}
             </div>
@@ -8033,7 +8036,8 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
                     style={selectedCol === i
                       ? { background: tt.textPrimary, color: tt.pageBg, borderRadius: tt.btnRadius }
                       : { background: 'transparent', color: tt.textSecondary, border: `1px solid ${tt.divider}`, borderRadius: tt.btnRadius }}>
-                    <span>{c.emoji}</span> <span>{c.name}</span>
+                    <span>{editMode ? <StyleOnlySpan field={`collections.${i}.emojiHtml`} value={c.emoji} htmlValue={c.emojiHtml} editMode={editMode} onFieldChange={onFieldChange} /> : c.emoji}</span>
+              <span>{editMode ? <StyleOnlySpan field={`collections.${i}.nameHtml`} value={c.name} htmlValue={c.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : c.name}</span>
                   </button>
                 ))}
               </div>
@@ -8333,7 +8337,8 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
                       <button key={i} onClick={() => setSelectedCol(i)}
                         className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-all"
                         style={selectedCol === i ? { background: pc, color: pcText, borderRadius: tt.btnRadius } : { background: tt.surfaceBg, color: tt.textSecondary, border: `1px solid ${tt.surfaceBorder}`, borderRadius: tt.btnRadius }}>
-                        <span>{c.emoji}</span> <span>{c.name}</span>
+                        <span>{editMode ? <StyleOnlySpan field={`collections.${i}.emojiHtml`} value={c.emoji} htmlValue={c.emojiHtml} editMode={editMode} onFieldChange={onFieldChange} /> : c.emoji}</span>
+              <span>{editMode ? <StyleOnlySpan field={`collections.${i}.nameHtml`} value={c.name} htmlValue={c.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : c.name}</span>
                       </button>
                     ))}
                   </div>
@@ -8649,7 +8654,8 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
                 {collections.map((c, i) => (
                   <button key={i} onClick={() => setSelectedCol(i)} className="flex-shrink-0 flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wide transition-all"
                     style={selectedCol === i ? { background: tt.textPrimary, color: tt.pageBg, borderRadius: tt.btnRadius } : { background: 'transparent', color: tt.textSecondary, border: `1px solid ${tt.divider}`, borderRadius: tt.btnRadius }}>
-                    <span>{c.emoji}</span> <span>{c.name}</span>
+                    <span>{editMode ? <StyleOnlySpan field={`collections.${i}.emojiHtml`} value={c.emoji} htmlValue={c.emojiHtml} editMode={editMode} onFieldChange={onFieldChange} /> : c.emoji}</span>
+              <span>{editMode ? <StyleOnlySpan field={`collections.${i}.nameHtml`} value={c.name} htmlValue={c.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : c.name}</span>
                   </button>
                 ))}
               </div>
