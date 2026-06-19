@@ -612,10 +612,12 @@ function EditSpan({
 // Tooltip appears when user tries to type, explaining text is edit-only via Dashboard.
 function StyleOnlySpan({
   field, value, htmlValue, editMode, onFieldChange, className, style,
+  tipMessage = 'Product text can only be edited in the Dashboard',
 }: {
   field: string; value: string; htmlValue?: string;
   editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
   className?: string; style?: React.CSSProperties;
+  tipMessage?: string;
 }) {
   const [isStyling, setIsStyling] = useState(false);
   const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
@@ -729,7 +731,7 @@ function StyleOnlySpan({
             whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
             textTransform: 'none', letterSpacing: '0.01em',
           }}>
-            Product text can only be edited in the Dashboard
+            {tipMessage}
           </span>,
           document.body
         )}
@@ -6239,9 +6241,8 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
                   onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
                   className="px-4 py-2 text-xs font-bold flex-shrink-0"
                   style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}
-                  title={editMode ? 'Button text can be customized in Theme settings' : undefined}
                 >
-                  Add to Cart
+                  <StyleOnlySpan field="addToCartLabel" value="Add to Cart" editMode={editMode} tipMessage="Button label can be changed in Theme settings" />
                 </button>
               </div>
             </div>
