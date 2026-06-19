@@ -466,6 +466,23 @@ export function buildStoreConfig(parsed: ClaudeStoreResponse): GeneratedStoreCon
   };
 }
 
+// ── Decode HTML entities ─────────────────────────────────────────────────────
+
+function decodeHtmlEntities(text: string): string {
+  if (typeof document !== 'undefined' && document.createElement) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+  }
+  // Fallback for non-browser environments
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
 // ── Parse raw JSON text from API response ─────────────────────────────────────
 
 export function parseStoreResponse(raw: string): GeneratedStoreConfig | null {
@@ -485,6 +502,73 @@ export function parseStoreResponse(raw: string): GeneratedStoreConfig | null {
       parsed.products.length === 0
     ) {
       return null;
+    }
+
+    // Decode HTML entities in string fields
+    parsed.storeName = decodeHtmlEntities(parsed.storeName);
+    parsed.category = parsed.category ? decodeHtmlEntities(parsed.category) : '';
+    parsed.tagline = parsed.tagline ? decodeHtmlEntities(parsed.tagline) : undefined;
+    parsed.heroTitle = parsed.heroTitle ? decodeHtmlEntities(parsed.heroTitle) : undefined;
+    parsed.heroSubtitle = parsed.heroSubtitle ? decodeHtmlEntities(parsed.heroSubtitle) : undefined;
+    parsed.ctaText = parsed.ctaText ? decodeHtmlEntities(parsed.ctaText) : undefined;
+    parsed.promoBar = parsed.promoBar ? decodeHtmlEntities(parsed.promoBar) : undefined;
+    parsed.brandStory = parsed.brandStory ? decodeHtmlEntities(parsed.brandStory) : undefined;
+
+    // Decode product fields
+    if (Array.isArray(parsed.products)) {
+      parsed.products = parsed.products.map(p => ({
+        ...p,
+        name: decodeHtmlEntities(p.name),
+        category: decodeHtmlEntities(p.category),
+        description: decodeHtmlEntities(p.description),
+        badge: p.badge ? decodeHtmlEntities(p.badge) : p.badge,
+      }));
+    }
+
+    // Decode nav links
+    if (Array.isArray(parsed.navLinks)) {
+      parsed.navLinks = parsed.navLinks.map(link => decodeHtmlEntities(link));
+    }
+
+    // Decode features, testimonials, FAQ, stats, collections
+    if (Array.isArray(parsed.features)) {
+      parsed.features = parsed.features.map(f => ({
+        ...f,
+        title: decodeHtmlEntities(f.title),
+        description: decodeHtmlEntities(f.description),
+      }));
+    }
+
+    if (Array.isArray(parsed.testimonials)) {
+      parsed.testimonials = parsed.testimonials.map(t => ({
+        ...t,
+        text: decodeHtmlEntities(t.text),
+        author: decodeHtmlEntities(t.author),
+        role: decodeHtmlEntities(t.role),
+      }));
+    }
+
+    if (Array.isArray(parsed.faq)) {
+      parsed.faq = parsed.faq.map(item => ({
+        ...item,
+        q: decodeHtmlEntities(item.q),
+        a: decodeHtmlEntities(item.a),
+      }));
+    }
+
+    if (Array.isArray(parsed.stats)) {
+      parsed.stats = parsed.stats.map(s => ({
+        ...s,
+        value: decodeHtmlEntities(s.value),
+        label: decodeHtmlEntities(s.label),
+      }));
+    }
+
+    if (Array.isArray(parsed.collections)) {
+      parsed.collections = parsed.collections.map(c => ({
+        ...c,
+        name: decodeHtmlEntities(c.name),
+      }));
     }
 
     // Normalise layoutStyle in case Claude produces an unexpected value
