@@ -15,6 +15,8 @@ export interface RichProduct {
   category: string;
   badge?: string;
   description: string;
+  /** Collection ID for product grouping in store */
+  collectionId?: string;
   /** Styled HTML for product name (set when user applies text styling in canvas editor) */
   nameHtml?: string;
   categoryHtml?: string;
