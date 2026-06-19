@@ -1293,6 +1293,25 @@ export default function EditorShell({ store, from }: Props) {
                   </button>
                 </Section>
 
+                <Section icon={Layers} title="Collections" open={openSection === 'collections'} onToggle={() => toggle('collections')}>
+                  {collections.map((c, i) => (
+                    <div key={i} className="p-3 bg-slate-50 rounded-xl space-y-2.5 relative group">
+                      <button onClick={() => setCollections(collections.filter((_, idx) => idx !== i))}
+                        className="absolute top-2 right-2 p-1 rounded text-slate-300 hover:text-red-400 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Field label="Emoji"><input value={c.emoji} onChange={v => setCollections(collections.map((x, idx) => idx === i ? { ...x, emoji: v } : x))} placeholder="✨" maxLength={2} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400" /></Field>
+                        <Field label="Name"><Input value={c.name} onChange={v => setCollections(collections.map((x, idx) => idx === i ? { ...x, name: v } : x))} placeholder="e.g., New Arrivals" dataField={`collections.${i}.name`} /></Field>
+                      </div>
+                    </div>
+                  ))}
+                  <button onClick={() => setCollections([...collections, { emoji: '✨', name: '' }])}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-emerald-600 border border-dashed border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors">
+                    <Plus className="w-3.5 h-3.5" /> Add Collection
+                  </button>
+                </Section>
+
                 <Section icon={Type} title="Hero Section" open={openSection === 'hero'} onToggle={() => toggle('hero')}>
                   <Field label="Headline"><Textarea value={heroTitle} onChange={setHeroTitle} placeholder="Your bold headline" rows={2} dataField="heroTitle" /></Field>
                   <Field label="Subheadline"><Textarea value={heroSubtitle} onChange={setHeroSubtitle} placeholder="Supporting description" rows={3} dataField="heroSubtitle" /></Field>
