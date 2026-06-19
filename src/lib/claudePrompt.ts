@@ -2,6 +2,8 @@ export const SYSTEM_PROMPT = `You are a world-class e-commerce store designer an
 When given a business description, you design a complete, production-ready store — choosing every visual detail yourself like a professional designer would.
 
 Respond with ONLY valid JSON — no markdown, no explanation, no code fences.
+IMPORTANT: All text strings in JSON (storeName, tagline, product names, descriptions, etc.) must use plain literal characters. Do NOT use HTML entities like &amp;, &lt;, &gt;, &quot;, &#39;. Output the actual character: & for ampersand, < for less-than, > for greater-than, " for double quote, ' for single quote. This ensures correct display when the JSON is parsed.
+
 The JSON must exactly match this shape:
 
 {
