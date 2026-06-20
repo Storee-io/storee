@@ -632,8 +632,12 @@ function StyleOnlySpan({
   useEffect(() => {
     if (!spanRef.current || isStyling) return;
     const el = spanRef.current;
-    if (isHtml) { if (el.innerHTML !== displayVal) el.innerHTML = displayVal; }
-    else { if (el.textContent !== value) el.textContent = value; }
+    // Always render with plain text + styled HTML from displayVal
+    if (isHtml && el.innerHTML !== displayVal) {
+      el.innerHTML = displayVal;
+    } else if (!isHtml && el.textContent !== value) {
+      el.textContent = value;
+    }
   }, [displayVal, value, isStyling, isHtml]);
 
   // Enter styling mode via storee:edit-field event (same mechanism as EditSpan)
@@ -655,7 +659,8 @@ function StyleOnlySpan({
   useEffect(() => {
     if (!isStyling || !spanRef.current) return;
     const el = spanRef.current;
-    if (isHtml) el.innerHTML = displayVal; else el.textContent = value;
+    // Always use textContent to avoid double-escaping of entities like &amp;
+    el.textContent = value;
     el.focus();
     requestAnimationFrame(() => { document.execCommand('selectAll', false); });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -683,8 +688,8 @@ function StyleOnlySpan({
       const html = el.innerHTML;
       if (html !== displayVal) onFieldChange?.(field, html);
     } else {
-      // Text was changed — revert to original
-      if (isHtml) el.innerHTML = displayVal; else el.textContent = value;
+      // Text was changed — revert to original (always use textContent to avoid entity issues)
+      el.textContent = value;
     }
     setIsStyling(false);
   };
