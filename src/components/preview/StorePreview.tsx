@@ -8373,7 +8373,7 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
                         </div>
                       ) : (
                         <>
-                          {p.badge && <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5" style={{ background: pc, color: pcText, borderRadius: '999px' }}>{p.badge}</span>}
+                          {p.badge && <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5" style={{ background: pc, color: pcText, borderRadius: '999px' }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.badgeHtml`} value={p.badge} htmlValue={p.badgeHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.badge}</span>}
                           <button data-wishlist-btn="" onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }} className="absolute top-2 right-2 w-7 h-7 bg-white/85 backdrop-blur flex items-center justify-center rounded-full shadow transition-all hover:scale-110 active:scale-95">
                             <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
                           </button>
@@ -8670,15 +8670,15 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
                     <div key={p.id} className="group cursor-pointer" onClick={() => onProductClick(p)}>
                       <div className="relative overflow-hidden" style={{ aspectRatio: '3/4', borderRadius: tt.surfaceRadius }}>
                         <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                        {p.badge && <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: '999px' }}>{p.badge}</span>}
+                        {p.badge && <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: '999px' }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.badgeHtml`} value={p.badge} htmlValue={p.badgeHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.badge}</span>}
                         <button data-wishlist-btn="" onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }} className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-white/80 backdrop-blur shadow">
                           <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
                         </button>
                         <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }} className="absolute bottom-0 inset-x-0 py-2.5 text-xs font-bold uppercase tracking-widest translate-y-full group-hover:translate-y-0 transition-transform" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000' }}>Add to Cart</button>
                       </div>
                       <div className="mt-3">
-                        <p className="text-xs font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
-                        <p className="text-sm font-black mt-0.5" style={{ color: pc }}>{fmtPrice(p.price)}</p>
+                        <p className="text-xs font-semibold truncate" style={{ color: tt.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
+                        <p className="text-sm font-black mt-0.5" style={{ color: pc }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(p.price)}</p>
                       </div>
                     </div>
                   ))}
