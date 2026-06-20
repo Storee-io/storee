@@ -1237,7 +1237,7 @@ function ProductDetailPage({ product, primaryColor, storeName, device, onBack, o
     <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
       <header className="px-5 h-14 flex items-center justify-between sticky top-0 z-40" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
         <button onClick={onBack} className="flex items-center gap-2 text-sm transition-colors" style={{ color: t.textSecondary }}><ArrowLeft className="w-4 h-4" /> {uiT.back}</button>
-        <span className="text-sm font-bold truncate max-w-[140px]" style={{ color: t.textPrimary }}>{storeName}</span>
+        <span className="text-sm font-bold truncate max-w-[140px]" style={{ color: t.textPrimary }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
         <button data-cart-btn onClick={onCartClick} className="relative p-2">
           <ShoppingCart className="w-5 h-5" style={{ color: t.textSecondary }} />
           {cartCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold rounded-full flex items-center justify-center" style={{ background: t.primary, color: t.primaryContrast }}>{cartCount}</span>}
@@ -1886,7 +1886,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   return (
     <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
       <header className="px-5 h-14 flex items-center sticky top-0 z-40 shadow-sm" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
-        <span className="text-sm font-bold flex-1 text-center" style={{ color: t.textPrimary }}>{storeName}</span>
+        <span className="text-sm font-bold flex-1 text-center" style={{ color: t.textPrimary }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
         <button onClick={onBack} className="relative p-2 hover:opacity-70 transition-opacity" style={{ color: t.textSecondary }}>
           <ShoppingCart className="w-5 h-5" />
         </button>
@@ -2179,7 +2179,7 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
             <Check className="w-9 h-9" style={{ color: t.primaryContrast }} />
           </div>
           <h1 className="text-2xl font-black mb-1" style={{ color: t.textPrimary }}>{uiT.orderReceived}</h1>
-          <p className="text-sm" style={{ color: t.textSecondary }}>{uiT.thankYou} <span className="font-bold" style={{ color: t.primary }}>{storeName}</span></p>
+          <p className="text-sm" style={{ color: t.textSecondary }}>{uiT.thankYou} <span className="font-bold" style={{ color: t.primary }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span></p>
           <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl" style={{ background: t.inputBg }}>
             <span className="text-xs" style={{ color: t.textMuted }}>{uiT.orderNum}</span>
             <span className="text-xs font-mono font-bold" style={{ color: t.textPrimary }}>{orderNum}</span>
@@ -2634,9 +2634,9 @@ function BuyerAuthModal({ primaryColor, onClose, onSuccess, onLogout, buyerEmail
 
 // ── Mobile Menu Drawer ────────────────────────────────────────────────────────
 
-function MobileMenuDrawer({ open, onClose, navLinks, primaryColor, storeName, onScrollToProducts }: {
+function MobileMenuDrawer({ open, onClose, navLinks, primaryColor, storeName, onScrollToProducts, editMode, onFieldChange }: {
   open: boolean; onClose: () => void; navLinks: string[]; primaryColor: string; storeName: string;
-  onScrollToProducts?: () => void;
+  onScrollToProducts?: () => void; editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   if (!open) return null;
   return (
@@ -2644,7 +2644,7 @@ function MobileMenuDrawer({ open, onClose, navLinks, primaryColor, storeName, on
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div className="absolute left-0 top-0 bottom-0 w-72 bg-white shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <span className="text-sm font-bold text-gray-900">{storeName}</span>
+          <span className="text-sm font-bold text-gray-900">{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-700 rounded-lg text-lg leading-none">✕</button>
         </div>
         <nav className="p-4 space-y-1">
@@ -2652,7 +2652,7 @@ function MobileMenuDrawer({ open, onClose, navLinks, primaryColor, storeName, on
             <button key={l} onClick={() => { onScrollToProducts?.(); onClose(); }}
               className="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-colors hover:bg-gray-50"
               style={i === 0 ? { color: primaryColor, background: alpha(primaryColor, 0.08) } : { color: '#374151' }}>
-              {l}
+              {editMode ? <StyleOnlySpan field={`navLinks.${i}`} value={l} htmlValue={l} editMode={editMode} onFieldChange={onFieldChange} /> : l}
             </button>
           ))}
         </nav>
@@ -2900,7 +2900,7 @@ function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onPro
             </span>
           )}
         </div>
-        <span className="text-xs font-medium truncate max-w-[120px]" style={{ color: t.textMuted }}>{storeName}</span>
+        <span className="text-xs font-medium truncate max-w-[120px]" style={{ color: t.textMuted }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
       </div>
 
       <div className="px-4 py-6 max-w-2xl mx-auto">
@@ -2989,7 +2989,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
   return (
     <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', background: tt.pageBg }}>
 
-      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
+      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} editMode={editMode} onFieldChange={onFieldChange} />
 
       {/* Header */}
       <header className="backdrop-blur-sm border-b sticky top-0 z-40" style={{ background: `${tt.headerBg}f5`, borderColor: tt.headerBorder }}>
@@ -2999,7 +2999,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
           </span>
           {!isMobile ? (
             <nav className="flex gap-8">
-              {navLinks.map((l, li) => <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-xs uppercase tracking-wider transition-colors font-medium cursor-pointer" style={{ color: tt.textMuted }}><EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine /></a>)}
+              {navLinks.map((l, li) => <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-xs uppercase tracking-wider transition-colors font-medium cursor-pointer" style={{ color: tt.textMuted }}>{editMode ? <StyleOnlySpan field={`navLinks.${li}`} value={l} htmlValue={l} editMode={editMode} onFieldChange={onFieldChange} /> : l}</a>)}
             </nav>
           ) : (
             <button onClick={() => setMenuOpen(true)} className="p-2 rounded-lg" style={{ color: tt.textSecondary }}><Menu className="w-5 h-5" /></button>
@@ -3280,7 +3280,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
   return (
     <div className="bg-[#0a0a0a]" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
-      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
+      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} editMode={editMode} onFieldChange={onFieldChange} />
 
       {/* Header */}
       <header className="bg-[#0a0a0a]/96 backdrop-blur-sm border-b border-white/8 sticky top-0 z-40">
@@ -3290,7 +3290,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
           </span>
           {!isMobile ? (
             <nav className="flex gap-7">
-              {navLinks.map((l, li) => <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-xs uppercase tracking-widest text-white/40 hover:text-white transition-colors cursor-pointer"><EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine /></a>)}
+              {navLinks.map((l, li) => <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-xs uppercase tracking-widest text-white/40 hover:text-white transition-colors cursor-pointer">{editMode ? <StyleOnlySpan field={`navLinks.${li}`} value={l} htmlValue={l} editMode={editMode} onFieldChange={onFieldChange} /> : l}</a>)}
             </nav>
           ) : (
             <button onClick={() => setMenuOpen(true)} className="p-2 text-white/60"><Menu className="w-5 h-5" /></button>
@@ -3516,7 +3516,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
   return (
     <div style={{ background: '#fdfcf8', fontFamily: 'Georgia, "Times New Roman", serif' }}>
 
-      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
+      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} editMode={editMode} onFieldChange={onFieldChange} />
 
       {/* Header */}
       <header style={{ background: '#fdfcf8', borderBottom: '1px solid #ece7de' }} className="sticky top-0 z-40">
@@ -3532,7 +3532,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
           {!isMobile ? (
             <nav className="flex gap-5">
               {navLinks.map((l, li) => (
-                <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-[11px] hover:opacity-50 transition-opacity cursor-pointer" style={{ color: '#6b5e52', letterSpacing: '0.1em' }}><EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine /></a>
+                <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-[11px] hover:opacity-50 transition-opacity cursor-pointer" style={{ color: '#6b5e52', letterSpacing: '0.1em' }}>{editMode ? <StyleOnlySpan field={`navLinks.${li}`} value={l} htmlValue={l} editMode={editMode} onFieldChange={onFieldChange} /> : l}</a>
               ))}
             </nav>
           ) : (
@@ -3749,7 +3749,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
   return (
     <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif', background: tt.pageBg }}>
 
-      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
+      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} editMode={editMode} onFieldChange={onFieldChange} />
 
       {/* Header */}
       <header className="backdrop-blur-xl border-b sticky top-0 z-40" style={{ background: `${tt.headerBg}d9`, borderColor: tt.headerBorder }}>
@@ -3764,7 +3764,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
           </div>
           {!isMobile ? (
             <nav className="flex gap-6">
-              {navLinks.map((l, li) => <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-sm transition-colors font-medium cursor-pointer" style={{ color: tt.textSecondary }}><EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine /></a>)}
+              {navLinks.map((l, li) => <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-sm transition-colors font-medium cursor-pointer" style={{ color: tt.textSecondary }}>{editMode ? <StyleOnlySpan field={`navLinks.${li}`} value={l} htmlValue={l} editMode={editMode} onFieldChange={onFieldChange} /> : l}</a>)}
             </nav>
           ) : (
             <button onClick={() => setMenuOpen(true)} className="p-2 rounded-xl" style={{ color: tt.textSecondary }}><Menu className="w-5 h-5" /></button>
@@ -4036,7 +4036,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
   return (
     <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', background: tt.pageBg }}>
 
-      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
+      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} editMode={editMode} onFieldChange={onFieldChange} />
 
       {/* Header */}
       <header className="border-b-2 sticky top-0 z-40" style={{ background: tt.headerBg, borderColor: tt.headerBorder }}>
@@ -4052,7 +4052,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
               {navLinks.map((l, li) => (
                 <a key={li} onClick={editMode ? undefined : scrollToProducts} className="px-4 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer"
                   style={li === 0 ? { background: primaryColor, color: heroTextColor } : { color: '#555', background: '#f5f5f5' }}>
-                  <EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                  {editMode ? <StyleOnlySpan field={`navLinks.${li}`} value={l} htmlValue={l} editMode={editMode} onFieldChange={onFieldChange} /> : l}
                 </a>
               ))}
             </nav>
@@ -7466,7 +7466,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
     <div style={{ fontFamily: tt.fontFamily, background: tt.pageBg, color: tt.textPrimary }}>
       <TkFontInjector url={tt.googleFontsUrl} />
       <AnimationInjector />
-      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} />
+      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} navLinks={navLinks} primaryColor={primaryColor} storeName={storeName} onScrollToProducts={scrollToProducts} editMode={editMode} onFieldChange={onFieldChange} />
 
       {/* Sticky wrapper — PromoBar + header stack together, no overlap */}
       <div className={`sticky top-0 z-40${animArch === 'tech' ? ' sk-grad-header' : ''}`}
@@ -7492,7 +7492,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
             <nav className="flex gap-7">
               {navLinks.map((l, li) => (
                 <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-xs uppercase tracking-wider font-medium cursor-pointer transition-opacity hover:opacity-60" style={{ color: tt.textSecondary }}>
-                  <EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                  {editMode ? <StyleOnlySpan field={`navLinks.${li}`} value={l} htmlValue={l} editMode={editMode} onFieldChange={onFieldChange} /> : l}
                 </a>
               ))}
             </nav>
@@ -7990,7 +7990,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
               <nav className="flex gap-8">
                 {navLinks.map((l, li) => (
                   <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-xs uppercase tracking-widest font-medium cursor-pointer transition-opacity hover:opacity-50"
-                    style={{ color: tt.textSecondary, letterSpacing: '0.1em' }}><EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine /></a>
+                    style={{ color: tt.textSecondary, letterSpacing: '0.1em' }}>{editMode ? <StyleOnlySpan field={`navLinks.${li}`} value={l} htmlValue={l} editMode={editMode} onFieldChange={onFieldChange} /> : l}</a>
                 ))}
               </nav>
             )}
@@ -8264,7 +8264,7 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
                 {navLinks.map((l, li) => (
                   <a key={li} onClick={scrollToProducts} className="text-xs font-medium cursor-pointer uppercase tracking-wide transition-opacity hover:opacity-50"
                     style={{ color: tt.textSecondary }}>
-                    <EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+                    {editMode ? <StyleOnlySpan field={`navLinks.${li}`} value={l} htmlValue={l} editMode={editMode} onFieldChange={onFieldChange} /> : l}
                   </a>
                 ))}
               </nav>
@@ -8543,14 +8543,14 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
           style={{ height: '56px', background: 'transparent', pointerEvents: 'none' }}>
         <span className="text-sm font-black tracking-[0.2em] uppercase pointer-events-auto"
           style={{ fontFamily: tt.headingFont, color: isDarkBg ? '#ffffff' : tt.textPrimary,
-            textShadow: isDarkBg ? '0 1px 8px rgba(0,0,0,0.5)' : 'none' }}>{storeName}</span>
+            textShadow: isDarkBg ? '0 1px 8px rgba(0,0,0,0.5)' : 'none' }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
         <div className="flex items-center gap-1 pointer-events-auto">
           {!isMobile && (
             <nav className="flex gap-6 mr-3">
               {navLinks.slice(0, 4).map((l, li) => (
                 <a key={li} onClick={editMode ? undefined : () => scrollToSlide(1)}
                   className="text-xs uppercase tracking-widest font-medium cursor-pointer transition-opacity hover:opacity-60"
-                  style={{ color: isDarkBg ? 'rgba(255,255,255,0.7)' : tt.textSecondary }}><EditSpan field={`navLinks.${li}`} value={l} editMode={editMode} onFieldChange={onFieldChange} singleLine /></a>
+                  style={{ color: isDarkBg ? 'rgba(255,255,255,0.7)' : tt.textSecondary }}>{editMode ? <StyleOnlySpan field={`navLinks.${li}`} value={l} htmlValue={l} editMode={editMode} onFieldChange={onFieldChange} /> : l}</a>
               ))}
             </nav>
           )}
