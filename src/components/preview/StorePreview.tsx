@@ -2932,7 +2932,7 @@ function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onPro
                   <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                   {p.badge && (
                     <span className="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: t.primary }}>
-                      {p.badge}
+                      {editMode ? <StyleOnlySpan field={`products.${p.id}.badgeHtml`} value={p.badge} htmlValue={p.badgeHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.badge}
                     </span>
                   )}
                   <button
@@ -3135,7 +3135,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
                   className={`w-full h-full object-cover ${editMode ? '' : 'group-hover:scale-105 transition-transform duration-700'}`}
                 />
                 {p.badge && (
-                  <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{ background: primaryColor }}>{p.badge}</span>
+                  <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{ background: primaryColor }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.badgeHtml`} value={p.badge} htmlValue={p.badgeHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.badge}</span>
                 )}
                 {/* Quick add button: Remove transition-transform and translate in edit mode */}
                 <div className={`absolute bottom-0 inset-x-0 p-3 ${editMode ? '' : 'transition-transform duration-200'} ${isMobile || editMode ? '' : 'translate-y-full group-hover:translate-y-0'}`}>
@@ -3374,7 +3374,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
                 {/* Overlay gradient at bottom */}
                 <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-black/80 to-transparent" />
                 {p.badge && (
-                  <span className="absolute top-3 left-3 text-[10px] font-black uppercase px-2.5 py-1 rounded-full text-black" style={{ background: idx === 0 ? accentColor : primaryColor }}>{p.badge}</span>
+                  <span className="absolute top-3 left-3 text-[10px] font-black uppercase px-2.5 py-1 rounded-full text-black" style={{ background: idx === 0 ? accentColor : primaryColor }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.badgeHtml`} value={p.badge} htmlValue={p.badgeHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.badge}</span>
                 )}
                 <button
                   data-wishlist-btn=""
@@ -3606,7 +3606,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
                 <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover transition-transform duration-1000" style={{ transform: 'scale(1)', transition: 'transform 1s ease' }} />
                 {p.badge && (
                   <span className="absolute top-3 left-3 text-[9px] font-bold tracking-widest px-2.5 py-1 text-white" style={{ background: primaryColor, letterSpacing: '0.15em', fontFamily: 'system-ui' }}>
-                    {p.badge.toUpperCase()}
+                    {editMode ? <StyleOnlySpan field={`products.${p.id}.badgeHtml`} value={p.badge} htmlValue={p.badgeHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.badge.toUpperCase()}
                   </span>
                 )}
                 <button
@@ -3862,7 +3862,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
                         <p className="text-white/80 text-xs">{fmtPrice(p.price)}</p>
                       </div>
                       {p.badge && (
-                        <span className="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow" style={{ background: primaryColor }}>{p.badge}</span>
+                        <span className="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow" style={{ background: primaryColor }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.badgeHtml`} value={p.badge} htmlValue={p.badgeHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.badge}</span>
                       )}
                     </div>
                   </div>
@@ -3892,7 +3892,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
               <div className="relative aspect-square overflow-hidden" style={{ background: tt.surfaceBg }}>
                 <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 {p.badge && (
-                  <span className="absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-full text-white shadow-sm" style={{ background: primaryColor }}>{p.badge}</span>
+                  <span className="absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-full text-white shadow-sm" style={{ background: primaryColor }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.badgeHtml`} value={p.badge} htmlValue={p.badgeHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.badge}</span>
                 )}
                 <button
                   data-wishlist-btn=""
@@ -4159,7 +4159,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
                 <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 {p.badge && (
                   <span className="absolute top-3 left-3 text-[10px] font-black px-3 py-1.5 rounded-full text-white shadow-lg" style={{ background: idx % 2 === 0 ? primaryColor : accentColor }}>
-                    {p.badge}
+                    {editMode ? <StyleOnlySpan field={`products.${p.id}.badgeHtml`} value={p.badge} htmlValue={p.badgeHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.badge}
                   </span>
                 )}
                 <button
@@ -4353,7 +4353,7 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
             <div key={p.id} className="group rounded-2xl overflow-hidden hover:shadow-lg transition-all cursor-pointer" style={{ background: tt.surfaceBg, border: `1px solid ${tt.divider}` }} onClick={() => onProductClick(p)}>
               <div className="relative aspect-square" style={{ background: tt.surfaceBg }}>
                 <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                {p.badge && <span className="absolute top-2 left-2 px-2 py-0.5 text-xs font-bold text-white rounded-full" style={{ background: primaryColor }}>{p.badge}</span>}
+                {p.badge && <span className="absolute top-2 left-2 px-2 py-0.5 text-xs font-bold text-white rounded-full" style={{ background: primaryColor }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.badgeHtml`} value={p.badge} htmlValue={p.badgeHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.badge}</span>}
                 <button
                   data-wishlist-btn=""
                   onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }}
@@ -7676,7 +7676,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
                       <div className="relative overflow-hidden" style={{ aspectRatio: '1/1', borderRadius: tt.surfaceRadius, background: tt.surfaceBg }}>
                         <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                         {p.badge && <span className="absolute top-2 left-2 text-[9px] font-black uppercase px-2 py-0.5" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: '999px' }}>
-                          {pi >= 0 ? <EditSpan field={`products.${pi}.badge`} value={p.badge} editMode={editMode} onFieldChange={onFieldChange} singleLine /> : p.badge}
+                          {pi >= 0 ? <StyleOnlySpan field={`products.${pi}.badgeHtml`} value={p.badge} htmlValue={p.badgeHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.badge}
                         </span>}
                         <button data-wishlist-btn="" onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }} className="absolute top-2 right-2 w-6 h-6 bg-white/80 backdrop-blur flex items-center justify-center rounded-full">
                           <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
