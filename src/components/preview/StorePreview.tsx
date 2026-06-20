@@ -1370,8 +1370,8 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
                 <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold truncate leading-tight" style={{ color: t.textPrimary }}>{p.name}</p>
-                <p className="text-xs font-bold mt-0.5" style={{ color: t.primary }}>{fmtPrice(p.price)}</p>
+                <p className="text-xs font-semibold truncate leading-tight" style={{ color: t.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
+                <p className="text-xs font-bold mt-0.5" style={{ color: t.primary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(p.price)}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.surfaceBorder}`, borderRadius: '6px' }}>
                     <button onClick={() => onUpdateQty(p.id, -1)} className="w-6 h-6 flex items-center justify-center text-sm font-medium" style={{ color: t.textSecondary }}>−</button>
@@ -1482,8 +1482,8 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: t.textMuted }}>{p.category}</p>
-                      <p className="text-sm font-semibold truncate" style={{ color: t.textPrimary }}>{p.name}</p>
-                      <p className="text-sm font-bold mt-0.5" style={{ color: t.primary }}>{fmtPrice(p.price)}</p>
+                      <p className="text-sm font-semibold truncate" style={{ color: t.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
+                      <p className="text-sm font-bold mt-0.5" style={{ color: t.primary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(p.price)}</p>
                     </div>
                     <div className="flex flex-col items-end justify-between flex-shrink-0">
                       <div className="flex items-center gap-1.5">
@@ -2112,7 +2112,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate" style={{ color: t.textPrimary }}>{p.name}</p>
+                  <p className="text-xs font-medium truncate" style={{ color: t.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
                   <p className="text-[10px]" style={{ color: t.textMuted }}>×{qty}</p>
                 </div>
                 <span className="text-xs font-bold" style={{ color: t.textPrimary }}>{fmtPrice(p.price * qty)}</span>
@@ -2694,10 +2694,10 @@ function SearchOverlay({ open, onClose, products, primaryColor, onProductClick, 
                 <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
+                <p className="text-sm font-semibold text-gray-900 truncate">{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
                 <p className="text-xs text-gray-400">{p.category}</p>
               </div>
-              <span className="text-sm font-bold flex-shrink-0" style={{ color: primaryColor }}>{fmtPrice(p.price)}</span>
+              <span className="text-sm font-bold flex-shrink-0" style={{ color: primaryColor }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(p.price)}</span>
             </button>
           ))}
         </div>
@@ -2946,9 +2946,9 @@ function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onPro
                 </div>
                 <div className="p-3">
                   <p className="text-xs truncate mb-0.5" style={{ color: t.textMuted }}>{p.category}</p>
-                  <p className="text-sm font-semibold truncate" style={{ color: t.textPrimary }}>{p.name}</p>
+                  <p className="text-sm font-semibold truncate" style={{ color: t.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
                   <div className="flex items-center justify-between mt-2 gap-2">
-                    <span className="text-sm font-bold" style={{ color: t.primary }}>{fmtPrice(p.price)}</span>
+                    <span className="text-sm font-bold" style={{ color: t.primary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(p.price)}</span>
                     <button
                       onClick={e => {
                         e.stopPropagation();
@@ -3157,9 +3157,9 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
                 </button>
               </div>
               <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
-              <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+              <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-sm font-black" style={{ color: tt.textPrimary }}>{fmtPrice(p.price)}</span>
+                <span className="text-sm font-black" style={{ color: tt.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(p.price)}</span>
                 {p.originalPrice && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
               </div>
             </div>
@@ -3397,8 +3397,8 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
               <div className="mt-3 px-0.5">
                 <p className="text-[10px] text-white/30 uppercase tracking-widest">{p.category}</p>
                 <div className="flex items-center justify-between mt-0.5">
-                  <p className="text-sm font-black text-white truncate flex-1">{p.name}</p>
-                  <span className="text-sm font-black ml-2 flex-shrink-0" style={{ color: primaryColor }}>{fmtPrice(p.price)}</span>
+                  <p className="text-sm font-black text-white truncate flex-1">{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
+                  <span className="text-sm font-black ml-2 flex-shrink-0" style={{ color: primaryColor }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(p.price)}</span>
                 </div>
               </div>
             </div>
@@ -3629,9 +3629,9 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
                 </div>
               </div>
               <p className="text-[10px] tracking-[0.22em] mb-1.5" style={{ color: '#a09080', fontFamily: 'system-ui' }}>{p.category.toUpperCase()}</p>
-              <p className="text-sm font-medium tracking-wide truncate" style={{ color: '#2a2420' }}>{p.name}</p>
+              <p className="text-sm font-medium tracking-wide truncate" style={{ color: '#2a2420' }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
               <div className="flex items-center gap-2.5 mt-1.5">
-                <span className="text-sm font-bold" style={{ color: primaryColor, fontFamily: 'system-ui' }}>{fmtPrice(p.price)}</span>
+                <span className="text-sm font-bold" style={{ color: primaryColor, fontFamily: 'system-ui' }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(p.price)}</span>
                 {p.originalPrice && <span className="text-xs line-through" style={{ color: '#a09080', fontFamily: 'system-ui' }}>{fmtPrice(p.originalPrice)}</span>}
               </div>
             </div>
@@ -3809,8 +3809,8 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
                   <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                 </div>
                 <div className="p-2" style={{ background: tt.surfaceBg }}>
-                  <p className="text-[11px] font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
-                  <p className="text-[11px] font-bold mt-0.5" style={{ color: primaryColor }}>{fmtPrice(p.price)}</p>
+                  <p className="text-[11px] font-semibold truncate" style={{ color: tt.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
+                  <p className="text-[11px] font-bold mt-0.5" style={{ color: primaryColor }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(p.price)}</p>
                 </div>
               </div>
             ))}
@@ -3858,8 +3858,8 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
                     <div className="relative w-full h-full">
                       <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                       <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/65 to-transparent">
-                        <p className="text-white text-xs font-semibold truncate">{p.name}</p>
-                        <p className="text-white/80 text-xs">{fmtPrice(p.price)}</p>
+                        <p className="text-white text-xs font-semibold truncate">{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
+                        <p className="text-white/80 text-xs">{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(p.price)}</p>
                       </div>
                       {p.badge && (
                         <span className="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow" style={{ background: primaryColor }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.badgeHtml`} value={p.badge} htmlValue={p.badgeHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.badge}</span>
@@ -3907,11 +3907,11 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: alpha(primaryColor, 0.1), color: primaryColor }}>{p.category}</span>
                 </div>
-                <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+                <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
                 {!isMobile && <p className="text-xs mt-0.5 truncate" style={{ color: tt.textMuted }}>{p.description}</p>}
                 <div className="flex items-center justify-between mt-2.5">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-sm font-bold" style={{ color: tt.textPrimary }}>{fmtPrice(p.price)}</span>
+                    <span className="text-sm font-bold" style={{ color: tt.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(p.price)}</span>
                     {p.originalPrice && !isMobile && <span className="text-xs line-through" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
                   </div>
                   <button onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(_btn)); }} className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-xl text-white shadow-sm hover:opacity-90 transition-opacity" style={{ background: primaryColor }}>
@@ -4109,8 +4109,8 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
                       <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                     </div>
                     <div className="p-2.5">
-                      <p className="text-xs font-bold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
-                      <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{fmtPrice(p.price)}</p>
+                      <p className="text-xs font-bold truncate" style={{ color: tt.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
+                      <p className="text-xs font-black mt-0.5" style={{ color: primaryColor }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(p.price)}</p>
                     </div>
                   </div>
                 ))}
@@ -4172,10 +4172,10 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
               </div>
               <div className={isMobile ? 'p-3' : 'p-4'}>
                 <p className="text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mb-1.5" style={{ background: alpha(primaryColor, 0.1), color: primaryColor }}>{p.category}</p>
-                <p className="text-sm font-black truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+                <p className="text-sm font-black truncate" style={{ color: tt.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
                 <div className="flex items-center justify-between mt-2.5">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-sm font-black truncate" style={{ color: primaryColor }}>{fmtPrice(p.price)}</span>
+                    <span className="text-sm font-black truncate" style={{ color: primaryColor }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(p.price)}</span>
                     {p.originalPrice && !isMobile && <span className="text-xs line-through flex-shrink-0" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
                   </div>
                   <button
@@ -4366,7 +4366,7 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
                 <p className="text-xs mb-1" style={{ color: tt.textMuted }}>{p.category}</p>
                 <p className="text-sm font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
                 <div className="flex items-center justify-between mt-2">
-                  <span className="font-bold" style={{ color: tt.textPrimary }}>{fmtPrice(p.price)}</span>
+                  <span className="font-bold" style={{ color: tt.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(p.price)}</span>
                   <button onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(_btn)); }} className="px-3 py-1.5 text-xs font-semibold rounded-xl text-white" style={{ background: primaryColor }}>Add</button>
                 </div>
               </div>
@@ -5617,7 +5617,7 @@ function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts, h
               {/* Top label on front card */}
               {i === 0 && (
                 <div className="absolute bottom-0 left-0 right-0 p-3" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)' }}>
-                  <p className="text-white text-[10px] font-bold truncate">{p.name}</p>
+                  <p className="text-white text-[10px] font-bold truncate">{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
                 </div>
               )}
             </div>
@@ -7183,8 +7183,8 @@ function CategorySpotlightSection({ design, tt, primaryColor, device, variant = 
                   <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                 </div>
                 <div>
-                  <p style={{ fontSize: '13px', fontWeight: 600, color: tt.textPrimary, marginBottom: '4px' }}>{p.name}</p>
-                  <p style={{ fontSize: '12px', color: pc, fontWeight: 700 }}>{p.price}</p>
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: tt.textPrimary, marginBottom: '4px' }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
+                  <p style={{ fontSize: '12px', color: pc, fontWeight: 700 }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={String(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.price}</p>
                 </div>
               </div>
             ))}
@@ -7215,7 +7215,7 @@ function CategorySpotlightSection({ design, tt, primaryColor, device, variant = 
                     <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                   </div>
                   <div style={{ padding: '12px', background: 'rgba(255,255,255,0.04)' }}>
-                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 600, marginBottom: '2px' }}>{p.name}</p>
+                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 600, marginBottom: '2px' }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
                   </div>
                 </motion.div>
               );
@@ -7250,7 +7250,7 @@ function CategorySpotlightSection({ design, tt, primaryColor, device, variant = 
                   <ProductImg src={p.image} alt={p.name} fallback={p.imageFallback} className="w-full h-full object-cover" />
                 </div>
                 <div style={{ padding: '10px 0 4px' }}>
-                  <p style={{ fontSize: '12px', fontWeight: 600, color: tt.textPrimary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</p>
+                  <p style={{ fontSize: '12px', fontWeight: 600, color: tt.textPrimary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
                 </div>
               </motion.div>
             ))}
@@ -8620,7 +8620,7 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
                     </div>
                     <div className="relative w-full max-w-6xl mx-auto px-6 pb-16">
                       <p className="text-xs uppercase tracking-[0.3em] mb-3 font-bold" style={{ color: pc }}>{p.category}</p>
-                      <h2 className="font-black leading-tight mb-3" style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '2rem' : '4rem', maxWidth: '14ch' }}>{p.name}</h2>
+                      <h2 className="font-black leading-tight mb-3" style={{ fontFamily: tt.headingFont, color: tt.textPrimary, fontSize: isMobile ? '2rem' : '4rem', maxWidth: '14ch' }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</h2>
                       <p className="text-sm mb-6" style={{ color: tt.textSecondary }}>{p.description}</p>
                       <div className="flex items-center gap-4">
                         <span className="text-2xl font-black" style={{ color: tt.textPrimary }}>{fmtPrice(p.price)}</span>
