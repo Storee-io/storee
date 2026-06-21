@@ -21,6 +21,7 @@ import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, 
 import type { Store, ShippingSettings, ShippingMethod, PaymentSettings, PaymentMethod } from '../../context/StoreContext';
 import { DEFAULT_SHIPPING_METHODS, DEFAULT_PAYMENT_METHODS } from '../../context/StoreContext';
 import type { StoreDesign, RichProduct, DesignSystem, DesignTokens } from '../../lib/claudeApi';
+import { decodeHtmlEntities } from '../../lib/claudeApi';
 import { makePriceFmt } from '../../lib/formatCurrency';
 import { supabase } from '../../lib/supabase';
 import { useCart, type CartItem } from '../../context/CartContext';
