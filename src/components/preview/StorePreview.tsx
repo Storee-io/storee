@@ -3008,7 +3008,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
       <header className="backdrop-blur-sm border-b sticky top-0 z-40" style={{ background: `${tt.headerBg}f5`, borderColor: tt.headerBorder }}>
         <div className="max-w-6xl mx-auto px-5 h-15 flex items-center justify-between" style={{ height: '56px' }}>
           <span className="text-sm font-black tracking-[0.18em] uppercase" style={{ color: tt.textPrimary }}>
-            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
           </span>
           {!isMobile ? (
             <nav className="flex gap-8">
@@ -3263,7 +3263,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
       <footer className="border-t py-10" style={{ background: tt.pageBg, borderColor: tt.divider }}>
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <span className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: tt.textPrimary }}>
-            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
           </span>
           <p className="text-xs italic" style={{ color: tt.textMuted }}>
             <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
@@ -3299,7 +3299,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
       <header className="bg-[#0a0a0a]/96 backdrop-blur-sm border-b border-white/8 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-5 flex items-center justify-between" style={{ height: '56px' }}>
           <span className="text-sm font-black uppercase tracking-[0.18em] text-white">
-            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
           </span>
           {!isMobile ? (
             <nav className="flex gap-7">
@@ -3497,7 +3497,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
       <footer className="border-t border-white/8 py-10">
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <span className="text-sm font-black uppercase tracking-[0.18em] text-white">
-            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
           </span>
           <p className="text-xs text-white/30 uppercase tracking-widest">
             <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
@@ -3539,7 +3539,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
               {storeName[0]}
             </div>
             <span className="text-sm font-bold" style={{ color: '#2a2420', letterSpacing: '0.16em' }}>
-              <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
             </span>
           </div>
           {!isMobile ? (
@@ -3729,7 +3729,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
       <footer style={{ background: '#2a2420', borderTop: `3px solid ${primaryColor}` }} className="py-12">
         <div className="max-w-6xl mx-auto px-6 text-center">
           <p className="text-xs font-bold tracking-[0.45em] text-white mb-3">
-            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
           </p>
           <p className="text-[10px] tracking-[0.22em] mb-6" style={{ color: 'rgba(255,255,255,0.38)' }}>
             <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
@@ -3772,7 +3772,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
               {storeName[0]}
             </div>
             <span className="text-sm font-bold" style={{ color: tt.textPrimary }}>
-              <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
             </span>
           </div>
           {!isMobile ? (
@@ -4016,7 +4016,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
               {storeName[0]}
             </div>
             <span className="text-sm font-bold" style={{ color: tt.textPrimary }}>
-              <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
             </span>
           </div>
           <p className="text-xs" style={{ color: tt.textMuted }}>
@@ -4057,7 +4057,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
           <div className="flex items-center gap-2">
             <span className="text-xl">{collections[0]?.emoji}</span>
             <span className="text-sm font-black" style={{ color: tt.textPrimary }}>
-              <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
             </span>
           </div>
           {!isMobile ? (
@@ -4285,7 +4285,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
         <div className="max-w-6xl mx-auto px-5 py-8 text-center">
           <p className="text-2xl mb-2">{collections[0]?.emoji}</p>
           <p className="text-sm font-black mb-1" style={{ color: heroTextColor }}>
-            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
           </p>
           <p className="text-xs mb-4" style={{ color: `${heroTextColor}aa` }}>
             <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
@@ -7499,7 +7499,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
           }}>
         <div className="max-w-6xl mx-auto px-5 h-full flex items-center justify-between">
           <span className="text-sm font-black tracking-[0.18em] uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
-            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
           </span>
           {!isMobile ? (
             <nav className="flex gap-7">
@@ -7550,7 +7550,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
       <footer style={{ borderTop: `1px solid ${tt.divider}`, background: tt.headerBg, paddingTop: '2.5rem', paddingBottom: '2.5rem' }}>
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <span className="text-sm font-black uppercase tracking-[0.18em]" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
-            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
           </span>
           <p className="text-xs italic" style={{ color: tt.textMuted }}>
             <EditSpan field="tagline" value={design.tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
@@ -7996,7 +7996,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
           style={{ background: tt.headerBg + 'e8', borderBottom: `1px solid ${tt.divider}`, height: '52px' }}>
           <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
             {/* Brand */}
-            <span className="text-sm font-black tracking-wider uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}><EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine /></span>
+            <span className="text-sm font-black tracking-wider uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
 
             {/* Nav — desktop only */}
             {!isMobile && (
@@ -8151,7 +8151,7 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
       <footer style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '2rem', paddingBottom: '2rem' }}>
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <span className="text-sm font-black uppercase tracking-widest" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
-            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
           </span>
           <p className="text-xs italic" style={{ color: tt.textMuted }}>
             <EditSpan field="tagline" value={design.tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
@@ -8270,7 +8270,7 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
           style={{ borderBottom: `1px solid ${tt.divider}`, height: '56px' }}>
           <div className="max-w-6xl mx-auto px-5 h-full flex items-center justify-between">
             <span className="font-black text-sm tracking-wider" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
-              <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
             </span>
             {!isMobile ? (
               <nav className="flex gap-6">
@@ -8490,7 +8490,7 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
       <footer style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '1.5rem', paddingBottom: '1.5rem' }}>
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <span className="text-sm font-black tracking-wider" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
-            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
           </span>
           <p className="text-xs italic" style={{ color: tt.textMuted }}>
             <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
@@ -8785,7 +8785,7 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
       <footer style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '2rem', paddingBottom: '2rem' }}>
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <span className="text-sm font-black uppercase tracking-widest" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
-            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine />
+            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
           </span>
           <p className="text-xs italic" style={{ color: tt.textMuted }}>
             <EditSpan field="tagline" value={design.tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
