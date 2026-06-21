@@ -624,7 +624,9 @@ function StyleOnlySpan({
   const spanRef = useRef<HTMLSpanElement>(null);
   const tipTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const displayVal = htmlValue || value;
+  // Decode incoming value to prevent double-escaping of entities
+  const decodedValue = decodeHtmlEntities(value);
+  const displayVal = htmlValue || decodedValue;
   const isHtml = /<[a-z]/i.test(displayVal);
   const spanStyle: React.CSSProperties = { ...style, lineHeight: 'inherit', verticalAlign: 'middle', display: 'inline' };
 
@@ -684,12 +686,17 @@ function StyleOnlySpan({
     if (!spanRef.current) { setIsStyling(false); return; }
     const el = spanRef.current;
     const currentText = el.textContent ?? '';
-    if (currentText === value) {
+    // Compare with decoded value to avoid entity mismatch
+    if (currentText === decodedValue) {
       const html = el.innerHTML;
-      if (html !== displayVal) onFieldChange?.(field, html);
+      if (html !== displayVal) {
+        // Decode the saved HTML to prevent accumulating entities
+        const decodedHtml = decodeHtmlEntities(html);
+        onFieldChange?.(field, decodedHtml);
+      }
     } else {
-      // Text was changed — revert to original (always use textContent to avoid entity issues)
-      el.textContent = value;
+      // Text was changed — revert to original
+      el.textContent = decodedValue;
     }
     setIsStyling(false);
   };
