@@ -215,9 +215,13 @@ function writeLastUsed(storeId: string) {
 function sortByLastUsed(stores: Store[]): Store[] {
   const lastUsed = readLastUsed();
   return [...stores].sort((a, b) => {
-    const ta = lastUsed[a.id] ?? a.createdAt ?? '';
-    const tb = lastUsed[b.id] ?? b.createdAt ?? '';
-    return new Date(tb).getTime() - new Date(ta).getTime();
+    const ta = lastUsed[a.id] ?? a.createdAt ?? '1970-01-01';
+    const tb = lastUsed[b.id] ?? b.createdAt ?? '1970-01-01';
+    const timeA = new Date(ta).getTime();
+    const timeB = new Date(tb).getTime();
+    // Fallback if dates are invalid (NaN comparison always false, so equal order)
+    if (isNaN(timeA) || isNaN(timeB)) return 0;
+    return timeB - timeA;
   });
 }
 
