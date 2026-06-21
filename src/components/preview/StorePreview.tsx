@@ -1230,10 +1230,10 @@ function getCommerceTheme(primaryColor: string, layoutStyle?: string): CommerceT
 
 // ── Shared interactive pages ──────────────────────────────────────────────────
 
-function ProductDetailPage({ product, primaryColor, storeName, device, onBack, onAddToCart, onCartClick, cartCount, fmtPrice, layoutStyle }: {
+function ProductDetailPage({ product, primaryColor, storeName, device, onBack, onAddToCart, onCartClick, cartCount, fmtPrice, layoutStyle, editMode, onFieldChange }: {
   product: RichProduct; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
   onBack: () => void; onAddToCart: (p: RichProduct, sourceRect?: DOMRect) => void; onCartClick: () => void; cartCount: number;
-  layoutStyle?: string;
+  layoutStyle?: string; editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
@@ -1453,10 +1453,10 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
   return content;
 }
 
-function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, onUpdateQty, fmtPrice, layoutStyle }: {
+function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, onUpdateQty, fmtPrice, layoutStyle, editMode, onFieldChange }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
   layoutStyle?: string;
-  onBack: () => void; onCheckout: () => void; onUpdateQty: (id: string, delta: number) => void;
+  onBack: () => void; onCheckout: () => void; onUpdateQty: (id: string, delta: number) => void; editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
   const isMobile = device === 'mobile';
@@ -1857,10 +1857,10 @@ function PhoneCountrySelect({ selectedCode, onChangeCode, t }: {
   );
 }
 
-function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, layoutStyle }: {
+function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, layoutStyle, editMode, onFieldChange }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
   shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; layoutStyle?: string;
-  onBack: () => void; onPlaceOrder: (paymentId: string, shippingId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => void;
+  onBack: () => void; onPlaceOrder: (paymentId: string, shippingId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => void; editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   const [form, setForm] = useState({ email: '', whatsapp: '', name: '', address: '', city: '', province: '', postal: '' });
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
@@ -2163,13 +2163,14 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   );
 }
 
-function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmtPrice, paymentSettings, selectedPaymentId, buyerUser, onShowAuth, onMyOrders, layoutStyle }: {
+function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmtPrice, paymentSettings, selectedPaymentId, buyerUser, onShowAuth, onMyOrders, layoutStyle, editMode, onFieldChange }: {
   primaryColor: string; storeName: string; orderNum: string; total: number; fmtPrice: (n: number) => string;
   paymentSettings?: PaymentSettings; selectedPaymentId: string; layoutStyle?: string;
   onContinue: () => void;
   buyerUser?: BuyerUser | null;
   onShowAuth?: () => void;
   onMyOrders?: () => void;
+  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   const [copied, setCopied] = useState(false);
   const allMethods = paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS;
@@ -2721,7 +2722,7 @@ function SearchOverlay({ open, onClose, products, primaryColor, onProductClick, 
 
 // ── My Orders Page ────────────────────────────────────────────────────────────
 
-function MyOrdersPage({ buyerUserId, primaryColor, storeName, storeId, onBack, fmtPrice, layoutStyle }: {
+function MyOrdersPage({ buyerUserId, primaryColor, storeName, storeId, onBack, fmtPrice, layoutStyle, editMode, onFieldChange }: {
   buyerUserId: string;
   primaryColor: string;
   storeName: string;
@@ -2729,6 +2730,7 @@ function MyOrdersPage({ buyerUserId, primaryColor, storeName, storeId, onBack, f
   onBack: () => void;
   fmtPrice: (n: number) => string;
   layoutStyle?: string;
+  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   const [orders, setOrders] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
@@ -2879,7 +2881,7 @@ function UserProfileMenu({ buyerEmail, onUserClick, onWishlistClick, wishlistCou
 
 // ── Wishlist page ──────────────────────────────────────────────────────────────
 
-function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onProductClick, onBack, primaryColor, storeName, fmtPrice, layoutStyle, device }: {
+function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onProductClick, onBack, primaryColor, storeName, fmtPrice, layoutStyle, device, editMode, onFieldChange }: {
   wishlist: Set<string>;
   products: RichProduct[];
   onToggleWishlist: (id: string) => void;
@@ -2891,6 +2893,7 @@ function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onPro
   fmtPrice: (amount: number) => string;
   layoutStyle?: string;
   device: DeviceMode;
+  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   const t = getCommerceTheme(primaryColor, layoutStyle);
   const { uiT } = useStoreFlags();
@@ -9103,17 +9106,17 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
   const allProducts = (design?.products ?? []) as RichProduct[];
 
   if (page === 'wishlist') {
-    content = <WishlistPage wishlist={wishlist} products={allProducts} onToggleWishlist={toggleWishlist} onAddToCart={addToCart} onProductClick={p => { if (!editMode) { setSelectedProduct(p); setPage('product'); } }} onBack={() => setPage('home')} primaryColor={primaryColor} storeName={storeName} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} device={device} />;
+    content = <WishlistPage wishlist={wishlist} products={allProducts} onToggleWishlist={toggleWishlist} onAddToCart={addToCart} onProductClick={p => { if (!editMode) { setSelectedProduct(p); setPage('product'); } }} onBack={() => setPage('home')} primaryColor={primaryColor} storeName={storeName} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} device={device} editMode={editMode} onFieldChange={onFieldChange} />;
   } else if (page === 'product' && selectedProduct) {
-    content = <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} onBack={() => setPage('home')} onAddToCart={handleAddToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} layoutStyle={design?.layoutStyle} />;
+    content = <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} onBack={() => setPage('home')} onAddToCart={handleAddToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} layoutStyle={design?.layoutStyle} editMode={editMode} onFieldChange={onFieldChange} />;
   } else if (page === 'cart') {
-    content = <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} onBack={() => setPage('home')} onCheckout={() => setPage('checkout')} onUpdateQty={updateQty} />;
+    content = <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} onBack={() => setPage('home')} onCheckout={() => setPage('checkout')} onUpdateQty={updateQty} editMode={editMode} onFieldChange={onFieldChange} />;
   } else if (page === 'checkout') {
-    content = <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} paymentSettings={paymentSettings} layoutStyle={design?.layoutStyle} onBack={() => setPage('cart')} onPlaceOrder={async (pid, sid, customer) => { setSelectedPaymentId(pid); setSelectedShippingId(sid); await saveOrder(pid, sid, customer); setPage('success'); }} />;
+    content = <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} paymentSettings={paymentSettings} layoutStyle={design?.layoutStyle} onBack={() => setPage('cart')} onPlaceOrder={async (pid, sid, customer) => { setSelectedPaymentId(pid); setSelectedShippingId(sid); await saveOrder(pid, sid, customer); setPage('success'); }} editMode={editMode} onFieldChange={onFieldChange} />;
   } else if (page === 'success') {
-    content = <SuccessPage primaryColor={primaryColor} storeName={storeName} orderNum={orderNum} total={cartTotal + shippingCost} fmtPrice={fmtPrice} paymentSettings={paymentSettings} selectedPaymentId={selectedPaymentId} layoutStyle={design?.layoutStyle} onContinue={() => { clearCart(); setPage('home'); }} buyerUser={buyerUser} onShowAuth={() => setShowAuthModal(true)} onMyOrders={() => setPage('myorders')} />;
+    content = <SuccessPage primaryColor={primaryColor} storeName={storeName} orderNum={orderNum} total={cartTotal + shippingCost} fmtPrice={fmtPrice} paymentSettings={paymentSettings} selectedPaymentId={selectedPaymentId} layoutStyle={design?.layoutStyle} onContinue={() => { clearCart(); setPage('home'); }} buyerUser={buyerUser} onShowAuth={() => setShowAuthModal(true)} onMyOrders={() => setPage('myorders')} editMode={editMode} onFieldChange={onFieldChange} />;
   } else if (page === 'myorders' && buyerUser) {
-    content = <MyOrdersPage buyerUserId={buyerUser.id} primaryColor={primaryColor} storeName={storeName} storeId={store.id} onBack={() => setPage('home')} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} />;
+    content = <MyOrdersPage buyerUserId={buyerUser.id} primaryColor={primaryColor} storeName={storeName} storeId={store.id} onBack={() => setPage('home')} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} editMode={editMode} onFieldChange={onFieldChange} />;
   } else if (!design) {
     content = <FallbackLayout store={store} device={device} onProductClick={shared.onProductClick} onAddToCart={shared.onAddToCart} onCartClick={shared.onCartClick} cartCount={shared.cartCount} onUserClick={shared.onUserClick} buyerEmail={shared.buyerEmail} wishlist={shared.wishlist} onToggleWishlist={shared.onToggleWishlist} onWishlistClick={shared.onWishlistClick} />;
   } else {
