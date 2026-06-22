@@ -177,7 +177,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
       <div className="flex items-center gap-2">
 
         {/* Domain pill — only visible when store is Published */}
-        {activeStore?.status === 'Published' && activeStore.domain && (
+        {isMounted && activeStore?.status === 'Published' && activeStore.domain && (
           <div className="hidden md:flex items-center bg-slate-50 border border-slate-200 rounded-full overflow-hidden hover:border-slate-300 transition-colors">
             <Tip label="Open live store">
               <a
