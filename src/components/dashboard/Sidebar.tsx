@@ -29,7 +29,7 @@ function buildNavSections(pendingOrders: number, newProducts: number, activeStor
     items: [
       { icon: LayoutDashboard, label: 'Overview', path: '/dashboard' },
       { icon: ShoppingBag, label: 'Orders', path: '/dashboard/orders', ...(pendingOrders > 0 ? { badge: pendingOrders } : {}) },
-      { icon: Package, label: 'Products', path: '/dashboard/products', ...(newProducts > 0 ? { badge: newProducts } : {}) },
+      { icon: Package, label: 'Products', path: '/dashboard/products' },
       { icon: Users, label: 'Customers', path: '/dashboard/customers' },
     ] as NavItem[],
   },
