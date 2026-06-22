@@ -66,8 +66,9 @@ function dbOrderToDashboard(o: DbOrder): DashboardOrder {
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
-function relativeToDate(str: string): Date {
+function relativeToDate(str: string | undefined | null): Date {
   const now = new Date();
+  if (!str) return now;
   const dayMatch = str.match(/^(\d+)\s*day/);
   if (dayMatch) {
     const d = new Date(now);
