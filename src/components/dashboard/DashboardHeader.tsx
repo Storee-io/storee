@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Menu, Bell, Eye, Copy, Settings, HelpCircle, LogOut, ExternalLink, Check, EyeOff, Loader2, PenLine, Rocket, RotateCcw } from 'lucide-react';
@@ -51,6 +51,8 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const [unpublishing, setUnpublishing] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [showUnpublishModal, setShowUnpublishModal] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
   const { user, logout } = useAuth();
   const { activeStore, updateActiveStore } = useStore();
   const router = useRouter();
@@ -104,7 +106,10 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           <Menu className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2.5 min-w-0">
-        <h1 className="font-semibold text-slate-900 text-sm sm:text-base truncate">{activeStore?.name ? decodeHtmlEntities(activeStore.name) : 'Dashboard'}</h1>
+        {isMounted
+          ? <h1 className="font-semibold text-slate-900 text-sm sm:text-base truncate">{activeStore?.name ? decodeHtmlEntities(activeStore.name) : 'Dashboard'}</h1>
+          : <div className="h-4 w-28 bg-slate-200 rounded animate-pulse" />
+        }
 
         {activeStore?.status === 'Published' ? (
           <Tip label="Store is live and published">
