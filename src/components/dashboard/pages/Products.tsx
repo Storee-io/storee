@@ -425,8 +425,13 @@ export default function Products() {
     const fetchProducts = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/stores/${activeStore.id}/products`);
-        if (!response.ok) throw new Error('Failed to fetch products');
+        const url = `/api/stores/${activeStore.id}/products`;
+        console.log('[Products] Fetching from:', url);
+        const response = await fetch(url);
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`Failed to fetch products: ${response.status} ${text}`);
+        }
         const { products } = await response.json();
 
         // Convert DB products to DashboardProduct format
@@ -451,6 +456,7 @@ export default function Products() {
       } catch (error) {
         console.error('[Products] fetch error:', error);
         // Fallback to storeData products if API fails
+        console.log('[Products] Falling back to generated products');
         setLocalProducts([...storeData.products]);
       } finally {
         setIsLoading(false);
