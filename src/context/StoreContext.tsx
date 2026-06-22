@@ -257,21 +257,19 @@ function sortByLastUsed(stores: Store[]): Store[] {
   });
 }
 
-function getInitialActiveStore(): Store {
-  try {
-    const stored = getStoredActiveStore();
-    if (stored) return stored;
-  } catch { /* fall through */ }
-  return DEMO_STORES[0];
-}
-
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [stores, setStores] = useState<Store[]>(DEMO_STORES);
-  const [activeStore, setActiveStoreState] = useState<Store>(getInitialActiveStore);
+  const [activeStore, setActiveStoreState] = useState<Store>(DEMO_STORES[0]);
   const [generatedStore, setGeneratedStore] = useState<Store | null>(null);
   const [generationState, setGenerationState] = useState<GenerationState | null>(null);
   const [isLoadingStores, setIsLoadingStores] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+
+  // Restore activeStore from localStorage after hydration (client-only)
+  useEffect(() => {
+    const stored = getStoredActiveStore();
+    if (stored) setActiveStoreState(stored);
+  }, []);
 
   // Listen to Supabase auth — load stores when user signs in, clear when signs out
   useEffect(() => {
