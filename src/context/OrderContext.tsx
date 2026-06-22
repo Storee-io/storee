@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { Order, OrderItem } from '@/src/lib/supabase';
-import { supabase } from '@/src/lib/supabase';
+import { useStore } from './StoreContext';
 
 interface OrderContextType {
   orders: Order[];
@@ -11,7 +11,7 @@ interface OrderContextType {
   currentOrder: Order | null;
   loadOrders: (storeId: string) => Promise<void>;
   submitOrder: (storeId: string, order: Omit<Order, 'id' | 'storeId' | 'createdAt' | 'updatedAt'>, items: Omit<OrderItem, 'id' | 'orderId' | 'createdAt'>[]) => Promise<Order | null>;
-  updateOrderStatus: (orderId: string, status: Order['status']) => Promise<void>;
+  updateOrderStatus: (orderId: string, status: string) => Promise<void>;
   setCurrentOrder: (order: Order | null) => void;
 }
 
@@ -22,26 +22,26 @@ function rowToOrder(row: any): Order {
   return {
     id: row.id,
     storeId: row.store_id,
-    customerId: row.customer_id,
-    orderNumber: row.order_number,
+    customerId: row.customer_id ?? null,
+    orderNumber: row.order_number ?? row.id,
     status: row.status,
     paymentMethod: row.payment_method,
     shippingMethod: row.shipping_method,
-    subtotal: row.subtotal,
-    shippingCost: row.shipping_cost,
-    discount: row.discount,
-    total: row.total,
-    notes: row.notes,
-    items: (row.order_items || []).map((item: any) => ({
+    subtotal: row.subtotal ?? 0,
+    shippingCost: row.shipping_cost ?? 0,
+    discount: row.discount ?? 0,
+    total: row.total ?? 0,
+    notes: row.notes ?? null,
+    items: Array.isArray(row.items) ? row.items.map((item: any) => ({
       id: item.id,
-      orderId: item.order_id,
+      orderId: item.order_id ?? row.id,
       productId: item.product_id,
-      productName: item.product_name,
+      productName: item.product_name ?? item.name,
       price: item.price,
       quantity: item.quantity,
       subtotal: item.subtotal,
       createdAt: item.created_at,
-    })),
+    })) : [],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -51,18 +51,16 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
-  const subscriptionRef = useRef<any>(null);
+  const { activeStore } = useStore();
 
   const loadOrders = useCallback(async (storeId: string) => {
     setIsLoadingOrders(true);
     try {
       const response = await fetch(`/api/orders?storeId=${encodeURIComponent(storeId)}`);
       if (!response.ok) throw new Error('Failed to fetch orders');
-      const { orders } = await response.json();
-      setOrders(orders || []);
-
-      // TODO: Setup realtime subscription later - for now using manual fetch
-      // Realtime disabled due to channel subscription issues
+      const { orders: rows } = await response.json();
+      // Map raw DB rows to Order type
+      setOrders((rows || []).map(rowToOrder));
     } catch (error) {
       console.error('[OrderContext] loadOrders:', error);
       setOrders([]);
@@ -71,14 +69,12 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Cleanup subscription on unmount
+  // Auto-load orders when active store changes
   useEffect(() => {
-    return () => {
-      if (subscriptionRef.current) {
-        supabase.removeChannel(subscriptionRef.current);
-      }
-    };
-  }, []);
+    if (activeStore?.id) {
+      loadOrders(activeStore.id);
+    }
+  }, [activeStore?.id, loadOrders]);
 
   const submitOrder = useCallback(async (
     storeId: string,
@@ -94,16 +90,17 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) throw new Error('Failed to create order');
       const { order: created } = await response.json();
-      setOrders(prev => [created, ...prev]);
-      setCurrentOrder(created);
-      return created;
+      const mapped = rowToOrder(created);
+      setOrders(prev => [mapped, ...prev]);
+      setCurrentOrder(mapped);
+      return mapped;
     } catch (error) {
       console.error('[OrderContext] submitOrder:', error);
       return null;
     }
   }, []);
 
-  const updateOrderStatus = useCallback(async (orderId: string, status: Order['status']) => {
+  const updateOrderStatus = useCallback(async (orderId: string, status: string) => {
     try {
       const response = await fetch(`/api/orders`, {
         method: 'PATCH',
@@ -113,9 +110,9 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) throw new Error('Failed to update order');
 
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: status as Order['status'] } : o));
       if (currentOrder?.id === orderId) {
-        setCurrentOrder({ ...currentOrder, status });
+        setCurrentOrder({ ...currentOrder, status: status as Order['status'] });
       }
     } catch (error) {
       console.error('[OrderContext] updateOrderStatus:', error);

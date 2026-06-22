@@ -90,7 +90,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   };
 
   // Badge: count pending orders from real OrderContext data
-  const pendingOrders = orders.filter(o => o.status === 'pending').length;
+  const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'Processing').length;
   const navSections = buildNavSections(pendingOrders, 0, activeStore?.id);
 
   const isActive = (path: string) => pathname === path || (path.startsWith('/editor/') && pathname.startsWith('/editor/'));
