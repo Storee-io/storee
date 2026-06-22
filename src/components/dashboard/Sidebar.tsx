@@ -131,13 +131,14 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           <div
             className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
             style={{ background: activeStore?.primaryColor || '#10b981' }}
+            suppressHydrationWarning
           >
             <Store className="w-4 h-4" />
           </div>
           {!isCollapsed && (
             <>
               <div className="flex-1 text-left min-w-0">
-                <p className="text-sm font-semibold text-slate-900 truncate">{activeStore?.name ? decodeHtmlEntities(activeStore.name) : 'My Store'}</p>
+                <p className="text-sm font-semibold text-slate-900 truncate" suppressHydrationWarning>{activeStore?.name ? decodeHtmlEntities(activeStore.name) : 'My Store'}</p>
                 {activeStore?.status === 'Published' && activeStore.domain
                   ? <p className="text-xs text-slate-500 truncate">{activeStore.domain}</p>
                   : <p className="text-xs text-amber-500 font-medium">Draft</p>
