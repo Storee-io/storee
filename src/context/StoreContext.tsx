@@ -308,7 +308,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   async function loadGuestStores() {
     try {
       const guestStores: Store[] = [];
-      const currentActive = activeStore;
+      // Read directly from localStorage — not from React state which may not have hydrated yet
+      const currentActive = getStoredActiveStore() ?? activeStore;
 
       // 1. Load from localStorage (always available)
       for (let i = 0; i < localStorage.length; i++) {
