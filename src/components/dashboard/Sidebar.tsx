@@ -12,6 +12,7 @@ import {
 import Image from 'next/image';
 import { useStore } from '../../context/StoreContext';
 import { useAuth } from '../../context/AuthContext';
+import { useOrders } from '../../context/OrderContext';
 import { decodeHtmlEntities } from '../../lib/claudeApi';
 
 interface NavItem {
@@ -70,6 +71,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const DEMO_IDS = new Set(['store-1', 'store-2']);
   const realStores = stores.filter(s => !DEMO_IDS.has(s.id));
   const { openUpgradeModal } = useAuth();
+  const { orders } = useOrders();
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [isMounted, setIsMounted] = useState(false);
@@ -87,10 +89,9 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     });
   };
 
-  // Badge: orders Processing/Shipped = belum selesai; products dengan badge 'New'
-  const pendingOrders = storeData.orders.filter(o => o.status === 'Processing').length;
-  const newProducts = storeData.products.filter(p => p.badge === 'New').length;
-  const navSections = buildNavSections(pendingOrders, newProducts, activeStore?.id);
+  // Badge: count pending orders from real OrderContext data
+  const pendingOrders = orders.filter(o => o.status === 'pending').length;
+  const navSections = buildNavSections(pendingOrders, 0, activeStore?.id);
 
   const isActive = (path: string) => pathname === path || (path.startsWith('/editor/') && pathname.startsWith('/editor/'));
 
