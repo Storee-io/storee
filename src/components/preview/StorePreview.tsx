@@ -1261,18 +1261,18 @@ function ProductDetailPage({ product, primaryColor, storeName, device, onBack, o
           <ProductImg src={product.image} alt={product.name} className="w-full h-full object-cover" />
         </div>
         <div className="flex flex-col gap-4">
-          {product.badge && <span className="text-xs font-bold px-3 py-1 rounded-full w-fit" style={{ background: t.primary, color: t.primaryContrast }}>{product.badge}</span>}
-          <p className="text-xs uppercase tracking-wider" style={{ color: t.textMuted }}>{product.category}</p>
-          <h1 className="text-2xl font-bold" style={{ color: t.textPrimary }}>{product.name}</h1>
+          {product.badge && <span className="text-xs font-bold px-3 py-1 rounded-full w-fit" style={{ background: t.primary, color: t.primaryContrast }}>{editMode ? <StyleOnlySpan field={`products.${product.id}.badgeHtml`} value={product.badge} htmlValue={product.badgeHtml} editMode={editMode} onFieldChange={onFieldChange} /> : product.badge}</span>}
+          <p className="text-xs uppercase tracking-wider" style={{ color: t.textMuted }}>{editMode ? <StyleOnlySpan field={`products.${product.id}.categoryHtml`} value={product.category} htmlValue={product.categoryHtml} editMode={editMode} onFieldChange={onFieldChange} /> : product.category}</p>
+          <h1 className="text-2xl font-bold" style={{ color: t.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${product.id}.nameHtml`} value={product.name} htmlValue={product.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : product.name}</h1>
           <div className="flex items-center gap-3">
-            <span className="text-2xl font-black" style={{ color: t.primary }}>{fmtPrice(product.price)}</span>
+            <span className="text-2xl font-black" style={{ color: t.primary }}>{editMode ? <StyleOnlySpan field={`products.${product.id}.priceHtml`} value={fmtPrice(product.price)} htmlValue={product.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(product.price)}</span>
             {product.originalPrice && <span className="text-lg line-through" style={{ color: t.textMuted }}>{fmtPrice(product.originalPrice)}</span>}
           </div>
           <div data-reviews-section="" className="flex items-center gap-1.5">
             {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
             <span className="text-sm ml-1" style={{ color: t.textMuted }}>(4.8) · 124 reviews</span>
           </div>
-          <p className="text-sm leading-relaxed" style={{ color: t.textSecondary }}>{product.description || 'Premium quality product crafted with care and precision.'}</p>
+          <p className="text-sm leading-relaxed" style={{ color: t.textSecondary }}>{editMode ? <StyleOnlySpan field={`products.${product.id}.descriptionHtml`} value={product.description || 'Premium quality product crafted with care and precision.'} htmlValue={product.descriptionHtml} editMode={editMode} onFieldChange={onFieldChange} /> : (product.description || 'Premium quality product crafted with care and precision.')}</p>
           <div className="flex items-center gap-3 mt-2">
             <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.surfaceBorder}`, borderRadius: t.inputRadius }}>
               <button onClick={() => setQty(q => Math.max(1, q - 1))} className="w-11 h-11 flex items-center justify-center text-lg font-bold transition-colors" style={{ color: t.textSecondary }}>−</button>
