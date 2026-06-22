@@ -728,7 +728,12 @@ export default function Products() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
+          <>
+            <StatCardSkeleton label="Total Products" icon={Package} />
+            <StatCardSkeleton label="Active Products" icon={TrendingUp} />
+            <StatCardSkeleton label="Stock Value" icon={AlertTriangle} />
+            <StatCardSkeleton label="Total Revenue" icon={DollarSign} />
+          </>
         ) : (
           <>
             <StatCard icon={Package}       label="Total Products"  value={String(localProducts.length)} sub={`${activeCount} active · ${draftCount} draft`}            iconBg="bg-emerald-50" iconColor="text-emerald-600" />
