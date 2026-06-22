@@ -95,7 +95,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     if (activeStore?.id) {
       loadOrders(activeStore.id);
     }
-  }, [activeStore?.id, loadOrders]);
+  }, [activeStore?.id]);
 
   const submitOrder = useCallback(async (
     storeId: string,
