@@ -196,6 +196,22 @@ const DEMO_STORES: Store[] = [
   },
 ];
 
+// ── Guest ID tracking ──────────────────────────────────────────────────────────
+const GUEST_ID_KEY = 'storee_guest_id';
+
+function getOrCreateGuestId(): string {
+  try {
+    let guestId = localStorage.getItem(GUEST_ID_KEY);
+    if (!guestId) {
+      guestId = `guest_${Math.random().toString(36).substring(2, 15)}_${Date.now()}`;
+      localStorage.setItem(GUEST_ID_KEY, guestId);
+    }
+    return guestId;
+  } catch {
+    return `guest_${Math.random().toString(36).substring(2, 15)}`;
+  }
+}
+
 // ── Last-used tracking ────────────────────────────────────────────────────────
 const LAST_USED_KEY = 'storee_last_used';
 
@@ -267,9 +283,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function loadGuestStores() {
+  async function loadGuestStores() {
     try {
       const guestStores: Store[] = [];
+
+      // 1. Load from localStorage (always available)
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (!key?.startsWith('storee_store_')) continue;
@@ -278,6 +296,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           if (s?.id && s?.name) guestStores.push(s);
         } catch { /* skip malformed */ }
       }
+
+      // 2. Load from Supabase using guest_id (for cloud persistence)
+      try {
+        const guestId = getOrCreateGuestId();
+        const response = await fetch(`/api/get-guest-stores?guestId=${encodeURIComponent(guestId)}`);
+        if (response.ok) {
+          const { stores: supabaseStores } = await response.json();
+          // Merge: Supabase stores + localStorage stores (Supabase as source of truth)
+          const supabaseIds = new Set(supabaseStores.map((s: Store) => s.id));
+          for (const store of supabaseStores) {
+            if (!guestStores.find(s => s.id === store.id)) {
+              guestStores.push(store);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[loadGuestStores] Failed to fetch from Supabase:', err);
+        // Fallback to localStorage only
+      }
+
       if (guestStores.length > 0) {
         const sorted = sortByLastUsed(guestStores);
         setStores(sorted);
@@ -286,7 +324,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setStores(DEMO_STORES);
         setActiveStoreState(DEMO_STORES[0]);
       }
-    } catch {
+    } catch (err) {
+      console.error('[loadGuestStores] error:', err);
       // localStorage not available (SSR edge case)
       setStores(DEMO_STORES);
       setActiveStoreState(DEMO_STORES[0]);
@@ -329,41 +368,56 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     writeLastUsed(store.id);
     setStores(prev => sortByLastUsed(prev.find(s => s.id === store.id) ? prev : [...prev, store]));
     setActiveStoreState(store);
-    // Persist to Supabase if logged in
+
+    // Persist to localStorage (for all users)
+    try { localStorage.setItem(`storee_store_${store.id}`, JSON.stringify(store)); } catch { /* quota */ }
+
+    // Persist to Supabase
     if (userId) {
+      // Authenticated user
       await upsertStore(store, userId);
-      // Also save auto-generated products to database
-      try {
-        const storeData = generateStoreData(store);
-        if (storeData.products && storeData.products.length > 0) {
-          // Save each product to database
-          for (const product of storeData.products) {
-            await fetch(`/api/stores/${store.id}/products`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                id: product.id,
-                name: product.name,
-                price: product.price,
-                originalPrice: product.originalPrice,
-                description: product.description,
-                category: product.category,
-                badge: product.badge,
-                image: product.image,
-                imageFallback: product.imageFallback,
-                collectionId: product.collectionId,
-                stock: 50, // Default stock
-              }),
-            });
-          }
-        }
-      } catch (err) {
-        console.warn('[StoreContext] Failed to auto-save products:', err);
-        // Don't block store creation if product save fails
-      }
     } else {
-      // Fallback: localStorage for unauthenticated preview
-      try { localStorage.setItem(`storee_store_${store.id}`, JSON.stringify(store)); } catch { /* quota */ }
+      // Guest user - save to Supabase with guest_id
+      const guestId = getOrCreateGuestId();
+      try {
+        await fetch('/api/save-guest-store', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ store, guestId }),
+        });
+      } catch (err) {
+        console.warn('[StoreContext] Failed to save guest store to Supabase:', err);
+        // Don't block - localStorage fallback is already saved
+      }
+    }
+
+    // Auto-save products for all users
+    try {
+      const storeData = generateStoreData(store);
+      if (storeData.products && storeData.products.length > 0) {
+        for (const product of storeData.products) {
+          await fetch(`/api/stores/${store.id}/products`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: product.id,
+              name: product.name,
+              price: product.price,
+              originalPrice: product.originalPrice,
+              description: product.description,
+              category: product.category,
+              badge: product.badge,
+              image: product.image,
+              imageFallback: product.imageFallback,
+              collectionId: product.collectionId,
+              stock: 50,
+            }),
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('[StoreContext] Failed to auto-save products:', err);
+      // Don't block store creation if product save fails
     }
   }, [userId]);
 
