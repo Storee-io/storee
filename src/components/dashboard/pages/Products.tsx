@@ -487,7 +487,7 @@ export default function Products() {
     };
 
     fetchProducts();
-  }, [activeStore?.id, storeData.products]);
+  }, [activeStore?.id]);
 
   // ── Mutations ──────────────────────────────────────────────────────────────
 
