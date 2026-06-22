@@ -140,10 +140,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
   const updateOrderStatus = useCallback(async (orderId: string, status: Order['status']) => {
     try {
-      const response = await fetch(`/api/stores/orders/${orderId}`, {
+      const response = await fetch(`/api/orders`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ id: orderId, status }),
       });
 
       if (!response.ok) throw new Error('Failed to update order');
