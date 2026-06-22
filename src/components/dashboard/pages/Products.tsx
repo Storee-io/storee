@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { StatCardSkeleton, TableSkeleton } from '../ui/Skeleton';
 import {
   Search, Plus, Edit3, Trash2, Copy, ChevronUp, ChevronDown,
   ChevronsUpDown, Package, TrendingUp, DollarSign, AlertTriangle,
@@ -726,10 +727,16 @@ export default function Products() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Package}       label="Total Products"  value={String(localProducts.length)} sub={`${activeCount} active · ${draftCount} draft`}            iconBg="bg-emerald-50" iconColor="text-emerald-600" />
-        <StatCard icon={TrendingUp}    label="Active Products" value={String(activeCount)}           sub={localProducts.length ? `${Math.round(activeCount / localProducts.length * 100)}% of catalog` : '—'} iconBg="bg-blue-50"    iconColor="text-blue-600"    />
-        <StatCard icon={AlertTriangle} label="Stock Value"     value={fmtPrice(stockValue)}          sub={`${localProducts.filter(p => p.stock <= 5).length} critical`} iconBg="bg-amber-50"  iconColor="text-amber-600"   />
-        <StatCard icon={DollarSign}    label="Total Revenue"   value={fmtPrice(totalRevenue)}        sub="from all product sales"                                   iconBg="bg-purple-50" iconColor="text-purple-600"  />
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
+        ) : (
+          <>
+            <StatCard icon={Package}       label="Total Products"  value={String(localProducts.length)} sub={`${activeCount} active · ${draftCount} draft`}            iconBg="bg-emerald-50" iconColor="text-emerald-600" />
+            <StatCard icon={TrendingUp}    label="Active Products" value={String(activeCount)}           sub={localProducts.length ? `${Math.round(activeCount / localProducts.length * 100)}% of catalog` : '—'} iconBg="bg-blue-50"    iconColor="text-blue-600"    />
+            <StatCard icon={AlertTriangle} label="Stock Value"     value={fmtPrice(stockValue)}          sub={`${localProducts.filter(p => p.stock <= 5).length} critical`} iconBg="bg-amber-50"  iconColor="text-amber-600"   />
+            <StatCard icon={DollarSign}    label="Total Revenue"   value={fmtPrice(totalRevenue)}        sub="from all product sales"                                   iconBg="bg-purple-50" iconColor="text-purple-600"  />
+          </>
+        )}
       </div>
 
       {/* Filters */}
@@ -810,7 +817,7 @@ export default function Products() {
               <TableHead className="text-right pr-4">Actions</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          {isLoading ? <TableSkeleton rows={6} cols={9} /> : <TableBody>
             {pageItems.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-16 text-slate-400">
@@ -903,7 +910,7 @@ export default function Products() {
                 );
               })
             )}
-          </TableBody>
+          </TableBody>}
         </Table>
       </div>
 

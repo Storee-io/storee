@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { DashboardOrder } from '../../../data/storeDataGenerator';
 import DateRangePicker, { type DateRange } from '../../ui/DateRangePicker';
+import { StatCardSkeleton, TableSkeleton } from '../ui/Skeleton';
 
 // ── DB Order type ─────────────────────────────────────────────────────────────
 
@@ -459,17 +460,21 @@ export default function Orders() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map(s => (
-          <div key={s.label} className="bg-white rounded-2xl p-5 border border-slate-100">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-slate-500 font-medium">{s.label}</p>
-              <div className={`w-9 h-9 ${s.iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}>
-                <s.icon className={`w-4 h-4 ${s.iconColor}`} />
+        {isLoadingOrders ? (
+          Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
+        ) : (
+          stats.map(s => (
+            <div key={s.label} className="bg-white rounded-2xl p-5 border border-slate-100">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm text-slate-500 font-medium">{s.label}</p>
+                <div className={`w-9 h-9 ${s.iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                  <s.icon className={`w-4 h-4 ${s.iconColor}`} />
+                </div>
               </div>
+              <p className="text-2xl font-bold text-slate-900">{s.value}</p>
             </div>
-            <p className="text-2xl font-bold text-slate-900">{s.value}</p>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Filters */}
@@ -519,15 +524,8 @@ export default function Orders() {
               <TableHead className="w-8" />
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {isLoadingOrders ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-16 text-slate-400">
-                  <RefreshCw className="w-6 h-6 mx-auto mb-2 text-slate-300 animate-spin" />
-                  Loading orders...
-                </TableCell>
-              </TableRow>
-            ) : filtered.length === 0 ? (
+          {isLoadingOrders ? <TableSkeleton rows={6} cols={8} /> : <TableBody>
+            {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-16 text-slate-400">
                   <ShoppingBag className="w-8 h-8 mx-auto mb-2 text-slate-300" />
@@ -581,7 +579,7 @@ export default function Orders() {
                 );
               })
             )}
-          </TableBody>
+          </TableBody>}
         </Table>
       </div>
     </div>

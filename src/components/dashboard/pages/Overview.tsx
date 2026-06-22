@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar,
@@ -9,6 +9,7 @@ import { TrendingUp, ShoppingBag, Package, Users, ArrowUpRight } from 'lucide-re
 import { useStore } from '../../../context/StoreContext';
 import DateRangePicker, { type DateRange } from '../../ui/DateRangePicker';
 import { makePriceFmt } from '../../../lib/formatCurrency';
+import { StatCardSkeleton, ChartSkeleton, Skeleton } from '../ui/Skeleton';
 
 function buildRevenueData(from: Date, to: Date) {
   const months: { month: string; revenue: number; orders: number }[] = [];
@@ -47,6 +48,8 @@ export default function Overview() {
   const { activeStore, storeData } = useStore();
   const { orders, topProducts, products, customers } = storeData;
   const fmtPrice = makePriceFmt(activeStore?.currency?.code ?? 'USD');
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
 
   const today = new Date();
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -83,21 +86,25 @@ export default function Overview() {
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map(stat => (
-          <div key={stat.label} className="bg-white rounded-2xl p-5 border border-slate-100">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-slate-500 font-medium">{stat.label}</p>
-              <div className={`w-9 h-9 ${stat.bg} rounded-xl flex items-center justify-center`}>
-                <stat.icon className={`w-4 h-4 ${stat.color}`} />
+        {!isMounted ? (
+          Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
+        ) : (
+          stats.map(stat => (
+            <div key={stat.label} className="bg-white rounded-2xl p-5 border border-slate-100">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-slate-500 font-medium">{stat.label}</p>
+                <div className={`w-9 h-9 ${stat.bg} rounded-xl flex items-center justify-center`}>
+                  <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                </div>
               </div>
+              <p className="text-2xl font-bold text-slate-900 mb-1">{stat.value}</p>
+              <p className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                <ArrowUpRight className="w-3 h-3" />
+                {stat.change} vs prev period
+              </p>
             </div>
-            <p className="text-2xl font-bold text-slate-900 mb-1">{stat.value}</p>
-            <p className="text-xs text-emerald-600 font-medium flex items-center gap-1">
-              <ArrowUpRight className="w-3 h-3" />
-              {stat.change} vs prev period
-            </p>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Charts row */}
@@ -108,7 +115,7 @@ export default function Overview() {
             <h3 className="font-bold text-slate-900">Revenue Overview</h3>
             <p className="text-xs text-slate-500 mt-0.5">Revenue trend for selected period</p>
           </div>
-          <ResponsiveContainer width="100%" height={200}>
+          {!isMounted ? <ChartSkeleton height="h-[200px]" /> : <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={revenueChartData}>
               <defs>
                 <linearGradient id="colorRevDash" x1="0" y1="0" x2="0" y2="1">
@@ -125,7 +132,7 @@ export default function Overview() {
               />
               <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2.5} fill="url(#colorRevDash)" />
             </AreaChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer>}
         </div>
 
         {/* Orders bar chart */}
@@ -134,7 +141,7 @@ export default function Overview() {
             <h3 className="font-bold text-slate-900">Orders</h3>
             <p className="text-xs text-slate-500 mt-0.5">Order volume trend</p>
           </div>
-          <ResponsiveContainer width="100%" height={200}>
+          {!isMounted ? <ChartSkeleton height="h-[200px]" /> : <ResponsiveContainer width="100%" height={200}>
             <BarChart data={revenueChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
@@ -144,7 +151,7 @@ export default function Overview() {
               />
               <Bar dataKey="orders" fill="#0ea5e9" radius={[6, 6, 0, 0]} />
             </BarChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer>}
         </div>
       </div>
 
@@ -157,7 +164,15 @@ export default function Overview() {
             <button className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">View all</button>
           </div>
           <div className="space-y-3">
-            {orders.slice(0, 5).map(order => (
+            {!isMounted ? Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 p-2">
+                <Skeleton className="w-9 h-9 rounded-xl flex-shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex justify-between"><Skeleton className="h-3.5 w-28" /><Skeleton className="h-5 w-16 rounded-full" /></div>
+                  <div className="flex justify-between"><Skeleton className="h-3 w-32" /><Skeleton className="h-3 w-12" /></div>
+                </div>
+              </div>
+            )) : orders.slice(0, 5).map(order => (
               <div key={order.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors">
                 <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                   {order.avatar}
@@ -186,7 +201,15 @@ export default function Overview() {
             <button className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">View all</button>
           </div>
           <div className="space-y-3">
-            {topProducts.map((p, i) => (
+            {!isMounted ? Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton className="w-6 h-3" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex justify-between"><Skeleton className="h-3.5 w-32" /><Skeleton className="h-3.5 w-16" /></div>
+                  <Skeleton className="h-1.5 w-full rounded-full" />
+                </div>
+              </div>
+            )) : topProducts.map((p, i) => (
               <div key={p.name} className="flex items-center gap-3">
                 <span className="w-6 text-xs font-bold text-slate-400 flex-shrink-0">#{i + 1}</span>
                 <div className="flex-1">

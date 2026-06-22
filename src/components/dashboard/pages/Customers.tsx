@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Mail, Crown, Users, UserPlus, Clock } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
 import { makePriceFmt } from '../../../lib/formatCurrency';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { DashboardCustomer } from '../../../data/storeDataGenerator';
+import { StatCardSkeleton, TableSkeleton } from '../ui/Skeleton';
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -36,6 +37,8 @@ export default function Customers() {
   const fmtPrice = makePriceFmt(activeStore?.currency?.code ?? 'USD');
   const { customers } = storeData;
   const [search, setSearch] = useState('');
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
 
   const filtered = customers.filter((c: DashboardCustomer) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -68,17 +71,21 @@ export default function Customers() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-3 gap-4">
-        {stats.map(s => (
-          <div key={s.label} className="bg-white rounded-2xl p-5 border border-slate-100">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-slate-500 font-medium">{s.label}</p>
-              <div className={`w-9 h-9 ${s.iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}>
-                <s.icon className={`w-4 h-4 ${s.iconColor}`} />
+        {!isMounted ? (
+          Array.from({ length: 3 }).map((_, i) => <StatCardSkeleton key={i} />)
+        ) : (
+          stats.map(s => (
+            <div key={s.label} className="bg-white rounded-2xl p-5 border border-slate-100">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm text-slate-500 font-medium">{s.label}</p>
+                <div className={`w-9 h-9 ${s.iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                  <s.icon className={`w-4 h-4 ${s.iconColor}`} />
+                </div>
               </div>
+              <p className="text-2xl font-bold text-slate-900">{s.value}</p>
             </div>
-            <p className="text-2xl font-bold text-slate-900">{s.value}</p>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Search */}
@@ -112,7 +119,7 @@ export default function Customers() {
               <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          {!isMounted ? <TableSkeleton rows={6} cols={6} /> : <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-16 text-slate-400">
@@ -194,7 +201,7 @@ export default function Customers() {
                 );
               })
             )}
-          </TableBody>
+          </TableBody>}
         </Table>
       </div>
     </div>
