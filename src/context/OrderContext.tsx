@@ -56,55 +56,20 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const loadOrders = useCallback(async (storeId: string) => {
     setIsLoadingOrders(true);
     try {
-      // Cleanup previous subscription
-      if (subscriptionRef.current) {
-        await supabase.removeChannel(subscriptionRef.current);
-      }
-      subscriptionRef.current = null;
-
       const response = await fetch(`/api/orders?storeId=${encodeURIComponent(storeId)}`);
       if (!response.ok) throw new Error('Failed to fetch orders');
       const { orders } = await response.json();
       setOrders(orders || []);
 
-      // Setup realtime subscription for this store's orders
-      subscriptionRef.current = supabase
-        .channel(`orders:${storeId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'orders',
-            filter: `store_id=eq.${storeId}`,
-          },
-          (payload) => {
-            console.log('[OrderContext] Realtime update:', payload);
-            if (payload.eventType === 'INSERT') {
-              // New order placed
-              const newOrder = rowToOrder(payload.new);
-              setOrders(prev => [newOrder, ...prev]);
-            } else if (payload.eventType === 'UPDATE') {
-              // Order updated (status change, etc)
-              const updatedOrder = rowToOrder(payload.new);
-              setOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
-              if (currentOrder?.id === updatedOrder.id) {
-                setCurrentOrder(updatedOrder);
-              }
-            } else if (payload.eventType === 'DELETE') {
-              // Order deleted
-              setOrders(prev => prev.filter(o => o.id !== payload.old.id));
-            }
-          }
-        )
-        .subscribe();
+      // TODO: Setup realtime subscription later - for now using manual fetch
+      // Realtime disabled due to channel subscription issues
     } catch (error) {
       console.error('[OrderContext] loadOrders:', error);
       setOrders([]);
     } finally {
       setIsLoadingOrders(false);
     }
-  }, [currentOrder?.id]);
+  }, []);
 
   // Cleanup subscription on unmount
   useEffect(() => {
