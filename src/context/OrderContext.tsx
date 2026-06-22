@@ -1,9 +1,10 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { Order, OrderItem } from '@/src/lib/supabase';
 import { useCart } from './CartContext';
+import { supabase } from '@/src/lib/supabase';
 
 interface OrderContextType {
   orders: Order[];
@@ -17,10 +18,41 @@ interface OrderContextType {
 
 const OrderContext = createContext<OrderContextType | null>(null);
 
+// Convert DB row to Order type
+function rowToOrder(row: any): Order {
+  return {
+    id: row.id,
+    storeId: row.store_id,
+    customerId: row.customer_id,
+    orderNumber: row.order_number,
+    status: row.status,
+    paymentMethod: row.payment_method,
+    shippingMethod: row.shipping_method,
+    subtotal: row.subtotal,
+    shippingCost: row.shipping_cost,
+    discount: row.discount,
+    total: row.total,
+    notes: row.notes,
+    items: (row.order_items || []).map((item: any) => ({
+      id: item.id,
+      orderId: item.order_id,
+      productId: item.product_id,
+      productName: item.product_name,
+      price: item.price,
+      quantity: item.quantity,
+      subtotal: item.subtotal,
+      createdAt: item.created_at,
+    })),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 export function OrderProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
+  const subscriptionRef = useRef<any>(null);
 
   const loadOrders = useCallback(async (storeId: string) => {
     setIsLoadingOrders(true);
@@ -29,12 +61,53 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       if (!response.ok) throw new Error('Failed to fetch orders');
       const { orders } = await response.json();
       setOrders(orders || []);
+
+      // Setup realtime subscription for this store's orders
+      subscriptionRef.current = supabase
+        .channel(`orders:${storeId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'orders',
+            filter: `store_id=eq.${storeId}`,
+          },
+          (payload) => {
+            console.log('[OrderContext] Realtime update:', payload);
+            if (payload.eventType === 'INSERT') {
+              // New order placed
+              const newOrder = rowToOrder(payload.new);
+              setOrders(prev => [newOrder, ...prev]);
+            } else if (payload.eventType === 'UPDATE') {
+              // Order updated (status change, etc)
+              const updatedOrder = rowToOrder(payload.new);
+              setOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
+              if (currentOrder?.id === updatedOrder.id) {
+                setCurrentOrder(updatedOrder);
+              }
+            } else if (payload.eventType === 'DELETE') {
+              // Order deleted
+              setOrders(prev => prev.filter(o => o.id !== payload.old.id));
+            }
+          }
+        )
+        .subscribe();
     } catch (error) {
       console.error('[OrderContext] loadOrders:', error);
       setOrders([]);
     } finally {
       setIsLoadingOrders(false);
     }
+  }, [currentOrder?.id]);
+
+  // Cleanup subscription on unmount
+  useEffect(() => {
+    return () => {
+      if (subscriptionRef.current) {
+        supabase.removeChannel(subscriptionRef.current);
+      }
+    };
   }, []);
 
   const submitOrder = useCallback(async (
