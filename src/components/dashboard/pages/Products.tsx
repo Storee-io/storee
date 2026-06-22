@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Search, Plus, Edit3, Trash2, Copy, ChevronUp, ChevronDown,
   ChevronsUpDown, Package, TrendingUp, DollarSign, AlertTriangle,
@@ -392,6 +393,7 @@ function newBlankProduct(): DashboardProduct {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function Products() {
+  const router = useRouter();
   const { storeData, activeStore } = useStore();
 
   const [localProducts, setLocalProducts] = useState<DashboardProduct[]>(() => [...storeData.products]);
@@ -806,7 +808,7 @@ export default function Products() {
                 return (
                   <TableRow key={product.id}
                     className={`hover:bg-slate-50 transition-colors cursor-pointer group ${isSelected ? 'bg-emerald-50/50' : ''}`}
-                    onClick={() => setEditProduct(product)}
+                    onClick={() => router.push(`/dashboard/products/${product.id}`)}
                   >
                     <TableCell className="pl-4" onClick={e => e.stopPropagation()}>
                       <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(product.id)} className="w-4 h-4 rounded border-slate-300 cursor-pointer accent-emerald-500" />
