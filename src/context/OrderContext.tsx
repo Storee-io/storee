@@ -1,24 +1,35 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Order, OrderItem } from '@/src/lib/supabase';
 import { useStore } from './StoreContext';
 
 interface OrderContextType {
-  orders: Order[];
+  orders: OrderRow[];
   isLoadingOrders: boolean;
-  currentOrder: Order | null;
+  currentOrder: OrderRow | null;
   loadOrders: (storeId: string) => Promise<void>;
-  submitOrder: (storeId: string, order: Omit<Order, 'id' | 'storeId' | 'createdAt' | 'updatedAt'>, items: Omit<OrderItem, 'id' | 'orderId' | 'createdAt'>[]) => Promise<Order | null>;
+  submitOrder: (storeId: string, order: Omit<Order, 'id' | 'storeId' | 'createdAt' | 'updatedAt'>, items: Omit<OrderItem, 'id' | 'orderId' | 'createdAt'>[]) => Promise<OrderRow | null>;
   updateOrderStatus: (orderId: string, status: string) => Promise<void>;
-  setCurrentOrder: (order: Order | null) => void;
+  setCurrentOrder: (order: OrderRow | null) => void;
 }
 
 const OrderContext = createContext<OrderContextType | null>(null);
 
-// Convert DB row to Order type
-function rowToOrder(row: any): Order {
+// Extended order type that carries customer/shipping fields from DB rows
+export interface OrderRow extends Order {
+  customerName?: string;
+  customerEmail?: string;
+  customerWhatsapp?: string;
+  shippingAddress?: string;
+  shippingCity?: string;
+  shippingProvince?: string;
+  shippingPostal?: string;
+}
+
+// Convert DB row to OrderRow (superset of Order type)
+function rowToOrder(row: any): OrderRow {
   return {
     id: row.id,
     storeId: row.store_id,
@@ -32,25 +43,32 @@ function rowToOrder(row: any): Order {
     discount: row.discount ?? 0,
     total: row.total ?? 0,
     notes: row.notes ?? null,
+    customerName: row.customer_name ?? undefined,
+    customerEmail: row.customer_email ?? undefined,
+    customerWhatsapp: row.customer_whatsapp ?? undefined,
+    shippingAddress: row.shipping_address ?? undefined,
+    shippingCity: row.shipping_city ?? undefined,
+    shippingProvince: row.shipping_province ?? undefined,
+    shippingPostal: row.shipping_postal ?? undefined,
     items: Array.isArray(row.items) ? row.items.map((item: any) => ({
-      id: item.id,
-      orderId: item.order_id ?? row.id,
-      productId: item.product_id,
-      productName: item.product_name ?? item.name,
-      price: item.price,
-      quantity: item.quantity,
-      subtotal: item.subtotal,
-      createdAt: item.created_at,
+      id: item.id ?? item.product_id,
+      orderId: row.id,
+      productId: item.product_id ?? item.id,
+      productName: item.product_name ?? item.name ?? 'Product',
+      price: item.price ?? 0,
+      quantity: item.quantity ?? item.qty ?? 1,
+      subtotal: item.subtotal ?? ((item.price ?? 0) * (item.quantity ?? item.qty ?? 1)),
+      createdAt: item.created_at ?? row.created_at,
     })) : [],
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    createdAt: row.created_at ?? new Date().toISOString(),
+    updatedAt: row.updated_at ?? row.created_at ?? new Date().toISOString(),
   };
 }
 
 export function OrderProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
-  const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
+  const [currentOrder, setCurrentOrder] = useState<OrderRow | null>(null);
   const { activeStore } = useStore();
 
   const loadOrders = useCallback(async (storeId: string) => {

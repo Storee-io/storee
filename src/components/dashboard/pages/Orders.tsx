@@ -344,12 +344,8 @@ export default function Orders() {
   const thirtyDaysAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29);
   const [dateRange, setDateRange] = useState<DateRange>({ from: thirtyDaysAgo, to: today });
 
-  // Load orders from OrderContext when component mounts or store changes
-  useEffect(() => {
-    if (activeStore?.id) {
-      loadOrders(activeStore.id);
-    }
-  }, [activeStore?.id, loadOrders]);
+  // Orders are auto-loaded by OrderProvider when activeStore changes.
+  // Manual refresh via handleRefresh below.
 
   // Refresh function for manual refresh button
   const handleRefresh = useCallback(() => {
@@ -360,23 +356,29 @@ export default function Orders() {
 
   // Convert orders from context to dashboard format
   const localOrders = useMemo(() => {
-    // Map orders from context to old DbOrder format for compatibility
     return (orders || []).map(order => ({
       id: order.id,
       store_id: order.storeId,
-      customer_name: null,
-      customer_email: null,
-      customer_whatsapp: null,
-      shipping_address: null,
-      shipping_city: null,
-      shipping_province: null,
-      shipping_postal: null,
+      customer_name: (order as any).customerName ?? null,
+      customer_email: (order as any).customerEmail ?? null,
+      customer_whatsapp: (order as any).customerWhatsapp ?? null,
+      shipping_address: (order as any).shippingAddress ?? null,
+      shipping_city: (order as any).shippingCity ?? null,
+      shipping_province: (order as any).shippingProvince ?? null,
+      shipping_postal: (order as any).shippingPostal ?? null,
       shipping_method: order.shippingMethod,
       shipping_cost: order.shippingCost || 0,
       payment_method: order.paymentMethod,
       subtotal: order.subtotal,
       total: order.total,
-      items: order.items || [],
+      items: (order.items || []).map((item: any) => ({
+        id: item.id,
+        name: item.productName ?? item.name ?? 'Product',
+        image: item.image,
+        price: item.price,
+        qty: item.quantity ?? item.qty ?? 1,
+        subtotal: item.subtotal,
+      })),
       status: order.status,
       created_at: order.createdAt,
     } as any)).map(dbOrderToDashboard);
