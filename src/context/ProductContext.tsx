@@ -1,8 +1,9 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { Product } from '@/src/lib/supabase';
+import { supabase } from '@/src/lib/supabase';
 
 interface ProductContextType {
   products: Product[];
@@ -15,9 +16,36 @@ interface ProductContextType {
 
 const ProductContext = createContext<ProductContextType | null>(null);
 
+// Convert DB row to Product type
+function rowToProduct(row: any): Product {
+  return {
+    id: row.id,
+    storeId: row.store_id,
+    name: row.name,
+    price: row.price,
+    originalPrice: row.original_price,
+    description: row.description,
+    category: row.category,
+    badge: row.badge,
+    image: row.image,
+    imageFallback: row.image_fallback,
+    collectionId: row.collection_id,
+    nameHtml: row.name_html,
+    categoryHtml: row.category_html,
+    descriptionHtml: row.description_html,
+    badgeHtml: row.badge_html,
+    priceHtml: row.price_html,
+    stock: row.stock,
+    sku: row.sku,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 export function ProductProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const subscriptionRef = useRef<any>(null);
 
   const loadProducts = useCallback(async (storeId: string) => {
     setIsLoadingProducts(true);
@@ -26,12 +54,47 @@ export function ProductProvider({ children }: { children: ReactNode }) {
       if (!response.ok) throw new Error('Failed to fetch products');
       const { products } = await response.json();
       setProducts(products || []);
+
+      // Setup realtime subscription for this store
+      subscriptionRef.current = supabase
+        .channel(`products:${storeId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'products',
+            filter: `store_id=eq.${storeId}`,
+          },
+          (payload) => {
+            console.log('[ProductContext] Realtime update:', payload);
+            if (payload.eventType === 'INSERT') {
+              const newProduct = rowToProduct(payload.new);
+              setProducts(prev => [...prev, newProduct]);
+            } else if (payload.eventType === 'UPDATE') {
+              const updatedProduct = rowToProduct(payload.new);
+              setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+            } else if (payload.eventType === 'DELETE') {
+              setProducts(prev => prev.filter(p => p.id !== payload.old.id));
+            }
+          }
+        )
+        .subscribe();
     } catch (error) {
       console.error('[ProductContext] loadProducts:', error);
       setProducts([]);
     } finally {
       setIsLoadingProducts(false);
     }
+  }, []);
+
+  // Cleanup subscription on unmount
+  useEffect(() => {
+    return () => {
+      if (subscriptionRef.current) {
+        supabase.removeChannel(subscriptionRef.current);
+      }
+    };
   }, []);
 
   const addProduct = useCallback(async (storeId: string, product: Omit<Product, 'id' | 'storeId' | 'createdAt' | 'updatedAt'>): Promise<Product | null> => {
