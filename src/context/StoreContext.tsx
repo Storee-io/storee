@@ -214,6 +214,7 @@ function getOrCreateGuestId(): string {
 
 // ── Last-used tracking ────────────────────────────────────────────────────────
 const LAST_USED_KEY = 'storee_last_used';
+const ACTIVE_STORE_KEY = 'storee_active_store';
 
 function readLastUsed(): Record<string, string> {
   try { return JSON.parse(localStorage.getItem(LAST_USED_KEY) ?? '{}'); }
@@ -225,6 +226,21 @@ function writeLastUsed(storeId: string) {
     const map = readLastUsed();
     map[storeId] = new Date().toISOString();
     localStorage.setItem(LAST_USED_KEY, JSON.stringify(map));
+  } catch { /* quota */ }
+}
+
+function getStoredActiveStore(): Store | null {
+  try {
+    const stored = localStorage.getItem(ACTIVE_STORE_KEY);
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveActiveStore(store: Store) {
+  try {
+    localStorage.setItem(ACTIVE_STORE_KEY, JSON.stringify(store));
   } catch { /* quota */ }
 }
 
@@ -241,9 +257,17 @@ function sortByLastUsed(stores: Store[]): Store[] {
   });
 }
 
+function getInitialActiveStore(): Store {
+  try {
+    const stored = getStoredActiveStore();
+    if (stored) return stored;
+  } catch { /* fall through */ }
+  return DEMO_STORES[0];
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [stores, setStores] = useState<Store[]>(DEMO_STORES);
-  const [activeStore, setActiveStoreState] = useState<Store>(DEMO_STORES[0]);
+  const [activeStore, setActiveStoreState] = useState<Store>(getInitialActiveStore);
   const [generatedStore, setGeneratedStore] = useState<Store | null>(null);
   const [generationState, setGenerationState] = useState<GenerationState | null>(null);
   const [isLoadingStores, setIsLoadingStores] = useState(false);
@@ -324,12 +348,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         // This prevents overwriting a freshly-generated store while still being saved to Supabase
         if (currentActive && guestStores.find(s => s.id === currentActive.id)) {
           setActiveStoreState(currentActive);
+          saveActiveStore(currentActive);
         } else {
           setActiveStoreState(sorted[0]);
+          saveActiveStore(sorted[0]);
         }
       } else {
         setStores(DEMO_STORES);
         setActiveStoreState(DEMO_STORES[0]);
+        saveActiveStore(DEMO_STORES[0]);
       }
     } catch (err) {
       console.error('[loadGuestStores] error:', err);
@@ -348,9 +375,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const sorted = sortByLastUsed(userStores);
         setStores(sorted);
         setActiveStoreState(sorted[0]);
+        saveActiveStore(sorted[0]);
       } else {
         setStores([]);
         setActiveStoreState(DEMO_STORES[0]);
+        saveActiveStore(DEMO_STORES[0]);
       }
     } catch {
       // Supabase unavailable — fall back to guest stores
@@ -367,6 +396,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       writeLastUsed(store.id);
     }
     setActiveStoreState(store);
+    saveActiveStore(store);
     setStores(prev => sortByLastUsed(prev));
   }, [userId]);
 
@@ -375,6 +405,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     writeLastUsed(store.id);
     setStores(prev => sortByLastUsed(prev.find(s => s.id === store.id) ? prev : [...prev, store]));
     setActiveStoreState(store);
+    saveActiveStore(store);
 
     // Persist to localStorage (for all users)
     try { localStorage.setItem(`storee_store_${store.id}`, JSON.stringify(store)); } catch { /* quota */ }
