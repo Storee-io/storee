@@ -75,7 +75,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     setIsLoadingOrders(true);
     try {
       const response = await fetch(`/api/orders?storeId=${encodeURIComponent(storeId)}`);
-      if (!response.ok) throw new Error('Failed to fetch orders');
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`API ${response.status}: ${text}`);
+      }
       const { orders: rows } = await response.json();
       // Map raw DB rows to Order type
       setOrders((rows || []).map(rowToOrder));

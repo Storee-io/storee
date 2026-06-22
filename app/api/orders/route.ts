@@ -59,15 +59,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing storeId or buyerUserId' }, { status: 400 });
   }
 
-  const db = createServerClient();
-  let query = db.from('orders').select('*').order('created_at', { ascending: false });
+  try {
+    const db = createServerClient();
+    let query = db.from('orders').select('*').order('created_at', { ascending: false });
 
-  if (storeId) query = query.eq('store_id', storeId);
-  if (buyerUserId) query = query.eq('buyer_user_id', buyerUserId);
+    if (storeId) query = query.eq('store_id', storeId);
+    if (buyerUserId) query = query.eq('buyer_user_id', buyerUserId);
 
-  const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ orders: data });
+    const { data, error } = await query;
+    if (error) {
+      console.error('[GET /api/orders] Supabase error:', error.message, error.code);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ orders: data || [] });
+  } catch (err) {
+    console.error('[GET /api/orders] Exception:', err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }
 
 export async function PATCH(req: NextRequest) {
