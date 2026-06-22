@@ -3924,7 +3924,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: alpha(primaryColor, 0.1), color: primaryColor }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.categoryHtml`} value={p.category} htmlValue={p.categoryHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.category}</span>
                 </div>
                 <p className="text-sm font-bold truncate" style={{ color: tt.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
-                {!isMobile && <p className="text-xs mt-0.5 truncate" style={{ color: tt.textMuted }}>{p.description}</p>}
+                {!isMobile && <p className="text-xs mt-0.5 truncate" style={{ color: tt.textMuted }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.descriptionHtml`} value={p.description} htmlValue={p.descriptionHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.description}</p>}
                 <div className="flex items-center justify-between mt-2.5">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className="text-sm font-bold" style={{ color: tt.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(p.price)}</span>
@@ -4380,7 +4380,7 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
               </div>
               <div className="p-3">
                 <p className="text-xs mb-1" style={{ color: tt.textMuted }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.categoryHtml`} value={p.category} htmlValue={p.categoryHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.category}</p>
-                <p className="text-sm font-semibold truncate" style={{ color: tt.textPrimary }}>{p.name}</p>
+                <p className="text-sm font-semibold truncate" style={{ color: tt.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
                 <div className="flex items-center justify-between mt-2">
                   <span className="font-bold" style={{ color: tt.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(p.price)}</span>
                   <button onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(_btn)); }} className="px-3 py-1.5 text-xs font-semibold rounded-xl text-white" style={{ background: primaryColor }}>Add</button>
