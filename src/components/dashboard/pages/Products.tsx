@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Search, Plus, Edit3, Trash2, Copy, ChevronUp, ChevronDown,
   ChevronsUpDown, Package, TrendingUp, DollarSign, AlertTriangle,
@@ -396,6 +396,8 @@ export default function Products() {
 
   const [localProducts, setLocalProducts] = useState<DashboardProduct[]>(() => [...storeData.products]);
   const [editProduct, setEditProduct] = useState<DashboardProduct | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -416,34 +418,174 @@ export default function Products() {
   // Delete confirm
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
+  // Fetch products from API on mount
+  useEffect(() => {
+    if (!activeStore?.id) return;
+
+    const fetchProducts = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/stores/${activeStore.id}/products`);
+        if (!response.ok) throw new Error('Failed to fetch products');
+        const { products } = await response.json();
+
+        // Convert DB products to DashboardProduct format
+        const dashboardProducts = (products || []).map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          originalPrice: p.original_price,
+          stock: p.stock || 0,
+          category: p.category || 'Other',
+          badge: p.badge,
+          status: 'Active' as const,
+          sales: 0,
+          revenue: p.price * (p.stock || 0),
+          collectionId: p.collection_id,
+          image: p.image,
+          imageFallback: p.image_fallback,
+          description: p.description,
+        }));
+
+        setLocalProducts(dashboardProducts);
+      } catch (error) {
+        console.error('[Products] fetch error:', error);
+        // Fallback to storeData products if API fails
+        setLocalProducts([...storeData.products]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [activeStore?.id, storeData.products]);
+
   // ── Mutations ──────────────────────────────────────────────────────────────
 
-  function updateProduct(updated: DashboardProduct) {
-    setLocalProducts(prev => prev.map(p => p.id === updated.id ? updated : p));
+  async function updateProduct(updated: DashboardProduct) {
+    if (!activeStore?.id) return;
+
+    setIsSaving(true);
+    try {
+      const payload = {
+        id: updated.id,
+        name: updated.name,
+        price: updated.price,
+        originalPrice: updated.originalPrice,
+        stock: updated.stock,
+        category: updated.category,
+        badge: updated.badge,
+        description: updated.description || '',
+        collectionId: updated.collectionId,
+        image: updated.image,
+        imageFallback: updated.imageFallback,
+      };
+
+      const response = await fetch(`/api/stores/${activeStore.id}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error('Failed to update product');
+
+      // Update local state
+      setLocalProducts(prev => prev.map(p => p.id === updated.id ? updated : p));
+      setEditProduct(null);
+    } catch (error) {
+      console.error('[updateProduct] error:', error);
+      alert('Failed to save product');
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   function toggleStatus(id: string) {
-    setLocalProducts(prev => prev.map(p =>
-      p.id === id ? { ...p, status: p.status === 'Active' ? 'Draft' : 'Active' } : p
-    ));
+    setLocalProducts(prev => prev.map(p => {
+      if (p.id === id) {
+        const updated = { ...p, status: p.status === 'Active' ? 'Draft' : 'Active' };
+        updateProduct(updated); // Also save to API
+        return updated;
+      }
+      return p;
+    }));
   }
 
-  function duplicateProduct(id: string) {
+  async function duplicateProduct(id: string) {
+    if (!activeStore?.id) return;
+
     const source = localProducts.find(p => p.id === id);
     if (!source) return;
-    const copy: DashboardProduct = { ...source, id: `P${Date.now()}`, name: `${source.name} (Copy)`, status: 'Draft', sales: 0 };
-    setLocalProducts(prev => {
-      const idx = prev.findIndex(p => p.id === id);
-      const next = [...prev];
-      next.splice(idx + 1, 0, copy);
-      return next;
-    });
+
+    setIsSaving(true);
+    try {
+      const copy: DashboardProduct = {
+        ...source,
+        id: `P${Date.now()}`,
+        name: `${source.name} (Copy)`,
+        status: 'Draft',
+        sales: 0,
+      };
+
+      // Save to API
+      const payload = {
+        id: copy.id,
+        name: copy.name,
+        price: copy.price,
+        originalPrice: copy.originalPrice,
+        stock: copy.stock,
+        category: copy.category,
+        badge: copy.badge,
+        description: copy.description || '',
+        collectionId: copy.collectionId,
+        image: copy.image,
+        imageFallback: copy.imageFallback,
+      };
+
+      const response = await fetch(`/api/stores/${activeStore.id}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error('Failed to duplicate product');
+
+      // Update local state
+      setLocalProducts(prev => {
+        const idx = prev.findIndex(p => p.id === id);
+        const next = [...prev];
+        next.splice(idx + 1, 0, copy);
+        return next;
+      });
+    } catch (error) {
+      console.error('[duplicateProduct] error:', error);
+      alert('Failed to duplicate product');
+    } finally {
+      setIsSaving(false);
+    }
   }
 
-  function deleteProduct(id: string) {
-    setLocalProducts(prev => prev.filter(p => p.id !== id));
-    setSelected(prev => { const n = new Set(prev); n.delete(id); return n; });
-    setDeleteTarget(null);
+  async function deleteProduct(id: string) {
+    if (!activeStore?.id) return;
+
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/stores/${activeStore.id}/products/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to delete product');
+
+      // Update local state
+      setLocalProducts(prev => prev.filter(p => p.id !== id));
+      setSelected(prev => { const n = new Set(prev); n.delete(id); return n; });
+      setDeleteTarget(null);
+    } catch (error) {
+      console.error('[deleteProduct] error:', error);
+      alert('Failed to delete product');
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   function bulkSetStatus(status: 'Active' | 'Draft') {
