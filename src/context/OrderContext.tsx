@@ -56,6 +56,12 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const loadOrders = useCallback(async (storeId: string) => {
     setIsLoadingOrders(true);
     try {
+      // Cleanup previous subscription
+      if (subscriptionRef.current) {
+        supabase.removeChannel(subscriptionRef.current);
+        subscriptionRef.current = null;
+      }
+
       const response = await fetch(`/api/orders?storeId=${encodeURIComponent(storeId)}`);
       if (!response.ok) throw new Error('Failed to fetch orders');
       const { orders } = await response.json();
