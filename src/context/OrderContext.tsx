@@ -3,7 +3,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { Order, OrderItem } from '@/src/lib/supabase';
-import { useCart } from './CartContext';
 import { supabase } from '@/src/lib/supabase';
 
 interface OrderContextType {
