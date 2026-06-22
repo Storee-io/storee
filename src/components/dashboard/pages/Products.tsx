@@ -436,6 +436,26 @@ export default function Products() {
         }
         const { products } = await response.json();
 
+        // If no products in DB, fall back to storeData (generated products) and auto-save them
+        if (!products || products.length === 0) {
+          const generated = storeData.products || [];
+          setLocalProducts([...generated]);
+          // Auto-save generated products to DB now that endpoint works
+          for (const p of generated) {
+            fetch(`/api/stores/${activeStore.id}/products`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: p.id, name: p.name, price: p.price,
+                originalPrice: p.originalPrice, description: p.description,
+                category: p.category, badge: p.badge, image: p.image,
+                imageFallback: p.imageFallback, collectionId: p.collectionId, stock: 50,
+              }),
+            }).catch(() => {});
+          }
+          return;
+        }
+
         // Convert DB products to DashboardProduct format
         const dashboardProducts = (products || []).map((p: any) => ({
           id: p.id,
