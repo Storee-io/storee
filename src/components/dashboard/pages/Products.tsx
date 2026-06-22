@@ -397,7 +397,7 @@ export default function Products() {
   const router = useRouter();
   const { storeData, activeStore } = useStore();
 
-  const [localProducts, setLocalProducts] = useState<DashboardProduct[]>(() => [...storeData.products]);
+  const [localProducts, setLocalProducts] = useState<DashboardProduct[]>([]);
   const [editProduct, setEditProduct] = useState<DashboardProduct | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
