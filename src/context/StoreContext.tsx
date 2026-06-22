@@ -471,6 +471,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           localStorage.setItem(`storee_store_${updated.id}`, JSON.stringify(updated));
         } catch { /* quota */ }
       }
+      // Save to ACTIVE_STORE_KEY for persistence across page reloads
+      saveActiveStore(updated);
       return updated;
     });
     setStores(prev => prev.map(s =>
