@@ -332,6 +332,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // Persist to Supabase if logged in
     if (userId) {
       await upsertStore(store, userId);
+      // Also save auto-generated products to database
+      try {
+        const storeData = generateStoreData(store);
+        if (storeData.products && storeData.products.length > 0) {
+          // Save each product to database
+          for (const product of storeData.products) {
+            await fetch(`/api/stores/${store.id}/products`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                originalPrice: product.originalPrice,
+                description: product.description,
+                category: product.category,
+                badge: product.badge,
+                image: product.image,
+                imageFallback: product.imageFallback,
+                collectionId: product.collectionId,
+                stock: 50, // Default stock
+              }),
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('[StoreContext] Failed to auto-save products:', err);
+        // Don't block store creation if product save fails
+      }
     } else {
       // Fallback: localStorage for unauthenticated preview
       try { localStorage.setItem(`storee_store_${store.id}`, JSON.stringify(store)); } catch { /* quota */ }
