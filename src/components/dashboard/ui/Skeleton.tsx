@@ -8,12 +8,14 @@ export function Skeleton({ className }: { className?: string }) {
   );
 }
 
-export function StatCardSkeleton({ label = 'Loading...', icon: Icon }: { label?: string; icon?: React.ElementType } = {}) {
+export function StatCardSkeleton({ label = 'Loading...', icon: Icon, iconBg = 'bg-slate-50', iconColor = 'text-slate-400' }: { label?: string; icon?: React.ElementType; iconBg?: string; iconColor?: string } = {}) {
   return (
     <div className="bg-white rounded-2xl p-5 border border-slate-100">
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm text-slate-500 font-medium">{label}</p>
-        {Icon && <div className="w-9 h-9 bg-slate-100 rounded-xl" />}
+        {Icon && <div className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}>
+          <Icon className={`w-4 h-4 ${iconColor}`} />
+        </div>}
       </div>
       <Skeleton className="h-7 w-28 mb-1" />
       <Skeleton className="h-3 w-20" />

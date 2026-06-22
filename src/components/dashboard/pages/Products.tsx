@@ -729,10 +729,10 @@ export default function Products() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {isLoading ? (
           <>
-            <StatCardSkeleton label="Total Products" icon={Package} />
-            <StatCardSkeleton label="Active Products" icon={TrendingUp} />
-            <StatCardSkeleton label="Stock Value" icon={AlertTriangle} />
-            <StatCardSkeleton label="Total Revenue" icon={DollarSign} />
+            <StatCardSkeleton label="Total Products" icon={Package} iconBg="bg-emerald-50" iconColor="text-emerald-600" />
+            <StatCardSkeleton label="Active Products" icon={TrendingUp} iconBg="bg-blue-50" iconColor="text-blue-600" />
+            <StatCardSkeleton label="Stock Value" icon={AlertTriangle} iconBg="bg-amber-50" iconColor="text-amber-600" />
+            <StatCardSkeleton label="Total Revenue" icon={DollarSign} iconBg="bg-purple-50" iconColor="text-purple-600" />
           </>
         ) : (
           <>
