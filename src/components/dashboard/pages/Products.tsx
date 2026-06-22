@@ -401,6 +401,7 @@ export default function Products() {
   const [editProduct, setEditProduct] = useState<DashboardProduct | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -441,6 +442,7 @@ export default function Products() {
         if (!products || products.length === 0) {
           const generated = storeData.products || [];
           setLocalProducts([...generated]);
+          setIsMounted(true);
           // Auto-save generated products to DB now that endpoint works
           for (const p of generated) {
             fetch(`/api/stores/${activeStore.id}/products`, {
@@ -476,17 +478,24 @@ export default function Products() {
         }));
 
         setLocalProducts(dashboardProducts);
+        setIsMounted(true);
       } catch (error) {
         console.error('[Products] fetch error:', error);
         // Fallback to storeData products if API fails
         console.log('[Products] Falling back to generated products');
         setLocalProducts([...storeData.products]);
+        setIsMounted(true);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchProducts();
+  }, [activeStore?.id]);
+
+  // Reset isMounted when store changes to show skeleton during load
+  useEffect(() => {
+    setIsMounted(false);
   }, [activeStore?.id]);
 
   // ── Mutations ──────────────────────────────────────────────────────────────
@@ -727,7 +736,7 @@ export default function Products() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {isLoading ? (
+        {!isMounted ? (
           <>
             <StatCardSkeleton label="Total Products" icon={Package} iconBg="bg-emerald-50" iconColor="text-emerald-600" />
             <StatCardSkeleton label="Active Products" icon={TrendingUp} iconBg="bg-blue-50" iconColor="text-blue-600" />
