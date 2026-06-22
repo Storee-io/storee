@@ -111,7 +111,9 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           : <div className="h-4 w-28 bg-slate-200 rounded animate-pulse" />
         }
 
-        {activeStore?.status === 'Published' ? (
+        {!isMounted ? (
+          <div className="h-6 w-16 bg-slate-200 rounded-full animate-pulse" />
+        ) : activeStore?.status === 'Published' ? (
           <Tip label="Store is live and published">
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer">
