@@ -2463,7 +2463,7 @@ function FAQSection({ faq, primaryColor, device, dark = false, elegant = false, 
 }
 
 function NewsletterSection({ newsletter, primaryColor, dark = false, elegant = false, device, editMode, onFieldChange }: {
-  newsletter: { headline: string; subtext: string };
+  newsletter: { headline: string; subtext: string; placeholderHtml?: string; placeholder?: string };
   primaryColor: string;
   dark?: boolean;
   elegant?: boolean;
@@ -2497,9 +2497,24 @@ function NewsletterSection({ newsletter, primaryColor, dark = false, elegant = f
             </div>
           ) : (
             <div className={`flex ${isMobile ? 'flex-col' : ''} gap-2`}>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Your email address"
-                className="flex-1 px-4 py-3 rounded-xl text-sm outline-none"
-                style={inverted ? { background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff' } : { background: '#fff', border: `1px solid ${alpha(primaryColor, 0.2)}`, color: '#111' }} />
+              <div className="flex-1 relative">
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder=""
+                  className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                  style={inverted ? { background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff' } : { background: '#fff', border: `1px solid ${alpha(primaryColor, 0.2)}`, color: '#111' }} />
+                {!email && (
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style={{ color: inverted ? 'rgba(255,255,255,0.5)' : `${alpha(primaryColor, 0.5)}` }}>
+                    {editMode ? (
+                      <StyleOnlySpan
+                        field="newsletter.placeholderHtml"
+                        value={newsletter.placeholder || 'Your email address'}
+                        htmlValue={newsletter.placeholderHtml}
+                        editMode={editMode}
+                        onFieldChange={onFieldChange}
+                      />
+                    ) : (newsletter.placeholder || 'Your email address')}
+                  </span>
+                )}
+              </div>
               <button onClick={() => email && setSubmitted(true)} className="px-5 py-3 rounded-xl text-sm font-bold transition-opacity hover:opacity-90 flex-shrink-0" style={{ background: primaryColor, color: isDark(primaryColor) ? '#fff' : '#111' }}>
                 Subscribe
               </button>
