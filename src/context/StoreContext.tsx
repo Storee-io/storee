@@ -286,6 +286,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   async function loadGuestStores() {
     try {
       const guestStores: Store[] = [];
+      const currentActive = activeStore;
 
       // 1. Load from localStorage (always available)
       for (let i = 0; i < localStorage.length; i++) {
@@ -304,7 +305,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (response.ok) {
           const { stores: supabaseStores } = await response.json();
           // Merge: Supabase stores + localStorage stores (Supabase as source of truth)
-          const supabaseIds = new Set(supabaseStores.map((s: Store) => s.id));
           for (const store of supabaseStores) {
             if (!guestStores.find(s => s.id === store.id)) {
               guestStores.push(store);
@@ -319,7 +319,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (guestStores.length > 0) {
         const sorted = sortByLastUsed(guestStores);
         setStores(sorted);
-        setActiveStoreState(sorted[0]);
+
+        // Preserve activeStore if it's still in the list (avoid race condition)
+        // This prevents overwriting a freshly-generated store while still being saved to Supabase
+        if (currentActive && guestStores.find(s => s.id === currentActive.id)) {
+          setActiveStoreState(currentActive);
+        } else {
+          setActiveStoreState(sorted[0]);
+        }
       } else {
         setStores(DEMO_STORES);
         setActiveStoreState(DEMO_STORES[0]);
