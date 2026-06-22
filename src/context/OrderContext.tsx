@@ -56,7 +56,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const loadOrders = useCallback(async (storeId: string) => {
     setIsLoadingOrders(true);
     try {
-      const response = await fetch(`/api/stores/${storeId}/orders`);
+      const response = await fetch(`/api/orders?storeId=${encodeURIComponent(storeId)}`);
       if (!response.ok) throw new Error('Failed to fetch orders');
       const { orders } = await response.json();
       setOrders(orders || []);
