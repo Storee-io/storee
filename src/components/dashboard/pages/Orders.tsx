@@ -331,7 +331,7 @@ function OrderDetail({ order, fmtPrice, onBack, onUpdateStatus }: OrderDetailPro
 
 export default function Orders() {
   const { activeStore } = useStore();
-  const { orders, isLoadingOrdersOrders, loadOrders, updateOrderStatus } = useOrders();
+  const { orders, isLoadingOrders, loadOrders, updateOrderStatus } = useOrders();
   const fmtPrice = makePriceFmt(activeStore?.currency?.code ?? 'IDR');
 
   const [selectedOrder, setSelectedOrder] = useState<DashboardOrder | null>(null);
@@ -344,6 +344,13 @@ export default function Orders() {
 
   // Load orders from OrderContext when component mounts or store changes
   useEffect(() => {
+    if (activeStore?.id) {
+      loadOrders(activeStore.id);
+    }
+  }, [activeStore?.id, loadOrders]);
+
+  // Refresh function for manual refresh button
+  const handleRefresh = useCallback(() => {
     if (activeStore?.id) {
       loadOrders(activeStore.id);
     }
@@ -436,7 +443,7 @@ export default function Orders() {
           <Button
             variant="outline"
             className="border-slate-200 text-slate-600 hover:bg-slate-50 flex-shrink-0"
-            onClick={fetchOrders}
+            onClick={handleRefresh}
             disabled={isLoadingOrders}
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingOrders ? 'animate-spin' : ''}`} />
