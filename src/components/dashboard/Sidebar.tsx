@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -72,8 +72,11 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const { openUpgradeModal } = useAuth();
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => { setIsMounted(true); }, []);
 
   const toggleExpand = (label: string) => {
     setExpandedItems(prev => {
@@ -123,28 +126,42 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
       </div>
 
       {/* Store switcher */}
-      <div className="px-3 py-3 border-b border-slate-100 flex-shrink-0" suppressHydrationWarning>
+      <div className="px-3 py-3 border-b border-slate-100 flex-shrink-0">
         <button
           onClick={() => setStoreMenuOpen(!storeMenuOpen)}
           className="w-full flex items-center gap-3 px-3 py-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors group"
         >
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-            style={{ background: activeStore?.primaryColor || '#10b981' }}
-            suppressHydrationWarning
-          >
-            <Store className="w-4 h-4" />
-          </div>
-          {!isCollapsed && (
+          {!isMounted ? (
+            /* Skeleton while hydrating */
+            <div className="flex items-center gap-3 w-full">
+              <div className="w-7 h-7 rounded-lg bg-slate-200 animate-pulse flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3 bg-slate-200 rounded animate-pulse w-24" />
+                  <div className="h-2.5 bg-slate-200 rounded animate-pulse w-16" />
+                </div>
+              )}
+            </div>
+          ) : (
             <>
-              <div className="flex-1 text-left min-w-0" suppressHydrationWarning>
-                <p className="text-sm font-semibold text-slate-900 truncate">{activeStore?.name ? decodeHtmlEntities(activeStore.name) : 'My Store'}</p>
-                {activeStore?.status === 'Published' && activeStore.domain
-                  ? <p className="text-xs text-slate-500 truncate">{activeStore.domain}</p>
-                  : <p className="text-xs text-amber-500 font-medium">Draft</p>
-                }
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                style={{ background: activeStore?.primaryColor || '#10b981' }}
+              >
+                <Store className="w-4 h-4" />
               </div>
-              <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform flex-shrink-0 ${storeMenuOpen ? 'rotate-180' : ''}`} />
+              {!isCollapsed && (
+                <>
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="text-sm font-semibold text-slate-900 truncate">{activeStore?.name ? decodeHtmlEntities(activeStore.name) : 'My Store'}</p>
+                    {activeStore?.status === 'Published' && activeStore.domain
+                      ? <p className="text-xs text-slate-500 truncate">{activeStore.domain}</p>
+                      : <p className="text-xs text-amber-500 font-medium">Draft</p>
+                    }
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform flex-shrink-0 ${storeMenuOpen ? 'rotate-180' : ''}`} />
+                </>
+              )}
             </>
           )}
         </button>
