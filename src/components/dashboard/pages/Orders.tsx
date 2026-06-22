@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Search, Download, ShoppingBag, Clock, Truck, CheckCircle2,
   ArrowLeft, Package, MapPin, Mail, ChevronRight, XCircle, RefreshCw,
 } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
+import { useOrders } from '../../../context/OrderContext';
 import { makePriceFmt } from '../../../lib/formatCurrency';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -330,10 +331,9 @@ function OrderDetail({ order, fmtPrice, onBack, onUpdateStatus }: OrderDetailPro
 
 export default function Orders() {
   const { activeStore } = useStore();
+  const { orders, isLoadingOrdersOrders, loadOrders, updateOrderStatus } = useOrders();
   const fmtPrice = makePriceFmt(activeStore?.currency?.code ?? 'IDR');
 
-  const [localOrders, setLocalOrders] = useState<DashboardOrder[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<DashboardOrder | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
@@ -342,37 +342,43 @@ export default function Orders() {
   const thirtyDaysAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29);
   const [dateRange, setDateRange] = useState<DateRange>({ from: thirtyDaysAgo, to: today });
 
-  const fetchOrders = useCallback(async () => {
-    if (!activeStore?.id) return;
-    setIsLoading(true);
-    try {
-      const res = await fetch(`/api/orders?storeId=${activeStore.id}`);
-      const data = await res.json();
-      if (data.orders) {
-        setLocalOrders(data.orders.map(dbOrderToDashboard));
-      }
-    } catch (err) {
-      console.error('[orders] fetch failed:', err);
-    } finally {
-      setIsLoading(false);
+  // Load orders from OrderContext when component mounts or store changes
+  useEffect(() => {
+    if (activeStore?.id) {
+      loadOrders(activeStore.id);
     }
-  }, [activeStore?.id]);
+  }, [activeStore?.id, loadOrders]);
 
-  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+  // Convert orders from context to dashboard format
+  const localOrders = useMemo(() => {
+    // Map orders from context to old DbOrder format for compatibility
+    return (orders || []).map(order => ({
+      id: order.id,
+      store_id: order.storeId,
+      customer_name: null,
+      customer_email: null,
+      customer_whatsapp: null,
+      shipping_address: null,
+      shipping_city: null,
+      shipping_province: null,
+      shipping_postal: null,
+      shipping_method: order.shippingMethod,
+      shipping_cost: order.shippingCost || 0,
+      payment_method: order.paymentMethod,
+      subtotal: order.subtotal,
+      total: order.total,
+      items: order.items || [],
+      status: order.status,
+      created_at: order.createdAt,
+    } as any)).map(dbOrderToDashboard);
+  }, [orders]);
 
   async function handleUpdateStatus(id: string, status: DashboardOrder['status']) {
-    // Optimistic update
-    setLocalOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
-    setSelectedOrder(prev => prev?.id === id ? { ...prev, status } : prev);
-    // Persist to DB
-    try {
-      await fetch('/api/orders', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status }),
-      });
-    } catch (err) {
-      console.error('[orders] status update failed:', err);
+    // Update via OrderContext (handles optimistic + realtime)
+    await updateOrderStatus(id, status as any);
+    // Update selected order if it matches
+    if (selectedOrder?.id === id) {
+      setSelectedOrder(prev => prev ? { ...prev, status } : prev);
     }
   }
 
@@ -431,9 +437,9 @@ export default function Orders() {
             variant="outline"
             className="border-slate-200 text-slate-600 hover:bg-slate-50 flex-shrink-0"
             onClick={fetchOrders}
-            disabled={isLoading}
+            disabled={isLoadingOrders}
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingOrders ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           <Button variant="outline" className="border-slate-200 text-slate-600 hover:bg-slate-50 flex-shrink-0">
@@ -506,7 +512,7 @@ export default function Orders() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {isLoadingOrders ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-16 text-slate-400">
                   <RefreshCw className="w-6 h-6 mx-auto mb-2 text-slate-300 animate-spin" />
