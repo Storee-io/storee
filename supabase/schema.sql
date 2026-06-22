@@ -1,18 +1,24 @@
 -- Run this in your Supabase SQL editor (Dashboard → SQL Editor → New query)
 
 CREATE TABLE IF NOT EXISTS published_stores (
-  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  subdomain   text        UNIQUE NOT NULL,
-  name        text        NOT NULL,
-  primary_color text      NOT NULL DEFAULT '#10b981',
-  category    text        NOT NULL DEFAULT 'Other',
-  template_id text,
-  design      jsonb,
-  currency    jsonb,
-  language    text,
-  created_at  timestamptz NOT NULL DEFAULT now(),
-  updated_at  timestamptz NOT NULL DEFAULT now()
+  id            uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  subdomain     text        UNIQUE NOT NULL,
+  name          text        NOT NULL,
+  primary_color text        NOT NULL DEFAULT '#10b981',
+  category      text        NOT NULL DEFAULT 'Other',
+  template_id   text,
+  design        jsonb,
+  currency      jsonb,
+  language      text,
+  guest_id      text,
+  user_id       text,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  updated_at    timestamptz NOT NULL DEFAULT now()
 );
+
+-- Index for guest_id lookups
+CREATE INDEX IF NOT EXISTS idx_published_stores_guest_id ON published_stores(guest_id);
+CREATE INDEX IF NOT EXISTS idx_published_stores_user_id ON published_stores(user_id);
 
 -- Auto-update updated_at on row changes
 CREATE OR REPLACE FUNCTION update_updated_at()
