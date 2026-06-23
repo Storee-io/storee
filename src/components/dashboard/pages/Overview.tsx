@@ -92,7 +92,7 @@ export default function Overview() {
           ))
         ) : (
           stats.map(stat => (
-            <div key={stat.label} className="bg-white rounded-2xl p-5 border border-slate-100">
+            <div key={stat.label} className="bg-white rounded-2xl p-5 border border-slate-100 min-h-[140px] flex flex-col justify-between">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-slate-500 font-medium">{stat.label}</p>
                 <div className={`w-9 h-9 ${stat.bg} rounded-xl flex items-center justify-center`}>
