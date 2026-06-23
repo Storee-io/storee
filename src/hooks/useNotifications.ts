@@ -40,10 +40,13 @@ function saveNotifications(data: Notification[]) {
 }
 
 export function useNotifications() {
-  const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
+  // Initialize empty to prevent hydration mismatch
+  // Server and client both start with [] until useEffect loads from localStorage
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
-    setNotifications(loadNotifications());
+    const loaded = loadNotifications();
+    setNotifications(loaded);
   }, []);
 
   const update = (data: Notification[]) => {

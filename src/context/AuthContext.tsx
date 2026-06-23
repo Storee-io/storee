@@ -31,6 +31,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const DEFAULT_GUEST_USER: User = {
+  id: 'guest',
+  name: 'Guest',
+  email: '',
+  isAnonymous: true,
+};
+
 function supabaseUserToLocal(sbUser: {
   id: string;
   email?: string;
@@ -48,7 +55,9 @@ function supabaseUserToLocal(sbUser: {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  // Initialize with Guest to prevent hydration mismatch
+  // Server and client both start with Guest until useEffect loads session
+  const [user, setUser] = useState<User | null>(DEFAULT_GUEST_USER);
   const [isLoading, setIsLoading] = useState(true);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradePlan, setUpgradePlan] = useState<PlanName>('Starter');
