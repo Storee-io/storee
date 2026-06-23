@@ -106,7 +106,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           <Menu className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2.5 min-w-0">
-        <h1 className="font-semibold text-slate-900 text-sm sm:text-base truncate">{activeStore?.name ? decodeHtmlEntities(activeStore.name) : 'Dashboard'}</h1>
+        <h1 suppressHydrationWarning className="font-semibold text-slate-900 text-sm sm:text-base truncate">{activeStore?.name ? decodeHtmlEntities(activeStore.name) : 'Dashboard'}</h1>
 
         {activeStore?.status === 'Published' ? (
           <Tip label="Store is live and published">
