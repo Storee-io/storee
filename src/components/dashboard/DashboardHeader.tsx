@@ -217,6 +217,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         <Tip label="Edit store design">
           <Link
             href={activeStore ? `/editor/${activeStore.id}?from=/dashboard` : '/editor'}
+            suppressHydrationWarning
             className="flex items-center gap-1.5 px-3.5 py-1.5 sm:px-3.5 sm:py-1.5 p-2 sm:p-0 text-sm font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-all"
           >
             <PenLine className="w-4 h-4" />
@@ -228,6 +229,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         <Tip label="View store preview">
           <Link
             href={activeStore ? `/preview/${activeStore.id}?from=/dashboard` : '/preview?from=/dashboard'}
+            suppressHydrationWarning
             className="flex items-center gap-1.5 px-3.5 py-1.5 sm:px-3.5 sm:py-1.5 p-2 sm:p-0 text-sm font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-all"
           >
             <Eye className="w-4 h-4" />
