@@ -296,6 +296,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                                 <Link
                                   key={child.label}
                                   href={child.path}
+                                  suppressHydrationWarning
                                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
                                     isActive(child.path)
                                       ? 'bg-emerald-100 text-emerald-700 font-medium'
@@ -322,6 +323,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                   <Link
                     key={item.label}
                     href={item.path || '#'}
+                    suppressHydrationWarning
                     className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
                       isItemActive
                         ? 'bg-emerald-50 text-emerald-700'
