@@ -10,25 +10,27 @@ export function Skeleton({ className }: { className?: string }) {
 
 export function StatCardSkeleton({ label = 'Loading...', icon: Icon, iconBg = 'bg-slate-50', iconColor = 'text-slate-400' }: { label?: string; icon?: React.ElementType; iconBg?: string; iconColor?: string } = {}) {
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-100">
-      <div className="flex items-center justify-between mb-3">
+    <div className="bg-white rounded-2xl p-5 border border-slate-100 min-h-[140px] flex flex-col justify-between">
+      <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-slate-500 font-medium">{label}</p>
         {Icon && <div className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}>
           <Icon className={`w-4 h-4 ${iconColor}`} />
         </div>}
       </div>
-      <Skeleton className="h-7 w-28 mb-1" />
-      <Skeleton className="h-3 w-20" />
+      <div>
+        <Skeleton className="h-8 w-32 mb-2" />
+        <Skeleton className="h-4 w-24" />
+      </div>
     </div>
   );
 }
 
 export function TableRowSkeleton({ cols = 5 }: { cols?: number }) {
   return (
-    <tr>
+    <tr className="border-b border-slate-100">
       {Array.from({ length: cols }).map((_, i) => (
-        <td key={i} className="px-4 py-3">
-          <Skeleton className={`h-4 ${i === 0 ? 'w-32' : i === cols - 1 ? 'w-16' : 'w-24'}`} />
+        <td key={i} className="px-4 py-4">
+          <Skeleton className={`h-5 ${i === 0 ? 'w-40' : i === cols - 1 ? 'w-20' : 'w-28'}`} />
         </td>
       ))}
     </tr>
