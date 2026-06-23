@@ -45,11 +45,9 @@ const statusColors: Record<string, string> = {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Overview() {
-  const { activeStore, storeData } = useStore();
+  const { activeStore, storeData, isLoadingActiveStore } = useStore();
   const { orders, topProducts, products, customers } = storeData;
   const fmtPrice = makePriceFmt(activeStore?.currency?.code ?? 'USD');
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => { setIsMounted(true); }, []);
 
   const today = new Date();
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -86,7 +84,7 @@ export default function Overview() {
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {!isMounted ? (
+        {isLoadingActiveStore ? (
           stats.map(stat => (
             <StatCardSkeleton key={stat.label} label={stat.label} icon={stat.icon} iconBg={stat.bg} iconColor={stat.color} />
           ))
@@ -119,7 +117,7 @@ export default function Overview() {
             <h3 className="font-bold text-slate-900">Revenue Overview</h3>
             <p className="text-xs text-slate-500 mt-0.5">Revenue trend for selected period</p>
           </div>
-          {!isMounted ? <ChartSkeleton height="h-[200px]" /> : <ResponsiveContainer width="100%" height={200}>
+          {isLoadingActiveStore ? <ChartSkeleton height="h-[200px]" /> : <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={revenueChartData}>
               <defs>
                 <linearGradient id="colorRevDash" x1="0" y1="0" x2="0" y2="1">
@@ -145,7 +143,7 @@ export default function Overview() {
             <h3 className="font-bold text-slate-900">Orders</h3>
             <p className="text-xs text-slate-500 mt-0.5">Order volume trend</p>
           </div>
-          {!isMounted ? <ChartSkeleton height="h-[200px]" /> : <ResponsiveContainer width="100%" height={200}>
+          {isLoadingActiveStore ? <ChartSkeleton height="h-[200px]" /> : <ResponsiveContainer width="100%" height={200}>
             <BarChart data={revenueChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
@@ -168,7 +166,7 @@ export default function Overview() {
             <button className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">View all</button>
           </div>
           <div className="space-y-3">
-            {!isMounted ? Array.from({ length: 5 }).map((_, i) => (
+            {isLoadingActiveStore ? Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 p-2">
                 <Skeleton className="w-9 h-9 rounded-xl flex-shrink-0" />
                 <div className="flex-1 space-y-1.5">
@@ -205,7 +203,7 @@ export default function Overview() {
             <button className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">View all</button>
           </div>
           <div className="space-y-3">
-            {!isMounted ? Array.from({ length: 5 }).map((_, i) => (
+            {isLoadingActiveStore ? Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3">
                 <Skeleton className="w-6 h-3" />
                 <div className="flex-1 space-y-1.5">

@@ -33,12 +33,10 @@ const STATUS_CONFIG: Record<string, { bg: string; text: string }> = {
 };
 
 export default function Customers() {
-  const { storeData, activeStore } = useStore();
+  const { storeData, activeStore, isLoadingActiveStore } = useStore();
   const fmtPrice = makePriceFmt(activeStore?.currency?.code ?? 'USD');
   const { customers } = storeData;
   const [search, setSearch] = useState('');
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => { setIsMounted(true); }, []);
 
   const filtered = customers.filter((c: DashboardCustomer) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -71,7 +69,7 @@ export default function Customers() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-3 gap-4">
-        {!isMounted ? (
+        {isLoadingActiveStore ? (
           stats.map(s => (
             <StatCardSkeleton key={s.label} label={s.label} icon={s.icon} iconBg={s.iconBg} iconColor={s.iconColor} />
           ))
@@ -123,7 +121,7 @@ export default function Customers() {
               <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
-          {!isMounted ? <TableSkeleton rows={6} cols={6} /> : <TableBody>
+          {isLoadingActiveStore ? <TableSkeleton rows={6} cols={6} /> : <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-16 text-slate-400">

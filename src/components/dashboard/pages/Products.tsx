@@ -397,13 +397,12 @@ function newBlankProduct(): DashboardProduct {
 
 export default function Products() {
   const router = useRouter();
-  const { storeData, activeStore } = useStore();
+  const { storeData, activeStore, isLoadingActiveStore } = useStore();
 
   const [localProducts, setLocalProducts] = useState<DashboardProduct[]>([]);
   const [editProduct, setEditProduct] = useState<DashboardProduct | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -444,7 +443,7 @@ export default function Products() {
         if (!products || products.length === 0) {
           const generated = storeData.products || [];
           setLocalProducts([...generated]);
-          setIsMounted(true);
+          // removed: isMounted no longer used;
           setIsLoading(false);
           // Auto-save generated products to DB now that endpoint works
           for (const p of generated) {
@@ -481,13 +480,13 @@ export default function Products() {
         }));
 
         setLocalProducts(dashboardProducts);
-        setIsMounted(true);
+        // removed: isMounted no longer used;
       } catch (error) {
         console.error('[Products] fetch error:', error);
         // Fallback to storeData products if API fails
         console.log('[Products] Falling back to generated products');
         setLocalProducts([...storeData.products]);
-        setIsMounted(true);
+        // removed: isMounted no longer used;
         setIsLoading(false);
       }
     };
@@ -495,10 +494,7 @@ export default function Products() {
     fetchProducts();
   }, [activeStore?.id]);
 
-  // Reset isMounted when store changes to show skeleton during load
-  useEffect(() => {
-    setIsMounted(false);
-  }, [activeStore?.id]);
+  // No longer needed — isLoadingActiveStore from context handles store change detection
 
   // ── Mutations ──────────────────────────────────────────────────────────────
 
@@ -738,7 +734,7 @@ export default function Products() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {!isMounted ? (
+        {isLoadingActiveStore || isLoading ? (
           <>
             <StatCardSkeleton label="Total Products" icon={Package} iconBg="bg-emerald-50" iconColor="text-emerald-600" />
             <StatCardSkeleton label="Active Products" icon={TrendingUp} iconBg="bg-blue-50" iconColor="text-blue-600" />
