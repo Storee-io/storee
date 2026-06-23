@@ -442,6 +442,8 @@ export default function Products() {
         if (!products || products.length === 0) {
           const generated = storeData.products || [];
           setLocalProducts([...generated]);
+          setIsMounted(true);
+          setIsLoading(false);
           // Auto-save generated products to DB now that endpoint works
           for (const p of generated) {
             fetch(`/api/stores/${activeStore.id}/products`, {
@@ -455,7 +457,6 @@ export default function Products() {
               }),
             }).catch(() => {});
           }
-          setIsLoading(false);
           return;
         }
 
@@ -484,6 +485,7 @@ export default function Products() {
         // Fallback to storeData products if API fails
         console.log('[Products] Falling back to generated products');
         setLocalProducts([...storeData.products]);
+        setIsMounted(true);
         setIsLoading(false);
       }
     };
