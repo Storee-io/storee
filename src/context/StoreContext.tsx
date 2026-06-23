@@ -260,6 +260,8 @@ function sortByLastUsed(stores: Store[]): Store[] {
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [stores, setStores] = useState<Store[]>(DEMO_STORES);
   const [activeStore, setActiveStoreState] = useState<Store>(DEMO_STORES[0]);
+  const [prevStoreId, setPrevStoreId] = useState<string | null>(null);
+  const [isLoadingActiveStore, setIsLoadingActiveStore] = useState(false);
   const [generatedStore, setGeneratedStore] = useState<Store | null>(null);
   const [generationState, setGenerationState] = useState<GenerationState | null>(null);
   const [isLoadingStores, setIsLoadingStores] = useState(false);
@@ -268,7 +270,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // Restore activeStore from localStorage after hydration (client-only)
   useEffect(() => {
     const stored = getStoredActiveStore();
-    if (stored) setActiveStoreState(stored);
+    if (stored) {
+      setActiveStoreState(stored);
+      setPrevStoreId(stored.id);
+    }
   }, []);
 
   // Listen to Supabase auth — load stores when user signs in, clear when signs out
@@ -388,6 +393,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }
 
   const setActiveStore = useCallback((store: Store) => {
+    // Show skeleton only if switching to a different store
+    if (store.id !== prevStoreId) {
+      setIsLoadingActiveStore(true);
+      setPrevStoreId(store.id);
+    }
     // Update last_used_at — Supabase for logged-in users, localStorage for guests
     if (userId) {
       touchStoreLastUsed(store.id).catch(() => {}); // fire-and-forget
@@ -397,7 +407,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setActiveStoreState(store);
     saveActiveStore(store);
     setStores(prev => sortByLastUsed(prev));
-  }, [userId]);
+  }, [userId, prevStoreId]);
 
   const addStore = useCallback(async (store: Store) => {
     // Optimistic update — mark as just used so it sorts to top
@@ -499,6 +509,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [activeStore?.id, activeStore?.revenue, activeStore?.orders, activeStore?.template?.id]
   );
 
+  // Turn off loading skeleton once data is ready
+  useEffect(() => {
+    if (isLoadingActiveStore) {
+      setIsLoadingActiveStore(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeData]);
+
   return (
     <StoreContext.Provider value={{
       stores,
@@ -513,6 +531,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       generationState,
       setGenerationState,
       isLoadingStores,
+      isLoadingActiveStore,
     }}>
       {children}
     </StoreContext.Provider>
