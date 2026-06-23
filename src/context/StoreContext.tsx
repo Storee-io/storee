@@ -344,26 +344,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const sorted = sortByLastUsed(guestStores);
         setStores(sorted);
 
-        // Preserve activeStore if it's still in the list (avoid race condition)
-        // This prevents overwriting a freshly-generated store while still being saved to Supabase
-        if (currentActive && guestStores.find(s => s.id === currentActive.id)) {
-          setActiveStoreState(currentActive);
-          saveActiveStore(currentActive);
-          writeLastUsed(currentActive.id);  // Update lastUsed timestamp
-          // Ensure prevStoreId matches (no flicker)
-          setPrevStoreId(currentActive.id);
+        // Always use sorted[0] (most recently used store) regardless of prevStoreId
+        // This ensures the correct store is selected based on lastUsed timestamps
+        if (sorted[0]?.id === prevStoreId) {
           // Same store on refresh — no loading state needed
           setIsLoadingActiveStore(false);
         } else {
           // Different store — show skeleton during transition
-          if (sorted[0]?.id !== prevStoreId) {
-            setIsLoadingActiveStore(true);
-          }
-          setActiveStoreState(sorted[0]);
-          setPrevStoreId(sorted[0]?.id ?? null);
-          saveActiveStore(sorted[0]);
-          writeLastUsed(sorted[0]?.id ?? '');  // Update lastUsed so this store sorts first next time
+          setIsLoadingActiveStore(true);
         }
+        setActiveStoreState(sorted[0]);
+        setPrevStoreId(sorted[0]?.id ?? null);
+        saveActiveStore(sorted[0]);
+        writeLastUsed(sorted[0]?.id ?? '');  // Ensure lastUsed is current
       } else {
         setStores(DEMO_STORES);
         // Different store — show skeleton
