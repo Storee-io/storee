@@ -271,12 +271,24 @@ function initializeActiveStore(): Store {
   return DEMO_STORES[0];
 }
 
+function initializeIsLoading(): boolean {
+  // Only show loading skeleton if we're starting with a demo store (no real store saved)
+  try {
+    const stored = localStorage.getItem(ACTIVE_STORE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed?.id && parsed?.name) return false; // Have a real store, don't load
+    }
+  } catch {}
+  return true; // No stored store, show skeleton while loading
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [stores, setStores] = useState<Store[]>(DEMO_STORES);
   // Initialize with localStorage or DEMO_STORES[0]
   const [activeStore, setActiveStoreState] = useState<Store>(initializeActiveStore);
   const [prevStoreId, setPrevStoreId] = useState<string | null>(null);
-  const [isLoadingActiveStore, setIsLoadingActiveStore] = useState(true);  // true until loadGuestStores determines real store
+  const [isLoadingActiveStore, setIsLoadingActiveStore] = useState(initializeIsLoading);  // true only if no real store in localStorage
   const [generatedStore, setGeneratedStore] = useState<Store | null>(null);
   const [generationState, setGenerationState] = useState<GenerationState | null>(null);
   const [isLoadingStores, setIsLoadingStores] = useState(false);
