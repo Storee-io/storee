@@ -99,11 +99,13 @@ export default function Overview() {
                   <stat.icon className={`w-4 h-4 ${stat.color}`} />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-slate-900 mb-1">{stat.value}</p>
-              <p className="text-xs text-emerald-600 font-medium flex items-center gap-1">
-                <ArrowUpRight className="w-3 h-3" />
-                {stat.change} vs prev period
-              </p>
+              <div>
+                <p className="text-2xl font-bold text-slate-900 mb-1">{stat.value}</p>
+                <p className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                  <ArrowUpRight className="w-3 h-3" />
+                  {stat.change} vs prev period
+                </p>
+              </div>
             </div>
           ))
         )}
