@@ -106,13 +106,9 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           <Menu className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2.5 min-w-0">
-        {!isLoadingActiveStore ? (
-          <h1 className="font-semibold text-slate-900 text-sm sm:text-base truncate">{activeStore?.name ? decodeHtmlEntities(activeStore.name) : 'Dashboard'}</h1>
-        ) : (
-          <div className="h-4 w-28 bg-slate-200 rounded animate-pulse" />
-        )}
+        <h1 className="font-semibold text-slate-900 text-sm sm:text-base truncate">{activeStore?.name ? decodeHtmlEntities(activeStore.name) : 'Dashboard'}</h1>
 
-        {!isLoadingActiveStore && activeStore?.status === 'Published' ? (
+        {activeStore?.status === 'Published' ? (
           <Tip label="Store is live and published">
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer">
@@ -136,7 +132,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
             </DropdownMenuContent>
             </DropdownMenu>
           </Tip>
-        ) : !isLoadingActiveStore ? (
+        ) : (
           <Tip label="Store is in draft, not published yet">
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-500 hover:bg-amber-100 transition-colors cursor-pointer">
@@ -168,8 +164,6 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
             </DropdownMenuContent>
             </DropdownMenu>
           </Tip>
-        ) : (
-          <div className="h-6 w-16 bg-slate-200 rounded-full animate-pulse" />
         )}
         </div>
       </div>
@@ -179,11 +173,11 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
 
         {/* Domain pill — always reserve space, only show when Published */}
         <div className={`hidden md:flex items-center ${
-          isMounted && activeStore?.status === 'Published' && activeStore.domain
+          activeStore?.status === 'Published' && activeStore.domain
             ? 'bg-slate-50 border border-slate-200 rounded-full overflow-hidden hover:border-slate-300 transition-colors'
             : 'w-32'
         }`}>
-          {isMounted && activeStore?.status === 'Published' && activeStore.domain ? (
+          {activeStore?.status === 'Published' && activeStore.domain ? (
             <>
               <Tip label="Open live store">
                 <a
