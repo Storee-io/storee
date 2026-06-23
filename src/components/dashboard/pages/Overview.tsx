@@ -87,7 +87,9 @@ export default function Overview() {
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {!isMounted ? (
-          Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
+          stats.map(stat => (
+            <StatCardSkeleton key={stat.label} label={stat.label} icon={stat.icon} iconBg={stat.bg} iconColor={stat.color} />
+          ))
         ) : (
           stats.map(stat => (
             <div key={stat.label} className="bg-white rounded-2xl p-5 border border-slate-100">

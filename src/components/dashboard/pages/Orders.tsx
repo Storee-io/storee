@@ -463,7 +463,9 @@ export default function Orders() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {isLoadingOrders ? (
-          Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
+          stats.map(s => (
+            <StatCardSkeleton key={s.label} label={s.label} icon={s.icon} iconBg={s.iconBg} iconColor={s.iconColor} />
+          ))
         ) : (
           stats.map(s => (
             <div key={s.label} className="bg-white rounded-2xl p-5 border border-slate-100">

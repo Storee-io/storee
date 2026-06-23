@@ -72,7 +72,9 @@ export default function Customers() {
       {/* Stat cards */}
       <div className="grid grid-cols-3 gap-4">
         {!isMounted ? (
-          Array.from({ length: 3 }).map((_, i) => <StatCardSkeleton key={i} />)
+          stats.map(s => (
+            <StatCardSkeleton key={s.label} label={s.label} icon={s.icon} iconBg={s.iconBg} iconColor={s.iconColor} />
+          ))
         ) : (
           stats.map(s => (
             <div key={s.label} className="bg-white rounded-2xl p-5 border border-slate-100">
