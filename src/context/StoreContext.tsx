@@ -259,22 +259,17 @@ function sortByLastUsed(stores: Store[]): Store[] {
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [stores, setStores] = useState<Store[]>(DEMO_STORES);
+  // Initialize with DEMO_STORES[0] but show skeleton until loadGuestStores selects actual store
   const [activeStore, setActiveStoreState] = useState<Store>(DEMO_STORES[0]);
   const [prevStoreId, setPrevStoreId] = useState<string | null>(null);
-  const [isLoadingActiveStore, setIsLoadingActiveStore] = useState(false);
+  const [isLoadingActiveStore, setIsLoadingActiveStore] = useState(true);  // true until loadGuestStores determines real store
   const [generatedStore, setGeneratedStore] = useState<Store | null>(null);
   const [generationState, setGenerationState] = useState<GenerationState | null>(null);
   const [isLoadingStores, setIsLoadingStores] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Restore activeStore from localStorage after hydration (client-only)
-  useEffect(() => {
-    const stored = getStoredActiveStore();
-    if (stored) {
-      setActiveStoreState(stored);
-      setPrevStoreId(stored.id);
-    }
-  }, []);
+  // Note: activeStore restore happens in loadGuestStores via sortByLastUsed
+  // Don't restore here to avoid showing stale store on refresh
 
   // Listen to Supabase auth — load stores when user signs in, clear when signs out
   useEffect(() => {
@@ -313,8 +308,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   async function loadGuestStores() {
     try {
       const guestStores: Store[] = [];
-      // Read directly from localStorage — not from React state which may not have hydrated yet
-      const currentActive = getStoredActiveStore() ?? activeStore;
+      // Don't restore from localStorage to avoid showing stale store on refresh
+      // loadGuestStores will select the most-recent store via sortByLastUsed
+      const currentActive = activeStore;  // Use current session store
 
       // 1. Load from localStorage (always available)
       for (let i = 0; i < localStorage.length; i++) {
@@ -355,6 +351,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           saveActiveStore(currentActive);
           // Ensure prevStoreId matches (no flicker)
           setPrevStoreId(currentActive.id);
+          // Same store on refresh — no loading state needed
+          setIsLoadingActiveStore(false);
         } else {
           // Different store — show skeleton during transition
           if (sorted[0]?.id !== prevStoreId) {
