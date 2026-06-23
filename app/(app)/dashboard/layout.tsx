@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from '@/src/components/dashboard/Sidebar';
 import DashboardHeader from '@/src/components/dashboard/DashboardHeader';
+import { DashboardContentLoader } from '@/src/components/dashboard/DashboardContentLoader';
 
 const pageVariants = {
   initial: { opacity: 0, y: 10 },
@@ -42,7 +43,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               exit="exit"
               className="h-full"
             >
-              {children}
+              <DashboardContentLoader>
+                {children}
+              </DashboardContentLoader>
             </motion.div>
           </AnimatePresence>
         </main>
