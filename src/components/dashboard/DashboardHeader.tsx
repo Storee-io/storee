@@ -106,14 +106,13 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           <Menu className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2.5 min-w-0">
-        {isMounted
-          ? <h1 className="font-semibold text-slate-900 text-sm sm:text-base truncate">{activeStore?.name ? decodeHtmlEntities(activeStore.name) : 'Dashboard'}</h1>
-          : <div className="h-4 w-28 bg-slate-200 rounded animate-pulse" />
-        }
+        {isMounted ? (
+          <h1 className="font-semibold text-slate-900 text-sm sm:text-base truncate">{activeStore?.name ? decodeHtmlEntities(activeStore.name) : 'Dashboard'}</h1>
+        ) : (
+          <div className="h-4 w-28 bg-slate-200 rounded" />
+        )}
 
-        {!isMounted ? (
-          <div className="h-6 w-16 bg-slate-200 rounded-full animate-pulse" />
-        ) : activeStore?.status === 'Published' ? (
+        {isMounted && activeStore?.status === 'Published' ? (
           <Tip label="Store is live and published">
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer">
@@ -137,7 +136,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
             </DropdownMenuContent>
             </DropdownMenu>
           </Tip>
-        ) : (
+        ) : isMounted ? (
           <Tip label="Store is in draft, not published yet">
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-500 hover:bg-amber-100 transition-colors cursor-pointer">
@@ -169,6 +168,8 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
             </DropdownMenuContent>
             </DropdownMenu>
           </Tip>
+        ) : (
+          <div className="h-6 w-16 bg-slate-200 rounded-full" />
         )}
         </div>
       </div>
