@@ -349,6 +349,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (currentActive && guestStores.find(s => s.id === currentActive.id)) {
           setActiveStoreState(currentActive);
           saveActiveStore(currentActive);
+          writeLastUsed(currentActive.id);  // Update lastUsed timestamp
           // Ensure prevStoreId matches (no flicker)
           setPrevStoreId(currentActive.id);
           // Same store on refresh — no loading state needed
@@ -361,6 +362,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setActiveStoreState(sorted[0]);
           setPrevStoreId(sorted[0]?.id ?? null);
           saveActiveStore(sorted[0]);
+          writeLastUsed(sorted[0]?.id ?? '');  // Update lastUsed so this store sorts first next time
         }
       } else {
         setStores(DEMO_STORES);
@@ -371,6 +373,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setActiveStoreState(DEMO_STORES[0]);
         setPrevStoreId(DEMO_STORES[0]?.id ?? null);
         saveActiveStore(DEMO_STORES[0]);
+        writeLastUsed(DEMO_STORES[0].id);
       }
     } catch (err) {
       console.error('[loadGuestStores] error:', err);
