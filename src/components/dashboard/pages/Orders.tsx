@@ -468,7 +468,7 @@ export default function Orders() {
           ))
         ) : (
           stats.map(s => (
-            <div key={s.label} className="bg-white rounded-2xl p-5 border border-slate-100 min-h-[140px] flex flex-col justify-between">
+            <div key={s.label} className="bg-white rounded-2xl p-5 border border-slate-100 min-h-[150px] flex flex-col justify-between">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm text-slate-500 font-medium">{s.label}</p>
                 <div className={`w-9 h-9 ${s.iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}>

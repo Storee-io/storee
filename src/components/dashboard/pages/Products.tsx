@@ -68,7 +68,7 @@ function StatCard({ icon: Icon, label, value, sub, iconBg, iconColor }: {
   icon: React.ElementType; label: string; value: string; sub?: string; iconBg: string; iconColor: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-100 min-h-[140px] flex flex-col justify-between">
+    <div className="bg-white rounded-2xl p-5 border border-slate-100 min-h-[150px] flex flex-col justify-between">
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm text-slate-500 font-medium">{label}</p>
         <div className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}>
