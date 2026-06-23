@@ -257,10 +257,24 @@ function sortByLastUsed(stores: Store[]): Store[] {
   });
 }
 
+function initializeActiveStore(): Store {
+  // Try to restore from localStorage; fallback to DEMO_STORES[0]
+  try {
+    const stored = localStorage.getItem(ACTIVE_STORE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed?.id && parsed?.name) return parsed;
+    }
+  } catch {
+    // localStorage unavailable or parse error
+  }
+  return DEMO_STORES[0];
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [stores, setStores] = useState<Store[]>(DEMO_STORES);
-  // Initialize with DEMO_STORES[0] but show skeleton until loadGuestStores selects actual store
-  const [activeStore, setActiveStoreState] = useState<Store>(DEMO_STORES[0]);
+  // Initialize with localStorage or DEMO_STORES[0]
+  const [activeStore, setActiveStoreState] = useState<Store>(initializeActiveStore);
   const [prevStoreId, setPrevStoreId] = useState<string | null>(null);
   const [isLoadingActiveStore, setIsLoadingActiveStore] = useState(true);  // true until loadGuestStores determines real store
   const [generatedStore, setGeneratedStore] = useState<Store | null>(null);
