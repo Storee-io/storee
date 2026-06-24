@@ -188,7 +188,11 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                 realStores.map(store => (
                   <button
                     key={store.id}
-                    onClick={() => { setActiveStore(store); setStoreMenuOpen(false); }}
+                    onClick={() => {
+                      setActiveStore(store);
+                      setStoreMenuOpen(false);
+                      router.push(`/dashboard?storeId=${store.id}`);
+                    }}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left ${
                       activeStore?.id === store.id ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-slate-50 text-slate-600'
                     }`}
