@@ -738,7 +738,7 @@ export default function Products() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {isLoadingActiveStore || isLoading ? (
+        {isLoadingActiveStore || isLoading || !hasDesign ? (
           <>
             <StatCardSkeleton label="Total Products" icon={Package} iconBg="bg-emerald-50" iconColor="text-emerald-600" />
             <StatCardSkeleton label="Active Products" icon={TrendingUp} iconBg="bg-blue-50" iconColor="text-blue-600" />
