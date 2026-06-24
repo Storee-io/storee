@@ -317,8 +317,36 @@ function initializeActiveStore(): Store {
   return DEMO_STORES[0];
 }
 
+function initializeStores(): Store[] {
+  // Read all persisted stores from localStorage so the sidebar shows real stores
+  // on first render instead of DEMO_STORES, eliminating the sidebar reload flash.
+  try {
+    if (typeof localStorage === 'undefined') return DEMO_STORES;
+    const stores: Store[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key?.startsWith('storee_store_')) continue;
+      try {
+        const s = JSON.parse(localStorage.getItem(key)!) as Store;
+        if (s?.id && s?.name) stores.push(s);
+      } catch { /* skip malformed */ }
+    }
+    // Also include active store if not already in list
+    try {
+      const active = localStorage.getItem(ACTIVE_STORE_KEY);
+      if (active) {
+        const s = JSON.parse(active) as Store;
+        if (s?.id && s?.name && !stores.find(x => x.id === s.id)) stores.push(s);
+      }
+    } catch { /* skip */ }
+    return stores.length > 0 ? sortByLastUsed(stores) : DEMO_STORES;
+  } catch {
+    return DEMO_STORES;
+  }
+}
+
 export function StoreProvider({ children, initialActiveStore }: { children: ReactNode; initialActiveStore?: Store }) {
-  const [stores, setStores] = useState<Store[]>(DEMO_STORES);
+  const [stores, setStores] = useState<Store[]>(() => initializeStores());
   // SSR passes the active store from a cookie so server and client agree on the
   // first render (no hydration mismatch, no placeholder flash). When absent
   // (first visit), fall back to localStorage on the client / DEMO on the server.
