@@ -384,30 +384,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (guestStores.length > 0) {
         const sorted = sortByLastUsed(guestStores);
         setStores(sorted);
-
-        // Always use sorted[0] (most recently used store) regardless of prevStoreId
-        // This ensures the correct store is selected based on lastUsed timestamps
-        if (sorted[0]?.id === prevStoreId) {
-          // Same store on refresh — no loading state needed
-          setIsLoadingActiveStore(false);
-        } else {
-          // Different store — show skeleton during transition
-          setIsLoadingActiveStore(true);
-        }
         setActiveStoreState(sorted[0]);
         setPrevStoreId(sorted[0]?.id ?? null);
         saveActiveStore(sorted[0]);
         writeLastUsed(sorted[0]?.id ?? '');  // Ensure lastUsed is current
+        // Store loaded — hide skeleton
+        setIsLoadingActiveStore(false);
       } else {
         setStores(DEMO_STORES);
-        // Different store — show skeleton
-        if (DEMO_STORES[0]?.id !== prevStoreId) {
-          setIsLoadingActiveStore(true);
-        }
         setActiveStoreState(DEMO_STORES[0]);
         setPrevStoreId(DEMO_STORES[0]?.id ?? null);
         saveActiveStore(DEMO_STORES[0]);
         writeLastUsed(DEMO_STORES[0].id);
+        // Store loaded — hide skeleton
+        setIsLoadingActiveStore(false);
       }
     } catch (err) {
       console.error('[loadGuestStores] error:', err);
