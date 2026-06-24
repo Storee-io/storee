@@ -398,6 +398,7 @@ function newBlankProduct(): DashboardProduct {
 export default function Products() {
   const router = useRouter();
   const { storeData, activeStore, isLoadingActiveStore } = useStore();
+  const hasDesign = !!activeStore?.design;
 
   const [localProducts, setLocalProducts] = useState<DashboardProduct[]>([]);
   const [editProduct, setEditProduct] = useState<DashboardProduct | null>(null);
@@ -423,9 +424,14 @@ export default function Products() {
   // Delete confirm
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
-  // Fetch products from API on mount
+  // Fetch products from API on mount and when storeData changes (design loads)
   useEffect(() => {
-    if (!activeStore?.id) return;
+    if (!activeStore?.id || !hasDesign) {
+      // Skip fetch until design is available. If design is missing, products will be
+      // empty anyway; show skeleton until design loads and this effect re-runs.
+      setIsLoading(!hasDesign);
+      return;
+    }
 
     const fetchProducts = async () => {
       setIsLoading(true);
@@ -443,7 +449,6 @@ export default function Products() {
         if (!products || products.length === 0) {
           const generated = storeData.products || [];
           setLocalProducts([...generated]);
-          // removed: isMounted no longer used;
           setIsLoading(false);
           // Auto-save generated products to DB now that endpoint works
           for (const p of generated) {
@@ -480,19 +485,18 @@ export default function Products() {
         }));
 
         setLocalProducts(dashboardProducts);
-        // removed: isMounted no longer used;
+        setIsLoading(false);
       } catch (error) {
         console.error('[Products] fetch error:', error);
         // Fallback to storeData products if API fails
         console.log('[Products] Falling back to generated products');
         setLocalProducts([...storeData.products]);
-        // removed: isMounted no longer used;
         setIsLoading(false);
       }
     };
 
     fetchProducts();
-  }, [activeStore?.id]);
+  }, [activeStore?.id, hasDesign, storeData]);
 
   // No longer needed — isLoadingActiveStore from context handles store change detection
 
