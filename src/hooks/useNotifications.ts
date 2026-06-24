@@ -40,13 +40,15 @@ function saveNotifications(data: Notification[]) {
 }
 
 export function useNotifications() {
-  // Initialize empty to prevent hydration mismatch
-  // Server and client both start with [] until useEffect loads from localStorage
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  // Seed synchronously from localStorage so the very first client render already
+  // shows the correct unread count — no 0 → N blink on refresh. The server seeds
+  // from INITIAL_NOTIFICATIONS (no localStorage), which matches an untouched client;
+  // for a client that has marked items read, the effect below reconciles after
+  // hydration (badge has suppressHydrationWarning so no console noise).
+  const [notifications, setNotifications] = useState<Notification[]>(() => loadNotifications());
 
   useEffect(() => {
-    const loaded = loadNotifications();
-    setNotifications(loaded);
+    setNotifications(loadNotifications());
   }, []);
 
   const update = (data: Notification[]) => {
