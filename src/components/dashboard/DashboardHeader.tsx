@@ -184,9 +184,10 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
                   href={`https://${activeStore.domain}`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  suppressHydrationWarning
                   className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 hover:bg-slate-100 transition-colors"
                 >
-                  <span className="text-xs text-slate-600 truncate max-w-[140px]">
+                  <span suppressHydrationWarning className="text-xs text-slate-600 truncate max-w-[140px]">
                     {activeStore.domain}
                   </span>
                   <ExternalLink className="w-3 h-3 text-slate-400 flex-shrink-0" />
