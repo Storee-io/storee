@@ -36,6 +36,7 @@ export default function Customers() {
   const { storeData, activeStore, isLoadingActiveStore } = useStore();
   const fmtPrice = makePriceFmt(activeStore?.currency?.code ?? 'USD');
   const { customers } = storeData;
+  const hasDesign = !!activeStore?.design;
   const [search, setSearch] = useState('');
 
   const filtered = customers.filter((c: DashboardCustomer) =>
@@ -69,7 +70,7 @@ export default function Customers() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-3 gap-4">
-        {isLoadingActiveStore ? (
+        {(isLoadingActiveStore || !hasDesign) ? (
           stats.map(s => (
             <StatCardSkeleton key={s.label} label={s.label} icon={s.icon} iconBg={s.iconBg} iconColor={s.iconColor} />
           ))
@@ -121,7 +122,7 @@ export default function Customers() {
               <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
-          {isLoadingActiveStore ? <TableSkeleton rows={6} cols={6} /> : <TableBody>
+          {(isLoadingActiveStore || !hasDesign) ? <TableSkeleton rows={6} cols={6} /> : <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-16 text-slate-400">

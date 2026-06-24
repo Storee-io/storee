@@ -49,6 +49,11 @@ export default function Overview() {
   const { orders, topProducts, products, customers } = storeData;
   const fmtPrice = makePriceFmt(activeStore?.currency?.code ?? 'USD');
 
+  // design-dependent data (products, customers, orders) requires the full store from
+  // Supabase — the slim cookie store doesn't carry design. Show skeleton for these
+  // values until design arrives to avoid a 0 → real-value flicker.
+  const hasDesign = !!activeStore?.design;
+
   const today = new Date();
   const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6),
@@ -64,11 +69,13 @@ export default function Overview() {
   const totalRevenue = scaleKpi(baseRevenue, days, 30);
   const totalOrders  = scaleKpi(baseOrderCount, days, 30);
 
-  const stats = [
-    { label: 'Total Revenue', value: fmtPrice(totalRevenue), change: '+18%', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Total Orders',  value: String(totalOrders),                     change: '+12%', icon: ShoppingBag, color: 'text-blue-600',  bg: 'bg-blue-50' },
-    { label: 'Products',      value: String(products.length),                 change: `+${Math.max(1, Math.floor(products.length / 4))} new`, icon: Package, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Customers',     value: String(customers.length),                change: '+24%', icon: Users,      color: 'text-rose-600',   bg: 'bg-rose-50' },
+  // revenue & orders come from the cookie store — always available immediately.
+  // products & customers come from storeData.design — need full store.
+  const cookieStats = [
+    { label: 'Total Revenue', value: fmtPrice(totalRevenue), change: '+18%', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', needsDesign: false },
+    { label: 'Total Orders',  value: String(totalOrders),    change: '+12%', icon: ShoppingBag, color: 'text-blue-600',  bg: 'bg-blue-50',  needsDesign: false },
+    { label: 'Products',      value: String(products.length), change: `+${Math.max(1, Math.floor(products.length / 4))} new`, icon: Package, color: 'text-purple-600', bg: 'bg-purple-50', needsDesign: true },
+    { label: 'Customers',     value: String(customers.length), change: '+24%', icon: Users,    color: 'text-rose-600',   bg: 'bg-rose-50',  needsDesign: true },
   ];
 
   return (
@@ -82,14 +89,13 @@ export default function Overview() {
         <DateRangePicker value={dateRange} onChange={setDateRange} />
       </div>
 
-      {/* Stats grid */}
+      {/* Stats grid — each card decides its own loading state */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {isLoadingActiveStore ? (
-          stats.map(stat => (
+        {cookieStats.map(stat => {
+          const loading = isLoadingActiveStore || (stat.needsDesign && !hasDesign);
+          return loading ? (
             <StatCardSkeleton key={stat.label} label={stat.label} icon={stat.icon} iconBg={stat.bg} iconColor={stat.color} />
-          ))
-        ) : (
-          stats.map(stat => (
+          ) : (
             <div key={stat.label} className="bg-white rounded-2xl p-5 border border-slate-100 min-h-[150px] flex flex-col justify-between">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-slate-500 font-medium">{stat.label}</p>
@@ -105,11 +111,11 @@ export default function Overview() {
                 </p>
               </div>
             </div>
-          ))
-        )}
+          );
+        })}
       </div>
 
-      {/* Charts row */}
+      {/* Charts row — revenue/orders charts use cookie data, no design needed */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue area chart */}
         <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-100">
@@ -166,7 +172,7 @@ export default function Overview() {
             <button className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">View all</button>
           </div>
           <div className="space-y-3">
-            {isLoadingActiveStore ? Array.from({ length: 5 }).map((_, i) => (
+            {(isLoadingActiveStore || !hasDesign) ? Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 p-2">
                 <Skeleton className="w-9 h-9 rounded-xl flex-shrink-0" />
                 <div className="flex-1 space-y-1.5">
@@ -203,7 +209,7 @@ export default function Overview() {
             <button className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">View all</button>
           </div>
           <div className="space-y-3">
-            {isLoadingActiveStore ? Array.from({ length: 5 }).map((_, i) => (
+            {(isLoadingActiveStore || !hasDesign) ? Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3">
                 <Skeleton className="w-6 h-3" />
                 <div className="flex-1 space-y-1.5">
