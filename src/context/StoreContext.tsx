@@ -257,6 +257,21 @@ function sortByLastUsed(stores: Store[]): Store[] {
   });
 }
 
+/**
+ * Decide which store should be active after loading the store list.
+ * The saved active store (ACTIVE_STORE_KEY) is the single source of truth — it
+ * tracks the store the user last accessed (dashboard, preview, or editor).
+ * Only fall back to most-recently-used when no valid saved store exists in the list.
+ */
+function pickActiveStore(stores: Store[]): Store | undefined {
+  const saved = getStoredActiveStore();
+  if (saved?.id) {
+    const match = stores.find(s => s.id === saved.id);
+    if (match) return match;
+  }
+  return sortByLastUsed(stores)[0];
+}
+
 function initializeActiveStore(): Store {
   // Try to restore from localStorage; fallback to DEMO_STORES[0]
   try {
@@ -338,9 +353,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   async function loadGuestStores() {
     try {
       const guestStores: Store[] = [];
-      // Don't restore from localStorage to avoid showing stale store on refresh
-      // loadGuestStores will select the most-recent store via sortByLastUsed
-      const currentActive = activeStore;  // Use current session store
 
       // 1. Load from localStorage (always available)
       for (let i = 0; i < localStorage.length; i++) {
@@ -384,10 +396,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (guestStores.length > 0) {
         const sorted = sortByLastUsed(guestStores);
         setStores(sorted);
-        setActiveStoreState(sorted[0]);
-        setPrevStoreId(sorted[0]?.id ?? null);
-        saveActiveStore(sorted[0]);
-        writeLastUsed(sorted[0]?.id ?? '');  // Ensure lastUsed is current
+        // Honor the store the user last accessed (ACTIVE_STORE_KEY); only fall
+        // back to most-recently-used when that store isn't in the list.
+        const active = pickActiveStore(sorted) ?? sorted[0];
+        setActiveStoreState(active);
+        setPrevStoreId(active.id);
+        saveActiveStore(active);
+        writeLastUsed(active.id);  // Dashboard view counts as accessing the store
         // Store loaded — hide skeleton
         setIsLoadingActiveStore(false);
       } else {
@@ -415,12 +430,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (userStores.length > 0) {
         const sorted = sortByLastUsed(userStores);
         setStores(sorted);
-        setActiveStoreState(sorted[0]);
-        saveActiveStore(sorted[0]);
+        // Honor the store the user last accessed; fall back to most-recently-used.
+        const active = pickActiveStore(sorted) ?? sorted[0];
+        setActiveStoreState(active);
+        setPrevStoreId(active.id);
+        saveActiveStore(active);
+        setIsLoadingActiveStore(false);
       } else {
         setStores([]);
         setActiveStoreState(DEMO_STORES[0]);
+        setPrevStoreId(DEMO_STORES[0]?.id ?? null);
         saveActiveStore(DEMO_STORES[0]);
+        setIsLoadingActiveStore(false);
       }
     } catch {
       // Supabase unavailable — fall back to guest stores

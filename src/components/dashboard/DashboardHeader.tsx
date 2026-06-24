@@ -95,6 +95,12 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
 
   const { notifications, markAsRead, markAllRead, unreadCount } = useNotifications();
 
+  // Render store-dependent UI only after mount. The server can't read localStorage,
+  // so it renders a neutral state; the first client render matches it (no hydration
+  // mismatch), then the real store appears once mounted. This avoids freezing stale
+  // server text — the bug that suppressHydrationWarning previously masked.
+  const store = isMounted ? activeStore : undefined;
+
   return (
     <header className="bg-white border-b border-slate-200 px-4 lg:px-6 h-12 flex items-center justify-between flex-shrink-0" style={{ boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>
       {/* Left */}
@@ -106,9 +112,9 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           <Menu className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2.5 min-w-0">
-        <h1 suppressHydrationWarning className="font-semibold text-slate-900 text-sm sm:text-base truncate">{activeStore?.name ? decodeHtmlEntities(activeStore.name) : 'Dashboard'}</h1>
+        <h1 className="font-semibold text-slate-900 text-sm sm:text-base truncate">{store?.name ? decodeHtmlEntities(store.name) : 'Dashboard'}</h1>
 
-        {activeStore?.status === 'Published' ? (
+        {store?.status === 'Published' ? (
           <Tip label="Store is live and published">
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer">
@@ -120,7 +126,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
             <DropdownMenuContent align="start" className="w-52">
               <div className="px-3 py-2 border-b border-slate-100">
                 <p className="text-xs text-slate-500 font-medium">Store is live</p>
-                <p className="text-xs text-slate-400 truncate mt-0.5">{activeStore.domain}</p>
+                <p className="text-xs text-slate-400 truncate mt-0.5">{store?.domain}</p>
               </div>
               <DropdownMenuItem
                 onClick={() => setShowUnpublishModal(true)}
@@ -144,7 +150,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
                 <p className="text-xs text-slate-500 font-medium">Store is in draft</p>
                 <p className="text-xs text-slate-400 mt-0.5">Not yet published</p>
               </div>
-              {activeStore?.publishedDomain ? (
+              {store?.publishedDomain ? (
                 <DropdownMenuItem
                   onClick={() => setShowPublishModal(true)}
                   className="flex items-center gap-2.5 px-3 py-2 text-sm text-teal-600 hover:bg-teal-50 cursor-pointer"
@@ -173,22 +179,21 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
 
         {/* Domain pill — always reserve space, only show when Published */}
         <div className={`hidden md:flex items-center ${
-          activeStore?.status === 'Published' && activeStore.domain
+          store?.status === 'Published' && store.domain
             ? 'bg-slate-50 border border-slate-200 rounded-full overflow-hidden hover:border-slate-300 transition-colors'
             : 'w-32'
         }`}>
-          {activeStore?.status === 'Published' && activeStore.domain ? (
+          {store?.status === 'Published' && store.domain ? (
             <>
               <Tip label="Open live store">
                 <a
-                  href={`https://${activeStore.domain}`}
+                  href={`https://${store.domain}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  suppressHydrationWarning
                   className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 hover:bg-slate-100 transition-colors"
                 >
-                  <span suppressHydrationWarning className="text-xs text-slate-600 truncate max-w-[140px]">
-                    {activeStore.domain}
+                  <span className="text-xs text-slate-600 truncate max-w-[140px]">
+                    {store.domain}
                   </span>
                   <ExternalLink className="w-3 h-3 text-slate-400 flex-shrink-0" />
                 </a>
@@ -211,7 +216,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         {/* Editor button */}
         <Tip label="Edit store design">
           <Link
-            href={activeStore ? `/editor/${activeStore.id}?from=/dashboard` : '/editor'}
+            href={store ? `/editor/${store.id}?from=/dashboard` : '/editor'}
             suppressHydrationWarning
             className="flex items-center gap-1.5 px-3.5 py-1.5 sm:px-3.5 sm:py-1.5 p-2 sm:p-0 text-sm font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-all"
           >
@@ -223,7 +228,7 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         {/* Preview button */}
         <Tip label="View store preview">
           <Link
-            href={activeStore ? `/preview/${activeStore.id}?from=/dashboard` : '/preview?from=/dashboard'}
+            href={store ? `/preview/${store.id}?from=/dashboard` : '/preview?from=/dashboard'}
             suppressHydrationWarning
             className="flex items-center gap-1.5 px-3.5 py-1.5 sm:px-3.5 sm:py-1.5 p-2 sm:p-0 text-sm font-medium text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-all"
           >
