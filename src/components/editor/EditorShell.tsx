@@ -266,9 +266,11 @@ export default function EditorShell({ store, from }: Props) {
   const persistStoreRef = useRef<(() => Promise<void>) | null>(null);
   const lastFieldLabelRef = useRef<string | undefined>(undefined);
 
-  // Live store from props (URL param is source of truth for this editor page)
-  // Don't fall back to activeStore from context, as it might be a different store
-  const liveContextStore = store;
+  // Use store prop as base, but merge in publish-state updates from context.
+  // activeStore reflects status/domain/publishedDomain after handlePublishComplete.
+  const liveContextStore = (activeStore?.id === store.id)
+    ? { ...store, ...activeStore }
+    : store;
   const d = liveContextStore.design;
 
   // Local editable state

@@ -106,9 +106,11 @@ export default function PreviewShell({ store, from = null }: Props) {
   const { updateActiveStore, setGeneratedStore, setGenerationState, activeStore, addStore } = useStore();
   const router = useRouter();
 
-  // Use store prop (from URL param) as source of truth for this preview page
-  // Don't fall back to activeStore from context, as it might be a different store
-  const liveStore = store;
+  // Use store prop as base, but merge in any updates from context (e.g. after publish).
+  // activeStore reflects the latest status/domain after handlePublishComplete updates context.
+  const liveStore = (activeStore?.id === store.id)
+    ? { ...store, ...activeStore }
+    : store;
 
   const backLabel = getBackLabel(from);
   const backHref = from ?? '/';
