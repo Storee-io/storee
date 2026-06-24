@@ -6,6 +6,69 @@ import { createServerClient } from '@/src/lib/supabase';
 export const runtime = 'nodejs';
 export const maxDuration = 120; // Claude needs up to 60s; 120s gives headroom for retries
 
+// ── Region context for currency-aware promo bars ──────────────────────────────
+function getRegionContext(currencyCode: string, language: string): {
+  region: string;
+  shippingContext: string;
+  example: string;
+} {
+  const contexts: Record<string, Record<string, { region: string; shippingContext: string; example: string }>> = {
+    IDR: {
+      'Bahasa Indonesia': {
+        region: 'Indonesia',
+        shippingContext: 'free shipping across Indonesia',
+        example: 'Gratis ongkir untuk pesanan di atas Rp 350.000 — berlaku seluruh Indonesia',
+      },
+    },
+    SGD: {
+      English: {
+        region: 'Singapore',
+        shippingContext: 'free shipping in Singapore',
+        example: 'Free shipping on orders over S$35 — all of Singapore',
+      },
+    },
+    MYR: {
+      English: {
+        region: 'Malaysia',
+        shippingContext: 'free shipping across Malaysia',
+        example: 'Free shipping for orders over RM 85 — nationwide Malaysia',
+      },
+    },
+    PHP: {
+      English: {
+        region: 'Philippines',
+        shippingContext: 'free shipping nationwide',
+        example: 'Free shipping on orders over ₱1,500 — nationwide delivery',
+      },
+    },
+    USD: {
+      English: {
+        region: 'USA',
+        shippingContext: 'free shipping in USA',
+        example: 'Free shipping on orders over $50 — USA wide',
+      },
+    },
+    EUR: {
+      English: {
+        region: 'Europe',
+        shippingContext: 'free shipping in EU',
+        example: 'Free shipping on orders over €45 — all EU countries',
+      },
+    },
+  };
+
+  // Try exact match first, then fallback to currency with any language
+  return (
+    contexts[currencyCode]?.[language] ??
+    Object.values(contexts[currencyCode] ?? {})[0] ??
+    {
+      region: 'your region',
+      shippingContext: 'free shipping on qualifying orders',
+      example: 'Free shipping on orders above minimum — check your region',
+    }
+  );
+}
+
 // ── Live config from Supabase (falls back to hardcoded defaults) ──────────────
 async function getLiveConfig(): Promise<{ prompt: string; model: string; maxTokens: number }> {
   try {
@@ -40,6 +103,12 @@ export async function POST(req: NextRequest) {
   const extras: string[] = [];
   if (currency) extras.push(`Currency: ${currency.label} (${currency.code}, symbol: ${currency.symbol}). Use realistic ${currency.code} pricing for all products.`);
   if (language) extras.push(`Generate ALL text content (storeName, tagline, heroTitle, heroSubtitle, ctaText, navLinks, product names, descriptions, features, testimonials, FAQ, newsletter, promoBar, brandStory, trustBadges, collections, stats) in ${language}. Only exception: keep category value in English.`);
+
+  // Promo bar must be currency & region-aware
+  if (currency && language) {
+    const regionContext = getRegionContext(currency.code, language);
+    extras.push(`promoBar MUST be specific to ${regionContext.region}: use ${currency.symbol} symbol for amounts, ${regionContext.shippingContext}, realistic for local market. Examples: "${regionContext.example}"`);
+  }
 
   if (advanced) {
     // Theme colors
