@@ -133,6 +133,64 @@ const CHART_WEIGHTS = [0.08, 0.11, 0.10, 0.15, 0.14, 0.20, 0.22];
 const STOCK_POOL = [24, 56, 112, 8, 45, 78, 34, 90];
 const SALES_SHARE = [0.40, 0.25, 0.20, 0.15];
 
+// Realistic price ranges for common product categories
+const PRICE_RANGES: Record<string, [number, number]> = {
+  Rings: [150, 2000],
+  Earrings: [50, 800],
+  Necklaces: [100, 1500],
+  Bracelets: [50, 1000],
+  Hoodies: [40, 150],
+  Bottoms: [60, 200],
+  Tops: [25, 100],
+  Accessories: [15, 200],
+  'Supplements': [30, 150],
+  'Equipment': [50, 500],
+  'Apparel': [30, 150],
+  'Lighting': [40, 300],
+  'Textiles': [30, 200],
+  'Furniture': [100, 500],
+  'Decor': [20, 200],
+  'Bread': [8, 25],
+  'Pastry': [10, 30],
+  'Cakes': [8, 20],
+  'Charging': [30, 150],
+  'Keyboard': [30, 150],
+  'Lighting': [40, 200],
+  'Bags': [50, 400],
+  'Clothing': [50, 300],
+  'Camping': [30, 200],
+  'Hiking': [30, 150],
+  'Building': [20, 100],
+  'Art': [15, 80],
+  'Plush': [15, 60],
+  'Puzzles': [20, 100],
+  'Outerwear': [200, 800],
+  'Bottoms': [100, 400],
+  'Tops': [50, 250],
+  'Shoes': [100, 500],
+  'Green Tea': [15, 50],
+  'Herbal': [12, 40],
+  'Matcha': [30, 100],
+  'Books': [10, 60],
+  'Default': [10, 500],
+};
+
+function normalizePrice(price: number, category?: string): number {
+  // If price is already reasonable (under 10000), keep it
+  if (price < 10000) return price;
+
+  const range = PRICE_RANGES[category || 'Default'] || PRICE_RANGES.Default;
+  const [min, max] = range;
+
+  // If price is unrealistic, normalize to reasonable range
+  // Scale down if way too high, or use random value in range
+  if (price > 10000) {
+    return Math.floor(min + Math.random() * (max - min));
+  }
+
+  return price;
+}
+
 // ── Main generator ───────────────────────────────────────────────────────────
 
 export function generateStoreData(store: Store): StoreData {
@@ -145,12 +203,11 @@ export function generateStoreData(store: Store): StoreData {
   if (baseProducts.length === 0) return emptyStoreData();
 
   const totalOrders = store.orders > 0 ? store.orders : 12;
-  const totalRevenue = store.revenue > 0 ? store.revenue : baseProducts.reduce((s, p) => s + p.price * 3, 0);
 
   const products: DashboardProduct[] = baseProducts.map((p, i) => ({
     id: p.id,
     name: p.name,
-    price: p.price,
+    price: normalizePrice(p.price, p.category),
     image: p.image,
     category: p.category,
     badge: (p as { badge?: string }).badge,
@@ -158,6 +215,8 @@ export function generateStoreData(store: Store): StoreData {
     sales: Math.max(1, Math.round(totalOrders * SALES_SHARE[i % 4])),
     status: 'Active' as const,
   }));
+
+  const totalRevenue = store.revenue > 0 ? store.revenue : products.reduce((s, p) => s + p.price * 3, 0);
 
   // Orders
   const orderCount = Math.min(totalOrders, 20);
