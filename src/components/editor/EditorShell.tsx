@@ -1050,7 +1050,10 @@ export default function EditorShell({ store, from }: Props) {
           {/* Dashboard */}
           <Tip label="Go to Dashboard">
             <button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => {
+                setActiveStore(store);
+                router.push('/dashboard');
+              }}
               className="p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
             >
               <LayoutDashboard className="w-4 h-4" />
