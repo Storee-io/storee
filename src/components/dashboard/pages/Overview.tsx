@@ -45,7 +45,7 @@ const statusColors: Record<string, string> = {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Overview() {
-  const { activeStore, storeData, isLoadingActiveStore } = useStore();
+  const { activeStore, stores, storeData, isLoadingActiveStore, updateActiveStore } = useStore();
   const { orders, topProducts, products, customers } = storeData;
   const fmtPrice = makePriceFmt(activeStore?.currency?.code ?? 'USD');
 
@@ -59,6 +59,20 @@ export default function Overview() {
     from: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6),
     to: today,
   });
+
+  // Update revenue & orders from fresh Supabase store to avoid stale data from cookie.
+  // When stores[] changes (after Supabase fetch), find matching store and update activeStore.
+  useEffect(() => {
+    if (!activeStore?.id || stores.length === 0) return;
+
+    const freshStore = stores.find(s => s.id === activeStore.id);
+    if (freshStore && (freshStore.revenue !== activeStore.revenue || freshStore.orders !== activeStore.orders)) {
+      updateActiveStore({
+        revenue: freshStore.revenue,
+        orders: freshStore.orders,
+      });
+    }
+  }, [stores, activeStore?.id, activeStore?.revenue, activeStore?.orders, updateActiveStore]);
 
   const days = Math.max(1, Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / 86400000) + 1);
   const revenueChartData = buildRevenueData(dateRange.from, dateRange.to);
