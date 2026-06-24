@@ -352,6 +352,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         } catch { /* skip malformed */ }
       }
 
+      // Also check active store key — it's the "currently editing" store that may not have storee_store_* yet
+      try {
+        const active = localStorage.getItem(ACTIVE_STORE_KEY);
+        if (active) {
+          const s = JSON.parse(active) as Store;
+          if (s?.id && s?.name && !guestStores.find(x => x.id === s.id)) {
+            guestStores.push(s);
+          }
+        }
+      } catch { /* skip malformed */ }
+
       // 2. Load from Supabase using guest_id (for cloud persistence)
       try {
         const guestId = getOrCreateGuestId();
