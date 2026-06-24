@@ -83,11 +83,11 @@ export default function Overview() {
   const totalRevenue = scaleKpi(baseRevenue, days, 30);
   const totalOrders  = scaleKpi(baseOrderCount, days, 30);
 
-  // revenue & orders come from the cookie store — always available immediately.
-  // products & customers come from storeData.design — need full store.
+  // all stats (revenue, orders, products, customers) depend on full store from Supabase
+  // show skeleton until design is loaded to avoid stale data from cookie
   const cookieStats = [
-    { label: 'Total Revenue', value: fmtPrice(totalRevenue), change: '+18%', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', needsDesign: false },
-    { label: 'Total Orders',  value: String(totalOrders),    change: '+12%', icon: ShoppingBag, color: 'text-blue-600',  bg: 'bg-blue-50',  needsDesign: false },
+    { label: 'Total Revenue', value: fmtPrice(totalRevenue), change: '+18%', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', needsDesign: true },
+    { label: 'Total Orders',  value: String(totalOrders),    change: '+12%', icon: ShoppingBag, color: 'text-blue-600',  bg: 'bg-blue-50',  needsDesign: true },
     { label: 'Products',      value: String(products.length), change: `+${Math.max(1, Math.floor(products.length / 4))} new`, icon: Package, color: 'text-purple-600', bg: 'bg-purple-50', needsDesign: true },
     { label: 'Customers',     value: String(customers.length), change: '+24%', icon: Users,    color: 'text-rose-600',   bg: 'bg-rose-50',  needsDesign: true },
   ];
