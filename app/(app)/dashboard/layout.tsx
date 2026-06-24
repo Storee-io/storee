@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from '@/src/components/dashboard/Sidebar';
 import DashboardHeader from '@/src/components/dashboard/DashboardHeader';
 import { DashboardContentLoader } from '@/src/components/dashboard/DashboardContentLoader';
+import { useStore } from '@/src/context/StoreContext';
 
 const pageVariants = {
   initial: { opacity: 0, y: 10 },
@@ -17,7 +18,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
+  const setStoreFromParamRef = useRef(false);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { stores, setActiveStore } = useStore();
+
+  // Set active store from query param if provided (e.g., from preview)
+  useEffect(() => {
+    if (setStoreFromParamRef.current) return;
+
+    const storeId = searchParams.get('storeId');
+    if (storeId && stores.length > 0) {
+      const store = stores.find(s => s.id === storeId);
+      if (store) {
+        setActiveStore(store);
+        setStoreFromParamRef.current = true;
+      }
+    }
+  }, [stores, setActiveStore]);
 
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0, behavior: 'instant' });

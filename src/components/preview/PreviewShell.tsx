@@ -402,7 +402,7 @@ export default function PreviewShell({ store, from = null }: Props) {
           {/* Dashboard */}
           <Tip label="Go to Dashboard">
             <button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push(`/dashboard?storeId=${store.id}`)}
               className="p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
             >
               <LayoutDashboard className="w-4 h-4" />
