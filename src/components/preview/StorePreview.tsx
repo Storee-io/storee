@@ -225,6 +225,7 @@ function EditSpan({
   const decode = (v: string) => {
     const isHtml = /<[a-z]/i.test(v);
     if (isHtml) return v;
+    if (typeof document === 'undefined') return v;
     const tmp = document.createElement('span');
     let prev = v;
     for (let i = 0; i < 5; i++) { tmp.innerHTML = prev; const next = tmp.textContent ?? prev; if (next === prev) break; prev = next; }
