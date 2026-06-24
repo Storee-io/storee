@@ -604,9 +604,15 @@ export default function PreviewShell({ store, from = null }: Props) {
             store={liveStore}
             onPublish={handlePublishComplete}
             onClose={() => setShowPublishModal(false)}
-            {...((isPublished || hasPublishedBefore) && liveStore.publishedDomain
-              ? { fixedSubdomain: liveStore.publishedDomain }
-              : {})}
+            {...((() => {
+              // Use publishedDomain from context stores if available (more up-to-date),
+              // otherwise fall back to liveStore prop (may be stale on republish)
+              const contextStore = activeStore?.id === liveStore.id ? activeStore : undefined;
+              const publishedDomain = contextStore?.publishedDomain ?? liveStore.publishedDomain;
+              return (isPublished || hasPublishedBefore) && publishedDomain
+                ? { fixedSubdomain: publishedDomain }
+                : {};
+            })())}
           />
         )}
       </AnimatePresence>

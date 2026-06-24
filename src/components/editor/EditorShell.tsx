@@ -1566,9 +1566,17 @@ export default function EditorShell({ store, from }: Props) {
             store={previewStore}
             onPublish={handlePublishComplete}
             onClose={() => setShowPublishModal(false)}
-            {...((isPublished || hasPublishedBefore) && liveContextStore.publishedDomain
-              ? { fixedSubdomain: liveContextStore.publishedDomain }
-              : {})}
+            {...((() => {
+              // Use publishedDomain from context if available (more up-to-date),
+              // otherwise fall back to liveContextStore prop (may be stale after first publish)
+              const contextPublishedDomain = activeStore?.id === liveContextStore.id
+                ? activeStore.publishedDomain
+                : undefined;
+              const publishedDomain = contextPublishedDomain ?? liveContextStore.publishedDomain;
+              return (isPublished || hasPublishedBefore) && publishedDomain
+                ? { fixedSubdomain: publishedDomain }
+                : {};
+            })())}
           />
         )}
       </AnimatePresence>
