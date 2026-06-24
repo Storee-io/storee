@@ -324,30 +324,30 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
   // (first visit), fall back to localStorage on the client / DEMO on the server.
   const [activeStore, setActiveStoreState] = useState<Store>(() => initialActiveStore ?? initializeActiveStore());
   const [prevStoreId, setPrevStoreId] = useState<string | null>(null);
-  // Start with true to match server render, will be set to false in useEffect if real store exists
-  const [isLoadingActiveStore, setIsLoadingActiveStore] = useState(true);
+  // If we have a store from the SSR cookie (initialActiveStore) or from localStorage,
+  // start with false so static + data elements render immediately on refresh without
+  // any skeleton flash. Only show skeleton when genuinely waiting for first-load data.
+  const [isLoadingActiveStore, setIsLoadingActiveStore] = useState(!initialActiveStore);
   const [generatedStore, setGeneratedStore] = useState<Store | null>(null);
   const [generationState, setGenerationState] = useState<GenerationState | null>(null);
   const [isLoadingStores, setIsLoadingStores] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Note: activeStore restore happens in loadGuestStores via sortByLastUsed
-  // Don't restore here to avoid showing stale store on refresh
-
-  // If we have a real store in localStorage, immediately stop showing skeleton
+  // If we have a real store in localStorage (and no cookie was provided), stop skeleton immediately
   useEffect(() => {
+    if (initialActiveStore) return; // already false from cookie
     try {
       const stored = localStorage.getItem(ACTIVE_STORE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed?.id && parsed?.name) {
-          setIsLoadingActiveStore(false); // Real store exists, show it immediately
+          setIsLoadingActiveStore(false);
         }
       }
     } catch {
       // localStorage error, keep skeleton loading
     }
-  }, []);
+  }, [initialActiveStore]);
 
   // Listen to Supabase auth — load stores when user signs in, clear when signs out
   useEffect(() => {
