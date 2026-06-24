@@ -242,6 +242,37 @@ function saveActiveStore(store: Store) {
   try {
     localStorage.setItem(ACTIVE_STORE_KEY, JSON.stringify(store));
   } catch { /* quota */ }
+  writeActiveStoreCookie(store);
+}
+
+/**
+ * Mirror the active store into a cookie so the server can render the correct
+ * store name/status/domain during SSR — eliminating the "Dashboard" placeholder
+ * flash on refresh. Only a slim subset is stored to stay well under the 4KB
+ * cookie limit (the full store, incl. design, loads from Supabase after mount).
+ */
+function slimStoreForCookie(s: Store): Partial<Store> {
+  return {
+    id: s.id,
+    name: s.name,
+    domain: s.domain,
+    status: s.status,
+    primaryColor: s.primaryColor,
+    createdAt: s.createdAt,
+    category: s.category,
+    revenue: s.revenue,
+    orders: s.orders,
+    currency: s.currency,
+    publishedDomain: s.publishedDomain,
+  };
+}
+
+function writeActiveStoreCookie(store: Store) {
+  try {
+    const val = encodeURIComponent(JSON.stringify(slimStoreForCookie(store)));
+    // 1-year lifetime; Lax so it rides along on top-level navigations/refreshes.
+    document.cookie = `${ACTIVE_STORE_KEY}=${val}; path=/; max-age=31536000; SameSite=Lax`;
+  } catch { /* document unavailable / serialization error */ }
 }
 
 function sortByLastUsed(stores: Store[]): Store[] {
@@ -286,10 +317,12 @@ function initializeActiveStore(): Store {
   return DEMO_STORES[0];
 }
 
-export function StoreProvider({ children }: { children: ReactNode }) {
+export function StoreProvider({ children, initialActiveStore }: { children: ReactNode; initialActiveStore?: Store }) {
   const [stores, setStores] = useState<Store[]>(DEMO_STORES);
-  // Initialize with localStorage or DEMO_STORES[0]
-  const [activeStore, setActiveStoreState] = useState<Store>(initializeActiveStore);
+  // SSR passes the active store from a cookie so server and client agree on the
+  // first render (no hydration mismatch, no placeholder flash). When absent
+  // (first visit), fall back to localStorage on the client / DEMO on the server.
+  const [activeStore, setActiveStoreState] = useState<Store>(() => initialActiveStore ?? initializeActiveStore());
   const [prevStoreId, setPrevStoreId] = useState<string | null>(null);
   // Start with true to match server render, will be set to false in useEffect if real store exists
   const [isLoadingActiveStore, setIsLoadingActiveStore] = useState(true);
@@ -563,8 +596,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const storeData = useMemo(
     () => generateStoreData(activeStore),
+    // Include design — when the SSR-provided slim store (no design) is replaced
+    // by the full store loaded from Supabase, design.products becomes available
+    // and the dashboard data must recompute.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeStore?.id, activeStore?.revenue, activeStore?.orders, activeStore?.template?.id]
+    [activeStore?.id, activeStore?.revenue, activeStore?.orders, activeStore?.template?.id, activeStore?.design]
   );
 
   // Turn off loading skeleton once data is ready

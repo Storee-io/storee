@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Menu, Bell, Eye, Copy, Settings, HelpCircle, LogOut, ExternalLink, Check, EyeOff, Loader2, PenLine, Rocket, RotateCcw } from 'lucide-react';
@@ -51,8 +51,6 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const [unpublishing, setUnpublishing] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [showUnpublishModal, setShowUnpublishModal] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => { setIsMounted(true); }, []);
   const { user, logout } = useAuth();
   const { activeStore, updateActiveStore, isLoadingActiveStore } = useStore();
   const router = useRouter();
@@ -95,11 +93,10 @@ export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
 
   const { notifications, markAsRead, markAllRead, unreadCount } = useNotifications();
 
-  // Render store-dependent UI only after mount. The server can't read localStorage,
-  // so it renders a neutral state; the first client render matches it (no hydration
-  // mismatch), then the real store appears once mounted. This avoids freezing stale
-  // server text — the bug that suppressHydrationWarning previously masked.
-  const store = isMounted ? activeStore : undefined;
+  // The active store is provided by SSR via cookie (see app/(app)/layout.tsx),
+  // so server and client render the same store on first paint — no placeholder
+  // flash, no hydration mismatch.
+  const store = activeStore;
 
   return (
     <header className="bg-white border-b border-slate-200 px-4 lg:px-6 h-12 flex items-center justify-between flex-shrink-0" style={{ boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>
