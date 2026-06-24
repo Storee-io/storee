@@ -373,6 +373,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     <>
       {/* Desktop sidebar */}
       <motion.aside
+        initial={false}
         animate={{ width: collapsed ? 72 : 256 }}
         transition={{ duration: 0.3 }}
         className="hidden lg:flex flex-col bg-white border-r border-slate-200 h-screen sticky top-0 overflow-hidden z-30"
