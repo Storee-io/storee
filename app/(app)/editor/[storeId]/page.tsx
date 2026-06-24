@@ -19,19 +19,24 @@ function EditorInner({ storeId }: { storeId: string }) {
   useEffect(() => setMounted(true), []);
 
   // Try to find the store by ID — never silently fall back to a different store.
-  // Priority: context stores → generatedStore → activeStore → localStorage fallback.
+  // Priority: context stores (full Supabase) → generatedStore → localStorage → activeStore with design.
+  // Do NOT use activeStore if it has no design — it may be the slim cookie store (SSR seed)
+  // which would render the editor with empty sections until the full store arrives.
   const store = (() => {
-    const fromContext =
-      stores.find(s => s.id === storeId) ||
-      (generatedStore?.id === storeId ? generatedStore : null) ||
-      (activeStore?.id === storeId ? activeStore : null);
-    if (fromContext) return fromContext;
+    // Full store from Supabase (most authoritative)
+    const fromStores = stores.find(s => s.id === storeId);
+    if (fromStores) return fromStores;
+    // New store from generation flow
+    if (generatedStore?.id === storeId) return generatedStore;
     // Only access localStorage after mount — keeps server/client render in sync.
-    if (!mounted) return null;
-    try {
-      const raw = localStorage.getItem(`storee_store_${storeId}`);
-      if (raw) return JSON.parse(raw);
-    } catch { /* ignore */ }
+    if (mounted) {
+      try {
+        const raw = localStorage.getItem(`storee_store_${storeId}`);
+        if (raw) return JSON.parse(raw);
+      } catch { /* ignore */ }
+    }
+    // activeStore from context — only if it has design (not the slim cookie store)
+    if (activeStore?.id === storeId && activeStore.design) return activeStore;
     return null;
   })();
 
