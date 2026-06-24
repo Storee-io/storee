@@ -5622,7 +5622,7 @@ function TkHeroStacked({ design, tt, primaryColor, device, onScrollToProducts, h
               <EditSpan field="ctaText" value={ctaText ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
             </button>
             {/* Collection pills */}
-            {collections.slice(0, 2).map(c => (
+            {collections.slice(0, 2).map((c, i) => (
               <span key={c.name} className="text-xs font-semibold px-3 py-1.5 rounded-full"
                 style={{ background: alpha(primaryColor, 0.1), color: primaryColor }}>
                 {editMode ? <><StyleOnlySpan field={`collections.${i}.emojiHtml`} value={c.emoji} htmlValue={c.emojiHtml} editMode={editMode} onFieldChange={onFieldChange} /> <StyleOnlySpan field={`collections.${i}.nameHtml`} value={c.name} htmlValue={c.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /></> : `${c.emoji} ${c.name}`}
