@@ -133,7 +133,24 @@ const CHART_WEIGHTS = [0.08, 0.11, 0.10, 0.15, 0.14, 0.20, 0.22];
 const STOCK_POOL = [24, 56, 112, 8, 45, 78, 34, 90];
 const SALES_SHARE = [0.40, 0.25, 0.20, 0.15];
 
-// Realistic price ranges for common product categories
+// Exchange rates: how many local units = 1 USD
+const EXCHANGE_RATES: Record<string, number> = {
+  USD: 1,
+  IDR: 15500,  // Indonesian Rupiah
+  SGD: 1.35,   // Singapore Dollar
+  MYR: 4.65,   // Malaysian Ringgit
+  PHP: 56,     // Philippine Peso
+  THB: 36,     // Thai Baht
+  VND: 24000,  // Vietnamese Dong
+  GBP: 0.79,   // British Pound
+  EUR: 0.92,   // Euro
+  AUD: 1.53,   // Australian Dollar
+  CAD: 1.36,   // Canadian Dollar
+  JPY: 150,    // Japanese Yen
+  CNY: 7.2,    // Chinese Yuan
+};
+
+// Realistic price ranges for common product categories (in USD)
 const PRICE_RANGES: Record<string, [number, number]> = {
   Rings: [150, 2000],
   Earrings: [50, 800],
@@ -155,7 +172,6 @@ const PRICE_RANGES: Record<string, [number, number]> = {
   'Cakes': [8, 20],
   'Charging': [30, 150],
   'Keyboard': [30, 150],
-  'Lighting': [40, 200],
   'Bags': [50, 400],
   'Clothing': [50, 300],
   'Camping': [30, 200],
@@ -165,8 +181,6 @@ const PRICE_RANGES: Record<string, [number, number]> = {
   'Plush': [15, 60],
   'Puzzles': [20, 100],
   'Outerwear': [200, 800],
-  'Bottoms': [100, 400],
-  'Tops': [50, 250],
   'Shoes': [100, 500],
   'Green Tea': [15, 50],
   'Herbal': [12, 40],
@@ -175,17 +189,23 @@ const PRICE_RANGES: Record<string, [number, number]> = {
   'Default': [10, 500],
 };
 
-function normalizePrice(price: number, category?: string): number {
-  // If price is already reasonable (under 10000), keep it
-  if (price < 10000) return price;
+function normalizePrice(price: number, category?: string, currencyCode?: string): number {
+  const rate = EXCHANGE_RATES[currencyCode || 'USD'] || 1;
+  const threshold = 10000 * rate;  // Adjust threshold based on currency
 
-  const range = PRICE_RANGES[category || 'Default'] || PRICE_RANGES.Default;
-  const [min, max] = range;
+  // If price is already reasonable for its currency, keep it
+  if (price < threshold) return price;
 
-  // If price is unrealistic, normalize to reasonable range
-  // Scale down if way too high, or use random value in range
-  if (price > 10000) {
-    return Math.floor(min + Math.random() * (max - min));
+  const usdRange = PRICE_RANGES[category || 'Default'] || PRICE_RANGES.Default;
+  const [usdMin, usdMax] = usdRange;
+
+  // Convert USD range to local currency
+  const localMin = Math.round(usdMin * rate);
+  const localMax = Math.round(usdMax * rate);
+
+  // Normalize to realistic range in local currency
+  if (price > threshold) {
+    return Math.floor(localMin + Math.random() * (localMax - localMin));
   }
 
   return price;
@@ -204,10 +224,12 @@ export function generateStoreData(store: Store): StoreData {
 
   const totalOrders = store.orders > 0 ? store.orders : 12;
 
+  const currencyCode = store.currency?.code ?? 'USD';
+
   const products: DashboardProduct[] = baseProducts.map((p, i) => ({
     id: p.id,
     name: p.name,
-    price: normalizePrice(p.price, p.category),
+    price: normalizePrice(p.price, p.category, currencyCode),
     image: p.image,
     category: p.category,
     badge: (p as { badge?: string }).badge,
