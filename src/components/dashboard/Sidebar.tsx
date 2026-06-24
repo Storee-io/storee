@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -96,19 +96,17 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center justify-between px-4 h-12 border-b border-slate-200 flex-shrink-0" style={{ boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>
-        {!isCollapsed && (
-          <Link href="/" className="flex items-center">
-            <Image
-              src="/logo-dark.png"
-              alt="Storee"
-              width={112}
-              height={32}
-              unoptimized
-              className="h-6 w-auto"
-              priority
-            />
-          </Link>
-        )}
+        <Link href="/" className="flex items-center flex-shrink-0">
+          <Image
+            src="/logo-dark.png"
+            alt="Storee"
+            width={112}
+            height={32}
+            unoptimized
+            className="h-6 w-auto"
+            priority
+          />
+        </Link>
         <button
           onClick={onToggle}
           className={`hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors ${isCollapsed ? 'mx-auto' : ''}`}
@@ -378,7 +376,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         transition={{ duration: 0.3 }}
         className="hidden lg:flex flex-col bg-white border-r border-slate-200 h-screen sticky top-0 overflow-hidden z-30"
       >
-        {renderSidebarContent(collapsed)}
+        {useMemo(() => renderSidebarContent(collapsed), [collapsed])}
       </motion.aside>
 
       {/* Mobile sidebar overlay */}
@@ -398,7 +396,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
               exit={{ x: -280 }}
               className="fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-slate-200 z-50 lg:hidden flex flex-col"
             >
-              {renderSidebarContent(false)}
+              {useMemo(() => renderSidebarContent(false), [])}
             </motion.aside>
           </>
         )}
