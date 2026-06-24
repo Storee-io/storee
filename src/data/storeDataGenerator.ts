@@ -222,22 +222,40 @@ export function generateStoreData(store: Store): StoreData {
 
   if (baseProducts.length === 0) return emptyStoreData();
 
-  const totalOrders = store.orders > 0 ? store.orders : 12;
-
   const currencyCode = store.currency?.code ?? 'USD';
 
-  const products: DashboardProduct[] = baseProducts.map((p, i) => ({
-    id: p.id,
-    name: p.name,
-    price: normalizePrice(p.price, p.category, currencyCode),
-    image: p.image,
-    category: p.category,
-    badge: (p as { badge?: string }).badge,
-    stock: STOCK_POOL[i % STOCK_POOL.length],
-    sales: Math.max(1, Math.round(totalOrders * SALES_SHARE[i % 4])),
-    status: 'Active' as const,
-  }));
+  const products: DashboardProduct[] = baseProducts.map((p, i) => {
+    // For draft stores, don't count sales; for published stores, use actual order count
+    const orderCount = store.status === 'Published' ? (store.orders > 0 ? store.orders : 12) : 0;
+    return {
+      id: p.id,
+      name: p.name,
+      price: normalizePrice(p.price, p.category, currencyCode),
+      image: p.image,
+      category: p.category,
+      badge: (p as { badge?: string }).badge,
+      stock: STOCK_POOL[i % STOCK_POOL.length],
+      sales: Math.max(1, Math.round(orderCount * SALES_SHARE[i % 4])),
+      status: 'Active' as const,
+    };
+  });
 
+  // Only generate orders, customers, and revenue for published stores
+  if (store.status !== 'Published') {
+    const revenueChart: ChartDataPoint[] = CHART_MONTHS.map(month => ({
+      month,
+      revenue: 0,
+      orders: 0,
+    }));
+    const collections: Collection[] = [
+      { id: 'col-1', name: 'Featured', emoji: '⭐' },
+      { id: 'col-2', name: 'Best Sellers', emoji: '🔥' },
+      { id: 'col-3', name: 'New Arrivals', emoji: '✨' },
+    ];
+    return { products, orders: [], customers: [], revenueChart, topProducts: [], collections };
+  }
+
+  const totalOrders = store.orders > 0 ? store.orders : 12;
   const totalRevenue = store.revenue > 0 ? store.revenue : products.reduce((s, p) => s + p.price * 3, 0);
 
   // Orders
