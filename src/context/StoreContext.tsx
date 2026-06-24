@@ -442,7 +442,6 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
   }, []);
 
   async function loadGuestStores() {
-    setIsLoadingActiveStore(true);
     try {
       const guestStores: Store[] = [];
 
@@ -516,7 +515,6 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
 
   async function loadStores(uid: string) {
     setIsLoadingStores(true);
-    setIsLoadingActiveStore(true);
     setUserId(uid);
     try {
       const userStores = await fetchUserStores(uid);
