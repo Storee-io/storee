@@ -120,7 +120,7 @@ export default function Customers() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search by name, email, or phone..."
-          className="pl-9"
+          className="pl-9 h-9 rounded-xl bg-white border-slate-200/60 text-sm placeholder:text-slate-400 focus-visible:ring-emerald-400/40 focus-visible:border-emerald-400"
         />
       </div>
 
