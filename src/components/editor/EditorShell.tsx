@@ -266,10 +266,16 @@ export default function EditorShell({ store, from }: Props) {
   const persistStoreRef = useRef<(() => Promise<void>) | null>(null);
   const lastFieldLabelRef = useRef<string | undefined>(undefined);
 
-  // Use store prop as base, but merge in publish-state updates from context.
-  // activeStore reflects status/domain/publishedDomain after handlePublishComplete.
+  // Use store prop as base, but overlay publish-state fields from context.
+  // Only status/domain/publishedDomain are merged — never design, which is managed
+  // via local editor state and would be overwritten by an older activeStore copy.
   const liveContextStore = (activeStore?.id === store.id)
-    ? { ...store, ...activeStore }
+    ? {
+        ...store,
+        status: activeStore.status,
+        domain: activeStore.domain,
+        publishedDomain: activeStore.publishedDomain,
+      }
     : store;
   const d = liveContextStore.design;
 
