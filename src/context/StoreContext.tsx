@@ -317,6 +317,36 @@ function initializeActiveStore(): Store {
   return DEMO_STORES[0];
 }
 
+/**
+ * Merge a fresh store list from Supabase into the current list.
+ * Preserves existing object references for stores whose display fields
+ * (name, status, domain) haven't changed — so React sees no diff for
+ * sidebar items that are visually identical, preventing unnecessary re-renders.
+ */
+function mergeStores(prev: Store[], next: Store[]): Store[] {
+  const prevMap = new Map(prev.map(s => [s.id, s]));
+  let changed = next.length !== prev.length;
+  const merged = next.map(s => {
+    const ex = prevMap.get(s.id);
+    if (ex && ex.name === s.name && ex.status === s.status && ex.domain === s.domain) return ex;
+    changed = true;
+    return s;
+  });
+  return changed ? merged : prev; // same reference = no re-render
+}
+
+/**
+ * Merge a fresh active store from Supabase into the current active store.
+ * If the same store is already active (same ID), only update `design` —
+ * identity fields (name, status, domain) from the cookie are already correct,
+ * and replacing them would cause a sidebar re-render with no visual benefit.
+ */
+function mergeActiveStore(prev: Store | null, next: Store): Store {
+  if (!prev || prev.id !== next.id) return next;      // different store — full replace
+  if (prev.design === next.design) return prev;        // nothing changed — same reference
+  return { ...prev, design: next.design };             // same store — only update design
+}
+
 function initializeStores(): Store[] {
   // Read all persisted stores from localStorage so the sidebar shows real stores
   // on first render instead of DEMO_STORES, eliminating the sidebar reload flash.
@@ -456,11 +486,11 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
 
       if (guestStores.length > 0) {
         const sorted = sortByLastUsed(guestStores);
-        setStores(sorted);
+        setStores(prev => mergeStores(prev, sorted));
         // Honor the store the user last accessed (ACTIVE_STORE_KEY); only fall
         // back to most-recently-used when that store isn't in the list.
         const active = pickActiveStore(sorted) ?? sorted[0];
-        setActiveStoreState(active);
+        setActiveStoreState(prev => mergeActiveStore(prev, active));
         setPrevStoreId(active.id);
         saveActiveStore(active);
         writeLastUsed(active.id);  // Dashboard view counts as accessing the store
@@ -490,10 +520,10 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
       const userStores = await fetchUserStores(uid);
       if (userStores.length > 0) {
         const sorted = sortByLastUsed(userStores);
-        setStores(sorted);
+        setStores(prev => mergeStores(prev, sorted));
         // Honor the store the user last accessed; fall back to most-recently-used.
         const active = pickActiveStore(sorted) ?? sorted[0];
-        setActiveStoreState(active);
+        setActiveStoreState(prev => mergeActiveStore(prev, active));
         setPrevStoreId(active.id);
         saveActiveStore(active);
         setIsLoadingActiveStore(false);
