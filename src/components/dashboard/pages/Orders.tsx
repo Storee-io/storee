@@ -428,10 +428,10 @@ export default function Orders() {
   };
 
   const stats = [
-    { label: 'Total Orders', value: String(counts.All),        icon: ShoppingBag,  iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
-    { label: 'Processing',   value: String(counts.Processing), icon: Clock,        iconBg: 'bg-amber-50',   iconColor: 'text-amber-600'   },
-    { label: 'Shipped',      value: String(counts.Shipped),    icon: Truck,        iconBg: 'bg-blue-50',    iconColor: 'text-blue-600'    },
-    { label: 'Completed',    value: String(counts.Completed),  icon: CheckCircle2, iconBg: 'bg-purple-50',  iconColor: 'text-purple-600'  },
+    { label: 'Total Orders', value: String(counts.All),        subtitle: 'in selected period', icon: ShoppingBag,  iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
+    { label: 'Processing',   value: String(counts.Processing), subtitle: 'awaiting shipment', icon: Clock,        iconBg: 'bg-amber-50',   iconColor: 'text-amber-600'   },
+    { label: 'Shipped',      value: String(counts.Shipped),    subtitle: 'in transit', icon: Truck,        iconBg: 'bg-blue-50',    iconColor: 'text-blue-600'    },
+    { label: 'Completed',    value: String(counts.Completed),  subtitle: 'delivered', icon: CheckCircle2, iconBg: 'bg-purple-50',  iconColor: 'text-purple-600'  },
   ];
 
   return (
@@ -477,6 +477,7 @@ export default function Orders() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-slate-900">{s.value}</p>
+                <p className="text-xs text-slate-500 mt-1">{s.subtitle}</p>
               </div>
             </div>
           ))

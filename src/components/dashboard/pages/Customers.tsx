@@ -49,9 +49,30 @@ export default function Customers() {
   const newCount = customers.filter((c: DashboardCustomer) => c.status === 'New').length;
 
   const stats = [
-    { label: 'Total Customers', value: String(customers.length), icon: Users,    iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
-    { label: 'VIP Customers',   value: String(vipCount),         icon: Crown,    iconBg: 'bg-purple-50',  iconColor: 'text-purple-600' },
-    { label: 'New This Month',  value: String(newCount),          icon: UserPlus, iconBg: 'bg-sky-50',     iconColor: 'text-sky-600' },
+    {
+      label: 'Total Customers',
+      value: String(customers.length),
+      subtitle: `${vipCount} VIP · ${newCount} new`,
+      icon: Users,
+      iconBg: 'bg-emerald-50',
+      iconColor: 'text-emerald-600',
+    },
+    {
+      label: 'VIP Customers',
+      value: String(vipCount),
+      subtitle: customers.length > 0 ? `${Math.round((vipCount / customers.length) * 100)}% of total` : '0% of total',
+      icon: Crown,
+      iconBg: 'bg-purple-50',
+      iconColor: 'text-purple-600',
+    },
+    {
+      label: 'New This Month',
+      value: String(newCount),
+      subtitle: 'since last month',
+      icon: UserPlus,
+      iconBg: 'bg-sky-50',
+      iconColor: 'text-sky-600',
+    },
   ];
 
   return (
@@ -85,6 +106,7 @@ export default function Customers() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-slate-900">{s.value}</p>
+                <p className="text-xs text-slate-500 mt-1">{s.subtitle}</p>
               </div>
             </div>
           ))
