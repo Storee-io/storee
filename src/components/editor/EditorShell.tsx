@@ -205,10 +205,14 @@ function deriveInitialSections(design: StoreDesign | undefined): SectionItem[] {
   // and cause Move Up/Down and drag to appear broken (swapping with invisible items).
   const layoutType = dt?.layoutType as string | undefined ?? '';
   const unsupported = LAYOUT_TYPE_UNSUPPORTED[layoutType] ?? new Set<string>();
+  // Token-based stores (designTokens / designSystem) store content inside the token
+  // structure, not at design.heroTitle etc. All derived sections are considered to have
+  // content — the AI generated them, so they're populated by definition.
+  const isTokenStore = !!(dt || ds);
   return order
     .filter(type => type in SECTION_META)
     .filter(type => !unsupported.has(type))
-    .map(type => ({ type, hasContent: sectionHasContent(type, design) }));
+    .map(type => ({ type, hasContent: isTokenStore ? true : sectionHasContent(type, design) }));
 }
 
 // â"€â"€ Edit mode CSS injector â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
