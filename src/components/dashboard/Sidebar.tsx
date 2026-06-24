@@ -74,11 +74,8 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const { orders } = useOrders();
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-
-  useEffect(() => { setIsMounted(true); }, []);
 
   const toggleExpand = (label: string) => {
     setExpandedItems(prev => {
@@ -132,8 +129,8 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           onClick={() => setStoreMenuOpen(!storeMenuOpen)}
           className="w-full flex items-center gap-3 px-3 py-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors group"
         >
-          {!isMounted ? (
-            /* Skeleton while hydrating */
+          {!activeStore ? (
+            /* Skeleton when no store available yet */
             <div className="flex items-center gap-3 w-full">
               <div className="w-7 h-7 rounded-lg bg-slate-200 animate-pulse flex-shrink-0" />
               {!isCollapsed && (
