@@ -127,7 +127,7 @@ export default function Customers() {
       {/* Table */}
       <div className="rounded-2xl border border-slate-200/60 overflow-hidden bg-white">
         <Table>
-          <TableHeader className="bg-slate-50">
+          <TableHeader className="bg-slate-100">
             <TableRow>
               <TableHead>Customer</TableHead>
               <TableHead>Phone</TableHead>
