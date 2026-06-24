@@ -484,12 +484,14 @@ export default function EditorShell({ store, from }: Props) {
     setFooterNote(ds?.footerNote ?? '');
     setElementOverrides(ds?.elementOverrides ?? {});
     setSectionItems(deriveInitialSections(ds));
-  // Only re-sync when the active store ID changes (switching stores).
-  // Do NOT include liveContextStore.design — it creates a new reference every render
-  // (StoreContext re-creates objects), which would reset sectionItems and other local
-  // edits on every render cycle.
+  // Re-sync when (a) store ID changes (switching stores) or (b) design arrives for the
+  // first time (slim cookie store → full Supabase store for same ID).
+  // !!design is a stable boolean — true once design exists, so it fires exactly once
+  // on the cookie→Supabase transition but never again during normal edits.
+  // Do NOT include liveContextStore.design itself — it's a new object reference every
+  // render and would reset local edits on every save cycle.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveContextStore.id]);
+  }, [liveContextStore.id, !!liveContextStore.design]);
 
   // â"€â"€ onFieldChange handler (called from canvas contenteditable) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
