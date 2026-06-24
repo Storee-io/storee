@@ -129,7 +129,7 @@ export default function Overview() {
         })}
       </div>
 
-      {/* Charts row — revenue/orders charts use cookie data, no design needed */}
+      {/* Charts row — all charts need design loaded to show fresh data */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue area chart */}
         <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-100">
@@ -137,7 +137,7 @@ export default function Overview() {
             <h3 className="font-bold text-slate-900">Revenue Overview</h3>
             <p className="text-xs text-slate-500 mt-0.5">Revenue trend for selected period</p>
           </div>
-          {isLoadingActiveStore ? <ChartSkeleton height="h-[200px]" /> : <ResponsiveContainer width="100%" height={200}>
+          {!hasDesign ? <ChartSkeleton height="h-[200px]" /> : <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={revenueChartData}>
               <defs>
                 <linearGradient id="colorRevDash" x1="0" y1="0" x2="0" y2="1">
@@ -163,7 +163,7 @@ export default function Overview() {
             <h3 className="font-bold text-slate-900">Orders</h3>
             <p className="text-xs text-slate-500 mt-0.5">Order volume trend</p>
           </div>
-          {isLoadingActiveStore ? <ChartSkeleton height="h-[200px]" /> : <ResponsiveContainer width="100%" height={200}>
+          {!hasDesign ? <ChartSkeleton height="h-[200px]" /> : <ResponsiveContainer width="100%" height={200}>
             <BarChart data={revenueChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
@@ -186,7 +186,7 @@ export default function Overview() {
             <button className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">View all</button>
           </div>
           <div className="space-y-3">
-            {(isLoadingActiveStore || !hasDesign) ? Array.from({ length: 5 }).map((_, i) => (
+            {!hasDesign ? Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 p-2">
                 <Skeleton className="w-9 h-9 rounded-xl flex-shrink-0" />
                 <div className="flex-1 space-y-1.5">
@@ -223,7 +223,7 @@ export default function Overview() {
             <button className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">View all</button>
           </div>
           <div className="space-y-3">
-            {(isLoadingActiveStore || !hasDesign) ? Array.from({ length: 5 }).map((_, i) => (
+            {!hasDesign ? Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3">
                 <Skeleton className="w-6 h-3" />
                 <div className="flex-1 space-y-1.5">
