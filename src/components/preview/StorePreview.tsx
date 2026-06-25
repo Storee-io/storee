@@ -1975,21 +1975,40 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     <div className="col-span-2">
                       <label style={lblStyle}>Full Address</label>
                       <textarea
-                        className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent resize-none"
-                        style={{ ...inpStyle, '--tw-ring-color': alpha(t.primary, 0.3), boxSizing: 'border-box' } as CSSProperties}
+                        className="w-full px-4 py-2.5 text-sm outline-none resize-none"
+                        style={inpStyle}
                         rows={2}
                         value={form.address}
                         onChange={set('address')}
+                        onFocus={e => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.boxShadow = `0 0 0 2px ${alpha(t.primary, 0.2)}`; }}
+                        onBlur={e => { e.currentTarget.style.borderColor = t.inputBorder; e.currentTarget.style.boxShadow = 'none'; }}
                         placeholder="Street name, number, district, subdistrict"
                       />
                     </div>
                     <div>
                       <label style={lblStyle}>City</label>
-                      <input className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.city} onChange={set('city')} placeholder="City" />
+                      <input
+                        className="w-full px-4 py-2.5 text-sm outline-none"
+                        style={inpStyle}
+                        value={form.city}
+                        onChange={set('city')}
+                        onFocus={e => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.boxShadow = `0 0 0 2px ${alpha(t.primary, 0.2)}`; }}
+                        onBlur={e => { e.currentTarget.style.borderColor = t.inputBorder; e.currentTarget.style.boxShadow = 'none'; }}
+                        placeholder="City"
+                      />
                     </div>
                     <div>
                       <label style={lblStyle}>Postal Code</label>
-                      <input className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.postal} onChange={set('postal')} placeholder="12345" maxLength={5} />
+                      <input
+                        className="w-full px-4 py-2.5 text-sm outline-none"
+                        style={inpStyle}
+                        value={form.postal}
+                        onChange={set('postal')}
+                        onFocus={e => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.boxShadow = `0 0 0 2px ${alpha(t.primary, 0.2)}`; }}
+                        onBlur={e => { e.currentTarget.style.borderColor = t.inputBorder; e.currentTarget.style.boxShadow = 'none'; }}
+                        placeholder="12345"
+                        maxLength={5}
+                      />
                     </div>
                     <div className="col-span-2">
                       <label style={lblStyle}>Province</label>
@@ -1997,8 +2016,10 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         <select
                           value={form.province}
                           onChange={set('province')}
-                          className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent appearance-none pr-8"
-                          style={{ ...inpStyle, '--tw-ring-color': alpha(t.primary, 0.3), boxSizing: 'border-box' } as CSSProperties}
+                          className="w-full px-4 py-2.5 text-sm outline-none appearance-none pr-8"
+                          style={inpStyle}
+                          onFocus={e => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.boxShadow = `0 0 0 2px ${alpha(t.primary, 0.2)}`; }}
+                          onBlur={e => { e.currentTarget.style.borderColor = t.inputBorder; e.currentTarget.style.boxShadow = 'none'; }}
                         >
                           <option value="">Select province...</option>
                           {INDONESIAN_PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
