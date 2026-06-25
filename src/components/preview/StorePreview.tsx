@@ -1858,16 +1858,25 @@ function PhoneCountrySelect({ selectedCode, onChangeCode, t }: {
   );
 }
 
-function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, layoutStyle, editMode, onFieldChange }: {
+function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, layoutStyle, editMode, onFieldChange, store }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
-  shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; layoutStyle?: string;
+  shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; layoutStyle?: string; store?: Store;
   onBack: () => void; onPlaceOrder: (paymentId: string, shippingId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => void; editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   const [form, setForm] = useState({ email: '', whatsapp: '', name: '', address: '', city: '', province: '', postal: '' });
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
   const [phoneCountryCode, setPhoneCountryCode] = useState(() => detectDefaultCountry());
-  const showAddressFields = form.name.trim().length > 0 && form.whatsapp.trim().length > 0 && form.email.trim().length > 0;
+
+  // Determine which contact fields are enabled
+  const contactFields = store?.checkoutSettings?.contactFields ?? 'both';
+  const showWhatsApp = contactFields === 'whatsapp' || contactFields === 'both';
+  const showEmail = contactFields === 'email' || contactFields === 'both';
+
+  // Show address fields when required fields are filled (based on enabled contact fields)
+  const showAddressFields = form.name.trim().length > 0 &&
+    (showWhatsApp ? form.whatsapp.trim().length > 0 : true) &&
+    (showEmail ? form.email.trim().length > 0 : true);
 
   const enabledPayments = (paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS).filter(m => m.enabled);
   const paymentMethods: PaymentMethod[] = enabledPayments.length > 0 ? enabledPayments : [
@@ -1927,40 +1936,29 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               </div>
 
               {/* Conditional contact fields based on store settings */}
-              {(() => {
-                const contactFields = store.checkoutSettings?.contactFields ?? 'both';
-                const showBoth = contactFields === 'both';
-                const showWhatsApp = contactFields === 'whatsapp' || showBoth;
-                const showEmail = contactFields === 'email' || showBoth;
-
-                return (
-                  <>
-                    {showWhatsApp && (
-                      <div className={showBoth ? '' : 'col-span-2'}>
-                        <label style={lblStyle}>WhatsApp</label>
-                        <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, background: t.inputBg, transition: 'border-color 0.15s, box-shadow 0.15s' }}
-                          ref={el => {
-                            if (!el) return;
-                            const inp = el.querySelector('input[type=tel]') as HTMLInputElement | null;
-                            if (!inp) return;
-                            inp.onfocus = () => { el.style.borderColor = t.primary; el.style.boxShadow = `0 0 0 2px ${alpha(t.primary, 0.2)}`; };
-                            inp.onblur  = () => { el.style.borderColor = t.inputBorder; el.style.boxShadow = 'none'; };
-                          }}
-                        >
-                          <PhoneCountrySelect selectedCode={phoneCountryCode} onChangeCode={setPhoneCountryCode} t={t} />
-                          <input type="tel" className="flex-1 min-w-0 text-sm outline-none" style={{ background: 'transparent', color: t.textPrimary, padding: '10px 12px' }} value={form.whatsapp} onChange={set('whatsapp')} placeholder="81234567890" />
-                        </div>
-                      </div>
-                    )}
-                    {showEmail && (
-                      <div className={showBoth ? '' : 'col-span-2'}>
-                        <label style={lblStyle}>Email</label>
-                        <input type="email" className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.email} onChange={set('email')} placeholder="name@email.com" />
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
+              {showWhatsApp && (
+                <div className={contactFields === 'both' ? '' : 'col-span-2'}>
+                  <label style={lblStyle}>WhatsApp</label>
+                  <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, background: t.inputBg, transition: 'border-color 0.15s, box-shadow 0.15s' }}
+                    ref={el => {
+                      if (!el) return;
+                      const inp = el.querySelector('input[type=tel]') as HTMLInputElement | null;
+                      if (!inp) return;
+                      inp.onfocus = () => { el.style.borderColor = t.primary; el.style.boxShadow = `0 0 0 2px ${alpha(t.primary, 0.2)}`; };
+                      inp.onblur  = () => { el.style.borderColor = t.inputBorder; el.style.boxShadow = 'none'; };
+                    }}
+                  >
+                    <PhoneCountrySelect selectedCode={phoneCountryCode} onChangeCode={setPhoneCountryCode} t={t} />
+                    <input type="tel" className="flex-1 min-w-0 text-sm outline-none" style={{ background: 'transparent', color: t.textPrimary, padding: '10px 12px' }} value={form.whatsapp} onChange={set('whatsapp')} placeholder="81234567890" />
+                  </div>
+                </div>
+              )}
+              {showEmail && (
+                <div className={contactFields === 'both' ? '' : 'col-span-2'}>
+                  <label style={lblStyle}>Email</label>
+                  <input type="email" className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.email} onChange={set('email')} placeholder="name@email.com" />
+                </div>
+              )}
 
               {/* Revealed after name + whatsapp + email are filled */}
               <AnimatePresence>
@@ -9145,7 +9143,7 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
   } else if (page === 'cart') {
     content = <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} onBack={() => setPage('home')} onCheckout={() => setPage('checkout')} onUpdateQty={updateQty} editMode={editMode} onFieldChange={onFieldChange} />;
   } else if (page === 'checkout') {
-    content = <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} paymentSettings={paymentSettings} layoutStyle={design?.layoutStyle} onBack={() => setPage('cart')} onPlaceOrder={async (pid, sid, customer) => { setSelectedPaymentId(pid); setSelectedShippingId(sid); await saveOrder(pid, sid, customer); setPage('success'); }} editMode={editMode} onFieldChange={onFieldChange} />;
+    content = <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} paymentSettings={paymentSettings} layoutStyle={design?.layoutStyle} onBack={() => setPage('cart')} onPlaceOrder={async (pid, sid, customer) => { setSelectedPaymentId(pid); setSelectedShippingId(sid); await saveOrder(pid, sid, customer); setPage('success'); }} editMode={editMode} onFieldChange={onFieldChange} store={store} />;
   } else if (page === 'success') {
     content = <SuccessPage primaryColor={primaryColor} storeName={storeName} orderNum={orderNum} total={cartTotal + shippingCost} fmtPrice={fmtPrice} paymentSettings={paymentSettings} selectedPaymentId={selectedPaymentId} layoutStyle={design?.layoutStyle} onContinue={() => { clearCart(); setPage('home'); }} buyerUser={buyerUser} onShowAuth={() => setShowAuthModal(true)} onMyOrders={() => setPage('myorders')} editMode={editMode} onFieldChange={onFieldChange} />;
   } else if (page === 'myorders' && buyerUser) {
