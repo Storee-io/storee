@@ -66,6 +66,7 @@ interface StoreRow {
   audience: string | null;
   shipping_settings: Store['shippingSettings'] | null;
   payment_settings: Store['paymentSettings'] | null;
+  checkout_settings: Store['checkoutSettings'] | null;
   custom_domain: string | null;
   published_domain: string | null;
   created_at: string;
@@ -95,6 +96,7 @@ export function rowToStore(row: StoreRow): Store {
     audience: row.audience ?? undefined,
     shippingSettings: row.shipping_settings ?? undefined,
     paymentSettings: row.payment_settings ?? undefined,
+    checkoutSettings: row.checkout_settings ?? undefined,
     customDomain: row.custom_domain ?? undefined,
     publishedDomain: row.published_domain ?? undefined,
     lastUsedAt: row.last_used_at ?? undefined,
@@ -121,6 +123,7 @@ export function storeToRow(store: Store, userId: string): Omit<StoreRow, 'update
     audience: store.audience ?? null,
     shipping_settings: store.shippingSettings ?? null,
     payment_settings: store.paymentSettings ?? null,
+    checkout_settings: store.checkoutSettings ?? null,
     custom_domain: store.customDomain ?? null,
     published_domain: store.publishedDomain ?? null,
     created_at: store.createdAt,
