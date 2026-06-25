@@ -1903,7 +1903,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const isTablet = device === 'tablet';
   const selectedPayment = paymentMethods.find(m => m.id === selectedPayId);
   const t = getCommerceTheme(primaryColor, layoutStyle);
-  const inpStyle: CSSProperties = { background: t.inputBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties;
+  const inpStyle: CSSProperties = { background: t.inputBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3), boxSizing: 'border-box' } as CSSProperties;
   const lblStyle: CSSProperties = { color: t.textSecondary, fontSize: '0.75rem', fontWeight: 600, marginBottom: '6px', display: 'block' };
 
   return (
@@ -1976,7 +1976,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       <label style={lblStyle}>Full Address</label>
                       <textarea
                         className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent resize-none"
-                        style={{ ...inpStyle, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}
+                        style={{ ...inpStyle, '--tw-ring-color': alpha(t.primary, 0.3), boxSizing: 'border-box' } as CSSProperties}
                         rows={2}
                         value={form.address}
                         onChange={set('address')}
@@ -1998,7 +1998,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           value={form.province}
                           onChange={set('province')}
                           className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent appearance-none pr-8"
-                          style={{ ...inpStyle, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}
+                          style={{ ...inpStyle, '--tw-ring-color': alpha(t.primary, 0.3), boxSizing: 'border-box' } as CSSProperties}
                         >
                           <option value="">Select province...</option>
                           {INDONESIAN_PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
