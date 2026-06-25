@@ -1903,8 +1903,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const isTablet = device === 'tablet';
   const selectedPayment = paymentMethods.find(m => m.id === selectedPayId);
   const t = getCommerceTheme(primaryColor, layoutStyle);
-  const inpBg = alpha(t.primary, 0.01);
-  const inpStyle: CSSProperties = { background: inpBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3), boxSizing: 'border-box' } as CSSProperties;
+  const inpStyle: CSSProperties = { background: t.inputBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3), boxSizing: 'border-box' } as CSSProperties;
   const lblStyle: CSSProperties = { color: t.textSecondary, fontSize: '0.75rem', fontWeight: 600, marginBottom: '6px', display: 'block' };
 
   return (
@@ -1935,7 +1934,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 <label style={lblStyle}>Full Name</label>
                 <input className="w-full px-4 py-2.5 text-sm outline-none" style={inpStyle} value={form.name} onChange={set('name')} placeholder="Recipient full name"
                   onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(t.primary, 0.05); }}
-                  onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = inpBg; }}
+                  onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
                 />
               </div>
 
@@ -1943,13 +1942,13 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               {showWhatsApp && (
                 <div className={contactFields === 'both' ? '' : 'col-span-2'}>
                   <label style={lblStyle}>WhatsApp</label>
-                  <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, background: inpBg, transition: 'border-color 0.15s, outline 0.15s' }}
+                  <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, background: t.inputBg, transition: 'border-color 0.15s, outline 0.15s' }}
                     ref={el => {
                       if (!el) return;
                       const inp = el.querySelector('input[type=tel]') as HTMLInputElement | null;
                       if (!inp) return;
                       inp.onfocus = () => { el.style.outline = `2px solid ${t.primary}`; el.style.outlineOffset = '-2px'; el.style.background = alpha(t.primary, 0.05); };
-                      inp.onblur  = () => { el.style.outline = 'none'; el.style.outlineOffset = '0'; el.style.background = inpBg; };
+                      inp.onblur  = () => { el.style.outline = 'none'; el.style.outlineOffset = '0'; el.style.background = t.inputBg; };
                     }}
                   >
                     <PhoneCountrySelect selectedCode={phoneCountryCode} onChangeCode={setPhoneCountryCode} t={t} />
@@ -1962,7 +1961,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   <label style={lblStyle}>Email</label>
                   <input type="email" className="w-full px-4 py-2.5 text-sm outline-none" style={inpStyle} value={form.email} onChange={set('email')} placeholder="name@email.com"
                     onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(t.primary, 0.05); }}
-                    onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = inpBg; }}
+                    onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
                   />
                 </div>
               )}
@@ -1988,7 +1987,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         value={form.address}
                         onChange={set('address')}
                         onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(t.primary, 0.05); }}
-                        onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = inpBg; }}
+                        onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
                         placeholder="Street name, number, district, subdistrict"
                       />
                     </div>
