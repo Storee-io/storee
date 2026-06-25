@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import {
   Store, Globe, CreditCard, Truck, Check, DollarSign, Languages, ArrowRight, Link2,
-  CloudOff, Trash2, AlertTriangle, X, MessageSquare, Mail,
+  CloudOff, Trash2, AlertTriangle, X, MessageSquare, Mail, Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useStore } from '../../../context/StoreContext';
@@ -50,6 +51,7 @@ export default function StoreSettings() {
   );
   const [showUnpublishConfirm, setShowUnpublishConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [contactFields, setContactFields] = useState<'whatsapp' | 'email' | 'both'>(
     activeStore?.checkoutSettings?.contactFields ?? 'both'
   );
@@ -63,14 +65,24 @@ export default function StoreSettings() {
     setContactFields(activeStore?.checkoutSettings?.contactFields ?? 'both');
   }, [activeStore?.id]);
 
-  const save = () => {
-    updateActiveStore({
-      name: storeName,
-      description: storeDesc,
-      email: storeEmail,
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const save = async () => {
+    setIsSaving(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 300)); // minimum visual feedback
+      updateActiveStore({
+        name: storeName,
+        description: storeDesc,
+        email: storeEmail,
+      });
+      toast.success('Settings saved successfully');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to save settings');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleUnpublish = async () => {
@@ -105,9 +117,16 @@ export default function StoreSettings() {
         </div>
         <button
           onClick={save}
-          className="flex items-center gap-2 px-5 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90"
+          disabled={isSaving}
+          className="flex items-center gap-2 px-5 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
         >
-          {saved ? <><Check className="w-4 h-4" />Saved!</> : 'Save Changes'}
+          {isSaving ? (
+            <><Loader2 className="w-4 h-4 animate-spin" />Saving...</>
+          ) : saved ? (
+            <><Check className="w-4 h-4" />Saved!</>
+          ) : (
+            'Save Changes'
+          )}
         </button>
       </div>
 
@@ -150,7 +169,11 @@ export default function StoreSettings() {
           {currencies.map(curr => (
             <button
               key={curr.code}
-              onClick={() => { setSelectedCurrency(curr); updateActiveStore({ currency: curr }); }}
+              onClick={() => {
+                setSelectedCurrency(curr);
+                updateActiveStore({ currency: curr });
+                toast.success(`Currency changed to ${curr.code}`);
+              }}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
                 selectedCurrency.code === curr.code
                   ? 'border-emerald-400 bg-emerald-50 text-emerald-800'
@@ -187,7 +210,11 @@ export default function StoreSettings() {
           {languages.map(lang => (
             <button
               key={lang.code}
-              onClick={() => { setSelectedLanguage(lang); updateActiveStore({ language: lang.label }); }}
+              onClick={() => {
+                setSelectedLanguage(lang);
+                updateActiveStore({ language: lang.label });
+                toast.success(`Language changed to ${lang.label}`);
+              }}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
                 selectedLanguage.code === lang.code
                   ? 'border-emerald-400 bg-emerald-50 text-emerald-800'
@@ -217,8 +244,13 @@ export default function StoreSettings() {
         </div>
         <div className="grid grid-cols-3 gap-2">
           <button
-            onClick={() => { setContactFields('whatsapp'); updateActiveStore({ checkoutSettings: { contactFields: 'whatsapp' } }); save(); }}
-            className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-left transition-all ${
+            onClick={() => {
+              setContactFields('whatsapp');
+              updateActiveStore({ checkoutSettings: { contactFields: 'whatsapp' } });
+              setTimeout(() => toast.success('Checkout settings updated'), 100);
+            }}
+            disabled={isSaving}
+            className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-left transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
               contactFields === 'whatsapp'
                 ? 'border-emerald-400 bg-emerald-50 text-emerald-800'
                 : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white text-slate-700'
@@ -231,8 +263,13 @@ export default function StoreSettings() {
             )}
           </button>
           <button
-            onClick={() => { setContactFields('email'); updateActiveStore({ checkoutSettings: { contactFields: 'email' } }); save(); }}
-            className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-left transition-all ${
+            onClick={() => {
+              setContactFields('email');
+              updateActiveStore({ checkoutSettings: { contactFields: 'email' } });
+              setTimeout(() => toast.success('Checkout settings updated'), 100);
+            }}
+            disabled={isSaving}
+            className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-left transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
               contactFields === 'email'
                 ? 'border-emerald-400 bg-emerald-50 text-emerald-800'
                 : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white text-slate-700'
@@ -245,8 +282,13 @@ export default function StoreSettings() {
             )}
           </button>
           <button
-            onClick={() => { setContactFields('both'); updateActiveStore({ checkoutSettings: { contactFields: 'both' } }); save(); }}
-            className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-left transition-all ${
+            onClick={() => {
+              setContactFields('both');
+              updateActiveStore({ checkoutSettings: { contactFields: 'both' } });
+              setTimeout(() => toast.success('Checkout settings updated'), 100);
+            }}
+            disabled={isSaving}
+            className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-left transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
               contactFields === 'both'
                 ? 'border-emerald-400 bg-emerald-50 text-emerald-800'
                 : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white text-slate-700'
