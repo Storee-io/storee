@@ -119,6 +119,8 @@ export const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [
 export interface Store {
   id: string;
   name: string;
+  description?: string;
+  email?: string;
   domain: string;
   status: 'Draft' | 'Published';
   template?: Template;

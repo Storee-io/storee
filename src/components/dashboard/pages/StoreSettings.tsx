@@ -40,7 +40,8 @@ export default function StoreSettings() {
   const router = useRouter();
   const [saved, setSaved] = useState(false);
   const [storeName, setStoreName] = useState(activeStore?.name || '');
-  const [storeDesc, setStoreDesc] = useState('Premium quality products for your lifestyle');
+  const [storeDesc, setStoreDesc] = useState(activeStore?.description || 'Premium quality products for your lifestyle');
+  const [storeEmail, setStoreEmail] = useState(activeStore?.email || 'hello@mystore.com');
   const [selectedCurrency, setSelectedCurrency] = useState(
     activeStore?.currency ?? currencies[0]
   );
@@ -55,12 +56,19 @@ export default function StoreSettings() {
 
   useEffect(() => {
     setStoreName(activeStore?.name || '');
+    setStoreDesc(activeStore?.description || 'Premium quality products for your lifestyle');
+    setStoreEmail(activeStore?.email || 'hello@mystore.com');
     setSelectedCurrency(activeStore?.currency ?? currencies[0]);
     setSelectedLanguage(languages.find(l => l.label === activeStore?.language) ?? languages[0]);
     setContactFields(activeStore?.checkoutSettings?.contactFields ?? 'both');
   }, [activeStore?.id]);
 
   const save = () => {
+    updateActiveStore({
+      name: storeName,
+      description: storeDesc,
+      email: storeEmail,
+    });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -122,7 +130,7 @@ export default function StoreSettings() {
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Store Email</label>
-            <input type="email" defaultValue="hello@mystore.com" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
+            <input type="email" value={storeEmail} onChange={e => setStoreEmail(e.target.value)} className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
           </div>
         </div>
       </div>

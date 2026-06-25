@@ -51,6 +51,8 @@ interface StoreRow {
   id: string;
   user_id: string;
   name: string;
+  description: string | null;
+  email: string | null;
   domain: string;
   status: string;
   primary_color: string;
@@ -80,6 +82,8 @@ export function rowToStore(row: StoreRow): Store {
   return {
     id: row.id,
     name: row.name,
+    description: row.description ?? undefined,
+    email: row.email ?? undefined,
     domain: row.domain,
     status: row.status as Store['status'],
     primaryColor: row.primary_color,
@@ -108,6 +112,8 @@ export function storeToRow(store: Store, userId: string): Omit<StoreRow, 'update
     id: store.id,
     user_id: userId,
     name: store.name,
+    description: store.description ?? null,
+    email: store.email ?? null,
     domain: store.domain,
     status: store.status,
     primary_color: store.primaryColor,
