@@ -1975,11 +1975,13 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     <div className="col-span-2">
                       <label style={lblStyle}>Full Address</label>
                       <textarea
-                        className="w-full px-4 py-2.5 text-sm outline-none resize-none"
-                        style={inpStyle}
+                        className="w-full px-4 py-2.5 text-sm resize-none"
+                        style={{ ...inpStyle, outline: 'none' }}
                         rows={2}
                         value={form.address}
                         onChange={set('address')}
+                        onFocus={e => { e.currentTarget.style.outline = `2px solid ${alpha(t.primary, 0.5)}`; e.currentTarget.style.outlineOffset = '-1px'; e.currentTarget.style.borderColor = t.primary; }}
+                        onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.borderColor = t.inputBorder; }}
                         placeholder="Street name, number, district, subdistrict"
                       />
                     </div>
