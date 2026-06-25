@@ -18,6 +18,15 @@ function EditorInner({ storeId }: { storeId: string }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  // Always wait for mount so server and client render the same initial HTML (spinner).
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
   // Try to find the store by ID — never silently fall back to a different store.
   // Priority: context stores (full Supabase) → generatedStore → localStorage → activeStore with design.
   // Do NOT use activeStore if it has no design — it may be the slim cookie store (SSR seed)
