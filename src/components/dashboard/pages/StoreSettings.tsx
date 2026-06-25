@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Store, Globe, CreditCard, Truck, Check, DollarSign, Languages, ArrowRight, Link2,
-  CloudOff, Trash2, AlertTriangle, X,
+  CloudOff, Trash2, AlertTriangle, X, MessageSquare, Mail,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useStore } from '../../../context/StoreContext';
@@ -49,11 +49,15 @@ export default function StoreSettings() {
   );
   const [showUnpublishConfirm, setShowUnpublishConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [contactFields, setContactFields] = useState<'whatsapp' | 'email' | 'both'>(
+    activeStore?.checkoutSettings?.contactFields ?? 'both'
+  );
 
   useEffect(() => {
     setStoreName(activeStore?.name || '');
     setSelectedCurrency(activeStore?.currency ?? currencies[0]);
     setSelectedLanguage(languages.find(l => l.label === activeStore?.language) ?? languages[0]);
+    setContactFields(activeStore?.checkoutSettings?.contactFields ?? 'both');
   }, [activeStore?.id]);
 
   const save = () => {
@@ -189,6 +193,66 @@ export default function StoreSettings() {
               )}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Checkout Settings */}
+      <div className="bg-white rounded-2xl p-6 border border-slate-200">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
+            <MessageSquare className="w-4 h-4 text-slate-600" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900">Checkout Contact Fields</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Choose which contact method(s) to display</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            onClick={() => { setContactFields('whatsapp'); updateActiveStore({ checkoutSettings: { contactFields: 'whatsapp' } }); save(); }}
+            className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-left transition-all ${
+              contactFields === 'whatsapp'
+                ? 'border-emerald-400 bg-emerald-50 text-emerald-800'
+                : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white text-slate-700'
+            }`}
+          >
+            <MessageSquare className={`w-4 h-4 flex-shrink-0 ${contactFields === 'whatsapp' ? 'text-emerald-600' : 'text-slate-500'}`} />
+            <span className="text-sm font-medium">WhatsApp Only</span>
+            {contactFields === 'whatsapp' && (
+              <Check className="w-4 h-4 text-emerald-500 ml-auto flex-shrink-0" />
+            )}
+          </button>
+          <button
+            onClick={() => { setContactFields('email'); updateActiveStore({ checkoutSettings: { contactFields: 'email' } }); save(); }}
+            className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-left transition-all ${
+              contactFields === 'email'
+                ? 'border-emerald-400 bg-emerald-50 text-emerald-800'
+                : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white text-slate-700'
+            }`}
+          >
+            <Mail className={`w-4 h-4 flex-shrink-0 ${contactFields === 'email' ? 'text-emerald-600' : 'text-slate-500'}`} />
+            <span className="text-sm font-medium">Email Only</span>
+            {contactFields === 'email' && (
+              <Check className="w-4 h-4 text-emerald-500 ml-auto flex-shrink-0" />
+            )}
+          </button>
+          <button
+            onClick={() => { setContactFields('both'); updateActiveStore({ checkoutSettings: { contactFields: 'both' } }); save(); }}
+            className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-left transition-all ${
+              contactFields === 'both'
+                ? 'border-emerald-400 bg-emerald-50 text-emerald-800'
+                : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white text-slate-700'
+            }`}
+          >
+            <div className="flex gap-0.5 flex-shrink-0">
+              <MessageSquare className={`w-4 h-4 ${contactFields === 'both' ? 'text-emerald-600' : 'text-slate-500'}`} />
+              <Mail className={`w-4 h-4 ${contactFields === 'both' ? 'text-emerald-600' : 'text-slate-500'}`} />
+            </div>
+            <span className="text-sm font-medium">Both</span>
+            {contactFields === 'both' && (
+              <Check className="w-4 h-4 text-emerald-500 ml-auto flex-shrink-0" />
+            )}
+          </button>
         </div>
       </div>
 
