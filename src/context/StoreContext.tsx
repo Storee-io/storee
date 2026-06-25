@@ -14,6 +14,10 @@ export type { StoreData };
 export type { StoreDesign };
 export type { AdvancedOptions };
 
+export interface CheckoutSettings {
+  contactFields: 'whatsapp' | 'email' | 'both'; // Which contact fields to show on checkout
+}
+
 export interface StoreCurrency {
   code: string;
   symbol: string;
@@ -129,6 +133,7 @@ export interface Store {
   language?: string;
   shippingSettings?: ShippingSettings;
   paymentSettings?: PaymentSettings;
+  checkoutSettings?: CheckoutSettings; // Customize checkout form (contact fields, etc.)
   publishedDomain?: string; // set once on first publish; used to lock URL on republish
   // Appearance preferences
   font?: string;

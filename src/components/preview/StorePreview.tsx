@@ -1920,30 +1920,47 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Customer Details</h3>
             </div>
             <div className="p-5 grid grid-cols-2 gap-3">
-              {/* Always visible: Name, WhatsApp, Email */}
+              {/* Always visible: Name */}
               <div className="col-span-2">
                 <label style={lblStyle}>Full Name</label>
                 <input className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.name} onChange={set('name')} placeholder="Recipient full name" />
               </div>
-              <div>
-                <label style={lblStyle}>WhatsApp</label>
-                <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, background: t.inputBg, transition: 'border-color 0.15s, box-shadow 0.15s' }}
-                  ref={el => {
-                    if (!el) return;
-                    const inp = el.querySelector('input[type=tel]') as HTMLInputElement | null;
-                    if (!inp) return;
-                    inp.onfocus = () => { el.style.borderColor = t.primary; el.style.boxShadow = `0 0 0 2px ${alpha(t.primary, 0.2)}`; };
-                    inp.onblur  = () => { el.style.borderColor = t.inputBorder; el.style.boxShadow = 'none'; };
-                  }}
-                >
-                  <PhoneCountrySelect selectedCode={phoneCountryCode} onChangeCode={setPhoneCountryCode} t={t} />
-                  <input type="tel" className="flex-1 min-w-0 text-sm outline-none" style={{ background: 'transparent', color: t.textPrimary, padding: '10px 12px' }} value={form.whatsapp} onChange={set('whatsapp')} placeholder="81234567890" />
-                </div>
-              </div>
-              <div>
-                <label style={lblStyle}>Email</label>
-                <input type="email" className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.email} onChange={set('email')} placeholder="name@email.com" />
-              </div>
+
+              {/* Conditional contact fields based on store settings */}
+              {(() => {
+                const contactFields = store.checkoutSettings?.contactFields ?? 'both';
+                const showBoth = contactFields === 'both';
+                const showWhatsApp = contactFields === 'whatsapp' || showBoth;
+                const showEmail = contactFields === 'email' || showBoth;
+
+                return (
+                  <>
+                    {showWhatsApp && (
+                      <div className={showBoth ? '' : 'col-span-2'}>
+                        <label style={lblStyle}>WhatsApp</label>
+                        <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, background: t.inputBg, transition: 'border-color 0.15s, box-shadow 0.15s' }}
+                          ref={el => {
+                            if (!el) return;
+                            const inp = el.querySelector('input[type=tel]') as HTMLInputElement | null;
+                            if (!inp) return;
+                            inp.onfocus = () => { el.style.borderColor = t.primary; el.style.boxShadow = `0 0 0 2px ${alpha(t.primary, 0.2)}`; };
+                            inp.onblur  = () => { el.style.borderColor = t.inputBorder; el.style.boxShadow = 'none'; };
+                          }}
+                        >
+                          <PhoneCountrySelect selectedCode={phoneCountryCode} onChangeCode={setPhoneCountryCode} t={t} />
+                          <input type="tel" className="flex-1 min-w-0 text-sm outline-none" style={{ background: 'transparent', color: t.textPrimary, padding: '10px 12px' }} value={form.whatsapp} onChange={set('whatsapp')} placeholder="81234567890" />
+                        </div>
+                      </div>
+                    )}
+                    {showEmail && (
+                      <div className={showBoth ? '' : 'col-span-2'}>
+                        <label style={lblStyle}>Email</label>
+                        <input type="email" className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.email} onChange={set('email')} placeholder="name@email.com" />
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
 
               {/* Revealed after name + whatsapp + email are filled */}
               <AnimatePresence>
