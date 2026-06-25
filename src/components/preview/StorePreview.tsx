@@ -1980,8 +1980,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         rows={2}
                         value={form.address}
                         onChange={set('address')}
-                        onFocus={e => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.boxShadow = `0 0 0 2px ${alpha(t.primary, 0.2)}`; }}
-                        onBlur={e => { e.currentTarget.style.borderColor = t.inputBorder; e.currentTarget.style.boxShadow = 'none'; }}
                         placeholder="Street name, number, district, subdistrict"
                       />
                     </div>
@@ -1992,8 +1990,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         style={inpStyle}
                         value={form.city}
                         onChange={set('city')}
-                        onFocus={e => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.boxShadow = `0 0 0 2px ${alpha(t.primary, 0.2)}`; }}
-                        onBlur={e => { e.currentTarget.style.borderColor = t.inputBorder; e.currentTarget.style.boxShadow = 'none'; }}
                         placeholder="City"
                       />
                     </div>
@@ -2004,8 +2000,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         style={inpStyle}
                         value={form.postal}
                         onChange={set('postal')}
-                        onFocus={e => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.boxShadow = `0 0 0 2px ${alpha(t.primary, 0.2)}`; }}
-                        onBlur={e => { e.currentTarget.style.borderColor = t.inputBorder; e.currentTarget.style.boxShadow = 'none'; }}
                         placeholder="12345"
                         maxLength={5}
                       />
@@ -2018,8 +2012,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           onChange={set('province')}
                           className="w-full px-4 py-2.5 text-sm outline-none appearance-none pr-8"
                           style={inpStyle}
-                          onFocus={e => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.boxShadow = `0 0 0 2px ${alpha(t.primary, 0.2)}`; }}
-                          onBlur={e => { e.currentTarget.style.borderColor = t.inputBorder; e.currentTarget.style.boxShadow = 'none'; }}
                         >
                           <option value="">Select province...</option>
                           {INDONESIAN_PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
