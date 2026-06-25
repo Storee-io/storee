@@ -1939,7 +1939,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               <div className="col-span-2">
                 <label style={lblStyle}>Full Name</label>
                 <input className="w-full px-4 py-2.5 text-sm outline-none" style={inpStyle} value={form.name} onChange={set('name')} placeholder="Recipient full name"
-                  onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 1.0), 1.0); }}
+                  onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.1), 0.1); }}
                   onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
                 />
               </div>
@@ -1953,7 +1953,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       if (!el) return;
                       const inp = el.querySelector('input[type=tel]') as HTMLInputElement | null;
                       if (!inp) return;
-                      inp.onfocus = () => { el.style.outline = `2px solid ${t.primary}`; el.style.outlineOffset = '-2px'; el.style.background = alpha(lighten(t.pageBg, 1.0), 1.0); };
+                      inp.onfocus = () => { el.style.outline = `2px solid ${t.primary}`; el.style.outlineOffset = '-2px'; el.style.background = alpha(lighten(t.pageBg, 0.1), 0.1); };
                       inp.onblur  = () => { el.style.outline = 'none'; el.style.outlineOffset = '0'; el.style.background = t.inputBg; };
                     }}
                   >
@@ -1966,7 +1966,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 <div className={contactFields === 'both' ? '' : 'col-span-2'}>
                   <label style={lblStyle}>Email</label>
                   <input type="email" className="w-full px-4 py-2.5 text-sm outline-none" style={inpStyle} value={form.email} onChange={set('email')} placeholder="name@email.com"
-                    onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 1.0), 1.0); }}
+                    onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.1), 0.1); }}
                     onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
                   />
                 </div>
@@ -1992,7 +1992,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         rows={2}
                         value={form.address}
                         onChange={set('address')}
-                        onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 1.0), 1.0); }}
+                        onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.1), 0.1); }}
                         onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
                         placeholder="Street name, number, district, subdistrict"
                       />
