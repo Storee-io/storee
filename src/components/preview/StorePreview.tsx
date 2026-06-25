@@ -1999,6 +1999,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         value={form.city}
                         onChange={set('city')}
                         placeholder="City"
+                        onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
+                        onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
                       />
                     </div>
                     <div>
@@ -2010,6 +2012,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         onChange={set('postal')}
                         placeholder="12345"
                         maxLength={5}
+                        onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
+                        onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
                       />
                     </div>
                     <div className="col-span-2">
@@ -2020,6 +2024,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           onChange={set('province')}
                           className="w-full px-4 py-2.5 text-sm outline-none appearance-none pr-8"
                           style={inpStyle}
+                          onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
+                          onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
                         >
                           <option value="">Select province...</option>
                           {INDONESIAN_PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
