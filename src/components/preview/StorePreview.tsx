@@ -1980,8 +1980,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         rows={2}
                         value={form.address}
                         onChange={set('address')}
-                        onFocus={e => { e.currentTarget.style.outline = `2px solid ${alpha(t.primary, 0.3)}`; e.currentTarget.style.outlineOffset = '2px'; e.currentTarget.style.borderColor = 'transparent'; }}
-                        onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.borderColor = t.inputBorder; }}
+                        onFocus={e => { e.currentTarget.style.outline = `2px solid ${alpha(t.primary, 0.4)}`; e.currentTarget.style.outlineOffset = '-2px'; }}
+                        onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
                         placeholder="Street name, number, district, subdistrict"
                       />
                     </div>
