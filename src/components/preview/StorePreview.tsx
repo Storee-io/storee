@@ -1932,20 +1932,23 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               {/* Always visible: Name */}
               <div className="col-span-2">
                 <label style={lblStyle}>Full Name</label>
-                <input className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.name} onChange={set('name')} placeholder="Recipient full name" />
+                <input className="w-full px-4 py-2.5 text-sm outline-none" style={inpStyle} value={form.name} onChange={set('name')} placeholder="Recipient full name"
+                  onFocus={e => { e.currentTarget.style.outline = `2px solid ${alpha(t.primary, 0.4)}`; e.currentTarget.style.outlineOffset = '-2px'; }}
+                  onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
+                />
               </div>
 
               {/* Conditional contact fields based on store settings */}
               {showWhatsApp && (
                 <div className={contactFields === 'both' ? '' : 'col-span-2'}>
                   <label style={lblStyle}>WhatsApp</label>
-                  <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, background: t.inputBg, transition: 'border-color 0.15s, box-shadow 0.15s' }}
+                  <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, background: t.inputBg, transition: 'border-color 0.15s, outline 0.15s' }}
                     ref={el => {
                       if (!el) return;
                       const inp = el.querySelector('input[type=tel]') as HTMLInputElement | null;
                       if (!inp) return;
-                      inp.onfocus = () => { el.style.borderColor = t.primary; el.style.boxShadow = `0 0 0 2px ${alpha(t.primary, 0.2)}`; };
-                      inp.onblur  = () => { el.style.borderColor = t.inputBorder; el.style.boxShadow = 'none'; };
+                      inp.onfocus = () => { el.style.outline = `2px solid ${alpha(t.primary, 0.4)}`; el.style.outlineOffset = '-2px'; };
+                      inp.onblur  = () => { el.style.outline = 'none'; el.style.outlineOffset = '0'; };
                     }}
                   >
                     <PhoneCountrySelect selectedCode={phoneCountryCode} onChangeCode={setPhoneCountryCode} t={t} />
@@ -1956,7 +1959,10 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               {showEmail && (
                 <div className={contactFields === 'both' ? '' : 'col-span-2'}>
                   <label style={lblStyle}>Email</label>
-                  <input type="email" className="w-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent" style={inpStyle} value={form.email} onChange={set('email')} placeholder="name@email.com" />
+                  <input type="email" className="w-full px-4 py-2.5 text-sm outline-none" style={inpStyle} value={form.email} onChange={set('email')} placeholder="name@email.com"
+                    onFocus={e => { e.currentTarget.style.outline = `2px solid ${alpha(t.primary, 0.4)}`; e.currentTarget.style.outlineOffset = '-2px'; }}
+                    onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
+                  />
                 </div>
               )}
 
