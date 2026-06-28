@@ -2525,7 +2525,7 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
         {payment && (
           <div className="shadow-sm mb-4 overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
             <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: `1px solid ${t.divider}` }}>
-              <span className="text-xl">{PAYMENT_ICONS[payment.id] ?? PAYMENT_ICONS[payment.type] ?? '💳'}</span>
+              <BrandLogo id={payment.id} type={payment.type} />
               <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>{uiT.paymentInstructions}</h3>
             </div>
             <div className="p-5">
