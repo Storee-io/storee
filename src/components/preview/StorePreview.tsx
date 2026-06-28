@@ -1579,6 +1579,7 @@ const INDONESIAN_PROVINCES = ['Aceh','Bali','Banten','Bengkulu','DI Yogyakarta',
 
 // ── LocationPickerModal ───────────────────────────────────────────────────────
 interface PickedLocation { address: string; city: string; postal: string; province: string; display: string }
+const cleanNominatimDisplay = (s: string) => s.replace(/Nusa Tenggara,\s*/g, '');
 
 function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }: {
   t: CommerceTheme;
@@ -1636,7 +1637,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
         city,
         postal: (a.postcode ?? '').replace(/\D/g, '').slice(0, 5),
         province: a.state ?? '',
-        display: data.display_name ?? '',
+        display: cleanNominatimDisplay(data.display_name ?? ''),
       });
     } catch { /* ignore */ }
     finally { setGeocoding(false); setLocating(false); }
@@ -1759,7 +1760,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <span style={{ flexShrink: 0, marginTop: '2px', color: t.textMuted }}>📍</span>
-                <span>{r.display_name}</span>
+                <span>{cleanNominatimDisplay(r.display_name)}</span>
               </div>
             ))}
           </div>
