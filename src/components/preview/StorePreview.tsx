@@ -2387,43 +2387,42 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           onMouseEnter={e => e.currentTarget.style.background = alpha(t.primary, 0.1)}
                           onMouseLeave={e => e.currentTarget.style.background = alpha(t.primary, 0.05)}
                         >
-                          {/* Top row */}
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px 4px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: t.primary, display: 'inline-block', flexShrink: 0 }} />
+                          {/* Header */}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderBottom: `1px solid ${alpha(t.divider, 0.2)}` }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: t.primary, display: 'inline-block', flexShrink: 0 }} />
                               <span style={{ fontSize: '10px', fontWeight: 700, color: t.primary, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Location Pinned</span>
                             </div>
                             <button
                               type="button"
-                              onClick={() => setShowLocationPicker(true)}
+                              onClick={e => { e.stopPropagation(); setShowLocationPicker(true); }}
                               style={{ fontSize: '11px', fontWeight: 600, color: t.primary, background: 'none', border: 'none', cursor: 'pointer', padding: '0', textDecoration: 'underline', textUnderlineOffset: '2px' }}
                             >
                               Change
                             </button>
                           </div>
-                          {/* Static map preview */}
-                          {lastPickedCoords && (
-                            <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 12px', borderBottom: `1px solid ${alpha(t.divider, 0.5)}` }}>
-                              <div style={{ width: '100px', height: '100px', background: `url('https://tile.openstreetmap.org/15/${Math.floor((lastPickedCoords.lng + 180) / 360 * Math.pow(2, 15))}/${Math.floor((1 - Math.log(Math.tan(lastPickedCoords.lat * Math.PI / 180) + 1 / Math.cos(lastPickedCoords.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 15))}.png') center/cover`, borderRadius: '8px', position: 'relative', border: `1px solid ${alpha(t.divider, 0.3)}` }}>
-                                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '20px' }}>📍</div>
+
+                          {/* Content: Map + Address */}
+                          <div style={{ display: 'flex', gap: '10px', padding: '10px 12px', alignItems: 'flex-start' }}>
+                            {/* Map */}
+                            {lastPickedCoords && (
+                              <div style={{ width: '90px', height: '90px', flexShrink: 0, background: `url('https://tile.openstreetmap.org/15/${Math.floor((lastPickedCoords.lng + 180) / 360 * Math.pow(2, 15))}/${Math.floor((1 - Math.log(Math.tan(lastPickedCoords.lat * Math.PI / 180) + 1 / Math.cos(lastPickedCoords.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 15))}.png') center/cover`, borderRadius: '8px', position: 'relative', border: `1px solid ${alpha(t.divider, 0.3)}` }}>
+                                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '18px' }}>📍</div>
                               </div>
+                            )}
+                            {/* Address info */}
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
+                              <span style={{ fontSize: '12px', color: t.textPrimary, lineHeight: 1.4, wordBreak: 'break-word' }}>{lastPickedLoc.display}</span>
+                              {/* Tags */}
+                              {(lastPickedLoc.city || lastPickedLoc.province || lastPickedLoc.postal) && (
+                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                  {lastPickedLoc.city && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '12px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{lastPickedLoc.city}</span>}
+                                  {lastPickedLoc.province && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '12px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{lastPickedLoc.province}</span>}
+                                  {lastPickedLoc.postal && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '12px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{lastPickedLoc.postal}</span>}
+                                </div>
+                              )}
                             </div>
-                          )}
-                          {/* Address */}
-                          <div style={{ padding: '2px 12px 10px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                            <svg width="14" height="18" viewBox="0 0 14 18" fill="none" style={{ flexShrink: 0, marginTop: '1px' }}>
-                              <path d="M7 0C3.13 0 0 3.13 0 7c0 5.25 7 11 7 11s7-5.75 7-11c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 7 4.5a2.5 2.5 0 0 1 0 5z" fill={t.primary}/>
-                            </svg>
-                            <span style={{ fontSize: '12px', color: t.textPrimary, lineHeight: 1.5 }}>{lastPickedLoc.display}</span>
                           </div>
-                          {/* Tags */}
-                          {(lastPickedLoc.city || lastPickedLoc.province || lastPickedLoc.postal) && (
-                            <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', padding: '0 12px 10px' }}>
-                              {lastPickedLoc.city && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{lastPickedLoc.city}</span>}
-                              {lastPickedLoc.province && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{lastPickedLoc.province}</span>}
-                              {lastPickedLoc.postal && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{lastPickedLoc.postal}</span>}
-                            </div>
-                          )}
                         </div>
                       )}
                       <textarea
