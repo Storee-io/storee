@@ -1600,9 +1600,12 @@ function LocationPickerModal({ t, onChoose, onClose }: {
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
       const data = await res.json();
       const a = data.address ?? {};
+      const streetParts = [a.house_number, a.road, a.neighbourhood, a.suburb, a.village, a.hamlet, a.quarter].filter(Boolean);
+      const streetAddr = streetParts.join(', ') || (data.display_name ?? '').split(',').slice(0, 3).join(',').trim();
+      const city = a.city ?? a.town ?? a.municipality ?? a.county ?? a.regency ?? '';
       setLoc({
-        address: [a.road, a.neighbourhood, a.suburb, a.village].filter(Boolean).join(', '),
-        city: a.city ?? a.town ?? a.county ?? a.regency ?? '',
+        address: streetAddr,
+        city,
         postal: (a.postcode ?? '').replace(/\D/g, '').slice(0, 5),
         province: a.state ?? '',
         display: data.display_name ?? '',
