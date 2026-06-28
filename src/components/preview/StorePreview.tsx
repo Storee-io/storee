@@ -1711,10 +1711,10 @@ function LocationPickerModal({ t, onChoose, onClose }: {
         </div>
         <div style={{ padding: '16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {/* Search */}
-          <div style={{ position: 'relative' }}>
+          <div>
             <input value={searchQuery} onChange={e => handleSearch(e.target.value)} placeholder="🔍  Cari lokasi, jalan, kota…" style={inp} />
             {searchResults.length > 0 && (
-              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10, background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '8px', marginTop: '4px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}>
+              <div style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '8px', marginTop: '4px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}>
                 {searchResults.map((r, i) => (
                   <div key={i} onClick={() => selectResult(r)} style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: i < searchResults.length - 1 ? `1px solid ${t.divider}` : 'none', color: t.textPrimary, fontSize: '12px', lineHeight: 1.4 }}>
                     {r.display_name}
