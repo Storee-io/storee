@@ -1577,7 +1577,45 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
 
 const INDONESIAN_PROVINCES = ['Aceh','Bali','Banten','Bengkulu','DI Yogyakarta','DKI Jakarta','Gorontalo','Jambi','Jawa Barat','Jawa Tengah','Jawa Timur','Kalimantan Barat','Kalimantan Selatan','Kalimantan Tengah','Kalimantan Timur','Kalimantan Utara','Kepulauan Bangka Belitung','Kepulauan Riau','Lampung','Maluku','Maluku Utara','Nusa Tenggara Barat','Nusa Tenggara Timur','Papua','Papua Barat','Riau','Sulawesi Barat','Sulawesi Selatan','Sulawesi Tengah','Sulawesi Tenggara','Sulawesi Utara','Sumatera Barat','Sumatera Selatan','Sumatera Utara'];
 
-const PAYMENT_ICONS: Record<string, string> = { bank_transfer: '🏦', qris: '📱', cod: '💵', ewallet: '👛', gopay: '🟢', ovo: '🟣', dana: '🔵' };
+const BRAND_LOGOS: Record<string, { bg: string; color: string; label: string }> = {
+  // Payment
+  'bca':            { bg: '#005BAA', color: '#fff',    label: 'BCA' },
+  'mandiri':        { bg: '#003087', color: '#FFD700', label: 'Mandiri' },
+  'bni':            { bg: '#EA621F', color: '#fff',    label: 'BNI' },
+  'bri':            { bg: '#003087', color: '#FF8000', label: 'BRI' },
+  'qris':           { bg: '#EB1C24', color: '#fff',    label: 'QRIS' },
+  'cod':            { bg: '#16a34a', color: '#fff',    label: 'COD' },
+  'gopay':          { bg: '#00AED6', color: '#fff',    label: 'GoPay' },
+  'ovo':            { bg: '#4C3494', color: '#fff',    label: 'OVO' },
+  'dana':           { bg: '#118EEA', color: '#fff',    label: 'DANA' },
+  // Payment types fallback
+  'bank_transfer':  { bg: '#1e40af', color: '#fff',    label: 'Bank' },
+  'ewallet':        { bg: '#7c3aed', color: '#fff',    label: 'eWallet' },
+  // Shipping
+  'jne-reg':        { bg: '#E30613', color: '#fff',    label: 'JNE' },
+  'jne-yes':        { bg: '#E30613', color: '#FFDE00', label: 'JNE' },
+  'jnt-reg':        { bg: '#E50012', color: '#fff',    label: 'J&T' },
+  'sicepat':        { bg: '#F7941D', color: '#fff',    label: 'SiCepat' },
+  'gosend':         { bg: '#00AED6', color: '#fff',    label: 'GoSend' },
+  'anteraja':       { bg: '#0065B1', color: '#fff',    label: 'Anteraja' },
+  'free':           { bg: '#16a34a', color: '#fff',    label: 'FREE' },
+  'seller-courier': { bg: '#64748b', color: '#fff',    label: 'Kurir' },
+  'pickup':         { bg: '#64748b', color: '#fff',    label: 'Pickup' },
+};
+
+function BrandLogo({ id, type }: { id: string; type?: string }) {
+  const brand = BRAND_LOGOS[id] ?? BRAND_LOGOS[type ?? ''] ?? { bg: '#64748b', color: '#fff', label: id.toUpperCase().slice(0, 6) };
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      background: brand.bg, color: brand.color,
+      borderRadius: '4px', padding: '2px 6px',
+      fontSize: '10px', fontWeight: 800, letterSpacing: '0.04em',
+      minWidth: '40px', height: '24px', flexShrink: 0,
+      lineHeight: 1, whiteSpace: 'nowrap',
+    }}>{brand.label}</span>
+  );
+}
 
 // ── Country codes ─────────────────────────────────────────────────────────────
 const COUNTRY_CODES: { code: string; name: string; dial: string; flag: string }[] = [
@@ -2089,7 +2127,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
                       {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
                     </div>
-                    <span className="text-lg flex-shrink-0">{method.icon}</span>
+                    <BrandLogo id={method.id} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{method.name}</p>
                       <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Est. arrival: {method.estimatedDays}</p>
@@ -2118,7 +2156,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             </div>
             <div className="p-5 space-y-2">
               {paymentMethods.map(pm => {
-                const icon = PAYMENT_ICONS[pm.id] ?? PAYMENT_ICONS[pm.type] ?? '💳';
                 const isSelected = selectedPayId === pm.id;
                 return (
                   <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }}>
@@ -2126,7 +2163,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
                       {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
                     </div>
-                    <span className="text-xl flex-shrink-0">{icon}</span>
+                    <BrandLogo id={pm.id} type={pm.type} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
                       {pm.type === 'bank_transfer' && pm.bankName && (
