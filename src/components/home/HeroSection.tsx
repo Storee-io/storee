@@ -12,6 +12,7 @@ import type { AdvancedOptions, ThemeColors } from '../../lib/claudeApiClient';
 import { businessCategories, templates } from '../../data/templates';
 import type { Template } from '../../data/templates';
 import type { Store } from '../../context/StoreContext';
+import { useStore } from '../../context/StoreContext';
 import { generateStoreWithClaude } from '../../lib/claudeApiClient';
 import { getGuestId } from '../../lib/guestId';
 
@@ -148,6 +149,7 @@ export default function HeroSection() {
   const [advancedApplied, setAdvancedApplied] = useState(false);
 
   const router = useRouter();
+  const { addStore } = useStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const brandInputRef = useRef<HTMLInputElement>(null);
   const colorBtnRef = useRef<HTMLButtonElement>(null);
@@ -308,17 +310,13 @@ export default function HeroSection() {
         : {}),
     };
 
-    // Save to localStorage (fast, instant access on same browser)
+    // Save to localStorage first (instant, same-browser access)
     localStorage.setItem(`storee_store_${newStore.id}`, JSON.stringify(newStore));
 
-    // Fire-and-forget save to Supabase so the store survives localStorage clears
-    // and can be fetched on any device/browser via the store ID.
-    const guestId = getGuestId();
-    fetch('/api/save-draft-store', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ guestId, store: newStore }),
-    }).catch(() => { /* non-critical — localStorage is the primary fallback */ });
+    // Persist to Supabase via addStore — handles both authenticated users
+    // (saves to stores table with user_id) and guests (saves to guest_stores).
+    // Fire-and-forget so navigation isn't blocked.
+    addStore(newStore).catch(() => { /* localStorage fallback already saved */ });
 
     // Navigate immediately — keep overlay visible during transition so home page
     // never flashes. The overlay disappears naturally when HeroSection unmounts.

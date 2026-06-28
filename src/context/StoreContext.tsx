@@ -575,10 +575,14 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
     // Persist to localStorage (for all users)
     try { localStorage.setItem(`storee_store_${store.id}`, JSON.stringify(store)); } catch { /* quota */ }
 
-    // Persist to Supabase
-    if (userId) {
-      // Authenticated user
-      await upsertStore(store, userId);
+    // Persist to Supabase — resolve auth at call time so newly-authenticated
+    // users don't race against the userId state update.
+    const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+    const resolvedUserId = session?.user?.id ?? userId;
+
+    if (resolvedUserId) {
+      if (!userId) setUserId(resolvedUserId); // sync state if it lagged
+      await upsertStore(store, resolvedUserId);
     } else {
       // Guest user - save to Supabase with guest_id
       const guestId = getOrCreateGuestId();
