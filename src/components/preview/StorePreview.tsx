@@ -1870,8 +1870,27 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   onBack: () => void; onPlaceOrder: (paymentId: string, shippingId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => void; editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
   const [form, setForm] = useState({ email: '', whatsapp: '', name: '', address: '', city: '', province: '', postal: '' });
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-    setForm(f => ({ ...f, [k]: e.target.value }));
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const touch = (k: string) => setTouched(t => ({ ...t, [k]: true }));
+
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    let val = e.target.value;
+    if (k === 'whatsapp') val = val.replace(/\D/g, ''); // numbers only
+    setForm(f => ({ ...f, [k]: val }));
+  };
+
+  const validate = (k: string, v: string): string => {
+    if (k === 'name')     return v.trim().length < 3 ? 'Minimum 3 characters' : '';
+    if (k === 'email')    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : 'Invalid email format';
+    if (k === 'whatsapp') return v.trim().length < 5 ? 'Enter a valid phone number' : '';
+    if (k === 'address')  return v.trim().length < 10 ? 'Minimum 10 characters' : '';
+    if (k === 'city')     return v.trim().length < 2 ? 'Minimum 2 characters' : '';
+    if (k === 'postal')   return v.trim().length < 3 ? 'Minimum 3 characters' : '';
+    return '';
+  };
+
+  const errStyle: CSSProperties = { color: '#ef4444', fontSize: '0.7rem', marginTop: '3px' };
+
   const [phoneCountryCode, setPhoneCountryCode] = useState(() => detectDefaultCountry());
 
   // Determine which contact fields are enabled
@@ -1940,8 +1959,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 <label style={lblStyle}>Full Name</label>
                 <input className="w-full px-4 py-2.5 text-sm outline-none" style={inpStyle} value={form.name} onChange={set('name')} placeholder="Recipient full name"
                   onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.7); }}
-                  onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
+                  onBlur={e => { touch('name'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
                 />
+                {touched.name && validate('name', form.name) && <p style={errStyle}>{validate('name', form.name)}</p>}
               </div>
 
               {/* Conditional contact fields based on store settings */}
@@ -1954,12 +1974,13 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       const inp = el.querySelector('input[type=tel]') as HTMLInputElement | null;
                       if (!inp) return;
                       inp.onfocus = () => { el.style.outline = `2px solid ${t.primary}`; el.style.outlineOffset = '-2px'; el.style.background = alpha(lighten(t.pageBg, 0.3), 0.7); };
-                      inp.onblur  = () => { el.style.outline = 'none'; el.style.outlineOffset = '0'; el.style.background = t.inputBg; };
+                      inp.onblur  = () => { touch('whatsapp'); el.style.outline = 'none'; el.style.outlineOffset = '0'; el.style.background = t.inputBg; };
                     }}
                   >
                     <PhoneCountrySelect selectedCode={phoneCountryCode} onChangeCode={setPhoneCountryCode} t={t} />
-                    <input type="tel" className="flex-1 min-w-0 text-sm outline-none" style={{ background: 'transparent', color: t.textPrimary, padding: '10px 12px' }} value={form.whatsapp} onChange={set('whatsapp')} placeholder="81234567890" />
+                    <input type="tel" className="flex-1 min-w-0 text-sm outline-none" style={{ background: 'transparent', color: t.textPrimary, padding: '10px 12px' }} value={form.whatsapp} onChange={set('whatsapp')} placeholder="81234567890" inputMode="numeric" />
                   </div>
+                  {touched.whatsapp && validate('whatsapp', form.whatsapp) && <p style={errStyle}>{validate('whatsapp', form.whatsapp)}</p>}
                 </div>
               )}
               {showEmail && (
@@ -1967,8 +1988,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   <label style={lblStyle}>Email</label>
                   <input type="email" className="w-full px-4 py-2.5 text-sm outline-none" style={inpStyle} value={form.email} onChange={set('email')} placeholder="name@email.com"
                     onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.7); }}
-                    onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
+                    onBlur={e => { touch('email'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
                   />
+                  {touched.email && validate('email', form.email) && <p style={errStyle}>{validate('email', form.email)}</p>}
                 </div>
               )}
 
@@ -1993,9 +2015,10 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         value={form.address}
                         onChange={set('address')}
                         onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.7); }}
-                        onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
+                        onBlur={e => { touch('address'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
                         placeholder="Street name, number, district, subdistrict"
                       />
+                      {touched.address && validate('address', form.address) && <p style={errStyle}>{validate('address', form.address)}</p>}
                     </div>
                     <div>
                       <label style={lblStyle}>City</label>
@@ -2006,8 +2029,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         onChange={set('city')}
                         placeholder="City"
                         onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
-                        onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
+                        onBlur={e => { touch('city'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
                       />
+                      {touched.city && validate('city', form.city) && <p style={errStyle}>{validate('city', form.city)}</p>}
                     </div>
                     <div>
                       <label style={lblStyle}>Postal Code</label>
@@ -2019,8 +2043,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         placeholder="12345"
                         maxLength={5}
                         onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
-                        onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
+                        onBlur={e => { touch('postal'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
                       />
+                      {touched.postal && validate('postal', form.postal) && <p style={errStyle}>{validate('postal', form.postal)}</p>}
                     </div>
                     <div className="col-span-2">
                       <label style={lblStyle}>Province</label>
@@ -2199,7 +2224,15 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             </div>
           </div>
           <button
-            onClick={() => { const dial = COUNTRY_CODES.find(c => c.code === phoneCountryCode)?.dial ?? '62'; onPlaceOrder(selectedPayId, selectedShippingId, { ...form, whatsapp: form.whatsapp ? `+${dial}${form.whatsapp}` : '' }); }}
+            onClick={() => {
+              // Touch all fields to surface any validation errors
+              const allFields = ['name', ...(showWhatsApp ? ['whatsapp'] : []), ...(showEmail ? ['email'] : []), 'address', 'city', 'postal'];
+              setTouched(Object.fromEntries(allFields.map(k => [k, true])));
+              const hasErrors = allFields.some(k => validate(k, form[k as keyof typeof form]) !== '');
+              if (hasErrors) return;
+              const dial = COUNTRY_CODES.find(c => c.code === phoneCountryCode)?.dial ?? '62';
+              onPlaceOrder(selectedPayId, selectedShippingId, { ...form, whatsapp: form.whatsapp ? `+${dial}${form.whatsapp}` : '' });
+            }}
             className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity"
             style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
           >
