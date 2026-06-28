@@ -1614,10 +1614,20 @@ function LocationPickerModal({ t, onChoose, onClose }: {
         a.village, a.suburb, a.city_district,
         regency, // kab/kota level (e.g. Badung, Depok)
       ].filter(Boolean);
+      // exclude province-level and above from street address
+      const excluded = new Set([a.state, a.region, a.country, a.country_code].filter(Boolean).map((s: string) => s.toLowerCase().trim()));
       const seen = new Set<string>();
-      const unique = streetParts.filter(p => { const k = p.toLowerCase().trim(); if (seen.has(k)) return false; seen.add(k); return true; });
-      const streetAddr = unique.join(', ')
-        || (data.display_name ?? '').split(',').slice(0, 5).join(',').trim();
+      const unique = streetParts.filter(p => {
+        const k = p.toLowerCase().trim();
+        if (seen.has(k) || excluded.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+      // fallback: cut display_name before province level
+      const displayParts = (data.display_name ?? '').split(',').map((s: string) => s.trim()).filter(Boolean);
+      const stateIdx = a.state ? displayParts.findIndex((p: string) => p.toLowerCase() === a.state.toLowerCase()) : -1;
+      const fallback = displayParts.slice(0, stateIdx > 0 ? stateIdx : 6).join(', ');
+      const streetAddr = unique.join(', ') || fallback;
       setLoc({
         address: streetAddr,
         city,
