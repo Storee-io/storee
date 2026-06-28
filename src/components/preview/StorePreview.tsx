@@ -1602,11 +1602,18 @@ function LocationPickerModal({ t, onChoose, onClose }: {
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
       const data = await res.json();
       const a = data.address ?? {};
-      const streetParts = [a.house_number, a.road, a.neighbourhood, a.suburb, a.village, a.hamlet, a.quarter].filter(Boolean);
-      const streetAddr = streetParts.join(', ') || (data.display_name ?? '').split(',').slice(0, 3).join(',').trim();
+      const city = a.city ?? a.town ?? a.municipality ?? a.county ?? a.regency ?? '';
+      const streetParts = [
+        a.house_number, a.road, a.residential,
+        a.neighbourhood, a.hamlet, a.quarter,
+        a.village, a.suburb, a.city_district,
+        city,
+      ].filter(Boolean);
+      const streetAddr = [...new Set(streetParts)].join(', ')
+        || (data.display_name ?? '').split(',').slice(0, 4).join(',').trim();
       setLoc({
         address: streetAddr,
-        city: a.city ?? a.town ?? a.municipality ?? a.county ?? a.regency ?? '',
+        city,
         postal: (a.postcode ?? '').replace(/\D/g, '').slice(0, 5),
         province: a.state ?? '',
         display: data.display_name ?? '',
