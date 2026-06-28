@@ -1609,7 +1609,9 @@ function LocationPickerModal({ t, onChoose, onClose }: {
         a.village, a.suburb, a.city_district,
         city,
       ].filter(Boolean);
-      const streetAddr = [...new Set(streetParts)].join(', ')
+      const seen = new Set<string>();
+      const unique = streetParts.filter(p => { const k = p.toLowerCase().trim(); if (seen.has(k)) return false; seen.add(k); return true; });
+      const streetAddr = unique.join(', ')
         || (data.display_name ?? '').split(',').slice(0, 4).join(',').trim();
       setLoc({
         address: streetAddr,
