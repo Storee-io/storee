@@ -1768,15 +1768,22 @@ function LocationPickerModal({ t, onChoose, onClose }: {
           {/* Hint */}
           <p style={{ fontSize: '11px', color: t.textMuted, textAlign: 'center', margin: '-4px 0' }}>Geser peta untuk menyesuaikan titik lokasi</p>
 
-          {/* Address preview */}
+          {/* Address preview — always visible once first address loaded; skeleton on refresh */}
           {(loc.display || geocoding) && (
-            <div style={{ padding: '12px 14px', background: t.inputBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '10px', minHeight: '60px' }}>
-              {geocoding ? (
-                <p style={{ fontSize: '12px', color: t.textMuted }}>Mencari alamat…</p>
+            <div style={{ position: 'relative', padding: '12px 14px', background: t.inputBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <p style={{ fontSize: '11px', color: t.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Alamat Terpilih</p>
+                {geocoding && <div style={{ width: '12px', height: '12px', border: '2px solid rgba(0,0,0,0.1)', borderTop: `2px solid ${t.primary}`, borderRadius: '50%', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />}
+              </div>
+              {geocoding && !loc.display ? (
+                /* first load skeleton */
+                <div>
+                  <div style={{ height: '13px', borderRadius: '4px', background: 'linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.2s infinite', marginBottom: '6px', width: '90%' }} />
+                  <div style={{ height: '13px', borderRadius: '4px', background: 'linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.2s infinite', width: '65%' }} />
+                </div>
               ) : (
                 <>
-                  <p style={{ fontSize: '11px', color: t.textMuted, marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Alamat Terpilih</p>
-                  <p style={{ fontSize: '13px', color: t.textPrimary, lineHeight: 1.5 }}>{loc.display}</p>
+                  <p style={{ fontSize: '13px', color: geocoding ? t.textMuted : t.textPrimary, lineHeight: 1.5, transition: 'color 0.2s' }}>{loc.display}</p>
                   <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
                     {loc.city && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.city}</span>}
                     {loc.postal && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.postal}</span>}
@@ -1799,7 +1806,7 @@ function LocationPickerModal({ t, onChoose, onClose }: {
           </button>
         </div>
       </div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
     </div>,
     document.body
   );
