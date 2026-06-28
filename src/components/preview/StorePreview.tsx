@@ -1750,7 +1750,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <span style={{ flexShrink: 0, marginTop: '2px', color: t.textMuted }}>📍</span>
-                <span>{cleanSearchResult(r.display_name)}</span>
+                <span>{parseDisplayName(r.display_name).display}</span>
               </div>
             ))}
           </div>
