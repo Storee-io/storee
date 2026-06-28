@@ -2403,24 +2403,18 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           </div>
 
                           {/* Content: Map + Address */}
-                          <div style={{ display: 'flex', gap: '10px', padding: '10px 12px', alignItems: 'flex-start' }}>
+                          <div style={{ display: 'flex', gap: '8px', padding: '8px 12px', alignItems: 'center' }}>
                             {/* Map */}
                             {lastPickedCoords && (
-                              <div style={{ width: '90px', height: '90px', flexShrink: 0, background: `url('https://tile.openstreetmap.org/15/${Math.floor((lastPickedCoords.lng + 180) / 360 * Math.pow(2, 15))}/${Math.floor((1 - Math.log(Math.tan(lastPickedCoords.lat * Math.PI / 180) + 1 / Math.cos(lastPickedCoords.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 15))}.png') center/cover`, borderRadius: '8px', position: 'relative', border: `1px solid ${alpha(t.divider, 0.3)}` }}>
-                                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '18px' }}>📍</div>
+                              <div style={{ width: '70px', height: '70px', flexShrink: 0, background: `url('https://tile.openstreetmap.org/15/${Math.floor((lastPickedCoords.lng + 180) / 360 * Math.pow(2, 15))}/${Math.floor((1 - Math.log(Math.tan(lastPickedCoords.lat * Math.PI / 180) + 1 / Math.cos(lastPickedCoords.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 15))}.png') center/cover`, borderRadius: '6px', position: 'relative', border: `1px solid ${alpha(t.divider, 0.3)}` }}>
+                                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '16px' }}>📍</div>
                               </div>
                             )}
-                            {/* Address info */}
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
-                              <span style={{ fontSize: '12px', color: t.textPrimary, lineHeight: 1.4, wordBreak: 'break-word' }}>{lastPickedLoc.display}</span>
-                              {/* Tags */}
-                              {(lastPickedLoc.city || lastPickedLoc.province || lastPickedLoc.postal) && (
-                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                                  {lastPickedLoc.city && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '12px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{lastPickedLoc.city}</span>}
-                                  {lastPickedLoc.province && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '12px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{lastPickedLoc.province}</span>}
-                                  {lastPickedLoc.postal && <span style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '12px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{lastPickedLoc.postal}</span>}
-                                </div>
-                              )}
+                            {/* Address info - simplified */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <span style={{ fontSize: '11px', color: t.textPrimary, lineHeight: 1.4, wordBreak: 'break-word' }}>
+                                {lastPickedLoc.city && lastPickedLoc.postal ? `${lastPickedLoc.city}, ${lastPickedLoc.postal}` : lastPickedLoc.display}
+                              </span>
                             </div>
                           </div>
                         </div>
