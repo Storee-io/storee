@@ -2355,44 +2355,44 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   >
                     <div className="col-span-2">
                       <label style={{ ...lblStyle, marginBottom: '6px', display: 'block' }}>Full Address</label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPendingGps(null);
-                          navigator.geolocation?.getCurrentPosition(
-                            pos => setPendingGps({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-                            () => {},
-                            { timeout: 10000, enableHighAccuracy: true }
-                          );
-                          setShowLocationPicker(true);
-                        }}
-                        style={{
-                          width: '100%', marginBottom: '8px',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                          padding: '9px 12px', borderRadius: t.inputRadius,
-                          border: `1.5px dashed ${t.primary}`,
-                          background: alpha(t.primary, 0.06),
-                          color: t.primary, fontSize: '12px', fontWeight: 700,
-                          cursor: 'pointer', transition: 'background 0.15s',
-                        }}
-                      >
-                        📍 Use My Current Location
-                      </button>
+                      {!lastPickedLoc && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPendingGps(null);
+                            navigator.geolocation?.getCurrentPosition(
+                              pos => setPendingGps({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                              () => {},
+                              { timeout: 10000, enableHighAccuracy: true }
+                            );
+                            setShowLocationPicker(true);
+                          }}
+                          style={{
+                            width: '100%', marginBottom: '8px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                            padding: '9px 12px', borderRadius: t.inputRadius,
+                            border: `1.5px dashed ${t.primary}`,
+                            background: alpha(t.primary, 0.06),
+                            color: t.primary, fontSize: '12px', fontWeight: 700,
+                            cursor: 'pointer', transition: 'background 0.15s',
+                          }}
+                        >
+                          📍 Use My Current Location
+                        </button>
+                      )}
                       {lastPickedLoc && (
-                        <div style={{ borderRadius: '12px', border: `1.5px solid ${alpha(t.primary, 0.25)}`, background: alpha(t.primary, 0.05), overflow: 'hidden' }}>
+                        <div
+                          onClick={() => setShowLocationPicker(true)}
+                          style={{ borderRadius: '12px', border: `1.5px solid ${alpha(t.primary, 0.25)}`, background: alpha(t.primary, 0.05), overflow: 'hidden', cursor: 'pointer', transition: 'background 0.15s', marginBottom: '8px' }}
+                          onMouseEnter={e => e.currentTarget.style.background = alpha(t.primary, 0.1)}
+                          onMouseLeave={e => e.currentTarget.style.background = alpha(t.primary, 0.05)}
+                        >
                           {/* Top row */}
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px 4px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                               <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: t.primary, display: 'inline-block', flexShrink: 0 }} />
                               <span style={{ fontSize: '10px', fontWeight: 700, color: t.primary, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Location Pinned</span>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => setShowLocationPicker(true)}
-                              style={{ fontSize: '11px', fontWeight: 600, color: t.primary, background: 'none', border: 'none', cursor: 'pointer', padding: '0', textDecoration: 'underline', textUnderlineOffset: '2px' }}
-                            >
-                              Change
-                            </button>
                           </div>
                           {/* Address */}
                           <div style={{ padding: '2px 12px 10px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
