@@ -103,7 +103,7 @@ export default function PreviewShell({ store, from = null }: Props) {
     return () => ro.disconnect();
   }, [device]);
 
-  const { updateActiveStore, setGeneratedStore, setGenerationState, activeStore, addStore } = useStore();
+  const { updateActiveStore, setGeneratedStore, setGenerationState, activeStore, addStore, setActiveStore } = useStore();
   const router = useRouter();
 
   // Use store prop as base, but merge in any updates from context (e.g. after publish).
@@ -402,7 +402,7 @@ export default function PreviewShell({ store, from = null }: Props) {
           {/* Dashboard */}
           <Tip label="Go to Dashboard">
             <button
-              onClick={() => router.push(`/dashboard?storeId=${store.id}`)}
+              onClick={() => { setActiveStore(liveStore); router.push(`/dashboard?storeId=${liveStore.id}`); }}
               className="p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
             >
               <LayoutDashboard className="w-4 h-4" />
