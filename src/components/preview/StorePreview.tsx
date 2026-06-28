@@ -1703,26 +1703,31 @@ function LocationPickerModal({ t, onChoose, onClose }: {
 
   return createPortal(
     <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.55)', padding: '16px' }}>
-      <div style={{ width: '100%', maxWidth: '480px', background: t.pageBg, borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
+      <div style={{ width: '100%', maxWidth: '480px', background: t.pageBg, borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '90vh', position: 'relative' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${t.divider}` }}>
           <span style={{ fontWeight: 700, fontSize: '15px', color: t.textPrimary }}>📍 Pilih Lokasi</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted, fontSize: '18px', lineHeight: 1, padding: '2px 4px' }}>✕</button>
         </div>
         <div style={{ padding: '16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {/* Search */}
-          <div>
-            <input value={searchQuery} onChange={e => handleSearch(e.target.value)} placeholder="🔍  Cari lokasi, jalan, kota…" style={inp} />
-            {searchResults.length > 0 && (
-              <div style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '8px', marginTop: '4px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}>
-                {searchResults.map((r, i) => (
-                  <div key={i} onClick={() => selectResult(r)} style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: i < searchResults.length - 1 ? `1px solid ${t.divider}` : 'none', color: t.textPrimary, fontSize: '12px', lineHeight: 1.4 }}>
-                    {r.display_name}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Search input */}
+          <input value={searchQuery} onChange={e => handleSearch(e.target.value)} placeholder="🔍  Cari lokasi, jalan, kota…" style={inp} />
+
+          {/* Search results overlay — covers map + address + footer, sits inside modal card */}
+          {searchResults.length > 0 && (
+            <div style={{ position: 'absolute', top: '58px', left: 0, right: 0, bottom: 0, zIndex: 500, background: t.pageBg, borderTop: `1px solid ${t.divider}`, overflowY: 'auto' }}>
+              {searchResults.map((r, i) => (
+                <div key={i} onClick={() => selectResult(r)}
+                  style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 16px', cursor: 'pointer', borderBottom: `1px solid ${t.divider}`, color: t.textPrimary, fontSize: '13px', lineHeight: 1.5 }}
+                  onMouseEnter={e => (e.currentTarget.style.background = t.inputBg)}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <span style={{ flexShrink: 0, marginTop: '2px', color: t.textMuted }}>📍</span>
+                  <span>{r.display_name}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Map with fixed center pin + GPS button */}
           <div style={{ position: 'relative' }}>
