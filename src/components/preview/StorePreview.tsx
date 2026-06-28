@@ -1580,6 +1580,17 @@ const INDONESIAN_PROVINCES = ['Aceh','Bali','Banten','Bengkulu','DI Yogyakarta',
 // ── LocationPickerModal ───────────────────────────────────────────────────────
 interface PickedLocation { address: string; city: string; postal: string; province: string; display: string }
 
+const NOMINATIM_SUPRA = new Set(['Nusa Tenggara', 'Jawa', 'Java', 'Sumatera', 'Sumatra', 'Kalimantan', 'Sulawesi', 'Papua', 'Maluku']);
+const cleanSearchResult = (s: string): string => {
+  const parts = s.split(',').map(p => p.trim());
+  const postalIdx = parts.findIndex(p => /^\d{4,6}$/.test(p));
+  if (postalIdx < 2) return s;
+  if (NOMINATIM_SUPRA.has(parts[postalIdx - 1])) {
+    return [...parts.slice(0, postalIdx - 1), ...parts.slice(postalIdx)].join(', ');
+  }
+  return s;
+};
+
 function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }: {
   t: CommerceTheme;
   onChoose: (loc: PickedLocation, coords: { lat: number; lng: number }) => void;
@@ -1763,7 +1774,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <span style={{ flexShrink: 0, marginTop: '2px', color: t.textMuted }}>📍</span>
-                <span>{r.display_name}</span>
+                <span>{cleanSearchResult(r.display_name)}</span>
               </div>
             ))}
           </div>
