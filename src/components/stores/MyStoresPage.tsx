@@ -93,7 +93,7 @@ export default function MyStoresPage() {
   };
 
   // ── Loading ───────────────────────────────────────────────────────────────
-  if (isLoadingStores) {
+  if (!mounted || isLoadingStores) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center space-y-3">
