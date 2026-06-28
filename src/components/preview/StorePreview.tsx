@@ -2378,6 +2378,13 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       >
                         📍 Use My Current Location
                       </button>
+                      {lastPickedLoc && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 10px', borderRadius: '8px', background: alpha(t.primary, 0.08), border: `1px solid ${alpha(t.primary, 0.2)}` }}>
+                          <span style={{ fontSize: '12px' }}>📍</span>
+                          <span style={{ fontSize: '11px', color: t.primary, fontWeight: 600, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lastPickedLoc.display}</span>
+                          <span style={{ fontSize: '10px', color: t.primary, opacity: 0.7, flexShrink: 0 }}>✓ Pinned</span>
+                        </div>
+                      )}
                       <textarea
                         className="w-full px-4 py-2.5 text-sm resize-none"
                         style={{ ...inpStyle, outline: 'none' }}
