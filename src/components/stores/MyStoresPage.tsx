@@ -21,6 +21,8 @@ const DEMO_IDS = new Set(['store-1', 'store-2']);
 export default function MyStoresPage() {
   const { stores, deleteStore, updateActiveStore, setActiveStore, isLoadingStores } = useStore();
   const realStores = stores.filter(s => !DEMO_IDS.has(s.id));
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const [deletingId, setDeletingId]         = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete]   = useState<string | null>(null);
   const [publishStore, setPublishStore]     = useState<StoreType | null>(null);
@@ -119,7 +121,7 @@ export default function MyStoresPage() {
             <div>
               <h1 className="text-2xl font-bold text-slate-900">My Stores</h1>
               <p className="text-slate-500 text-sm mt-0.5">
-                {realStores.length > 0
+                {mounted && realStores.length > 0
                   ? `${realStores.length} store${realStores.length !== 1 ? 's' : ''} in your account`
                   : 'Create your first AI-powered store'}
               </p>
