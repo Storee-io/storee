@@ -1605,40 +1605,42 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
       const data = await res.json();
       const a = data.address ?? {};
-      // POI/building name is in data.name (top-level), not inside address object
-      const poiName = (data.name && data.name !== a.road) ? data.name : '';
-      const rawRegency = a.county ?? a.regency ?? a.state_district ?? '';
-      // strip "Kabupaten "/"Kota " prefix that Nominatim sometimes includes
-      const regency = rawRegency.replace(/^(Kabupaten|Kota)\s+/i, '');
-      // regency (kabupaten) before town/municipality — in Indonesia a.town can map to kecamatan
-      const city = a.city ?? regency ?? a.town ?? a.municipality ?? '';
-      const streetParts = [
-        poiName,
-        a.house_number, a.road, a.residential,
-        a.neighbourhood, a.hamlet, a.quarter,
-        a.village, a.suburb, a.city_district,
-        regency, // kab/kota level (e.g. Badung, Depok)
-      ].filter(Boolean);
-      // exclude province-level and above from street address
-      const excluded = new Set([a.state, a.region, a.country, a.country_code].filter(Boolean).map((s: string) => s.toLowerCase().trim()));
-      const seen = new Set<string>();
-      const unique = streetParts.filter(p => {
-        const k = p.toLowerCase().trim();
-        if (seen.has(k) || excluded.has(k)) return false;
-        seen.add(k);
-        return true;
-      });
-      // fallback: cut display_name before province level
-      const displayParts = (data.display_name ?? '').split(',').map((s: string) => s.trim()).filter(Boolean);
-      const stateIdx = a.state ? displayParts.findIndex((p: string) => p.toLowerCase() === a.state.toLowerCase()) : -1;
-      const fallback = displayParts.slice(0, stateIdx > 0 ? stateIdx : 6).join(', ');
-      const streetAddr = unique.join(', ') || fallback;
+
+      // Parse display_name by position — more reliable than address fields for Indonesia.
+      // Structure: ..., [Kecamatan], [Kabupaten], [Provinsi], [Supra-region?], [PostalCode], [Indonesia]
+      const SUPRA = new Set(['Nusa Tenggara', 'Java', 'Sumatra', 'Kalimantan', 'Sulawesi', 'Papua', 'Maluku']);
+      const rawParts = (data.display_name ?? '').split(',').map((s: string) => s.trim()).filter(Boolean);
+      const postalIdx = rawParts.findIndex((p: string) => /^\d{4,6}$/.test(p));
+
+      let city = '';
+      let province = '';
+      let display = data.display_name ?? '';
+      let addressStr = '';
+
+      if (postalIdx >= 3) {
+        const hasSupra = SUPRA.has(rawParts[postalIdx - 1]);
+        province  = rawParts[postalIdx - (hasSupra ? 2 : 1)] ?? '';
+        city      = rawParts[postalIdx - (hasSupra ? 3 : 2)] ?? '';
+        const streetEnd = postalIdx - (hasSupra ? 3 : 2); // exclusive — everything before kabupaten
+        addressStr = rawParts.slice(0, streetEnd).join(', ');
+        // Display: skip supra-region and country
+        display = [
+          ...rawParts.slice(0, postalIdx - (hasSupra ? 1 : 0)),
+          rawParts[postalIdx],
+        ].join(', ');
+      } else {
+        // Fallback for short / non-Indonesian results
+        city = a.city ?? a.county ?? a.town ?? '';
+        province = a.state ?? '';
+        addressStr = data.display_name ?? '';
+      }
+
       setLoc({
-        address: streetAddr,
+        address: addressStr,
         city,
-        postal: (a.postcode ?? '').replace(/\D/g, '').slice(0, 5),
-        province: a.state ?? '',
-        display: data.display_name ?? '',
+        postal: (a.postcode ?? rawParts[postalIdx] ?? '').replace(/\D/g, '').slice(0, 5),
+        province,
+        display,
       });
     } catch { /* ignore */ }
     finally { setGeocoding(false); setLocating(false); }
