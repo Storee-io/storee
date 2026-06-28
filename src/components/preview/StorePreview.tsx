@@ -1583,7 +1583,7 @@ interface PickedLocation { address: string; city: string; postal: string; provin
 function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }: {
   t: CommerceTheme;
   onChoose: (loc: PickedLocation, coords: { lat: number; lng: number }) => void;
-  onClose: () => void;
+  onClose: (viewedCoords: { lat: number; lng: number }) => void;
   initialCoords?: { lat: number; lng: number } | null;
   initialLoc?: PickedLocation | null;
 }) {
@@ -1736,7 +1736,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${t.divider}` }}>
           <span style={{ fontWeight: 700, fontSize: '15px', color: t.textPrimary }}>📍 Pilih Lokasi</span>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted, fontSize: '18px', lineHeight: 1, padding: '2px 4px' }}>✕</button>
+          <button onClick={() => onClose(currentCoordsRef.current)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted, fontSize: '18px', lineHeight: 1, padding: '2px 4px' }}>✕</button>
         </div>
 
         {/* Search bar — always visible */}
@@ -2220,6 +2220,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [pendingGps, setPendingGps] = useState<{ lat: number; lng: number } | null>(null);
   const [lastPickedCoords, setLastPickedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [lastPickedLoc, setLastPickedLoc] = useState<PickedLocation | null>(null);
+  const [lastViewedCoords, setLastViewedCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   const selectedShipping = shippingMethods.find(m => m.id === selectedShippingId) ?? shippingMethods[0];
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
@@ -2250,7 +2251,17 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   return (
     <>
     {showLocationPicker && (
-      <LocationPickerModal t={t} onChoose={handleLocationChosen} onClose={() => { setShowLocationPicker(false); setPendingGps(null); }} initialCoords={lastPickedCoords ?? pendingGps} initialLoc={lastPickedLoc} />
+      <LocationPickerModal
+        t={t}
+        onChoose={handleLocationChosen}
+        onClose={(viewedCoords) => {
+          setShowLocationPicker(false);
+          setPendingGps(null);
+          if (!lastPickedCoords) setLastViewedCoords(viewedCoords);
+        }}
+        initialCoords={lastPickedCoords ?? lastViewedCoords ?? pendingGps}
+        initialLoc={lastPickedLoc}
+      />
     )}
     <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
       <header className="px-5 h-14 flex items-center sticky top-0 z-40 shadow-sm" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
