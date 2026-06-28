@@ -1580,22 +1580,24 @@ const INDONESIAN_PROVINCES = ['Aceh','Bali','Banten','Bengkulu','DI Yogyakarta',
 // ── LocationPickerModal ───────────────────────────────────────────────────────
 interface PickedLocation { address: string; city: string; postal: string; province: string; display: string }
 
-function LocationPickerModal({ t, onChoose, onClose, initialCoords }: {
+function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }: {
   t: CommerceTheme;
-  onChoose: (loc: PickedLocation) => void;
+  onChoose: (loc: PickedLocation, coords: { lat: number; lng: number }) => void;
   onClose: () => void;
   initialCoords?: { lat: number; lng: number } | null;
+  initialLoc?: PickedLocation | null;
 }) {
   const mapDivRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [loc, setLoc] = useState<PickedLocation>({ address: '', city: '', postal: '', province: '', display: '' });
+  const [loc, setLoc] = useState<PickedLocation>(initialLoc ?? { address: '', city: '', postal: '', province: '', display: '' });
   const [mapReady, setMapReady] = useState(false);
-  const [locating, setLocating] = useState(true);
+  const [locating, setLocating] = useState(!initialCoords);
   const [geocoding, setGeocoding] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
   const geocodeTimer = useRef<ReturnType<typeof setTimeout>>();
+  const currentCoordsRef = useRef<{ lat: number; lng: number }>(initialCoords ?? { lat: -6.2, lng: 106.8 });
 
   const reverseGeocode = useCallback(async (lat: number, lon: number) => {
     setGeocoding(true);
@@ -1671,12 +1673,17 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords }: {
       }
       if (!mapDivRef.current || leafletMap.current) return;
       const L = (window as any).L;
-      const map = L.map(mapDivRef.current, { zoomControl: true }).setView([-6.2, 106.8], 12);
+      const startView: [number, number] = initialCoords ? [initialCoords.lat, initialCoords.lng] : [-6.2, 106.8];
+      const startZoom = initialCoords ? 16 : 12;
+      const map = L.map(mapDivRef.current, { zoomControl: true }).setView(startView, startZoom);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
       leafletMap.current = map;
       // Debounced reverse geocode on every map move
+      let firstMove = !!initialLoc; // skip first moveend geocode if we already have address
       map.on('moveend', () => {
         const c = map.getCenter();
+        currentCoordsRef.current = { lat: c.lat, lng: c.lng };
+        if (firstMove) { firstMove = false; return; }
         clearTimeout(geocodeTimer.current);
         geocodeTimer.current = setTimeout(() => reverseGeocode(c.lat, c.lng), 350);
       });
@@ -1689,36 +1696,22 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords }: {
     };
   }, [reverseGeocode]);
 
-  // Center on GPS — fires when map is ready OR when pre-fetched coords arrive (whichever is later)
-  const centeredRef = useRef(false);
+  // Center map on open — use saved coords instantly, otherwise request GPS
+  const centeredRef = useRef(!!initialCoords);
   useEffect(() => {
     if (!mapReady || centeredRef.current) return;
-    if (initialCoords) {
-      centeredRef.current = true;
-      panTo(initialCoords.lat, initialCoords.lng, 16);
-      setLocating(false);
-    }
-  }, [mapReady, initialCoords, panTo]);
-
-  // Fallback: if no pre-fetched coords after map is ready, request GPS ourselves
-  useEffect(() => {
-    if (!mapReady || centeredRef.current) return;
-    if (initialCoords) return; // will be handled by effect above
-    const t = setTimeout(() => {
-      if (centeredRef.current) return;
-      navigator.geolocation?.getCurrentPosition(
-        pos => {
-          if (centeredRef.current) return;
-          centeredRef.current = true;
-          panTo(pos.coords.latitude, pos.coords.longitude, 16);
-          setLocating(false);
-        },
-        () => setLocating(false),
-        { timeout: 10000 }
-      );
-    }, 300); // give pre-fetched coords 300ms to arrive
-    return () => clearTimeout(t);
-  }, [mapReady, initialCoords, panTo]);
+    // No saved coords — request GPS (map already starts at default Jakarta view)
+    navigator.geolocation?.getCurrentPosition(
+      pos => {
+        if (centeredRef.current) return;
+        centeredRef.current = true;
+        panTo(pos.coords.latitude, pos.coords.longitude, 16);
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { timeout: 10000 }
+    );
+  }, [mapReady, panTo]);
 
   const handleSearch = (q: string) => {
     setSearchQuery(q);
@@ -1828,7 +1821,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords }: {
             {/* Footer CTA */}
             <div style={{ padding: '14px 16px', borderTop: `1px solid ${t.divider}` }}>
               <button
-                onClick={() => { onChoose(loc); onClose(); }}
+                onClick={() => { onChoose(loc, currentCoordsRef.current); onClose(); }}
                 disabled={!loc.display || geocoding}
                 style={{ width: '100%', padding: '13px', background: (loc.display && !geocoding) ? t.primary : t.surfaceBorder, color: (loc.display && !geocoding) ? t.primaryContrast : t.textMuted, borderRadius: t.btnRadius, fontWeight: 700, fontSize: '14px', cursor: (loc.display && !geocoding) ? 'pointer' : 'not-allowed', border: 'none', transition: 'background 0.15s' }}
               >
@@ -2225,6 +2218,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [promoApplied, setPromoApplied] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [pendingGps, setPendingGps] = useState<{ lat: number; lng: number } | null>(null);
+  const [lastPickedCoords, setLastPickedCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [lastPickedLoc, setLastPickedLoc] = useState<PickedLocation | null>(null);
 
   const selectedShipping = shippingMethods.find(m => m.id === selectedShippingId) ?? shippingMethods[0];
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
@@ -2239,7 +2234,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const inpStyle: CSSProperties = { background: t.inputBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3), boxSizing: 'border-box' } as CSSProperties;
   const lblStyle: CSSProperties = { color: t.textSecondary, fontSize: '0.75rem', fontWeight: 600, marginBottom: '6px', display: 'block' };
 
-  const handleLocationChosen = (loc: PickedLocation) => {
+  const handleLocationChosen = (loc: PickedLocation, coords: { lat: number; lng: number }) => {
     setForm(f => ({
       ...f,
       address: loc.address || f.address,
@@ -2248,12 +2243,14 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
       province: loc.province || f.province,
     }));
     setTouched(prev => ({ ...prev, address: false, city: false, postal: false }));
+    setLastPickedLoc(loc);
+    setLastPickedCoords(coords);
   };
 
   return (
     <>
     {showLocationPicker && (
-      <LocationPickerModal t={t} onChoose={handleLocationChosen} onClose={() => { setShowLocationPicker(false); setPendingGps(null); }} initialCoords={pendingGps} />
+      <LocationPickerModal t={t} onChoose={handleLocationChosen} onClose={() => { setShowLocationPicker(false); setPendingGps(null); }} initialCoords={lastPickedCoords ?? pendingGps} initialLoc={lastPickedLoc} />
     )}
     <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
       <header className="px-5 h-14 flex items-center sticky top-0 z-40 shadow-sm" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
