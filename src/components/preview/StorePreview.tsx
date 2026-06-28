@@ -1587,49 +1587,50 @@ function LocationPickerModal({ t, onChoose, onClose }: {
 }) {
   const mapDivRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<any>(null);
-  const marker = useRef<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [loc, setLoc] = useState<PickedLocation>({ address: '', city: '', postal: '', province: '', display: '' });
   const [mapReady, setMapReady] = useState(false);
   const [locating, setLocating] = useState(true);
+  const [geocoding, setGeocoding] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+  const geocodeTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const reverseGeocode = useCallback(async (lat: number, lon: number) => {
+    setGeocoding(true);
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
       const data = await res.json();
       const a = data.address ?? {};
       const streetParts = [a.house_number, a.road, a.neighbourhood, a.suburb, a.village, a.hamlet, a.quarter].filter(Boolean);
       const streetAddr = streetParts.join(', ') || (data.display_name ?? '').split(',').slice(0, 3).join(',').trim();
-      const city = a.city ?? a.town ?? a.municipality ?? a.county ?? a.regency ?? '';
       setLoc({
         address: streetAddr,
-        city,
+        city: a.city ?? a.town ?? a.municipality ?? a.county ?? a.regency ?? '',
         postal: (a.postcode ?? '').replace(/\D/g, '').slice(0, 5),
         province: a.state ?? '',
         display: data.display_name ?? '',
       });
     } catch { /* ignore */ }
+    finally { setGeocoding(false); }
   }, []);
 
-  const placeMarker = useCallback((lat: number, lon: number, zoom?: number) => {
-    const L = (window as any).L;
-    if (!leafletMap.current || !L) return;
+  const panTo = useCallback((lat: number, lon: number, zoom?: number) => {
+    if (!leafletMap.current) return;
     if (zoom) leafletMap.current.setView([lat, lon], zoom);
     else leafletMap.current.panTo([lat, lon]);
-    if (marker.current) marker.current.setLatLng([lat, lon]);
-    else {
-      marker.current = L.marker([lat, lon], { draggable: true }).addTo(leafletMap.current);
-      marker.current.on('dragend', () => {
-        const ll = marker.current.getLatLng();
-        reverseGeocode(ll.lat, ll.lng);
-      });
-    }
-    reverseGeocode(lat, lon);
-  }, [reverseGeocode]);
+  }, []);
 
-  // Load Leaflet CSS + JS from CDN, then init map
+  const goToGPS = useCallback(() => {
+    setLocating(true);
+    navigator.geolocation?.getCurrentPosition(
+      pos => { panTo(pos.coords.latitude, pos.coords.longitude, 17); setLocating(false); },
+      () => setLocating(false),
+      { timeout: 10000 }
+    );
+  }, [panTo]);
+
+  // Load Leaflet and init map
   useEffect(() => {
     const init = async () => {
       if (!(window as any).L) {
@@ -1645,27 +1646,33 @@ function LocationPickerModal({ t, onChoose, onClose }: {
       }
       if (!mapDivRef.current || leafletMap.current) return;
       const L = (window as any).L;
-      delete L.Icon.Default.prototype._getIconUrl;
-      L.Icon.Default.mergeOptions({ iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png', iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png', shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png' });
-      const map = L.map(mapDivRef.current).setView([-6.2, 106.8], 12);
+      const map = L.map(mapDivRef.current, { zoomControl: true }).setView([-6.2, 106.8], 12);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
       leafletMap.current = map;
-      map.on('click', (e: any) => placeMarker(e.latlng.lat, e.latlng.lng));
+      // Debounced reverse geocode on every map move
+      map.on('moveend', () => {
+        const c = map.getCenter();
+        clearTimeout(geocodeTimer.current);
+        geocodeTimer.current = setTimeout(() => reverseGeocode(c.lat, c.lng), 350);
+      });
       setMapReady(true);
     };
     init();
-    return () => { if (leafletMap.current) { leafletMap.current.remove(); leafletMap.current = null; marker.current = null; } };
-  }, []);
+    return () => {
+      clearTimeout(geocodeTimer.current);
+      if (leafletMap.current) { leafletMap.current.remove(); leafletMap.current = null; }
+    };
+  }, [reverseGeocode]);
 
   // Auto-GPS once map is ready
   useEffect(() => {
     if (!mapReady) return;
     navigator.geolocation?.getCurrentPosition(
-      pos => { placeMarker(pos.coords.latitude, pos.coords.longitude, 16); setLocating(false); },
+      pos => { panTo(pos.coords.latitude, pos.coords.longitude, 16); setLocating(false); },
       () => setLocating(false),
       { timeout: 10000 }
     );
-  }, [mapReady, placeMarker]);
+  }, [mapReady, panTo]);
 
   const handleSearch = (q: string) => {
     setSearchQuery(q);
@@ -1678,7 +1685,7 @@ function LocationPickerModal({ t, onChoose, onClose }: {
   };
 
   const selectResult = (r: any) => {
-    placeMarker(parseFloat(r.lat), parseFloat(r.lon), 16);
+    panTo(parseFloat(r.lat), parseFloat(r.lon), 16);
     setSearchQuery(r.display_name);
     setSearchResults([]);
   };
@@ -1690,13 +1697,13 @@ function LocationPickerModal({ t, onChoose, onClose }: {
       <div style={{ width: '100%', maxWidth: '480px', background: t.pageBg, borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${t.divider}` }}>
-          <span style={{ fontWeight: 700, fontSize: '15px', color: t.textPrimary }}>📍 Choose Location</span>
+          <span style={{ fontWeight: 700, fontSize: '15px', color: t.textPrimary }}>📍 Pilih Lokasi</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted, fontSize: '18px', lineHeight: 1, padding: '2px 4px' }}>✕</button>
         </div>
         <div style={{ padding: '16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {/* Search */}
           <div style={{ position: 'relative' }}>
-            <input value={searchQuery} onChange={e => handleSearch(e.target.value)} placeholder="🔍  Search location, street, city…" style={inp} />
+            <input value={searchQuery} onChange={e => handleSearch(e.target.value)} placeholder="🔍  Cari lokasi, jalan, kota…" style={inp} />
             {searchResults.length > 0 && (
               <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10, background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '8px', marginTop: '4px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}>
                 {searchResults.map((r, i) => (
@@ -1707,39 +1714,79 @@ function LocationPickerModal({ t, onChoose, onClose }: {
               </div>
             )}
           </div>
-          {/* Map */}
+
+          {/* Map with fixed center pin + GPS button */}
           <div style={{ position: 'relative' }}>
             <div ref={mapDivRef} style={{ width: '100%', height: '260px', borderRadius: '10px', border: `1px solid ${t.surfaceBorder}`, overflow: 'hidden' }} />
+
+            {/* Fixed center pin — always at exact center */}
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -100%)', zIndex: 1000, pointerEvents: 'none', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.35))' }}>
+              <svg width="32" height="42" viewBox="0 0 32 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 10.627 14.083 24.48 15.29 25.668a1 1 0 001.42 0C17.917 40.48 32 26.627 32 16 32 7.163 24.837 0 16 0z" fill="#E53E3E"/>
+                <circle cx="16" cy="16" r="6" fill="white"/>
+              </svg>
+            </div>
+
+            {/* GPS recenter button */}
+            <button
+              onClick={goToGPS}
+              title="Kembali ke lokasi saya"
+              style={{
+                position: 'absolute', bottom: '12px', right: '12px', zIndex: 1000,
+                width: '36px', height: '36px', borderRadius: '8px',
+                background: '#fff', border: '1px solid rgba(0,0,0,0.15)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', transition: 'background 0.15s',
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+                <circle cx="12" cy="12" r="8" strokeDasharray="4 2"/>
+              </svg>
+            </button>
+
+            {/* Loading overlay */}
             {(locating || !mapReady) && (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.35)', borderRadius: '10px', color: '#fff', fontSize: '13px', gap: '8px' }}>
                 <div style={{ width: '24px', height: '24px', border: '3px solid rgba(255,255,255,0.3)', borderTop: '3px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                {mapReady ? 'Getting your location…' : 'Loading map…'}
+                {mapReady ? 'Mendeteksi lokasi…' : 'Memuat peta…'}
               </div>
             )}
           </div>
+
+          {/* Hint */}
+          <p style={{ fontSize: '11px', color: t.textMuted, textAlign: 'center', margin: '-4px 0' }}>Geser peta untuk menyesuaikan titik lokasi</p>
+
           {/* Address preview */}
-          {loc.display ? (
-            <div style={{ padding: '12px 14px', background: t.inputBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '10px' }}>
-              <p style={{ fontSize: '11px', color: t.textMuted, marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Selected Address</p>
-              <p style={{ fontSize: '13px', color: t.textPrimary, lineHeight: 1.5 }}>{loc.display}</p>
-              <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
-                {loc.city && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.city}</span>}
-                {loc.postal && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.postal}</span>}
-                {loc.province && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.province}</span>}
-              </div>
+          {(loc.display || geocoding) && (
+            <div style={{ padding: '12px 14px', background: t.inputBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '10px', minHeight: '60px' }}>
+              {geocoding ? (
+                <p style={{ fontSize: '12px', color: t.textMuted }}>Mencari alamat…</p>
+              ) : (
+                <>
+                  <p style={{ fontSize: '11px', color: t.textMuted, marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Alamat Terpilih</p>
+                  <p style={{ fontSize: '13px', color: t.textPrimary, lineHeight: 1.5 }}>{loc.display}</p>
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
+                    {loc.city && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.city}</span>}
+                    {loc.postal && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.postal}</span>}
+                    {loc.province && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.province}</span>}
+                  </div>
+                </>
+              )}
             </div>
-          ) : mapReady && !locating ? (
-            <p style={{ fontSize: '12px', color: t.textMuted, textAlign: 'center' }}>Tap on the map or search to pick a location</p>
-          ) : null}
+          )}
         </div>
+
         {/* Footer CTA */}
         <div style={{ padding: '14px 16px', borderTop: `1px solid ${t.divider}` }}>
           <button
             onClick={() => { onChoose(loc); onClose(); }}
-            disabled={!loc.display}
-            style={{ width: '100%', padding: '13px', background: loc.display ? t.primary : t.surfaceBorder, color: loc.display ? t.primaryContrast : t.textMuted, borderRadius: t.btnRadius, fontWeight: 700, fontSize: '14px', cursor: loc.display ? 'pointer' : 'not-allowed', border: 'none', transition: 'background 0.15s' }}
+            disabled={!loc.display || geocoding}
+            style={{ width: '100%', padding: '13px', background: (loc.display && !geocoding) ? t.primary : t.surfaceBorder, color: (loc.display && !geocoding) ? t.primaryContrast : t.textMuted, borderRadius: t.btnRadius, fontWeight: 700, fontSize: '14px', cursor: (loc.display && !geocoding) ? 'pointer' : 'not-allowed', border: 'none', transition: 'background 0.15s' }}
           >
-            ✓ Use This Location
+            ✓ Gunakan Lokasi Ini
           </button>
         </div>
       </div>
