@@ -1577,6 +1577,176 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
 
 const INDONESIAN_PROVINCES = ['Aceh','Bali','Banten','Bengkulu','DI Yogyakarta','DKI Jakarta','Gorontalo','Jambi','Jawa Barat','Jawa Tengah','Jawa Timur','Kalimantan Barat','Kalimantan Selatan','Kalimantan Tengah','Kalimantan Timur','Kalimantan Utara','Kepulauan Bangka Belitung','Kepulauan Riau','Lampung','Maluku','Maluku Utara','Nusa Tenggara Barat','Nusa Tenggara Timur','Papua','Papua Barat','Riau','Sulawesi Barat','Sulawesi Selatan','Sulawesi Tengah','Sulawesi Tenggara','Sulawesi Utara','Sumatera Barat','Sumatera Selatan','Sumatera Utara'];
 
+// ── LocationPickerModal ───────────────────────────────────────────────────────
+interface PickedLocation { address: string; city: string; postal: string; province: string; display: string }
+
+function LocationPickerModal({ t, onChoose, onClose }: {
+  t: CommerceTheme;
+  onChoose: (loc: PickedLocation) => void;
+  onClose: () => void;
+}) {
+  const mapDivRef = useRef<HTMLDivElement>(null);
+  const leafletMap = useRef<any>(null);
+  const marker = useRef<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [loc, setLoc] = useState<PickedLocation>({ address: '', city: '', postal: '', province: '', display: '' });
+  const [mapReady, setMapReady] = useState(false);
+  const [locating, setLocating] = useState(true);
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const reverseGeocode = useCallback(async (lat: number, lon: number) => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
+      const data = await res.json();
+      const a = data.address ?? {};
+      setLoc({
+        address: [a.road, a.neighbourhood, a.suburb, a.village].filter(Boolean).join(', '),
+        city: a.city ?? a.town ?? a.county ?? a.regency ?? '',
+        postal: (a.postcode ?? '').replace(/\D/g, '').slice(0, 5),
+        province: a.state ?? '',
+        display: data.display_name ?? '',
+      });
+    } catch { /* ignore */ }
+  }, []);
+
+  const placeMarker = useCallback((lat: number, lon: number, zoom?: number) => {
+    const L = (window as any).L;
+    if (!leafletMap.current || !L) return;
+    if (zoom) leafletMap.current.setView([lat, lon], zoom);
+    else leafletMap.current.panTo([lat, lon]);
+    if (marker.current) marker.current.setLatLng([lat, lon]);
+    else {
+      marker.current = L.marker([lat, lon], { draggable: true }).addTo(leafletMap.current);
+      marker.current.on('dragend', () => {
+        const ll = marker.current.getLatLng();
+        reverseGeocode(ll.lat, ll.lng);
+      });
+    }
+    reverseGeocode(lat, lon);
+  }, [reverseGeocode]);
+
+  // Load Leaflet CSS + JS from CDN, then init map
+  useEffect(() => {
+    const init = async () => {
+      if (!(window as any).L) {
+        if (!document.getElementById('leaflet-css')) {
+          const link = Object.assign(document.createElement('link'), { id: 'leaflet-css', rel: 'stylesheet', href: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' });
+          document.head.appendChild(link);
+        }
+        await new Promise<void>((resolve, reject) => {
+          const s = Object.assign(document.createElement('script'), { src: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js' });
+          s.onload = () => resolve(); s.onerror = reject;
+          document.head.appendChild(s);
+        });
+      }
+      if (!mapDivRef.current || leafletMap.current) return;
+      const L = (window as any).L;
+      delete L.Icon.Default.prototype._getIconUrl;
+      L.Icon.Default.mergeOptions({ iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png', iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png', shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png' });
+      const map = L.map(mapDivRef.current).setView([-6.2, 106.8], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+      leafletMap.current = map;
+      map.on('click', (e: any) => placeMarker(e.latlng.lat, e.latlng.lng));
+      setMapReady(true);
+    };
+    init();
+    return () => { if (leafletMap.current) { leafletMap.current.remove(); leafletMap.current = null; marker.current = null; } };
+  }, []);
+
+  // Auto-GPS once map is ready
+  useEffect(() => {
+    if (!mapReady) return;
+    navigator.geolocation?.getCurrentPosition(
+      pos => { placeMarker(pos.coords.latitude, pos.coords.longitude, 16); setLocating(false); },
+      () => setLocating(false),
+      { timeout: 10000 }
+    );
+  }, [mapReady, placeMarker]);
+
+  const handleSearch = (q: string) => {
+    setSearchQuery(q);
+    clearTimeout(searchTimer.current);
+    if (!q.trim()) { setSearchResults([]); return; }
+    searchTimer.current = setTimeout(async () => {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
+      setSearchResults(await res.json());
+    }, 400);
+  };
+
+  const selectResult = (r: any) => {
+    placeMarker(parseFloat(r.lat), parseFloat(r.lon), 16);
+    setSearchQuery(r.display_name);
+    setSearchResults([]);
+  };
+
+  const inp: CSSProperties = { width: '100%', padding: '10px 14px', borderRadius: '8px', border: `1px solid ${t.inputBorder}`, background: t.inputBg, color: t.textPrimary, fontSize: '13px', outline: 'none', boxSizing: 'border-box' };
+
+  return createPortal(
+    <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.55)', padding: '16px' }}>
+      <div style={{ width: '100%', maxWidth: '480px', background: t.pageBg, borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${t.divider}` }}>
+          <span style={{ fontWeight: 700, fontSize: '15px', color: t.textPrimary }}>📍 Choose Location</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted, fontSize: '18px', lineHeight: 1, padding: '2px 4px' }}>✕</button>
+        </div>
+        <div style={{ padding: '16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {/* Search */}
+          <div style={{ position: 'relative' }}>
+            <input value={searchQuery} onChange={e => handleSearch(e.target.value)} placeholder="🔍  Search location, street, city…" style={inp} />
+            {searchResults.length > 0 && (
+              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10, background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '8px', marginTop: '4px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}>
+                {searchResults.map((r, i) => (
+                  <div key={i} onClick={() => selectResult(r)} style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: i < searchResults.length - 1 ? `1px solid ${t.divider}` : 'none', color: t.textPrimary, fontSize: '12px', lineHeight: 1.4 }}>
+                    {r.display_name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* Map */}
+          <div style={{ position: 'relative' }}>
+            <div ref={mapDivRef} style={{ width: '100%', height: '260px', borderRadius: '10px', border: `1px solid ${t.surfaceBorder}`, overflow: 'hidden' }} />
+            {(locating || !mapReady) && (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.35)', borderRadius: '10px', color: '#fff', fontSize: '13px', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', border: '3px solid rgba(255,255,255,0.3)', borderTop: '3px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                {mapReady ? 'Getting your location…' : 'Loading map…'}
+              </div>
+            )}
+          </div>
+          {/* Address preview */}
+          {loc.display ? (
+            <div style={{ padding: '12px 14px', background: t.inputBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '10px' }}>
+              <p style={{ fontSize: '11px', color: t.textMuted, marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Selected Address</p>
+              <p style={{ fontSize: '13px', color: t.textPrimary, lineHeight: 1.5 }}>{loc.display}</p>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+                {loc.city && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.city}</span>}
+                {loc.postal && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.postal}</span>}
+                {loc.province && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.province}</span>}
+              </div>
+            </div>
+          ) : mapReady && !locating ? (
+            <p style={{ fontSize: '12px', color: t.textMuted, textAlign: 'center' }}>Tap on the map or search to pick a location</p>
+          ) : null}
+        </div>
+        {/* Footer CTA */}
+        <div style={{ padding: '14px 16px', borderTop: `1px solid ${t.divider}` }}>
+          <button
+            onClick={() => { onChoose(loc); onClose(); }}
+            disabled={!loc.display}
+            style={{ width: '100%', padding: '13px', background: loc.display ? t.primary : t.surfaceBorder, color: loc.display ? t.primaryContrast : t.textMuted, borderRadius: t.btnRadius, fontWeight: 700, fontSize: '14px', cursor: loc.display ? 'pointer' : 'not-allowed', border: 'none', transition: 'background 0.15s' }}
+          >
+            ✓ Use This Location
+          </button>
+        </div>
+      </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>,
+    document.body
+  );
+}
+
+// ── Brand Logos ───────────────────────────────────────────────────────────────
 const BRAND_LOGOS: Record<string, { bg: string; color: string; label: string }> = {
   // Payment
   'bca':            { bg: '#005BAA', color: '#fff',    label: 'BCA' },
@@ -1955,48 +2125,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [selectedShippingId, setSelectedShippingId] = useState(shippingMethods[0]?.id ?? '');
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
-  const [locating, setLocating] = useState(false);
-  const [locateError, setLocateError] = useState('');
-
-  const useMyLocation = () => {
-    if (!navigator.geolocation) { setLocateError('Geolocation not supported by your browser'); return; }
-    setLocating(true);
-    setLocateError('');
-    navigator.geolocation.getCurrentPosition(
-      async pos => {
-        try {
-          const { latitude: lat, longitude: lon } = pos.coords;
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`, {
-            headers: { 'Accept-Language': 'id,en' },
-          });
-          const data = await res.json();
-          const a = data.address ?? {};
-          const road = [a.road, a.neighbourhood, a.suburb, a.village].filter(Boolean).join(', ');
-          const city = a.city ?? a.town ?? a.county ?? a.regency ?? '';
-          const postal = a.postcode ?? '';
-          const province = a.state ?? '';
-          setForm(f => ({
-            ...f,
-            address: road || f.address,
-            city: city || f.city,
-            postal: (postal || f.postal).replace(/\D/g, '').slice(0, 5),
-            province: province || f.province,
-          }));
-          setTouched(t => ({ ...t, address: false, city: false, postal: false }));
-        } catch {
-          setLocateError('Could not retrieve address. Try again.');
-        } finally {
-          setLocating(false);
-        }
-      },
-      err => {
-        setLocating(false);
-        if (err.code === 1) setLocateError('Location access denied. Please allow location in browser settings.');
-        else setLocateError('Could not get your location. Try again.');
-      },
-      { timeout: 10000 }
-    );
-  };
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
 
   const selectedShipping = shippingMethods.find(m => m.id === selectedShippingId) ?? shippingMethods[0];
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
@@ -2011,7 +2140,22 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const inpStyle: CSSProperties = { background: t.inputBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3), boxSizing: 'border-box' } as CSSProperties;
   const lblStyle: CSSProperties = { color: t.textSecondary, fontSize: '0.75rem', fontWeight: 600, marginBottom: '6px', display: 'block' };
 
+  const handleLocationChosen = (loc: PickedLocation) => {
+    setForm(f => ({
+      ...f,
+      address: loc.address || f.address,
+      city: loc.city || f.city,
+      postal: loc.postal || f.postal,
+      province: loc.province || f.province,
+    }));
+    setTouched(prev => ({ ...prev, address: false, city: false, postal: false }));
+  };
+
   return (
+    <>
+    {showLocationPicker && (
+      <LocationPickerModal t={t} onChoose={handleLocationChosen} onClose={() => setShowLocationPicker(false)} />
+    )}
     <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
       <header className="px-5 h-14 flex items-center sticky top-0 z-40 shadow-sm" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
         <span className="text-sm font-bold flex-1 text-center" style={{ color: t.textPrimary }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
@@ -2090,8 +2234,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       <label style={{ ...lblStyle, marginBottom: '6px', display: 'block' }}>Full Address</label>
                       <button
                         type="button"
-                        onClick={useMyLocation}
-                        disabled={locating}
+                        onClick={() => setShowLocationPicker(true)}
                         style={{
                           width: '100%', marginBottom: '8px',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
@@ -2099,13 +2242,11 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           border: `1.5px dashed ${t.primary}`,
                           background: alpha(t.primary, 0.06),
                           color: t.primary, fontSize: '12px', fontWeight: 700,
-                          cursor: locating ? 'wait' : 'pointer', opacity: locating ? 0.6 : 1,
-                          transition: 'background 0.15s',
+                          cursor: 'pointer', transition: 'background 0.15s',
                         }}
                       >
-                        {locating ? '⏳ Detecting location…' : '📍 Use My Current Location'}
+                        📍 Use My Current Location
                       </button>
-                      {locateError && <p style={{ ...errStyle, marginBottom: '4px' }}>{locateError}</p>}
                       <textarea
                         className="w-full px-4 py-2.5 text-sm resize-none"
                         style={{ ...inpStyle, outline: 'none' }}
@@ -2339,6 +2480,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         </div>
       </div>
     </div>
+    </>
   );
 }
 
