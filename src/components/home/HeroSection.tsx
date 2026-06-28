@@ -12,7 +12,7 @@ import type { AdvancedOptions, ThemeColors } from '../../lib/claudeApiClient';
 import { businessCategories, templates } from '../../data/templates';
 import type { Template } from '../../data/templates';
 import type { Store } from '../../context/StoreContext';
-import { useStore } from '../../context/StoreContext';
+import { useOptionalStore } from '../../context/StoreContext';
 import { generateStoreWithClaude } from '../../lib/claudeApiClient';
 import { getGuestId } from '../../lib/guestId';
 
@@ -149,7 +149,8 @@ export default function HeroSection() {
   const [advancedApplied, setAdvancedApplied] = useState(false);
 
   const router = useRouter();
-  const { addStore } = useStore();
+  const storeCtx = useOptionalStore();
+  const addStore = storeCtx?.addStore;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const brandInputRef = useRef<HTMLInputElement>(null);
   const colorBtnRef = useRef<HTMLButtonElement>(null);
@@ -316,7 +317,7 @@ export default function HeroSection() {
     // Persist to Supabase via addStore — handles both authenticated users
     // (saves to stores table with user_id) and guests (saves to guest_stores).
     // Fire-and-forget so navigation isn't blocked.
-    addStore(newStore).catch(() => { /* localStorage fallback already saved */ });
+    addStore?.(newStore).catch(() => { /* localStorage fallback already saved */ });
 
     // Navigate immediately — keep overlay visible during transition so home page
     // never flashes. The overlay disappears naturally when HeroSection unmounts.
