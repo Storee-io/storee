@@ -1606,7 +1606,7 @@ const parseDisplayName = (displayName: string, postcode?: string): PickedLocatio
     if (falseExtra) cityOffset += 1;
     const city      = parts[postalIdx - cityOffset] ?? '';
     const streetEnd = postalIdx - cityOffset;
-    const address   = parts.slice(0, streetEnd).join(', ');
+    const address   = parts.slice(0, streetEnd + 1).join(', '); // include city/kabupaten level
     // Build display: skip supra-region, country, and any known false extra segment
     const skipInDisplay = new Set([...(hasSupra ? [parts[postalIdx - 1]] : []), ...(falseExtra ? [falseExtra] : []), 'Indonesia']);
     const display   = [...parts.slice(0, postalIdx), parts[postalIdx]]
