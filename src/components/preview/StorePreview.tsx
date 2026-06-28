@@ -1602,17 +1602,21 @@ function LocationPickerModal({ t, onChoose, onClose }: {
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
       const data = await res.json();
       const a = data.address ?? {};
-      const city = a.city ?? a.town ?? a.municipality ?? a.county ?? a.regency ?? '';
+      // POI/building name is in data.name (top-level), not inside address object
+      const poiName = (data.name && data.name !== a.road) ? data.name : '';
+      const regency = a.county ?? a.regency ?? '';
+      const city = a.city ?? a.town ?? a.municipality ?? regency;
       const streetParts = [
+        poiName,
         a.house_number, a.road, a.residential,
         a.neighbourhood, a.hamlet, a.quarter,
         a.village, a.suburb, a.city_district,
-        city,
+        regency, // kab/kota level (e.g. Badung, Depok)
       ].filter(Boolean);
       const seen = new Set<string>();
       const unique = streetParts.filter(p => { const k = p.toLowerCase().trim(); if (seen.has(k)) return false; seen.add(k); return true; });
       const streetAddr = unique.join(', ')
-        || (data.display_name ?? '').split(',').slice(0, 4).join(',').trim();
+        || (data.display_name ?? '').split(',').slice(0, 5).join(',').trim();
       setLoc({
         address: streetAddr,
         city,
