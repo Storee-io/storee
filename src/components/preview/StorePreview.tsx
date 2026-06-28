@@ -1709,12 +1709,14 @@ function LocationPickerModal({ t, onChoose, onClose }: {
           <span style={{ fontWeight: 700, fontSize: '15px', color: t.textPrimary }}>📍 Pilih Lokasi</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted, fontSize: '18px', lineHeight: 1, padding: '2px 4px' }}>✕</button>
         </div>
-        <div style={{ padding: '16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {/* Search */}
-          <div>
-            <input value={searchQuery} onChange={e => handleSearch(e.target.value)} placeholder="🔍  Cari lokasi, jalan, kota…" style={inp} />
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', flex: 1 }}>
+          {/* Search + Map in one relative container so dropdown floats over map */}
+          <div style={{ position: 'relative' }}>
+            <input value={searchQuery} onChange={e => handleSearch(e.target.value)} placeholder="🔍  Cari lokasi, jalan, kota…" style={{ ...inp, marginBottom: '8px' }} />
+
+            {/* Search results — absolute over map, does not shift layout */}
             {searchResults.length > 0 && (
-              <div style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '8px', marginTop: '4px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}>
+              <div style={{ position: 'absolute', top: '46px', left: 0, right: 0, zIndex: 2000, background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '8px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.18)', maxHeight: '220px', overflowY: 'auto' }}>
                 {searchResults.map((r, i) => (
                   <div key={i} onClick={() => selectResult(r)} style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: i < searchResults.length - 1 ? `1px solid ${t.divider}` : 'none', color: t.textPrimary, fontSize: '12px', lineHeight: 1.4 }}>
                     {r.display_name}
@@ -1722,47 +1724,35 @@ function LocationPickerModal({ t, onChoose, onClose }: {
                 ))}
               </div>
             )}
-          </div>
 
-          {/* Map with fixed center pin + GPS button */}
-          <div style={{ position: 'relative' }}>
-            <div ref={mapDivRef} style={{ width: '100%', height: '260px', borderRadius: '10px', border: `1px solid ${t.surfaceBorder}`, overflow: 'hidden' }} />
+            {/* Map wrapper — separate relative context for pin/GPS/overlay */}
+            <div style={{ position: 'relative' }}>
+              <div ref={mapDivRef} style={{ width: '100%', height: '260px', borderRadius: '10px', border: `1px solid ${t.surfaceBorder}`, overflow: 'hidden' }} />
 
-            {/* Fixed center pin — always at exact center */}
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -100%)', zIndex: 1000, pointerEvents: 'none', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.35))' }}>
-              <svg width="32" height="42" viewBox="0 0 32 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 10.627 14.083 24.48 15.29 25.668a1 1 0 001.42 0C17.917 40.48 32 26.627 32 16 32 7.163 24.837 0 16 0z" fill="#E53E3E"/>
-                <circle cx="16" cy="16" r="6" fill="white"/>
-              </svg>
-            </div>
-
-            {/* GPS recenter button */}
-            <button
-              onClick={goToGPS}
-              title="Kembali ke lokasi saya"
-              style={{
-                position: 'absolute', bottom: '12px', right: '12px', zIndex: 1000,
-                width: '36px', height: '36px', borderRadius: '8px',
-                background: '#fff', border: '1px solid rgba(0,0,0,0.15)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', transition: 'background 0.15s',
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-                <circle cx="12" cy="12" r="8" strokeDasharray="4 2"/>
-              </svg>
-            </button>
-
-            {/* Loading overlay */}
-            {(locating || !mapReady) && (
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.35)', borderRadius: '10px', color: '#fff', fontSize: '13px', gap: '8px' }}>
-                <div style={{ width: '24px', height: '24px', border: '3px solid rgba(255,255,255,0.3)', borderTop: '3px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                {mapReady ? 'Mendeteksi lokasi…' : 'Memuat peta…'}
+              {/* Fixed center pin */}
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -100%)', zIndex: 1000, pointerEvents: 'none', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.35))' }}>
+                <svg width="32" height="42" viewBox="0 0 32 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M16 0C7.163 0 0 7.163 0 16c0 10.627 14.083 24.48 15.29 25.668a1 1 0 001.42 0C17.917 40.48 32 26.627 32 16 32 7.163 24.837 0 16 0z" fill="#E53E3E"/>
+                  <circle cx="16" cy="16" r="6" fill="white"/>
+                </svg>
               </div>
-            )}
+
+              {/* GPS recenter button */}
+              <button onClick={goToGPS} title="Kembali ke lokasi saya" style={{ position: 'absolute', bottom: '12px', right: '12px', zIndex: 1000, width: '36px', height: '36px', borderRadius: '8px', background: '#fff', border: '1px solid rgba(0,0,0,0.15)', boxShadow: '0 2px 8px rgba(0,0,0,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+                  <circle cx="12" cy="12" r="8" strokeDasharray="4 2"/>
+                </svg>
+              </button>
+
+              {/* Loading overlay */}
+              {(locating || !mapReady) && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.35)', borderRadius: '10px', color: '#fff', fontSize: '13px', gap: '8px' }}>
+                  <div style={{ width: '24px', height: '24px', border: '3px solid rgba(255,255,255,0.3)', borderTop: '3px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                  {mapReady ? 'Mendeteksi lokasi…' : 'Memuat peta…'}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Hint */}
