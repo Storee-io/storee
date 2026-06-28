@@ -1740,13 +1740,13 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       <div style={{ width: '100%', maxWidth: '480px', background: t.pageBg, borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: 'min(600px, 90vh)' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${t.divider}` }}>
-          <span style={{ fontWeight: 700, fontSize: '15px', color: t.textPrimary }}>📍 Pilih Lokasi</span>
+          <span style={{ fontWeight: 700, fontSize: '15px', color: t.textPrimary }}>📍 Pick Location</span>
           <button onClick={() => onClose(currentCoordsRef.current)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted, fontSize: '18px', lineHeight: 1, padding: '2px 4px' }}>✕</button>
         </div>
 
         {/* Search bar — always visible */}
         <div style={{ padding: '12px 16px', borderBottom: searchResults.length > 0 ? `1px solid ${t.divider}` : 'none' }}>
-          <input value={searchQuery} onChange={e => handleSearch(e.target.value)} placeholder="🔍  Cari lokasi, jalan, kota…" style={inp} />
+          <input value={searchQuery} onChange={e => handleSearch(e.target.value)} placeholder="🔍  Search location, street, city…" style={inp} />
         </div>
 
         {/* ── Search results (shown on top when results exist) ── */}
@@ -1790,17 +1790,17 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
                 {(locating || !mapReady) && (
                   <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.35)', borderRadius: '10px', color: '#fff', fontSize: '13px', gap: '8px' }}>
                     <div style={{ width: '24px', height: '24px', border: '3px solid rgba(255,255,255,0.3)', borderTop: '3px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                    {mapReady ? 'Mendeteksi lokasi…' : 'Memuat peta…'}
+                    {mapReady ? 'Detecting location…' : 'Loading map…'}
                   </div>
                 )}
               </div>
 
-              <p style={{ fontSize: '11px', color: t.textMuted, textAlign: 'center', margin: '0' }}>Geser peta untuk menyesuaikan titik lokasi</p>
+              <p style={{ fontSize: '11px', color: t.textMuted, textAlign: 'center', margin: '0' }}>Drag the map to adjust the pin location</p>
 
               {/* Address preview — always visible */}
               <div style={{ padding: '12px 14px', background: t.inputBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <p style={{ fontSize: '11px', color: t.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Alamat Terpilih</p>
+                  <p style={{ fontSize: '11px', color: t.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Selected Address</p>
                   {(locating || geocoding) && <div style={{ width: '12px', height: '12px', border: '2px solid rgba(0,0,0,0.1)', borderTop: `2px solid ${t.primary}`, borderRadius: '50%', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />}
                 </div>
                 {(locating || (!loc.display && geocoding)) ? (
@@ -1818,7 +1818,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
                     </div>
                   </>
                 ) : (
-                  <p style={{ fontSize: '13px', color: t.textMuted, margin: 0 }}>Lokasi tidak terdeteksi</p>
+                  <p style={{ fontSize: '13px', color: t.textMuted, margin: 0 }}>Location not detected</p>
                 )}
               </div>
             </div>
@@ -1830,7 +1830,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
                 disabled={!loc.display || geocoding}
                 style={{ width: '100%', padding: '13px', background: (loc.display && !geocoding) ? t.primary : t.surfaceBorder, color: (loc.display && !geocoding) ? t.primaryContrast : t.textMuted, borderRadius: t.btnRadius, fontWeight: 700, fontSize: '14px', cursor: (loc.display && !geocoding) ? 'pointer' : 'not-allowed', border: 'none', transition: 'background 0.15s' }}
               >
-                ✓ Gunakan Lokasi Ini
+                ✓ Use This Location
               </button>
             </div>
           </>
