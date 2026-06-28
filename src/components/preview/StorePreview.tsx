@@ -1608,7 +1608,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
 
       // Parse display_name by position — more reliable than address fields for Indonesia.
       // Structure: ..., [Kecamatan], [Kabupaten], [Provinsi], [Supra-region?], [PostalCode], [Indonesia]
-      const SUPRA = new Set(['Nusa Tenggara', 'Java', 'Sumatra', 'Kalimantan', 'Sulawesi', 'Papua', 'Maluku']);
+      const SUPRA = new Set(['Nusa Tenggara', 'Jawa', 'Java', 'Sumatera', 'Sumatra', 'Kalimantan', 'Sulawesi', 'Papua', 'Maluku']);
       const rawParts = (data.display_name ?? '').split(',').map((s: string) => s.trim()).filter(Boolean);
       const postalIdx = rawParts.findIndex((p: string) => /^\d{4,6}$/.test(p));
 
