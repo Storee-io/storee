@@ -1593,7 +1593,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [loc, setLoc] = useState<PickedLocation>(initialLoc ?? { address: '', city: '', postal: '', province: '', display: '' });
   const [mapReady, setMapReady] = useState(false);
-  const [locating, setLocating] = useState(!initialCoords);
+  const [locating, setLocating] = useState(!initialCoords || !initialLoc);
   const [geocoding, setGeocoding] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
   const geocodeTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -1639,7 +1639,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
         display: data.display_name ?? '',
       });
     } catch { /* ignore */ }
-    finally { setGeocoding(false); }
+    finally { setGeocoding(false); setLocating(false); }
   }, []);
 
   const panTo = useCallback((lat: number, lon: number, zoom?: number) => {
@@ -1699,7 +1699,12 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   // Center map on open — use saved coords instantly, otherwise request GPS
   const centeredRef = useRef(!!initialCoords);
   useEffect(() => {
-    if (!mapReady || centeredRef.current) return;
+    if (!mapReady) return;
+    // Has saved coords but no address yet — geocode immediately
+    if (initialCoords && !initialLoc) {
+      reverseGeocode(initialCoords.lat, initialCoords.lng);
+    }
+    if (centeredRef.current) return;
     // No saved coords — request GPS (map already starts at default Jakarta view)
     navigator.geolocation?.getCurrentPosition(
       pos => {
