@@ -2379,10 +2379,36 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         📍 Use My Current Location
                       </button>
                       {lastPickedLoc && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 10px', borderRadius: '8px', background: alpha(t.primary, 0.08), border: `1px solid ${alpha(t.primary, 0.2)}` }}>
-                          <span style={{ fontSize: '12px' }}>📍</span>
-                          <span style={{ fontSize: '11px', color: t.primary, fontWeight: 600, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lastPickedLoc.display}</span>
-                          <span style={{ fontSize: '10px', color: t.primary, opacity: 0.7, flexShrink: 0 }}>✓ Pinned</span>
+                        <div style={{ borderRadius: '12px', border: `1.5px solid ${alpha(t.primary, 0.25)}`, background: alpha(t.primary, 0.05), overflow: 'hidden' }}>
+                          {/* Top row */}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px 4px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: t.primary, display: 'inline-block', flexShrink: 0 }} />
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: t.primary, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Location Pinned</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setShowLocationPicker(true)}
+                              style={{ fontSize: '11px', fontWeight: 600, color: t.primary, background: 'none', border: 'none', cursor: 'pointer', padding: '0', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+                            >
+                              Change
+                            </button>
+                          </div>
+                          {/* Address */}
+                          <div style={{ padding: '2px 12px 10px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                            <svg width="14" height="18" viewBox="0 0 14 18" fill="none" style={{ flexShrink: 0, marginTop: '1px' }}>
+                              <path d="M7 0C3.13 0 0 3.13 0 7c0 5.25 7 11 7 11s7-5.75 7-11c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 7 4.5a2.5 2.5 0 0 1 0 5z" fill={t.primary}/>
+                            </svg>
+                            <span style={{ fontSize: '12px', color: t.textPrimary, lineHeight: 1.5 }}>{lastPickedLoc.display}</span>
+                          </div>
+                          {/* Tags */}
+                          {(lastPickedLoc.city || lastPickedLoc.province || lastPickedLoc.postal) && (
+                            <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', padding: '0 12px 10px' }}>
+                              {lastPickedLoc.city && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{lastPickedLoc.city}</span>}
+                              {lastPickedLoc.province && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{lastPickedLoc.province}</span>}
+                              {lastPickedLoc.postal && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{lastPickedLoc.postal}</span>}
+                            </div>
+                          )}
                         </div>
                       )}
                       <textarea
