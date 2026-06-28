@@ -1703,113 +1703,102 @@ function LocationPickerModal({ t, onChoose, onClose }: {
 
   return createPortal(
     <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.55)', padding: '16px' }}>
-      <div style={{ width: '100%', maxWidth: '480px', background: t.pageBg, borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '90vh', position: 'relative' }}>
+      <div style={{ width: '100%', maxWidth: '480px', background: t.pageBg, borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${t.divider}` }}>
           <span style={{ fontWeight: 700, fontSize: '15px', color: t.textPrimary }}>📍 Pilih Lokasi</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted, fontSize: '18px', lineHeight: 1, padding: '2px 4px' }}>✕</button>
         </div>
-        <div style={{ padding: '16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {/* Search input */}
+
+        {/* Search bar — always visible */}
+        <div style={{ padding: '12px 16px', borderBottom: searchResults.length > 0 ? `1px solid ${t.divider}` : 'none' }}>
           <input value={searchQuery} onChange={e => handleSearch(e.target.value)} placeholder="🔍  Cari lokasi, jalan, kota…" style={inp} />
+        </div>
 
-          {/* Search results overlay — covers map + address + footer, sits inside modal card */}
-          {searchResults.length > 0 && (
-            <div style={{ position: 'absolute', top: '58px', left: 0, right: 0, bottom: 0, zIndex: 500, background: t.pageBg, borderTop: `1px solid ${t.divider}`, overflowY: 'auto' }}>
-              {searchResults.map((r, i) => (
-                <div key={i} onClick={() => selectResult(r)}
-                  style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 16px', cursor: 'pointer', borderBottom: `1px solid ${t.divider}`, color: t.textPrimary, fontSize: '13px', lineHeight: 1.5 }}
-                  onMouseEnter={e => (e.currentTarget.style.background = t.inputBg)}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <span style={{ flexShrink: 0, marginTop: '2px', color: t.textMuted }}>📍</span>
-                  <span>{r.display_name}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Map with fixed center pin + GPS button */}
-          <div style={{ position: 'relative' }}>
-            <div ref={mapDivRef} style={{ width: '100%', height: '260px', borderRadius: '10px', border: `1px solid ${t.surfaceBorder}`, overflow: 'hidden' }} />
-
-            {/* Fixed center pin — always at exact center */}
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -100%)', zIndex: 1000, pointerEvents: 'none', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.35))' }}>
-              <svg width="32" height="42" viewBox="0 0 32 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 10.627 14.083 24.48 15.29 25.668a1 1 0 001.42 0C17.917 40.48 32 26.627 32 16 32 7.163 24.837 0 16 0z" fill="#E53E3E"/>
-                <circle cx="16" cy="16" r="6" fill="white"/>
-              </svg>
-            </div>
-
-            {/* GPS recenter button */}
-            <button
-              onClick={goToGPS}
-              title="Kembali ke lokasi saya"
-              style={{
-                position: 'absolute', bottom: '12px', right: '12px', zIndex: 1000,
-                width: '36px', height: '36px', borderRadius: '8px',
-                background: '#fff', border: '1px solid rgba(0,0,0,0.15)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', transition: 'background 0.15s',
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-                <circle cx="12" cy="12" r="8" strokeDasharray="4 2"/>
-              </svg>
-            </button>
-
-            {/* Loading overlay */}
-            {(locating || !mapReady) && (
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.35)', borderRadius: '10px', color: '#fff', fontSize: '13px', gap: '8px' }}>
-                <div style={{ width: '24px', height: '24px', border: '3px solid rgba(255,255,255,0.3)', borderTop: '3px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                {mapReady ? 'Mendeteksi lokasi…' : 'Memuat peta…'}
+        {searchResults.length > 0 ? (
+          /* ── Search results view ── */
+          <div style={{ overflowY: 'auto', flex: 1 }}>
+            {searchResults.map((r, i) => (
+              <div key={i} onClick={() => selectResult(r)}
+                style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 16px', cursor: 'pointer', borderBottom: `1px solid ${t.divider}`, color: t.textPrimary, fontSize: '13px', lineHeight: 1.5 }}
+                onMouseEnter={e => (e.currentTarget.style.background = t.inputBg)}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <span style={{ flexShrink: 0, marginTop: '2px', color: t.textMuted }}>📍</span>
+                <span>{r.display_name}</span>
               </div>
-            )}
+            ))}
           </div>
-
-          {/* Hint */}
-          <p style={{ fontSize: '11px', color: t.textMuted, textAlign: 'center', margin: '-4px 0' }}>Geser peta untuk menyesuaikan titik lokasi</p>
-
-          {/* Address preview — always visible once first address loaded; skeleton on refresh */}
-          {(loc.display || geocoding) && (
-            <div style={{ position: 'relative', padding: '12px 14px', background: t.inputBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <p style={{ fontSize: '11px', color: t.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Alamat Terpilih</p>
-                {geocoding && <div style={{ width: '12px', height: '12px', border: '2px solid rgba(0,0,0,0.1)', borderTop: `2px solid ${t.primary}`, borderRadius: '50%', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />}
-              </div>
-              {geocoding && !loc.display ? (
-                /* first load skeleton */
-                <div>
-                  <div style={{ height: '13px', borderRadius: '4px', background: 'linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.2s infinite', marginBottom: '6px', width: '90%' }} />
-                  <div style={{ height: '13px', borderRadius: '4px', background: 'linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.2s infinite', width: '65%' }} />
+        ) : (
+          /* ── Map + address view ── */
+          <>
+            <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {/* Map with fixed pin + GPS button */}
+              <div style={{ position: 'relative' }}>
+                <div ref={mapDivRef} style={{ width: '100%', height: '260px', borderRadius: '10px', border: `1px solid ${t.surfaceBorder}`, overflow: 'hidden' }} />
+                {/* Fixed center pin */}
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -100%)', zIndex: 1000, pointerEvents: 'none', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.35))' }}>
+                  <svg width="32" height="42" viewBox="0 0 32 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 0C7.163 0 0 7.163 0 16c0 10.627 14.083 24.48 15.29 25.668a1 1 0 001.42 0C17.917 40.48 32 26.627 32 16 32 7.163 24.837 0 16 0z" fill="#E53E3E"/>
+                    <circle cx="16" cy="16" r="6" fill="white"/>
+                  </svg>
                 </div>
-              ) : (
-                <>
-                  <p style={{ fontSize: '13px', color: geocoding ? t.textMuted : t.textPrimary, lineHeight: 1.5, transition: 'color 0.2s' }}>{loc.display}</p>
-                  <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
-                    {loc.city && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.city}</span>}
-                    {loc.postal && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.postal}</span>}
-                    {loc.province && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.province}</span>}
+                {/* GPS recenter */}
+                <button onClick={goToGPS} title="Kembali ke lokasi saya" style={{ position: 'absolute', bottom: '12px', right: '12px', zIndex: 1000, width: '36px', height: '36px', borderRadius: '8px', background: '#fff', border: '1px solid rgba(0,0,0,0.15)', boxShadow: '0 2px 8px rgba(0,0,0,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+                    <circle cx="12" cy="12" r="8" strokeDasharray="4 2"/>
+                  </svg>
+                </button>
+                {/* Loading overlay */}
+                {(locating || !mapReady) && (
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.35)', borderRadius: '10px', color: '#fff', fontSize: '13px', gap: '8px' }}>
+                    <div style={{ width: '24px', height: '24px', border: '3px solid rgba(255,255,255,0.3)', borderTop: '3px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                    {mapReady ? 'Mendeteksi lokasi…' : 'Memuat peta…'}
                   </div>
-                </>
+                )}
+              </div>
+
+              <p style={{ fontSize: '11px', color: t.textMuted, textAlign: 'center', margin: '0' }}>Geser peta untuk menyesuaikan titik lokasi</p>
+
+              {/* Address preview */}
+              {(loc.display || geocoding) && (
+                <div style={{ padding: '12px 14px', background: t.inputBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <p style={{ fontSize: '11px', color: t.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Alamat Terpilih</p>
+                    {geocoding && <div style={{ width: '12px', height: '12px', border: '2px solid rgba(0,0,0,0.1)', borderTop: `2px solid ${t.primary}`, borderRadius: '50%', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />}
+                  </div>
+                  {geocoding && !loc.display ? (
+                    <div>
+                      <div style={{ height: '13px', borderRadius: '4px', background: 'linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.2s infinite', marginBottom: '6px', width: '90%' }} />
+                      <div style={{ height: '13px', borderRadius: '4px', background: 'linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.2s infinite', width: '65%' }} />
+                    </div>
+                  ) : (
+                    <>
+                      <p style={{ fontSize: '13px', color: geocoding ? t.textMuted : t.textPrimary, lineHeight: 1.5, transition: 'color 0.2s' }}>{loc.display}</p>
+                      <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
+                        {loc.city && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.city}</span>}
+                        {loc.postal && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.postal}</span>}
+                        {loc.province && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.province}</span>}
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
             </div>
-          )}
-        </div>
 
-        {/* Footer CTA */}
-        <div style={{ padding: '14px 16px', borderTop: `1px solid ${t.divider}` }}>
-          <button
-            onClick={() => { onChoose(loc); onClose(); }}
-            disabled={!loc.display || geocoding}
-            style={{ width: '100%', padding: '13px', background: (loc.display && !geocoding) ? t.primary : t.surfaceBorder, color: (loc.display && !geocoding) ? t.primaryContrast : t.textMuted, borderRadius: t.btnRadius, fontWeight: 700, fontSize: '14px', cursor: (loc.display && !geocoding) ? 'pointer' : 'not-allowed', border: 'none', transition: 'background 0.15s' }}
-          >
-            ✓ Gunakan Lokasi Ini
-          </button>
-        </div>
+            {/* Footer CTA */}
+            <div style={{ padding: '14px 16px', borderTop: `1px solid ${t.divider}` }}>
+              <button
+                onClick={() => { onChoose(loc); onClose(); }}
+                disabled={!loc.display || geocoding}
+                style={{ width: '100%', padding: '13px', background: (loc.display && !geocoding) ? t.primary : t.surfaceBorder, color: (loc.display && !geocoding) ? t.primaryContrast : t.textMuted, borderRadius: t.btnRadius, fontWeight: 700, fontSize: '14px', cursor: (loc.display && !geocoding) ? 'pointer' : 'not-allowed', border: 'none', transition: 'background 0.15s' }}
+              >
+                ✓ Gunakan Lokasi Ini
+              </button>
+            </div>
+          </>
+        )}
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
     </div>,
