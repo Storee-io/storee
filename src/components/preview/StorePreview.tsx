@@ -1580,6 +1580,22 @@ const INDONESIAN_PROVINCES = ['Aceh','Bali','Banten','Bengkulu','DI Yogyakarta',
 // ── LocationPickerModal ───────────────────────────────────────────────────────
 interface PickedLocation { address: string; city: string; postal: string; province: string; display: string }
 
+// Nominatim sometimes inserts a supra-provincial "region" label between the real province
+// and the postal code (e.g. "Bali, Nusa Tenggara, 80351"). These are not official Indonesian
+// administrative divisions. Remove them if found at that position.
+const NOMINATIM_SUPRA_REGIONS = new Set([
+  'Nusa Tenggara', 'Java', 'Sumatra', 'Kalimantan', 'Sulawesi', 'Papua', 'Maluku',
+]);
+const cleanNominatimDisplay = (s: string): string => {
+  const parts = s.split(',').map(p => p.trim());
+  const postalIdx = parts.findIndex(p => /^\d{4,6}$/.test(p));
+  if (postalIdx < 2) return s;
+  if (NOMINATIM_SUPRA_REGIONS.has(parts[postalIdx - 1])) {
+    return [...parts.slice(0, postalIdx - 1), ...parts.slice(postalIdx)].join(', ');
+  }
+  return s;
+};
+
 function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }: {
   t: CommerceTheme;
   onChoose: (loc: PickedLocation, coords: { lat: number; lng: number }) => void;
@@ -1636,7 +1652,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
         city,
         postal: (a.postcode ?? '').replace(/\D/g, '').slice(0, 5),
         province: a.state ?? '',
-        display: data.display_name ?? '',
+        display: cleanNominatimDisplay(data.display_name ?? ''),
       });
     } catch { /* ignore */ }
     finally { setGeocoding(false); setLocating(false); }
@@ -1759,7 +1775,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <span style={{ flexShrink: 0, marginTop: '2px', color: t.textMuted }}>📍</span>
-                <span>{r.display_name}</span>
+                <span>{cleanNominatimDisplay(r.display_name)}</span>
               </div>
             ))}
           </div>
