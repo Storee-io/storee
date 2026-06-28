@@ -2403,8 +2403,10 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           </div>
                           {/* Static map preview */}
                           {lastPickedCoords && (
-                            <div style={{ width: '100%', height: '120px', background: `url('https://tile.openstreetmap.org/15/${Math.floor((lastPickedCoords.lng + 180) / 360 * Math.pow(2, 15))}/${Math.floor((1 - Math.log(Math.tan(lastPickedCoords.lat * Math.PI / 180) + 1 / Math.cos(lastPickedCoords.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 15))}.png') center/cover`, borderBottom: `1px solid ${alpha(t.divider, 0.5)}`, position: 'relative' }}>
-                              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '24px' }}>📍</div>
+                            <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 12px', borderBottom: `1px solid ${alpha(t.divider, 0.5)}` }}>
+                              <div style={{ width: '100px', height: '100px', background: `url('https://tile.openstreetmap.org/15/${Math.floor((lastPickedCoords.lng + 180) / 360 * Math.pow(2, 15))}/${Math.floor((1 - Math.log(Math.tan(lastPickedCoords.lat * Math.PI / 180) + 1 / Math.cos(lastPickedCoords.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 15))}.png') center/cover`, borderRadius: '8px', position: 'relative', border: `1px solid ${alpha(t.divider, 0.3)}` }}>
+                                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '20px' }}>📍</div>
+                              </div>
                             </div>
                           )}
                           {/* Address */}
