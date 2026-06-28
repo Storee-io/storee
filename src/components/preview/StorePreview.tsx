@@ -1884,7 +1884,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     if (k === 'email')    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : 'Invalid email format';
     if (k === 'whatsapp') return v.trim().length < 5 ? 'Enter a valid phone number' : '';
     if (k === 'address')  return v.trim().length < 10 ? 'Minimum 10 characters' : '';
-    if (k === 'city')     return v.trim().length < 2 ? 'Minimum 2 characters' : '';
+    if (k === 'city')     return v.trim().length < 3 ? 'Minimum 3 characters' : '';
     if (k === 'postal')   return v.trim().length < 3 ? 'Minimum 3 characters' : '';
     return '';
   };
