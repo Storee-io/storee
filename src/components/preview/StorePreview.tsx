@@ -1605,7 +1605,8 @@ function LocationPickerModal({ t, onChoose, onClose }: {
       // POI/building name is in data.name (top-level), not inside address object
       const poiName = (data.name && data.name !== a.road) ? data.name : '';
       const regency = a.county ?? a.regency ?? '';
-      const city = a.city ?? a.town ?? a.municipality ?? regency;
+      // municipality often maps to kecamatan in Indonesia — skip it for city field
+      const city = a.city ?? a.town ?? regency ?? a.municipality ?? '';
       const streetParts = [
         poiName,
         a.house_number, a.road, a.residential,
