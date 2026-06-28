@@ -1799,30 +1799,30 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords }: {
 
               <p style={{ fontSize: '11px', color: t.textMuted, textAlign: 'center', margin: '0' }}>Geser peta untuk menyesuaikan titik lokasi</p>
 
-              {/* Address preview */}
-              {(loc.display || geocoding) && (
-                <div style={{ padding: '12px 14px', background: t.inputBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <p style={{ fontSize: '11px', color: t.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Alamat Terpilih</p>
-                    {geocoding && <div style={{ width: '12px', height: '12px', border: '2px solid rgba(0,0,0,0.1)', borderTop: `2px solid ${t.primary}`, borderRadius: '50%', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />}
-                  </div>
-                  {geocoding && !loc.display ? (
-                    <div>
-                      <div style={{ height: '13px', borderRadius: '4px', background: 'linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.2s infinite', marginBottom: '6px', width: '90%' }} />
-                      <div style={{ height: '13px', borderRadius: '4px', background: 'linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.2s infinite', width: '65%' }} />
-                    </div>
-                  ) : (
-                    <>
-                      <p style={{ fontSize: '13px', color: geocoding ? t.textMuted : t.textPrimary, lineHeight: 1.5, transition: 'color 0.2s' }}>{loc.display}</p>
-                      <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
-                        {loc.city && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.city}</span>}
-                        {loc.postal && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.postal}</span>}
-                        {loc.province && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.province}</span>}
-                      </div>
-                    </>
-                  )}
+              {/* Address preview — always visible */}
+              <div style={{ padding: '12px 14px', background: t.inputBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <p style={{ fontSize: '11px', color: t.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Alamat Terpilih</p>
+                  {(locating || geocoding) && <div style={{ width: '12px', height: '12px', border: '2px solid rgba(0,0,0,0.1)', borderTop: `2px solid ${t.primary}`, borderRadius: '50%', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />}
                 </div>
-              )}
+                {(locating || (!loc.display && geocoding)) ? (
+                  <div>
+                    <div style={{ height: '13px', borderRadius: '4px', background: 'linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.2s infinite', marginBottom: '6px', width: '90%' }} />
+                    <div style={{ height: '13px', borderRadius: '4px', background: 'linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.2s infinite', width: '65%' }} />
+                  </div>
+                ) : loc.display ? (
+                  <>
+                    <p style={{ fontSize: '13px', color: geocoding ? t.textMuted : t.textPrimary, lineHeight: 1.5, transition: 'color 0.2s', margin: 0 }}>{loc.display}</p>
+                    <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
+                      {loc.city && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.city}</span>}
+                      {loc.postal && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.postal}</span>}
+                      {loc.province && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.province}</span>}
+                    </div>
+                  </>
+                ) : (
+                  <p style={{ fontSize: '13px', color: t.textMuted, margin: 0 }}>Lokasi tidak terdeteksi</p>
+                )}
+              </div>
             </div>
 
             {/* Footer CTA */}
