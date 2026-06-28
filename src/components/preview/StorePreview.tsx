@@ -1607,7 +1607,9 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       const a = data.address ?? {};
       // POI/building name is in data.name (top-level), not inside address object
       const poiName = (data.name && data.name !== a.road) ? data.name : '';
-      const regency = a.county ?? a.regency ?? '';
+      const rawRegency = a.county ?? a.regency ?? a.state_district ?? '';
+      // strip "Kabupaten "/"Kota " prefix that Nominatim sometimes includes
+      const regency = rawRegency.replace(/^(Kabupaten|Kota)\s+/i, '');
       // regency (kabupaten) before town/municipality — in Indonesia a.town can map to kecamatan
       const city = a.city ?? regency ?? a.town ?? a.municipality ?? '';
       const streetParts = [
