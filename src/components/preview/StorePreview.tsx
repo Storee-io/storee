@@ -1715,8 +1715,8 @@ function LocationPickerModal({ t, onChoose, onClose }: {
           <input value={searchQuery} onChange={e => handleSearch(e.target.value)} placeholder="🔍  Cari lokasi, jalan, kota…" style={inp} />
         </div>
 
-        {searchResults.length > 0 ? (
-          /* ── Search results view ── */
+        {/* ── Search results (shown on top when results exist) ── */}
+        {searchResults.length > 0 && (
           <div style={{ overflowY: 'auto', flex: 1 }}>
             {searchResults.map((r, i) => (
               <div key={i} onClick={() => selectResult(r)}
@@ -1729,8 +1729,10 @@ function LocationPickerModal({ t, onChoose, onClose }: {
               </div>
             ))}
           </div>
-        ) : (
-          /* ── Map + address view ── */
+        )}
+
+        {/* ── Map + address + CTA (always in DOM, hidden when results showing) ── */}
+        <div style={{ display: searchResults.length > 0 ? 'none' : 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
           <>
             <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {/* Map with fixed pin + GPS button */}
@@ -1798,7 +1800,7 @@ function LocationPickerModal({ t, onChoose, onClose }: {
               </button>
             </div>
           </>
-        )}
+        </div>
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
     </div>,
