@@ -1597,8 +1597,14 @@ const parseDisplayName = (displayName: string, postcode?: string): PickedLocatio
   if (postalIdx >= 3) {
     const hasSupra = NOMINATIM_SUPRA.has(parts[postalIdx - 1]);
     const province  = normalizeProvince(parts[postalIdx - (hasSupra ? 2 : 1)] ?? '');
-    const city      = parts[postalIdx - (hasSupra ? 3 : 2)] ?? '';
-    const streetEnd = postalIdx - (hasSupra ? 3 : 2);
+    let cityOffset  = hasSupra ? 3 : 2;
+    // Nominatim sometimes inserts a wrong extra level before the province (e.g. "Depok" before
+    // "Daerah Istimewa Yogyakarta"). Detect by checking if the candidate city is a known
+    // false-positive for a given province and shift one level deeper if so.
+    const cityCandidate = parts[postalIdx - cityOffset] ?? '';
+    if (cityCandidate === 'Depok' && province.includes('Yogyakarta')) cityOffset += 1;
+    const city      = parts[postalIdx - cityOffset] ?? '';
+    const streetEnd = postalIdx - cityOffset;
     const address   = parts.slice(0, streetEnd).join(', ');
     const display   = [...parts.slice(0, postalIdx - (hasSupra ? 1 : 0)), parts[postalIdx]].join(', ');
     const postal    = (postcode ?? parts[postalIdx] ?? '').replace(/\D/g, '').slice(0, 5);
