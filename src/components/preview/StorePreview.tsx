@@ -1607,10 +1607,12 @@ const parseDisplayName = (displayName: string, postcode?: string): PickedLocatio
     const city      = parts[postalIdx - cityOffset] ?? '';
     const streetEnd = postalIdx - cityOffset;
     const address   = parts.slice(0, streetEnd + 1).join(', '); // include city/kabupaten level
-    // Build display: skip supra-region, country, and any known false extra segment
+    // Build display: skip supra-region, country, false extras; replace raw province with normalized
+    const rawProvince   = parts[postalIdx - (hasSupra ? 2 : 1)] ?? '';
     const skipInDisplay = new Set([...(hasSupra ? [parts[postalIdx - 1]] : []), ...(falseExtra ? [falseExtra] : []), 'Indonesia']);
-    const display   = [...parts.slice(0, postalIdx), parts[postalIdx]]
+    const display = [...parts.slice(0, postalIdx), parts[postalIdx]]
       .filter(p => !skipInDisplay.has(p))
+      .map(p => p === rawProvince ? province : p)
       .join(', ');
     const postal    = (postcode ?? parts[postalIdx] ?? '').replace(/\D/g, '').slice(0, 5);
     return { address, city, postal, province, display };
