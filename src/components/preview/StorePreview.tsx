@@ -1582,6 +1582,13 @@ interface PickedLocation { address: string; city: string; postal: string; provin
 
 const NOMINATIM_SUPRA = new Set(['Nusa Tenggara', 'Jawa', 'Java', 'Sumatera', 'Sumatra', 'Kalimantan', 'Sulawesi', 'Papua', 'Maluku']);
 
+const PROVINCE_NORMALIZE: Record<string, string> = {
+  'Daerah Khusus Ibukota Jakarta': 'DKI Jakarta',
+  'Daerah Istimewa Yogyakarta': 'DI Yogyakarta',
+  'Kepulauan Bangka Belitung': 'Bangka Belitung',
+};
+const normalizeProvince = (p: string) => PROVINCE_NORMALIZE[p] ?? p;
+
 // Parse Nominatim display_name into structured location fields
 // Structure: ..., [Kecamatan], [Kabupaten], [Provinsi], [Supra?], [PostalCode], [Indonesia]
 const parseDisplayName = (displayName: string, postcode?: string): PickedLocation => {
@@ -1589,7 +1596,7 @@ const parseDisplayName = (displayName: string, postcode?: string): PickedLocatio
   const postalIdx = parts.findIndex(p => /^\d{4,6}$/.test(p));
   if (postalIdx >= 3) {
     const hasSupra = NOMINATIM_SUPRA.has(parts[postalIdx - 1]);
-    const province  = parts[postalIdx - (hasSupra ? 2 : 1)] ?? '';
+    const province  = normalizeProvince(parts[postalIdx - (hasSupra ? 2 : 1)] ?? '');
     const city      = parts[postalIdx - (hasSupra ? 3 : 2)] ?? '';
     const streetEnd = postalIdx - (hasSupra ? 3 : 2);
     const address   = parts.slice(0, streetEnd).join(', ');
