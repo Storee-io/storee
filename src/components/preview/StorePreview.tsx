@@ -2087,18 +2087,25 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     style={{ overflow: 'hidden' }}
                   >
                     <div className="col-span-2">
-                      <div className="flex items-center justify-between mb-1">
-                        <label style={lblStyle}>Full Address</label>
-                        <button
-                          type="button"
-                          onClick={useMyLocation}
-                          disabled={locating}
-                          style={{ color: t.primary, fontSize: '11px', fontWeight: 600, background: 'none', border: 'none', cursor: locating ? 'wait' : 'pointer', opacity: locating ? 0.6 : 1, padding: 0, display: 'flex', alignItems: 'center', gap: '4px' }}
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-                          {locating ? 'Locating…' : 'Use My Location'}
-                        </button>
-                      </div>
+                      <label style={{ ...lblStyle, marginBottom: '6px', display: 'block' }}>Full Address</label>
+                      <button
+                        type="button"
+                        onClick={useMyLocation}
+                        disabled={locating}
+                        style={{
+                          width: '100%', marginBottom: '8px',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                          padding: '9px 12px', borderRadius: t.inputRadius,
+                          border: `1.5px dashed ${t.primary}`,
+                          background: alpha(t.primary, 0.06),
+                          color: t.primary, fontSize: '12px', fontWeight: 700,
+                          cursor: locating ? 'wait' : 'pointer', opacity: locating ? 0.6 : 1,
+                          transition: 'background 0.15s',
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                        {locating ? 'Detecting location…' : '📍 Use My Current Location'}
+                      </button>
                       {locateError && <p style={{ ...errStyle, marginBottom: '4px' }}>{locateError}</p>}
                       <textarea
                         className="w-full px-4 py-2.5 text-sm resize-none"
