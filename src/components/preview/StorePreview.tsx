@@ -2393,7 +2393,20 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                               <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: t.primary, display: 'inline-block', flexShrink: 0 }} />
                               <span style={{ fontSize: '10px', fontWeight: 700, color: t.primary, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Location Pinned</span>
                             </div>
+                            <button
+                              type="button"
+                              onClick={() => setShowLocationPicker(true)}
+                              style={{ fontSize: '11px', fontWeight: 600, color: t.primary, background: 'none', border: 'none', cursor: 'pointer', padding: '0', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+                            >
+                              Change
+                            </button>
                           </div>
+                          {/* Static map preview */}
+                          {lastPickedCoords && (
+                            <div style={{ width: '100%', height: '120px', background: `url('https://tile.openstreetmap.org/15/${Math.floor((lastPickedCoords.lng + 180) / 360 * Math.pow(2, 15))}/${Math.floor((1 - Math.log(Math.tan(lastPickedCoords.lat * Math.PI / 180) + 1 / Math.cos(lastPickedCoords.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 15))}.png') center/cover`, borderBottom: `1px solid ${alpha(t.divider, 0.5)}`, position: 'relative' }}>
+                              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '24px' }}>📍</div>
+                            </div>
+                          )}
                           {/* Address */}
                           <div style={{ padding: '2px 12px 10px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                             <svg width="14" height="18" viewBox="0 0 14 18" fill="none" style={{ flexShrink: 0, marginTop: '1px' }}>
