@@ -1581,14 +1581,23 @@ const INDONESIAN_PROVINCES = ['Aceh','Bali','Banten','Bengkulu','DI Yogyakarta',
 interface PickedLocation { address: string; city: string; postal: string; province: string; display: string }
 
 const NOMINATIM_SUPRA = new Set(['Nusa Tenggara', 'Jawa', 'Java', 'Sumatera', 'Sumatra', 'Kalimantan', 'Sulawesi', 'Papua', 'Maluku']);
-const cleanSearchResult = (s: string): string => {
-  const parts = s.split(',').map(p => p.trim());
+
+// Parse Nominatim display_name into structured location fields
+// Structure: ..., [Kecamatan], [Kabupaten], [Provinsi], [Supra?], [PostalCode], [Indonesia]
+const parseDisplayName = (displayName: string, postcode?: string): PickedLocation => {
+  const parts = displayName.split(',').map(p => p.trim()).filter(Boolean);
   const postalIdx = parts.findIndex(p => /^\d{4,6}$/.test(p));
-  if (postalIdx < 2) return s;
-  if (NOMINATIM_SUPRA.has(parts[postalIdx - 1])) {
-    return [...parts.slice(0, postalIdx - 1), ...parts.slice(postalIdx)].join(', ');
+  if (postalIdx >= 3) {
+    const hasSupra = NOMINATIM_SUPRA.has(parts[postalIdx - 1]);
+    const province  = parts[postalIdx - (hasSupra ? 2 : 1)] ?? '';
+    const city      = parts[postalIdx - (hasSupra ? 3 : 2)] ?? '';
+    const streetEnd = postalIdx - (hasSupra ? 3 : 2);
+    const address   = parts.slice(0, streetEnd).join(', ');
+    const display   = [...parts.slice(0, postalIdx - (hasSupra ? 1 : 0)), parts[postalIdx]].join(', ');
+    const postal    = (postcode ?? parts[postalIdx] ?? '').replace(/\D/g, '').slice(0, 5);
+    return { address, city, postal, province, display };
   }
-  return s;
+  return { address: displayName, city: '', postal: postcode ?? '', province: '', display: displayName };
 };
 
 function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }: {
@@ -1609,50 +1618,15 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
   const geocodeTimer = useRef<ReturnType<typeof setTimeout>>();
   const currentCoordsRef = useRef<{ lat: number; lng: number }>(initialCoords ?? { lat: -6.2, lng: 106.8 });
+  const skipNextGeocode = useRef(!!initialLoc);
 
   const reverseGeocode = useCallback(async (lat: number, lon: number) => {
     setGeocoding(true);
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
       const data = await res.json();
-      const a = data.address ?? {};
-
-      // Parse display_name by position — more reliable than address fields for Indonesia.
-      // Structure: ..., [Kecamatan], [Kabupaten], [Provinsi], [Supra-region?], [PostalCode], [Indonesia]
-      const SUPRA = new Set(['Nusa Tenggara', 'Jawa', 'Java', 'Sumatera', 'Sumatra', 'Kalimantan', 'Sulawesi', 'Papua', 'Maluku']);
-      const rawParts = (data.display_name ?? '').split(',').map((s: string) => s.trim()).filter(Boolean);
-      const postalIdx = rawParts.findIndex((p: string) => /^\d{4,6}$/.test(p));
-
-      let city = '';
-      let province = '';
-      let display = data.display_name ?? '';
-      let addressStr = '';
-
-      if (postalIdx >= 3) {
-        const hasSupra = SUPRA.has(rawParts[postalIdx - 1]);
-        province  = rawParts[postalIdx - (hasSupra ? 2 : 1)] ?? '';
-        city      = rawParts[postalIdx - (hasSupra ? 3 : 2)] ?? '';
-        const streetEnd = postalIdx - (hasSupra ? 3 : 2); // exclusive — everything before kabupaten
-        addressStr = rawParts.slice(0, streetEnd).join(', ');
-        // Display: skip supra-region and country
-        display = [
-          ...rawParts.slice(0, postalIdx - (hasSupra ? 1 : 0)),
-          rawParts[postalIdx],
-        ].join(', ');
-      } else {
-        // Fallback for short / non-Indonesian results
-        city = a.city ?? a.county ?? a.town ?? '';
-        province = a.state ?? '';
-        addressStr = data.display_name ?? '';
-      }
-
-      setLoc({
-        address: addressStr,
-        city,
-        postal: (a.postcode ?? rawParts[postalIdx] ?? '').replace(/\D/g, '').slice(0, 5),
-        province,
-        display,
-      });
+      const postcode = (data.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
+      setLoc(parseDisplayName(data.display_name ?? '', postcode));
     } catch { /* ignore */ }
     finally { setGeocoding(false); setLocating(false); }
   }, []);
@@ -1694,11 +1668,10 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
       leafletMap.current = map;
       // Debounced reverse geocode on every map move
-      let firstMove = !!initialLoc; // skip first moveend geocode if we already have address
       map.on('moveend', () => {
         const c = map.getCenter();
         currentCoordsRef.current = { lat: c.lat, lng: c.lng };
-        if (firstMove) { firstMove = false; return; }
+        if (skipNextGeocode.current) { skipNextGeocode.current = false; return; }
         clearTimeout(geocodeTimer.current);
         geocodeTimer.current = setTimeout(() => reverseGeocode(c.lat, c.lng), 350);
       });
@@ -1744,6 +1717,9 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   };
 
   const selectResult = (r: any) => {
+    const postcode = (r.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
+    setLoc(parseDisplayName(r.display_name, postcode));
+    skipNextGeocode.current = true;
     panTo(parseFloat(r.lat), parseFloat(r.lon), 16);
     setSearchResults([]);
   };
