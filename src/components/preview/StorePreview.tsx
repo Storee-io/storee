@@ -2236,7 +2236,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity"
             style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
           >
-            Place Order 🚀
+            Place Order
           </button>
           <p className="text-[10px] text-center" style={{ color: t.textMuted }}>🔒 Secure &amp; protected payment</p>
         </div>
