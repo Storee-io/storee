@@ -1602,11 +1602,16 @@ const parseDisplayName = (displayName: string, postcode?: string): PickedLocatio
     // "Daerah Istimewa Yogyakarta"). Detect by checking if the candidate city is a known
     // false-positive for a given province and shift one level deeper if so.
     const cityCandidate = parts[postalIdx - cityOffset] ?? '';
-    if (cityCandidate === 'Depok' && province.includes('Yogyakarta')) cityOffset += 1;
+    const falseExtra    = cityCandidate === 'Depok' && province.includes('Yogyakarta') ? cityCandidate : null;
+    if (falseExtra) cityOffset += 1;
     const city      = parts[postalIdx - cityOffset] ?? '';
     const streetEnd = postalIdx - cityOffset;
     const address   = parts.slice(0, streetEnd).join(', ');
-    const display   = [...parts.slice(0, postalIdx - (hasSupra ? 1 : 0)), parts[postalIdx]].join(', ');
+    // Build display: skip supra-region, country, and any known false extra segment
+    const skipInDisplay = new Set([...(hasSupra ? [parts[postalIdx - 1]] : []), ...(falseExtra ? [falseExtra] : []), 'Indonesia']);
+    const display   = [...parts.slice(0, postalIdx), parts[postalIdx]]
+      .filter(p => !skipInDisplay.has(p))
+      .join(', ');
     const postal    = (postcode ?? parts[postalIdx] ?? '').replace(/\D/g, '').slice(0, 5);
     return { address, city, postal, province, display };
   }
