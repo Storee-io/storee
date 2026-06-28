@@ -1695,7 +1695,6 @@ function LocationPickerModal({ t, onChoose, onClose }: {
 
   const selectResult = (r: any) => {
     panTo(parseFloat(r.lat), parseFloat(r.lon), 16);
-    setSearchQuery(r.display_name);
     setSearchResults([]);
   };
 
