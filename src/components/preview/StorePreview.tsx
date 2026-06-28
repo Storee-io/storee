@@ -1580,10 +1580,11 @@ const INDONESIAN_PROVINCES = ['Aceh','Bali','Banten','Bengkulu','DI Yogyakarta',
 // ── LocationPickerModal ───────────────────────────────────────────────────────
 interface PickedLocation { address: string; city: string; postal: string; province: string; display: string }
 
-function LocationPickerModal({ t, onChoose, onClose }: {
+function LocationPickerModal({ t, onChoose, onClose, initialCoords }: {
   t: CommerceTheme;
   onChoose: (loc: PickedLocation) => void;
   onClose: () => void;
+  initialCoords?: { lat: number; lng: number } | null;
 }) {
   const mapDivRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<any>(null);
@@ -1688,15 +1689,36 @@ function LocationPickerModal({ t, onChoose, onClose }: {
     };
   }, [reverseGeocode]);
 
-  // Auto-GPS once map is ready
+  // Center on GPS — fires when map is ready OR when pre-fetched coords arrive (whichever is later)
+  const centeredRef = useRef(false);
   useEffect(() => {
-    if (!mapReady) return;
-    navigator.geolocation?.getCurrentPosition(
-      pos => { panTo(pos.coords.latitude, pos.coords.longitude, 16); setLocating(false); },
-      () => setLocating(false),
-      { timeout: 10000 }
-    );
-  }, [mapReady, panTo]);
+    if (!mapReady || centeredRef.current) return;
+    if (initialCoords) {
+      centeredRef.current = true;
+      panTo(initialCoords.lat, initialCoords.lng, 16);
+      setLocating(false);
+    }
+  }, [mapReady, initialCoords, panTo]);
+
+  // Fallback: if no pre-fetched coords after map is ready, request GPS ourselves
+  useEffect(() => {
+    if (!mapReady || centeredRef.current) return;
+    if (initialCoords) return; // will be handled by effect above
+    const t = setTimeout(() => {
+      if (centeredRef.current) return;
+      navigator.geolocation?.getCurrentPosition(
+        pos => {
+          if (centeredRef.current) return;
+          centeredRef.current = true;
+          panTo(pos.coords.latitude, pos.coords.longitude, 16);
+          setLocating(false);
+        },
+        () => setLocating(false),
+        { timeout: 10000 }
+      );
+    }, 300); // give pre-fetched coords 300ms to arrive
+    return () => clearTimeout(t);
+  }, [mapReady, initialCoords, panTo]);
 
   const handleSearch = (q: string) => {
     setSearchQuery(q);
@@ -2202,6 +2224,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [pendingGps, setPendingGps] = useState<{ lat: number; lng: number } | null>(null);
 
   const selectedShipping = shippingMethods.find(m => m.id === selectedShippingId) ?? shippingMethods[0];
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
@@ -2230,7 +2253,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   return (
     <>
     {showLocationPicker && (
-      <LocationPickerModal t={t} onChoose={handleLocationChosen} onClose={() => setShowLocationPicker(false)} />
+      <LocationPickerModal t={t} onChoose={handleLocationChosen} onClose={() => { setShowLocationPicker(false); setPendingGps(null); }} initialCoords={pendingGps} />
     )}
     <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
       <header className="px-5 h-14 flex items-center sticky top-0 z-40 shadow-sm" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
@@ -2310,7 +2333,15 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       <label style={{ ...lblStyle, marginBottom: '6px', display: 'block' }}>Full Address</label>
                       <button
                         type="button"
-                        onClick={() => setShowLocationPicker(true)}
+                        onClick={() => {
+                          setPendingGps(null);
+                          navigator.geolocation?.getCurrentPosition(
+                            pos => setPendingGps({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                            () => {},
+                            { timeout: 10000, enableHighAccuracy: true }
+                          );
+                          setShowLocationPicker(true);
+                        }}
                         style={{
                           width: '100%', marginBottom: '8px',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
