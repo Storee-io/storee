@@ -1841,7 +1841,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
                 disabled={!loc.display || geocoding}
                 style={{ width: '100%', padding: '13px', background: (loc.display && !geocoding) ? t.primary : t.surfaceBorder, color: (loc.display && !geocoding) ? t.primaryContrast : t.textMuted, borderRadius: t.btnRadius, fontWeight: 700, fontSize: '14px', cursor: (loc.display && !geocoding) ? 'pointer' : 'not-allowed', border: 'none', transition: 'background 0.15s' }}
               >
-                ✓ Use This Location
+                Select Location
               </button>
             </div>
           </>
