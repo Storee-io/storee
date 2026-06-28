@@ -525,11 +525,32 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
     setUserId(uid);
     try {
       const userStores = await fetchUserStores(uid);
-      if (userStores.length > 0) {
-        const sorted = sortByLastUsed(userStores);
-        setStores(prev => mergeStores(prev, sorted));
+
+      // Also collect localStorage stores not yet in Supabase (e.g. created before
+      // auth resolved, or saved as guest stores). Upsert them now so they appear
+      // in future fetches and don't require another manual visit.
+      const localStores: Store[] = [];
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key?.startsWith('storee_store_')) continue;
+          try {
+            const s = JSON.parse(localStorage.getItem(key)!) as Store;
+            if (s?.id && s?.name && !userStores.find(u => u.id === s.id)) {
+              localStores.push(s);
+              // Persist to Supabase so future loads include it
+              upsertStore(s, uid).catch(() => {});
+            }
+          } catch { /* skip malformed */ }
+        }
+      } catch { /* localStorage unavailable */ }
+
+      const combined = sortByLastUsed([...userStores, ...localStores]);
+
+      if (combined.length > 0) {
+        setStores(prev => mergeStores(prev, combined));
         // Honor the store the user last accessed; fall back to most-recently-used.
-        const active = pickActiveStore(sorted) ?? sorted[0];
+        const active = pickActiveStore(combined) ?? combined[0];
         setActiveStoreState(prev => mergeActiveStore(prev, active));
         setPrevStoreId(active.id);
         saveActiveStore(active);
