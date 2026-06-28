@@ -1955,6 +1955,48 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [selectedShippingId, setSelectedShippingId] = useState(shippingMethods[0]?.id ?? '');
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [locateError, setLocateError] = useState('');
+
+  const useMyLocation = () => {
+    if (!navigator.geolocation) { setLocateError('Geolocation not supported by your browser'); return; }
+    setLocating(true);
+    setLocateError('');
+    navigator.geolocation.getCurrentPosition(
+      async pos => {
+        try {
+          const { latitude: lat, longitude: lon } = pos.coords;
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`, {
+            headers: { 'Accept-Language': 'id,en' },
+          });
+          const data = await res.json();
+          const a = data.address ?? {};
+          const road = [a.road, a.neighbourhood, a.suburb, a.village].filter(Boolean).join(', ');
+          const city = a.city ?? a.town ?? a.county ?? a.regency ?? '';
+          const postal = a.postcode ?? '';
+          const province = a.state ?? '';
+          setForm(f => ({
+            ...f,
+            address: road || f.address,
+            city: city || f.city,
+            postal: (postal || f.postal).replace(/\D/g, '').slice(0, 5),
+            province: province || f.province,
+          }));
+          setTouched(t => ({ ...t, address: false, city: false, postal: false }));
+        } catch {
+          setLocateError('Could not retrieve address. Try again.');
+        } finally {
+          setLocating(false);
+        }
+      },
+      err => {
+        setLocating(false);
+        if (err.code === 1) setLocateError('Location access denied. Please allow location in browser settings.');
+        else setLocateError('Could not get your location. Try again.');
+      },
+      { timeout: 10000 }
+    );
+  };
 
   const selectedShipping = shippingMethods.find(m => m.id === selectedShippingId) ?? shippingMethods[0];
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
@@ -2045,7 +2087,19 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     style={{ overflow: 'hidden' }}
                   >
                     <div className="col-span-2">
-                      <label style={lblStyle}>Full Address</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label style={lblStyle}>Full Address</label>
+                        <button
+                          type="button"
+                          onClick={useMyLocation}
+                          disabled={locating}
+                          style={{ color: t.primary, fontSize: '11px', fontWeight: 600, background: 'none', border: 'none', cursor: locating ? 'wait' : 'pointer', opacity: locating ? 0.6 : 1, padding: 0, display: 'flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                          {locating ? 'Locating…' : 'Use My Location'}
+                        </button>
+                      </div>
+                      {locateError && <p style={{ ...errStyle, marginBottom: '4px' }}>{locateError}</p>}
                       <textarea
                         className="w-full px-4 py-2.5 text-sm resize-none"
                         style={{ ...inpStyle, outline: 'none' }}
