@@ -2573,8 +2573,9 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
                 onMouseEnter={e => (e.currentTarget.style.background = alpha(t.primary, 0.05))}
                 onMouseLeave={e => (e.currentTarget.style.background = 'none')}
               >
-                {v.postal && <span style={{ fontSize: '14px', fontWeight: 600, color: t.primary, flexShrink: 0 }}>{v.postal}</span>}
-                <span style={{ fontSize: '14px', fontWeight: 500, color: t.textPrimary }}>{v.name}</span>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: t.textPrimary }}>
+                  {v.postal && <span style={{ fontWeight: 600, color: t.primary }}>{v.postal} </span>}{v.name}
+                </span>
               </button>
             ))
           )}
