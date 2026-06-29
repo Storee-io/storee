@@ -2293,15 +2293,17 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
         const rr = r.regency.replace(/^(kota|kabupaten)\s*/i, '').trim().toLowerCase();
         return rd === districtKey && rr.includes(regencyKey.slice(0, 8));
       });
+      const norm = (s: string) => s.toLowerCase().replace(/[\s\-_.]/g, '');
       const map: Record<string, string> = {};
-      (filtered.length ? filtered : results).forEach(r => { map[r.village.toLowerCase()] = String(r.code); });
+      (filtered.length ? filtered : results).forEach(r => { map[norm(r.village)] = String(r.code); });
       setPostalMap(map);
     } catch { setVillages([]); }
     finally { setLoading(false); }
   };
 
   const handleVillageClick = (village: WilayahItem) => {
-    const postal = postalMap[village.name.toLowerCase()] ?? '';
+    const norm = (s: string) => s.toLowerCase().replace(/[\s\-_.]/g, '');
+    const postal = postalMap[norm(village.name)] ?? '';
     const districtKey = selDistrict.replace(/^KECAMATAN\s*/i, '').trim();
     const regencyKey = selRegency.replace(/^(kota|kabupaten)\s*/i, '').trim();
     onSelect({
@@ -2455,7 +2457,8 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
             districts.map((d, i) => <Row key={d.id} i={i} label={d.name} sub={`${selProvince} › ${selRegency}`} onClick={() => handleDistrictClick(d)} />)
           ) : (
             villages.map((v, i) => {
-              const postal = postalMap[v.name.toLowerCase()] ?? '';
+              const norm = (s: string) => s.toLowerCase().replace(/[\s\-_.]/g, '');
+              const postal = postalMap[norm(v.name)] ?? '';
               return (
                 <button key={v.id} type="button" onClick={() => handleVillageClick(v)}
                   style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.12)}` : 'none', cursor: 'pointer', padding: '13px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}
