@@ -2432,8 +2432,8 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
                 const onClick = isLast ? undefined : () => {
                   const target = levelOrder[i];
                   setLevel(target);
-                  if (i < 1) { setSelRegency(''); setDistricts([]); setSelDistrict(''); setPostalResults([]); }
-                  else if (i < 2) { setSelDistrict(''); setPostalResults([]); }
+                  if (i < 1) { setSelRegency(''); setDistricts([]); setSelDistrict(''); setVillages([]); setPostalMap({}); }
+                  else if (i < 2) { setSelDistrict(''); setVillages([]); setPostalMap({}); }
                 };
                 return (
                   <span key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
