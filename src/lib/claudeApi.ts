@@ -507,10 +507,10 @@ export function parseStoreResponse(raw: string): GeneratedStoreConfig | null {
     // Decode HTML entities in string fields
     parsed.storeName = decodeHtmlEntities(parsed.storeName);
     parsed.category = parsed.category ? decodeHtmlEntities(parsed.category) : '';
-    parsed.tagline = parsed.tagline ? decodeHtmlEntities(parsed.tagline) : undefined;
-    parsed.heroTitle = parsed.heroTitle ? decodeHtmlEntities(parsed.heroTitle) : undefined;
-    parsed.heroSubtitle = parsed.heroSubtitle ? decodeHtmlEntities(parsed.heroSubtitle) : undefined;
-    parsed.ctaText = parsed.ctaText ? decodeHtmlEntities(parsed.ctaText) : undefined;
+    parsed.tagline = parsed.tagline ? decodeHtmlEntities(parsed.tagline) : '';
+    parsed.heroTitle = parsed.heroTitle ? decodeHtmlEntities(parsed.heroTitle) : '';
+    parsed.heroSubtitle = parsed.heroSubtitle ? decodeHtmlEntities(parsed.heroSubtitle) : '';
+    parsed.ctaText = parsed.ctaText ? decodeHtmlEntities(parsed.ctaText) : '';
     parsed.promoBar = parsed.promoBar ? decodeHtmlEntities(parsed.promoBar) : undefined;
     parsed.brandStory = parsed.brandStory ? decodeHtmlEntities(parsed.brandStory) : undefined;
 

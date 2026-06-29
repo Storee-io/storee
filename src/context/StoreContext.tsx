@@ -171,6 +171,7 @@ interface StoreContextType {
   generationState: GenerationState | null;
   setGenerationState: (state: GenerationState | null) => void;
   isLoadingStores: boolean;
+  isLoadingActiveStore: boolean;
 }
 
 const StoreContext = createContext<StoreContextType | null>(null);

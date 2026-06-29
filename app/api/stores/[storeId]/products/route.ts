@@ -3,10 +3,11 @@ import { fetchStoreProducts, upsertProduct, deleteProduct } from '@/src/lib/supa
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { storeId: string } }
+  { params }: { params: Promise<{ storeId: string }> }
 ) {
   try {
-    const products = await fetchStoreProducts(params.storeId);
+    const { storeId } = await params;
+    const products = await fetchStoreProducts(storeId);
     return NextResponse.json({ products }, { status: 200 });
   } catch (error) {
     console.error('[API] GET /products:', error);
@@ -16,11 +17,12 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { storeId: string } }
+  { params }: { params: Promise<{ storeId: string }> }
 ) {
   try {
+    const { storeId } = await params;
     const body = await request.json();
-    const product = await upsertProduct(params.storeId, body);
+    const product = await upsertProduct(storeId, body);
     return NextResponse.json({ product }, { status: 200 });
   } catch (error) {
     console.error('[API] POST /products:', error);
