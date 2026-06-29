@@ -2201,6 +2201,10 @@ let kodeposCsvLoading: Promise<Map<string, string>> | null = null;
 
 const normStr = (s: string) => s.toLowerCase().replace(/[\s\-_.]/g, '');
 
+const WILAYAH_ABBR = new Set(['DKI', 'DI', 'DIY', 'NTB', 'NTT', 'RI', 'SD', 'SMP', 'SMA']);
+const toTitleCase = (s: string) =>
+  s.split(' ').map(w => WILAYAH_ABBR.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+
 async function loadKodeposCsv(): Promise<Map<string, string>> {
   if (kodeposCsvCache) return kodeposCsvCache;
   if (kodeposCsvLoading) return kodeposCsvLoading;
@@ -2258,7 +2262,7 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
     fetch(`${BASE}/provinces.json`)
       .then(r => r.json())
       .then((data: Array<{ code: string; name: string }>) =>
-        setProvinces(data.map(p => ({ id: p.code, name: p.name })))
+        setProvinces(data.map(p => ({ id: p.code, name: toTitleCase(p.name) })))
       )
       .catch(() => {});
   }, []);
@@ -2288,7 +2292,7 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
     try {
       const res = await fetch(`${BASE}/regencies/${item.id}.json`);
       const data: Array<{ code: string; name: string }> = await res.json();
-      setRegencies(data.map(r => ({ id: r.code, name: r.name })));
+      setRegencies(data.map(r => ({ id: r.code, name: toTitleCase(r.name) })));
     } catch { setRegencies([]); }
     finally { setLoading(false); }
   };
@@ -2300,7 +2304,7 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
     try {
       const res = await fetch(`${BASE}/districts/${item.id}.json`);
       const data: Array<{ code: string; name: string }> = await res.json();
-      setDistricts(data.map(d => ({ id: d.code, name: d.name })));
+      setDistricts(data.map(d => ({ id: d.code, name: toTitleCase(d.name) })));
     } catch { setDistricts([]); }
     finally { setLoading(false); }
   };
@@ -2312,7 +2316,7 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
     try {
       const res = await fetch(`${BASE}/villages/${item.id}.json`);
       const data: Array<{ code: string; name: string; postal_code?: string }> = await res.json();
-      const vilList = data.map(v => ({ id: v.code, name: v.name, postal: v.postal_code ?? '' }));
+      const vilList = data.map(v => ({ id: v.code, name: toTitleCase(v.name), postal: v.postal_code ?? '' }));
       setVillages(vilList);
 
       // Supplement missing postal codes from local CSV
