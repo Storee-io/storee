@@ -2288,7 +2288,7 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
     const key = q.trim().toLowerCase();
     try {
       const [kodeposRes, idx] = await Promise.all([
-        fetch(`https://kodepos.vercel.app/search/?q=${encodeURIComponent(q.trim())}&limit=30`).then(r => r.json()).catch(() => ({})),
+        fetch(`/api/postal/search?q=${encodeURIComponent(q.trim())}&limit=30`).then(r => r.json()).catch(() => ({})),
         loadSearchIndex(),
       ]);
       setSearchResults(Array.isArray(kodeposRes?.data) ? kodeposRes.data : []);
