@@ -2194,6 +2194,40 @@ interface WilayahItem { id: string; name: string; }
 
 type PostalLevel = 'province' | 'regency' | 'district' | 'village';
 
+// Module-level cache for the local kodepos CSV (loaded once per session)
+// Key: norm(district) + '|' + norm(subdistrict) → postal_code string
+let kodeposCsvCache: Map<string, string> | null = null;
+let kodeposCsvLoading: Promise<Map<string, string>> | null = null;
+
+const normStr = (s: string) => s.toLowerCase().replace(/[\s\-_.]/g, '');
+
+async function loadKodeposCsv(): Promise<Map<string, string>> {
+  if (kodeposCsvCache) return kodeposCsvCache;
+  if (kodeposCsvLoading) return kodeposCsvLoading;
+  kodeposCsvLoading = fetch('/data/kodepos.csv')
+    .then(r => r.text())
+    .then(text => {
+      const map = new Map<string, string>();
+      const lines = text.split('\n');
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        if (cols.length < 5) continue;
+        const district = cols[2].trim();
+        const subdistrict = cols[3].trim();
+        const postal = cols[4].trim();
+        if (!postal) continue;
+        // Key by district+village (for district-level lookup)
+        map.set(normStr(district) + '|' + normStr(subdistrict), postal);
+        // Also key by village only as fallback
+        if (!map.has('v|' + normStr(subdistrict))) map.set('v|' + normStr(subdistrict), postal);
+      }
+      kodeposCsvCache = map;
+      return map;
+    })
+    .catch(() => { kodeposCsvCache = new Map(); return kodeposCsvCache; });
+  return kodeposCsvLoading;
+}
+
 function PostalCodePickerModal({ t, onSelect, onClose }: {
   t: CommerceTheme;
   onSelect: (r: PostalResult) => void;
@@ -2293,9 +2327,19 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
         const rr = r.regency.replace(/^(kota|kabupaten)\s*/i, '').trim().toLowerCase();
         return rd === districtKey && rr.includes(regencyKey.slice(0, 8));
       });
-      const norm = (s: string) => s.toLowerCase().replace(/[\s\-_.]/g, '');
       const map: Record<string, string> = {};
-      (filtered.length ? filtered : results).forEach(r => { map[norm(r.village)] = String(r.code); });
+      (filtered.length ? filtered : results).forEach(r => { map[normStr(r.village)] = String(r.code); });
+
+      // Supplement missing entries from local CSV
+      const csvMap = await loadKodeposCsv();
+      const distKey = normStr(districtKey);
+      vilData.forEach(v => {
+        const vKey = normStr(v.nama);
+        if (!map[vKey]) {
+          const fromCsv = csvMap.get(distKey + '|' + vKey) ?? csvMap.get('v|' + vKey);
+          if (fromCsv) map[vKey] = fromCsv;
+        }
+      });
       setPostalMap(map);
     } catch { setVillages([]); }
     finally { setLoading(false); }
