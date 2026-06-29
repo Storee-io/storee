@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform, Reorder } from 'framer-motion';
@@ -1578,7 +1578,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
 const INDONESIAN_PROVINCES = ['Aceh','Bali','Banten','Bengkulu','DI Yogyakarta','DKI Jakarta','Gorontalo','Jambi','Jawa Barat','Jawa Tengah','Jawa Timur','Kalimantan Barat','Kalimantan Selatan','Kalimantan Tengah','Kalimantan Timur','Kalimantan Utara','Kepulauan Bangka Belitung','Kepulauan Riau','Lampung','Maluku','Maluku Utara','Nusa Tenggara Barat','Nusa Tenggara Timur','Papua','Papua Barat','Riau','Sulawesi Barat','Sulawesi Selatan','Sulawesi Tengah','Sulawesi Tenggara','Sulawesi Utara','Sumatera Barat','Sumatera Selatan','Sumatera Utara'];
 
 // ── LocationPickerModal ───────────────────────────────────────────────────────
-interface PickedLocation { address: string; city: string; postal: string; province: string; display: string }
+interface PickedLocation { address: string; city: string; postal: string; province: string; display: string; suburb: string; district: string }
 
 const NOMINATIM_SUPRA = new Set(['Nusa Tenggara', 'Jawa', 'Java', 'Sumatera', 'Sumatra', 'Kalimantan', 'Sulawesi', 'Papua', 'Maluku']);
 
@@ -1606,6 +1606,8 @@ const parseDisplayName = (displayName: string, postcode?: string): PickedLocatio
     if (falseExtra) cityOffset += 1;
     const city      = parts[postalIdx - cityOffset] ?? '';
     const streetEnd = postalIdx - cityOffset;
+    const district  = parts[streetEnd - 1] ?? '';
+    const suburb    = parts[streetEnd - 2] ?? '';
     const address   = parts.slice(0, streetEnd + 1).join(', '); // include city/kabupaten level
     // Build display: skip supra-region, country, false extras; replace raw province with normalized
     const rawProvince   = parts[postalIdx - (hasSupra ? 2 : 1)] ?? '';
@@ -1615,9 +1617,9 @@ const parseDisplayName = (displayName: string, postcode?: string): PickedLocatio
       .map(p => p === rawProvince ? province : p)
       .join(', ');
     const postal    = (postcode ?? parts[postalIdx] ?? '').replace(/\D/g, '').slice(0, 5);
-    return { address, city, postal, province, display };
+    return { address, city, postal, province, display, suburb, district };
   }
-  return { address: displayName, city: '', postal: postcode ?? '', province: '', display: displayName };
+  return { address: displayName, city: '', postal: postcode ?? '', province: '', display: displayName, suburb: '', district: '' };
 };
 
 function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }: {
@@ -2179,6 +2181,280 @@ function PhoneCountrySelect({ selectedCode, onChangeCode, t }: {
   );
 }
 
+interface PostalResult {
+  code: number;
+  village: string;
+  district: string;
+  regency: string;
+  province: string;
+}
+
+// Wilayah Indonesia API types
+interface WilayahItem { id: string; name: string; }
+
+type PostalLevel = 'province' | 'regency' | 'district' | 'village';
+
+function PostalCodePickerModal({ t, onSelect, onClose }: {
+  t: CommerceTheme;
+  onSelect: (r: PostalResult) => void;
+  onClose: () => void;
+}) {
+  const [query, setQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<PostalResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Hierarchy state — uses ibnux.github.io/data-indonesia
+  const BASE = 'https://ibnux.github.io/data-indonesia';
+  const [level, setLevel] = useState<PostalLevel>('province');
+  const [selProvince, setSelProvince] = useState('');
+  const [selRegency, setSelRegency] = useState('');
+  const [selDistrict, setSelDistrict] = useState('');
+  const [provinces, setProvinces] = useState<WilayahItem[]>([]);
+  const [regencies, setRegencies] = useState<WilayahItem[]>([]);
+  const [districts, setDistricts] = useState<WilayahItem[]>([]);
+  const [postalResults, setPostalResults] = useState<PostalResult[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const isSearchMode = query.trim().length > 0;
+
+  // Load province list on mount
+  useEffect(() => {
+    fetch(`${BASE}/provinsi.json`)
+      .then(r => r.json())
+      .then((data: Array<{ id: string; nama: string }>) =>
+        setProvinces(data.map(p => ({ id: p.id, name: p.nama })))
+      )
+      .catch(() => {});
+  }, []);
+
+  // Search via kodepos
+  const doSearch = useCallback(async (q: string) => {
+    if (!q.trim()) { setSearchResults([]); setSearched(false); return; }
+    setSearching(true);
+    try {
+      const res = await fetch(`https://kodepos.vercel.app/search/?q=${encodeURIComponent(q.trim())}&limit=40`);
+      const data = await res.json();
+      setSearchResults(Array.isArray(data?.data) ? data.data : []);
+    } catch { setSearchResults([]); }
+    finally { setSearching(false); setSearched(true); }
+  }, []);
+
+  const handleQueryChange = (v: string) => {
+    setQuery(v);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => doSearch(v), 400);
+  };
+
+  const handleProvinceClick = async (item: WilayahItem) => {
+    setSelProvince(item.name);
+    setLevel('regency');
+    setLoading(true);
+    try {
+      const res = await fetch(`${BASE}/kabupaten/${item.id}.json`);
+      const data: Array<{ id: string; nama: string }> = await res.json();
+      setRegencies(data.map(r => ({ id: r.id, name: r.nama })));
+    } catch { setRegencies([]); }
+    finally { setLoading(false); }
+  };
+
+  const handleRegencyClick = async (item: WilayahItem) => {
+    setSelRegency(item.name);
+    setLevel('district');
+    setLoading(true);
+    try {
+      const res = await fetch(`${BASE}/kecamatan/${item.id}.json`);
+      const data: Array<{ id: string; nama: string }> = await res.json();
+      setDistricts(data.map(d => ({ id: d.id, name: d.nama })));
+    } catch { setDistricts([]); }
+    finally { setLoading(false); }
+  };
+
+  const handleDistrictClick = async (item: WilayahItem) => {
+    setSelDistrict(item.name);
+    setLevel('village');
+    setLoading(true);
+    try {
+      const res = await fetch(`https://kodepos.vercel.app/search/?q=${encodeURIComponent(item.name)}&limit=200`);
+      const data = await res.json();
+      const results: PostalResult[] = Array.isArray(data?.data) ? data.data : [];
+      const districtKey = item.name.replace(/^KECAMATAN\s*/i, '').trim().toLowerCase();
+      const regencyKey = selRegency.replace(/^(kota|kabupaten)\s*/i, '').trim().toLowerCase();
+      const filtered = results.filter(r => {
+        const rd = r.district.replace(/^kecamatan\s*/i, '').trim().toLowerCase();
+        const rr = r.regency.replace(/^(kota|kabupaten)\s*/i, '').trim().toLowerCase();
+        return rd === districtKey && rr.includes(regencyKey.slice(0, 8));
+      });
+      setPostalResults(filtered.length ? filtered : results);
+    } catch { setPostalResults([]); }
+    finally { setLoading(false); }
+  };
+
+  const goBack = () => {
+    if (level === 'regency') { setLevel('province'); setSelProvince(''); setRegencies([]); }
+    else if (level === 'district') { setLevel('regency'); setSelRegency(''); setDistricts([]); }
+    else if (level === 'village') { setLevel('district'); setSelDistrict(''); setPostalResults([]); }
+  };
+
+  const breadcrumb = [selProvince, selRegency, selDistrict].filter(Boolean);
+
+  const Row = ({ label, sub, onClick, i }: { label: string; sub?: string; onClick: () => void; i: number }) => (
+    <button type="button" onClick={onClick}
+      style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.12)}` : 'none', cursor: 'pointer', padding: '13px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}
+      onMouseEnter={e => (e.currentTarget.style.background = alpha(t.primary, 0.05))}
+      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+    >
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: '14px', fontWeight: 500, color: t.textPrimary }}>{label}</div>
+        {sub && <div style={{ fontSize: '11px', color: t.textMuted, marginTop: '1px' }}>{sub}</div>}
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.textMuted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+  );
+
+  const levelLabel: Record<PostalLevel, string> = {
+    province: 'Pilih Provinsi',
+    regency: 'Pilih Kota / Kabupaten',
+    district: 'Pilih Kecamatan',
+    village: 'Pilih Kelurahan',
+  };
+
+  const SkeletonList = () => (
+    <div>
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} style={{ padding: '13px 16px', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.12)}` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ height: '14px', width: `${55 + (i % 4) * 10}%`, borderRadius: '6px', background: `linear-gradient(90deg, ${alpha(t.divider, 0.15)} 25%, ${alpha(t.divider, 0.3)} 50%, ${alpha(t.divider, 0.15)} 75%)`, backgroundSize: '200% 100%', animation: 'shimmer 1.2s infinite' }} />
+            <div style={{ height: '10px', width: '40%', borderRadius: '4px', marginTop: '6px', background: `linear-gradient(90deg, ${alpha(t.divider, 0.1)} 25%, ${alpha(t.divider, 0.2)} 50%, ${alpha(t.divider, 0.1)} 75%)`, backgroundSize: '200% 100%', animation: 'shimmer 1.2s infinite', animationDelay: `${i * 0.05}s` }} />
+          </div>
+          <div style={{ width: '14px', height: '14px', borderRadius: '3px', background: alpha(t.divider, 0.15), flexShrink: 0 }} />
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{ width: '100%', maxWidth: '480px', background: t.surfaceBg, borderRadius: '20px 20px 0 0', maxHeight: '88vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+        {/* Header */}
+        <div style={{ padding: '14px 16px 0', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {level !== 'province' && !isSearchMode && (
+                <button type="button" onClick={goBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px 2px 0', color: t.textMuted, display: 'flex', alignItems: 'center' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                </button>
+              )}
+              <span style={{ fontSize: '15px', fontWeight: 700, color: t.textPrimary }}>
+                {isSearchMode ? 'Hasil Pencarian' : levelLabel[level]}
+              </span>
+            </div>
+            <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted, padding: 0, fontSize: '20px', lineHeight: 1 }}>✕</button>
+          </div>
+
+          {/* Breadcrumb — each item clickable to go back to that level */}
+          {breadcrumb.length > 0 && !isSearchMode && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
+              {breadcrumb.map((b, i) => {
+                const levelOrder: PostalLevel[] = ['regency', 'district', 'village'];
+                const isLast = i === breadcrumb.length - 1;
+                const onClick = isLast ? undefined : () => {
+                  const target = levelOrder[i];
+                  setLevel(target);
+                  if (i < 1) { setSelRegency(''); setDistricts([]); setSelDistrict(''); setPostalResults([]); }
+                  else if (i < 2) { setSelDistrict(''); setPostalResults([]); }
+                };
+                return (
+                  <span key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {i > 0 && <span style={{ color: t.textMuted, fontSize: '11px' }}>›</span>}
+                    <button type="button" onClick={onClick} disabled={isLast}
+                      style={{ background: 'none', border: 'none', padding: 0, cursor: isLast ? 'default' : 'pointer', fontSize: '11px', color: isLast ? t.primary : t.textMuted, fontWeight: isLast ? 600 : 400, textDecoration: 'none' }}
+                      onMouseEnter={e => { if (!isLast) e.currentTarget.style.color = t.primary; }}
+                      onMouseLeave={e => { if (!isLast) e.currentTarget.style.color = t.textMuted; }}
+                    >{b}</button>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Search box */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: t.inputBg, border: `1.5px solid ${alpha(t.divider, 0.4)}`, borderRadius: '10px', padding: '8px 12px', marginBottom: '8px' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.textMuted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input
+              autoFocus
+              type="text"
+              placeholder="Cari kelurahan, kecamatan, kota, atau kode pos…"
+              value={query}
+              onChange={e => handleQueryChange(e.target.value)}
+              style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: '13px', color: t.textPrimary }}
+            />
+            {(searching || loading) && (
+              <div style={{ width: '14px', height: '14px', borderRadius: '50%', border: `2px solid ${alpha(t.primary, 0.3)}`, borderTopColor: t.primary, animation: 'spin 0.6s linear infinite', flexShrink: 0 }} />
+            )}
+            {query && (
+              <button type="button" onClick={() => { setQuery(''); setSearchResults([]); setSearched(false); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted, padding: 0, fontSize: '16px', lineHeight: 1 }}>✕</button>
+            )}
+          </div>
+        </div>
+
+        {/* List */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {isSearchMode ? (
+            <>
+              {searched && searchResults.length === 0 && !searching && (
+                <div style={{ padding: '32px 16px', textAlign: 'center', color: t.textMuted, fontSize: '13px' }}>Tidak ada hasil</div>
+              )}
+              {searchResults.map((r, i) => (
+                <button key={i} type="button" onClick={() => onSelect(r)}
+                  style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.12)}` : 'none', cursor: 'pointer', padding: '12px 16px', display: 'block' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = alpha(t.primary, 0.05))}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                >
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: t.textPrimary, marginBottom: '2px' }}>{r.code} — {r.village}</div>
+                  <div style={{ fontSize: '11px', color: t.textMuted, display: 'flex', alignItems: 'center', gap: '3px', flexWrap: 'wrap' }}>
+                    <span>{r.province}</span><span style={{ opacity: 0.4 }}>›</span>
+                    <span>{r.regency}</span><span style={{ opacity: 0.4 }}>›</span>
+                    <span>{r.district}</span>
+                  </div>
+                </button>
+              ))}
+            </>
+          ) : level === 'province' ? (
+            provinces.length === 0
+              ? <SkeletonList />
+              : provinces.map((p, i) => <Row key={p.id} i={i} label={p.name} onClick={() => handleProvinceClick(p)} />)
+          ) : loading ? <SkeletonList /> : level === 'regency' ? (
+            regencies.map((r, i) => <Row key={r.id} i={i} label={r.name} sub={selProvince} onClick={() => handleRegencyClick(r)} />)
+          ) : level === 'district' ? (
+            districts.map((d, i) => <Row key={d.id} i={i} label={d.name} sub={`${selProvince} › ${selRegency}`} onClick={() => handleDistrictClick(d)} />)
+          ) : (
+            postalResults.map((r, i) => (
+              <button key={i} type="button" onClick={() => onSelect(r)}
+                style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.12)}` : 'none', cursor: 'pointer', padding: '13px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}
+                onMouseEnter={e => (e.currentTarget.style.background = alpha(t.primary, 0.05))}
+                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+              >
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: t.textPrimary, marginBottom: '2px' }}>{r.code} — {r.village}</div>
+                  <div style={{ fontSize: '11px', color: t.textMuted, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span>{r.province}</span><span style={{ opacity: 0.4 }}>›</span>
+                    <span>{r.regency}</span><span style={{ opacity: 0.4 }}>›</span>
+                    <span>{r.district}</span>
+                  </div>
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, layoutStyle, editMode, onFieldChange, store }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
   shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; layoutStyle?: string; store?: Store;
@@ -2233,6 +2509,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [showPostalPicker, setShowPostalPicker] = useState(false);
   const [pendingGps, setPendingGps] = useState<{ lat: number; lng: number } | null>(null);
   const [lastPickedCoords, setLastPickedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [lastPickedLoc, setLastPickedLoc] = useState<PickedLocation | null>(null);
@@ -2277,6 +2554,19 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         }}
         initialCoords={lastPickedCoords ?? lastViewedCoords ?? pendingGps}
         initialLoc={lastPickedLoc}
+      />
+    )}
+    {showPostalPicker && (
+      <PostalCodePickerModal
+        t={t}
+        onSelect={r => {
+          const normalizedProvince = normalizeProvince(r.province);
+          const matchedProvince = INDONESIAN_PROVINCES.find(p => p === normalizedProvince) ?? INDONESIAN_PROVINCES.find(p => p.toLowerCase().includes(r.province.toLowerCase())) ?? '';
+          setForm(f => ({ ...f, postal: String(r.code), city: r.regency, province: matchedProvince || r.province }));
+          setTouched(prev => ({ ...prev, postal: false, city: false }));
+          setShowPostalPicker(false);
+        }}
+        onClose={() => setShowPostalPicker(false)}
       />
     )}
     <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
@@ -2387,35 +2677,32 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           onMouseEnter={e => e.currentTarget.style.background = alpha(t.primary, 0.1)}
                           onMouseLeave={e => e.currentTarget.style.background = alpha(t.primary, 0.05)}
                         >
-                          {/* Header */}
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderBottom: `1px solid ${alpha(t.divider, 0.2)}` }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: t.primary, display: 'inline-block', flexShrink: 0 }} />
-                              <span style={{ fontSize: '10px', fontWeight: 700, color: t.primary, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Location Pinned</span>
+                          {/* Card: map + info + change in one row */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px' }}>
+                            {/* Map thumbnail */}
+                            {lastPickedCoords && (
+                              <div style={{ width: '48px', height: '48px', flexShrink: 0, background: `url('https://tile.openstreetmap.org/15/${Math.floor((lastPickedCoords.lng + 180) / 360 * Math.pow(2, 15))}/${Math.floor((1 - Math.log(Math.tan(lastPickedCoords.lat * Math.PI / 180) + 1 / Math.cos(lastPickedCoords.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 15))}.png') center/cover`, borderRadius: '6px', position: 'relative', border: `1px solid ${alpha(t.divider, 0.25)}` }}>
+                                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '12px', lineHeight: 1 }}>📍</div>
+                              </div>
+                            )}
+                            {/* Label + address */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px' }}>
+                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: t.primary, display: 'inline-block', flexShrink: 0 }} />
+                                <span style={{ fontSize: '9px', fontWeight: 700, color: t.primary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Location Pinned</span>
+                              </div>
+                              <p style={{ margin: 0, fontSize: '11px', color: t.textPrimary, lineHeight: 1.35, wordBreak: 'break-word' }}>
+                                {[lastPickedLoc.suburb, lastPickedLoc.district, lastPickedLoc.city].filter(Boolean).join(', ')}{lastPickedLoc.postal ? `, ${lastPickedLoc.postal}` : ''}
+                              </p>
                             </div>
+                            {/* Change button */}
                             <button
                               type="button"
                               onClick={e => { e.stopPropagation(); setShowLocationPicker(true); }}
-                              style={{ fontSize: '11px', fontWeight: 600, color: t.primary, background: 'none', border: 'none', cursor: 'pointer', padding: '0', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+                              style={{ fontSize: '11px', fontWeight: 600, color: t.primary, background: 'none', border: 'none', cursor: 'pointer', padding: '0', textDecoration: 'underline', textUnderlineOffset: '2px', flexShrink: 0 }}
                             >
                               Change
                             </button>
-                          </div>
-
-                          {/* Content: Map + Address */}
-                          <div style={{ display: 'flex', gap: '8px', padding: '8px 12px', alignItems: 'center' }}>
-                            {/* Map */}
-                            {lastPickedCoords && (
-                              <div style={{ width: '70px', height: '70px', flexShrink: 0, background: `url('https://tile.openstreetmap.org/15/${Math.floor((lastPickedCoords.lng + 180) / 360 * Math.pow(2, 15))}/${Math.floor((1 - Math.log(Math.tan(lastPickedCoords.lat * Math.PI / 180) + 1 / Math.cos(lastPickedCoords.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 15))}.png') center/cover`, borderRadius: '6px', position: 'relative', border: `1px solid ${alpha(t.divider, 0.3)}` }}>
-                                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '16px' }}>📍</div>
-                              </div>
-                            )}
-                            {/* Address info - simplified */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <span style={{ fontSize: '11px', color: t.textPrimary, lineHeight: 1.4, wordBreak: 'break-word' }}>
-                                {lastPickedLoc.city && lastPickedLoc.postal ? `${lastPickedLoc.city}, ${lastPickedLoc.postal}` : lastPickedLoc.display}
-                              </span>
-                            </div>
                           </div>
                         </div>
                       )}
@@ -2446,16 +2733,28 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     </div>
                     <div>
                       <label style={lblStyle}>Postal Code</label>
-                      <input
-                        className="w-full px-4 py-2.5 text-sm outline-none"
-                        style={inpStyle}
-                        value={form.postal}
-                        onChange={set('postal')}
-                        placeholder="12345"
-                        maxLength={5}
-                        onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
-                        onBlur={e => { touch('postal'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
-                      />
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          className="w-full px-4 py-2.5 text-sm outline-none"
+                          style={{ ...inpStyle, paddingRight: '36px' }}
+                          value={form.postal}
+                          onChange={set('postal')}
+                          placeholder="12345"
+                          maxLength={5}
+                          onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
+                          onBlur={e => { touch('postal'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPostalPicker(true)}
+                          title="Search postal code"
+                          style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: t.primary, display: 'flex', alignItems: 'center' }}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                          </svg>
+                        </button>
+                      </div>
                       {touched.postal && validate('postal', form.postal) && <p style={errStyle}>{validate('postal', form.postal)}</p>}
                     </div>
                     <div className="col-span-2">
