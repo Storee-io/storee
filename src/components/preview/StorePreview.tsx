@@ -2329,18 +2329,22 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
       });
       const map: Record<string, string> = {};
       (filtered.length ? filtered : results).forEach(r => { map[normStr(r.village)] = String(r.code); });
-
-      // Supplement missing entries from local CSV
-      const csvMap = await loadKodeposCsv();
-      const distKey = normStr(districtKey);
-      vilData.forEach(v => {
-        const vKey = normStr(v.nama);
-        if (!map[vKey]) {
-          const fromCsv = csvMap.get(distKey + '|' + vKey) ?? csvMap.get('v|' + vKey);
-          if (fromCsv) map[vKey] = fromCsv;
-        }
-      });
       setPostalMap(map);
+
+      // Supplement missing entries from local CSV (separate — must not affect village list if it fails)
+      try {
+        const csvMap = await loadKodeposCsv();
+        const distKey = normStr(districtKey);
+        const supplement: Record<string, string> = { ...map };
+        vilData.forEach(v => {
+          const vKey = normStr(v.nama);
+          if (!supplement[vKey]) {
+            const fromCsv = csvMap.get(distKey + '|' + vKey) ?? csvMap.get('v|' + vKey);
+            if (fromCsv) supplement[vKey] = fromCsv;
+          }
+        });
+        setPostalMap(supplement);
+      } catch { /* CSV fallback failed — keep kodepos API results */ }
     } catch { setVillages([]); }
     finally { setLoading(false); }
   };
