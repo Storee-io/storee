@@ -2205,18 +2205,6 @@ const WILAYAH_ABBR = new Set(['DKI', 'DI', 'DIY', 'NTB', 'NTT', 'RI', 'SD', 'SMP
 const toTitleCase = (s: string) =>
   s.split(' ').map(w => WILAYAH_ABBR.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
-// Cache for search index (provinces + regencies)
-let searchIndexCache: { provinces: Array<{ code: string; name: string }>; regencies: Array<{ code: string; name: string; province_code: string; type: string }> } | null = null;
-let searchIndexLoading: Promise<typeof searchIndexCache> | null = null;
-async function loadSearchIndex() {
-  if (searchIndexCache) return searchIndexCache;
-  if (searchIndexLoading) return searchIndexLoading;
-  searchIndexLoading = fetch('https://rizuku-v2.github.io/wilayah-indonesia-api/api/search.json')
-    .then(r => r.json())
-    .then(data => { searchIndexCache = data; return searchIndexCache; })
-    .catch(() => { searchIndexCache = { provinces: [], regencies: [] }; return searchIndexCache; });
-  return searchIndexLoading;
-}
 
 async function loadKodeposCsv(): Promise<Map<string, string>> {
   if (kodeposCsvCache) return kodeposCsvCache;
@@ -2251,8 +2239,10 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
   onClose: () => void;
 }) {
   const [query, setQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<PostalResult[]>([]);
-  const [searchWilayah, setSearchWilayah] = useState<Array<{ id: string; name: string; type: 'province' | 'regency'; provinceCode?: string }>>([]);
+  type SearchNav = { id: string; name: string; type: 'province' | 'regency' | 'district'; province?: string; regency?: string };
+  type SearchVillage = { code: number | null; village: string; district: string; regency: string; province: string };
+  const [searchNav, setSearchNav] = useState<SearchNav[]>([]);
+  const [searchVillages, setSearchVillages] = useState<SearchVillage[]>([]);
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -2281,59 +2271,62 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
       .catch(() => {});
   }, []);
 
-  // Combined search: wilayah index (province/regency) + kodepos (village/postal)
+  const clearSearch = () => { setSearchNav([]); setSearchVillages([]); setSearched(false); };
+
   const doSearch = useCallback(async (q: string) => {
-    if (!q.trim()) { setSearchResults([]); setSearchWilayah([]); setSearched(false); return; }
+    if (!q.trim()) { clearSearch(); return; }
     setSearching(true);
-    const key = q.trim().toLowerCase();
     try {
-      const [kodeposRes, idx] = await Promise.all([
-        fetch(`/api/postal/search?q=${encodeURIComponent(q.trim())}&limit=30`).then(r => r.json()).catch(() => ({})),
-        loadSearchIndex(),
-      ]);
-      setSearchResults(Array.isArray(kodeposRes?.data) ? kodeposRes.data : []);
-      const wilayah: typeof searchWilayah = [];
-      idx?.provinces?.forEach(p => {
-        if (p.name.toLowerCase().includes(key)) wilayah.push({ id: p.code, name: toTitleCase(p.name), type: 'province' });
-      });
-      idx?.regencies?.forEach(r => {
-        if (r.name.toLowerCase().includes(key)) wilayah.push({ id: r.code, name: toTitleCase(r.name), type: 'regency', provinceCode: r.province_code });
-      });
-      setSearchWilayah(wilayah.slice(0, 10));
-    } catch { setSearchResults([]); setSearchWilayah([]); }
+      const res = await fetch(`/api/postal/search?q=${encodeURIComponent(q.trim())}&limit=20`).then(r => r.json()).catch(() => ({}));
+      const nav: SearchNav[] = [
+        ...(res.provinces ?? []).map((p: { id: string; name: string }) => ({ id: p.id, name: p.name, type: 'province' as const })),
+        ...(res.regencies ?? []).map((r: { id: string; name: string; province: string }) => ({ id: r.id, name: r.name, type: 'regency' as const, province: r.province })),
+        ...(res.districts ?? []).map((d: { id: string; name: string; regency: string; province: string }) => ({ id: d.id, name: d.name, type: 'district' as const, regency: d.regency, province: d.province })),
+      ];
+      setSearchNav(nav);
+      setSearchVillages(res.villages ?? []);
+    } catch { clearSearch(); }
     finally { setSearching(false); setSearched(true); }
   }, []);
 
   const handleQueryChange = (v: string) => {
     setQuery(v);
-    if (!v.trim()) { setSearchResults([]); setSearchWilayah([]); setSearched(false); }
+    if (!v.trim()) clearSearch();
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => doSearch(v), 400);
   };
 
-  const handleSearchProvinceClick = async (item: { id: string; name: string }) => {
-    setQuery(''); setSearchResults([]); setSearchWilayah([]); setSearched(false);
-    setSelProvince(item.name); setLevel('regency'); setLoading(true);
+  const handleSearchNavClick = async (item: SearchNav) => {
+    setQuery(''); clearSearch();
+    setLoading(true);
     try {
-      const res = await fetch(`${BASE}/regencies/${item.id}.json`);
-      const data: Array<{ code: string; name: string }> = await res.json();
-      setRegencies(data.map(r => ({ id: r.code, name: toTitleCase(r.name) })));
-    } catch { setRegencies([]); }
-    finally { setLoading(false); }
-  };
-
-  const handleSearchRegencyClick = async (item: { id: string; name: string; provinceCode?: string }) => {
-    setQuery(''); setSearchResults([]); setSearchWilayah([]); setSearched(false);
-    // Resolve province name from index
-    const idx = await loadSearchIndex().catch(() => null);
-    const prov = idx?.provinces.find(p => p.code === item.provinceCode);
-    setSelProvince(prov ? toTitleCase(prov.name) : '');
-    setSelRegency(item.name); setLevel('district'); setLoading(true);
-    try {
-      const res = await fetch(`${BASE}/districts/${item.id}.json`);
-      const data: Array<{ code: string; name: string }> = await res.json();
-      setDistricts(data.map(d => ({ id: d.code, name: toTitleCase(d.name) })));
-    } catch { setDistricts([]); }
+      if (item.type === 'province') {
+        setSelProvince(item.name); setLevel('regency');
+        const data: Array<{ code: string; name: string }> = await fetch(`${BASE}/regencies/${item.id}.json`).then(r => r.json());
+        setRegencies(data.map(r => ({ id: r.code, name: toTitleCase(r.name) })));
+      } else if (item.type === 'regency') {
+        setSelProvince(item.province ?? ''); setSelRegency(item.name); setLevel('district');
+        const data: Array<{ code: string; name: string }> = await fetch(`${BASE}/districts/${item.id}.json`).then(r => r.json());
+        setDistricts(data.map(d => ({ id: d.code, name: toTitleCase(d.name) })));
+      } else {
+        setSelProvince(item.province ?? ''); setSelRegency(item.regency ?? ''); setSelDistrict(item.name); setLevel('village');
+        const data: Array<{ code: string; name: string; postal_code?: string }> = await fetch(`${BASE}/villages/${item.id}.json`).then(r => r.json());
+        const vilList = data.map(v => ({ id: v.code, name: toTitleCase(v.name), postal: v.postal_code ?? '' }));
+        setVillages(vilList);
+        const missing = vilList.filter(v => !v.postal);
+        if (missing.length > 0) {
+          loadKodeposCsv().then(csvMap => {
+            const distKey = normStr(item.name);
+            setVillages(prev => prev.map(v => {
+              if (v.postal) return v;
+              const vKey = normStr(v.name);
+              const fromCsv = csvMap.get(distKey + '|' + vKey) ?? csvMap.get('v|' + vKey);
+              return fromCsv ? { ...v, postal: fromCsv } : v;
+            }));
+          }).catch(() => {});
+        }
+      }
+    } catch { /* keep hierarchy as-is */ }
     finally { setLoading(false); }
   };
 
@@ -2505,7 +2498,7 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
               <div style={{ width: '14px', height: '14px', borderRadius: '50%', border: `2px solid ${alpha(t.primary, 0.3)}`, borderTopColor: t.primary, animation: 'spin 0.6s linear infinite', flexShrink: 0 }} />
             )}
             {query && (
-              <button type="button" onClick={() => { setQuery(''); setSearchResults([]); setSearchWilayah([]); setSearched(false); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted, padding: 0, fontSize: '16px', lineHeight: 1 }}>✕</button>
+              <button type="button" onClick={() => { setQuery(''); clearSearch(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted, padding: 0, fontSize: '16px', lineHeight: 1 }}>✕</button>
             )}
           </div>
         </div>
@@ -2514,40 +2507,41 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {isSearchMode ? (
             <>
-              {searched && searchResults.length === 0 && searchWilayah.length === 0 && !searching && (
+              {searched && searchNav.length === 0 && searchVillages.length === 0 && !searching && (
                 <div style={{ padding: '32px 16px', textAlign: 'center', color: t.textMuted, fontSize: '13px' }}>Tidak ada hasil</div>
               )}
-              {/* Wilayah matches (province/regency) — navigable */}
-              {searchWilayah.length > 0 && (
+              {searchNav.length > 0 && (
                 <>
-                  <div style={{ padding: '8px 16px 4px', fontSize: '10px', fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Provinsi &amp; Kota/Kabupaten</div>
-                  {searchWilayah.map((w, i) => (
-                    <button key={w.id} type="button"
-                      onClick={() => w.type === 'province' ? handleSearchProvinceClick(w) : handleSearchRegencyClick(w)}
-                      style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.12)}` : 'none', cursor: 'pointer', padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = alpha(t.primary, 0.05))}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                    >
-                      <div>
-                        <div style={{ fontSize: '14px', fontWeight: 500, color: t.textPrimary }}>{w.name}</div>
-                        <div style={{ fontSize: '11px', color: t.textMuted, marginTop: '1px' }}>{w.type === 'province' ? 'Provinsi' : 'Kota/Kabupaten'}</div>
-                      </div>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.textMuted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                    </button>
-                  ))}
+                  <div style={{ padding: '8px 16px 4px', fontSize: '10px', fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Wilayah</div>
+                  {searchNav.map((w, i) => {
+                    const typeLabel = w.type === 'province' ? 'Provinsi' : w.type === 'regency' ? 'Kota/Kabupaten' : 'Kecamatan';
+                    const sub = w.type === 'regency' ? w.province : w.type === 'district' ? `${w.province} › ${w.regency}` : undefined;
+                    return (
+                      <button key={w.id} type="button" onClick={() => handleSearchNavClick(w)}
+                        style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.12)}` : 'none', cursor: 'pointer', padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = alpha(t.primary, 0.05))}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                      >
+                        <div>
+                          <div style={{ fontSize: '14px', fontWeight: 500, color: t.textPrimary }}>{w.name}</div>
+                          <div style={{ fontSize: '11px', color: t.textMuted, marginTop: '1px' }}>{sub ? `${typeLabel} · ${sub}` : typeLabel}</div>
+                        </div>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.textMuted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                      </button>
+                    );
+                  })}
                 </>
               )}
-              {/* Kodepos results (village level) — selectable */}
-              {searchResults.length > 0 && (
+              {searchVillages.length > 0 && (
                 <>
-                  <div style={{ padding: '8px 16px 4px', fontSize: '10px', fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', borderTop: searchWilayah.length > 0 ? `1px solid ${alpha(t.divider, 0.15)}` : 'none', marginTop: searchWilayah.length > 0 ? '4px' : 0 }}>Kelurahan &amp; Kode Pos</div>
-                  {searchResults.map((r, i) => (
-                    <button key={i} type="button" onClick={() => onSelect(r)}
+                  <div style={{ padding: '8px 16px 4px', fontSize: '10px', fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', borderTop: searchNav.length > 0 ? `1px solid ${alpha(t.divider, 0.15)}` : 'none', marginTop: searchNav.length > 0 ? '4px' : 0 }}>Kelurahan &amp; Kode Pos</div>
+                  {searchVillages.map((r, i) => (
+                    <button key={i} type="button" onClick={() => onSelect({ code: r.code ?? 0, village: r.village, district: r.district, regency: r.regency, province: r.province })}
                       style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.12)}` : 'none', cursor: 'pointer', padding: '11px 16px', display: 'block' }}
                       onMouseEnter={e => (e.currentTarget.style.background = alpha(t.primary, 0.05))}
                       onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                     >
-                      <div style={{ fontSize: '14px', fontWeight: 600, color: t.textPrimary, marginBottom: '2px' }}>{r.code} — {r.village}</div>
+                      <div style={{ fontSize: '14px', fontWeight: 600, color: t.textPrimary, marginBottom: '2px' }}>{r.code ?? '—'} — {r.village}</div>
                       <div style={{ fontSize: '11px', color: t.textMuted, display: 'flex', alignItems: 'center', gap: '3px', flexWrap: 'wrap' }}>
                         <span>{r.province}</span><span style={{ opacity: 0.4 }}>›</span>
                         <span>{r.regency}</span><span style={{ opacity: 0.4 }}>›</span>
