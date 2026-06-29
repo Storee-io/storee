@@ -2214,7 +2214,8 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
   const [provinces, setProvinces] = useState<WilayahItem[]>([]);
   const [regencies, setRegencies] = useState<WilayahItem[]>([]);
   const [districts, setDistricts] = useState<WilayahItem[]>([]);
-  const [postalResults, setPostalResults] = useState<PostalResult[]>([]);
+  const [villages, setVillages] = useState<WilayahItem[]>([]);
+  const [postalMap, setPostalMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
   const isSearchMode = query.trim().length > 0;
@@ -2274,11 +2275,17 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
   const handleDistrictClick = async (item: WilayahItem) => {
     setSelDistrict(item.name);
     setLevel('village');
+    setPostalMap({});
     setLoading(true);
     try {
-      const res = await fetch(`https://kodepos.vercel.app/search/?q=${encodeURIComponent(item.name)}&limit=200`);
-      const data = await res.json();
-      const results: PostalResult[] = Array.isArray(data?.data) ? data.data : [];
+      const [vilRes, posRes] = await Promise.all([
+        fetch(`${BASE}/kelurahan/${item.id}.json`),
+        fetch(`https://kodepos.vercel.app/search/?q=${encodeURIComponent(item.name)}&limit=200`),
+      ]);
+      const vilData: Array<{ id: string; nama: string }> = await vilRes.json();
+      setVillages(vilData.map(v => ({ id: v.id, name: v.nama })));
+      const posData = await posRes.json();
+      const results: PostalResult[] = Array.isArray(posData?.data) ? posData.data : [];
       const districtKey = item.name.replace(/^KECAMATAN\s*/i, '').trim().toLowerCase();
       const regencyKey = selRegency.replace(/^(kota|kabupaten)\s*/i, '').trim().toLowerCase();
       const filtered = results.filter(r => {
@@ -2286,15 +2293,30 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
         const rr = r.regency.replace(/^(kota|kabupaten)\s*/i, '').trim().toLowerCase();
         return rd === districtKey && rr.includes(regencyKey.slice(0, 8));
       });
-      setPostalResults(filtered.length ? filtered : results);
-    } catch { setPostalResults([]); }
+      const map: Record<string, string> = {};
+      (filtered.length ? filtered : results).forEach(r => { map[r.village.toLowerCase()] = String(r.code); });
+      setPostalMap(map);
+    } catch { setVillages([]); }
     finally { setLoading(false); }
+  };
+
+  const handleVillageClick = (village: WilayahItem) => {
+    const postal = postalMap[village.name.toLowerCase()] ?? '';
+    const districtKey = selDistrict.replace(/^KECAMATAN\s*/i, '').trim();
+    const regencyKey = selRegency.replace(/^(kota|kabupaten)\s*/i, '').trim();
+    onSelect({
+      code: Number(postal) || 0,
+      village: village.name,
+      district: districtKey,
+      regency: regencyKey,
+      province: selProvince,
+    });
   };
 
   const goBack = () => {
     if (level === 'regency') { setLevel('province'); setSelProvince(''); setRegencies([]); }
     else if (level === 'district') { setLevel('regency'); setSelRegency(''); setDistricts([]); }
-    else if (level === 'village') { setLevel('district'); setSelDistrict(''); setPostalResults([]); }
+    else if (level === 'village') { setLevel('district'); setSelDistrict(''); setVillages([]); setPostalMap({}); }
   };
 
   const breadcrumb = [selProvince, selRegency, selDistrict].filter(Boolean);
@@ -2432,22 +2454,19 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
           ) : level === 'district' ? (
             districts.map((d, i) => <Row key={d.id} i={i} label={d.name} sub={`${selProvince} › ${selRegency}`} onClick={() => handleDistrictClick(d)} />)
           ) : (
-            postalResults.map((r, i) => (
-              <button key={i} type="button" onClick={() => onSelect(r)}
-                style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.12)}` : 'none', cursor: 'pointer', padding: '13px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}
-                onMouseEnter={e => (e.currentTarget.style.background = alpha(t.primary, 0.05))}
-                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-              >
-                <div>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: t.textPrimary, marginBottom: '2px' }}>{r.code} — {r.village}</div>
-                  <div style={{ fontSize: '11px', color: t.textMuted, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span>{r.province}</span><span style={{ opacity: 0.4 }}>›</span>
-                    <span>{r.regency}</span><span style={{ opacity: 0.4 }}>›</span>
-                    <span>{r.district}</span>
-                  </div>
-                </div>
-              </button>
-            ))
+            villages.map((v, i) => {
+              const postal = postalMap[v.name.toLowerCase()] ?? '';
+              return (
+                <button key={v.id} type="button" onClick={() => handleVillageClick(v)}
+                  style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.12)}` : 'none', cursor: 'pointer', padding: '13px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = alpha(t.primary, 0.05))}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                >
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: t.textPrimary }}>{v.name}</span>
+                  {postal && <span style={{ fontSize: '12px', fontWeight: 600, color: t.primary, flexShrink: 0 }}>{postal}</span>}
+                </button>
+              );
+            })
           )}
         </div>
       </div>
