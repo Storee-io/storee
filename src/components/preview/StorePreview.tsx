@@ -2561,9 +2561,9 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
               ? <SkeletonList />
               : provinces.map((p, i) => <Row key={p.id} i={i} label={p.name} onClick={() => handleProvinceClick(p)} />)
           ) : loading ? <SkeletonList /> : level === 'regency' ? (
-            regencies.map((r, i) => <Row key={r.id} i={i} label={r.name} sub={selProvince} onClick={() => handleRegencyClick(r)} />)
+            regencies.map((r, i) => <Row key={r.id} i={i} label={r.name} onClick={() => handleRegencyClick(r)} />)
           ) : level === 'district' ? (
-            districts.map((d, i) => <Row key={d.id} i={i} label={d.name} sub={`${selProvince} › ${selRegency}`} onClick={() => handleDistrictClick(d)} />)
+            districts.map((d, i) => <Row key={d.id} i={i} label={d.name} onClick={() => handleDistrictClick(d)} />)
           ) : (
             villages.map((v, i) => (
               <button key={v.id} type="button" onClick={() => handleVillageClick(v)}
