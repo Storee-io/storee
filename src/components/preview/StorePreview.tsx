@@ -2644,7 +2644,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [lastPickedCoords, setLastPickedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [lastPickedLoc, setLastPickedLoc] = useState<PickedLocation | null>(null);
   const [lastViewedCoords, setLastViewedCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [addrSugg, setAddrSugg] = useState<{ display: string; full: string }[]>([]);
+  const [addrSugg, setAddrSugg] = useState<any[]>([]);
   const [showAddrSugg, setShowAddrSugg] = useState(false);
   const [addrSuggRect, setAddrSuggRect] = useState<{ top: number; left: number; width: number } | null>(null);
   const [addrPortalTarget, setAddrPortalTarget] = useState<Element | null>(null);
@@ -2693,7 +2693,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
         const data: any[] = await res.json();
-        setAddrSugg(data.map(r => ({ display: parseDisplayName(r.display_name).display, full: r.display_name })));
+        setAddrSugg(data);
         setShowAddrSugg(data.length > 0);
       } catch { setAddrSugg([]); }
     }, 450);
@@ -2725,7 +2725,27 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             type="button"
             onMouseDown={e => {
               e.preventDefault();
-              setForm(f => ({ ...f, address: s.display }));
+              const parsed = parseDisplayName(s.display_name);
+              const postcode = (s.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
+              const normalizedProv = normalizeProvince(s.address?.state ?? parsed.province ?? '');
+              const matchedProv = INDONESIAN_PROVINCES.find(p => p === normalizedProv) ?? INDONESIAN_PROVINCES.find(p => p.toLowerCase().includes((s.address?.state ?? parsed.province ?? '').toLowerCase())) ?? '';
+              setForm(f => ({
+                ...f,
+                address: parsed.address || f.address,
+                postal: postcode || parsed.postal || f.postal,
+                city: s.address?.city ?? s.address?.county ?? parsed.city ?? f.city,
+                province: matchedProv || f.province,
+              }));
+              setLastPickedLoc({
+                address: parsed.address || '',
+                city: s.address?.city ?? s.address?.county ?? parsed.city ?? '',
+                postal: postcode || parsed.postal || '',
+                province: matchedProv || '',
+                display: s.display_name,
+                suburb: s.address?.suburb ?? '',
+                district: s.address?.district ?? '',
+              });
+              setLastPickedCoords({ lat: parseFloat(s.lat), lng: parseFloat(s.lon) });
               setAddrSugg([]);
               setShowAddrSugg(false);
             }}
@@ -2734,7 +2754,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             onMouseLeave={e => (e.currentTarget.style.background = 'none')}
           >
             <span style={{ color: t.textMuted, flexShrink: 0, marginTop: '1px' }}>📍</span>
-            <span>{s.display}</span>
+            <span>{parseDisplayName(s.display_name).display}</span>
           </button>
         ))}
       </div>,
