@@ -2650,29 +2650,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const addrTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const addrTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const updateAddrRect = useCallback(() => {
-    if (addrTextareaRef.current) {
-      const r = addrTextareaRef.current.getBoundingClientRect();
-      setAddrSuggRect({ top: r.bottom + 4, left: r.left, width: r.width });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!showAddrSugg) return;
-    const scrollables = document.querySelectorAll('*');
-    const listeners: Array<[Element, () => void]> = [];
-    scrollables.forEach(el => {
-      if (el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth) {
-        el.addEventListener('scroll', updateAddrRect, { passive: true });
-        listeners.push([el, updateAddrRect]);
-      }
-    });
-    window.addEventListener('scroll', updateAddrRect, { passive: true });
-    return () => {
-      listeners.forEach(([el, fn]) => el.removeEventListener('scroll', fn));
-      window.removeEventListener('scroll', updateAddrRect);
-    };
-  }, [showAddrSugg, updateAddrRect]);
 
   const selectedShipping = shippingMethods.find(m => m.id === selectedShippingId) ?? shippingMethods[0];
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
@@ -2693,7 +2670,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     if (!val.trim() || val.length < 4) { setAddrSugg([]); setShowAddrSugg(false); return; }
     if (addrTextareaRef.current) {
       const r = addrTextareaRef.current.getBoundingClientRect();
-      setAddrSuggRect({ top: r.bottom + 4, left: r.left, width: r.width });
+      setAddrSuggRect({ top: r.bottom + window.scrollY + 4, left: r.left + window.scrollX, width: r.width });
     }
     addrTimer.current = setTimeout(async () => {
       try {
@@ -2721,7 +2698,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   return (
     <>
     {showAddrSugg && addrSugg.length > 0 && addrSuggRect && createPortal(
-      <div style={{ position: 'fixed', top: addrSuggRect.top, left: addrSuggRect.left, width: addrSuggRect.width, zIndex: 999999, background: t.pageBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, boxShadow: '0 8px 24px rgba(0,0,0,0.14)', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: addrSuggRect.top, left: addrSuggRect.left, width: addrSuggRect.width, zIndex: 999999, background: t.pageBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, boxShadow: '0 8px 24px rgba(0,0,0,0.14)', overflow: 'hidden' }}>
         {addrSugg.map((s, i) => (
           <button
             key={i}
