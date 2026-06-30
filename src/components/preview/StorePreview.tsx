@@ -3003,9 +3003,11 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           value={form.province}
                           onChange={set('province')}
                           className="w-full px-4 py-2.5 text-sm outline-none appearance-none pr-8"
-                          style={inpStyle}
+                          style={{ ...inpStyle, cursor: 'pointer', transition: 'all 0.2s' }}
                           onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
                           onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.5); }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = t.inputBorder; e.currentTarget.style.background = t.inputBg; }}
                         >
                           <option value="">Select province...</option>
                           {INDONESIAN_PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
