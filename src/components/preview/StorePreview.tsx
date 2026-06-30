@@ -2647,6 +2647,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [addrSugg, setAddrSugg] = useState<{ display: string; full: string }[]>([]);
   const [showAddrSugg, setShowAddrSugg] = useState(false);
   const [addrSuggRect, setAddrSuggRect] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [addrPortalTarget, setAddrPortalTarget] = useState<Element | null>(null);
   const addrTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const addrTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -2669,8 +2670,24 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     if (addrTimer.current) clearTimeout(addrTimer.current);
     if (!val.trim() || val.length < 4) { setAddrSugg([]); setShowAddrSugg(false); return; }
     if (addrTextareaRef.current) {
-      const r = addrTextareaRef.current.getBoundingClientRect();
-      setAddrSuggRect({ top: r.bottom + window.scrollY + 4, left: r.left + window.scrollX, width: r.width });
+      // Find first scrollable ancestor to portal into
+      let scrollParent: Element = document.body;
+      let el: Element | null = addrTextareaRef.current.parentElement;
+      while (el && el !== document.body) {
+        const { overflow, overflowY } = getComputedStyle(el);
+        if (/auto|scroll/.test(overflow + overflowY) && el.scrollHeight > el.clientHeight) {
+          scrollParent = el; break;
+        }
+        el = el.parentElement;
+      }
+      setAddrPortalTarget(scrollParent);
+      const ta = addrTextareaRef.current.getBoundingClientRect();
+      const pr = scrollParent.getBoundingClientRect();
+      setAddrSuggRect({
+        top: ta.bottom - pr.top + scrollParent.scrollTop + 4,
+        left: ta.left - pr.left + scrollParent.scrollLeft,
+        width: ta.width,
+      });
     }
     addrTimer.current = setTimeout(async () => {
       try {
@@ -2697,7 +2714,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
 
   return (
     <>
-    {showAddrSugg && addrSugg.length > 0 && addrSuggRect && createPortal(
+    {showAddrSugg && addrSugg.length > 0 && addrSuggRect && addrPortalTarget && createPortal(
       <div style={{ position: 'absolute', top: addrSuggRect.top, left: addrSuggRect.left, width: addrSuggRect.width, zIndex: 999999, background: t.pageBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, boxShadow: '0 8px 24px rgba(0,0,0,0.14)', overflow: 'hidden' }}>
         {addrSugg.map((s, i) => (
           <button
@@ -2718,7 +2735,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
           </button>
         ))}
       </div>,
-      document.body
+      addrPortalTarget
     )}
     {showLocationPicker && (
       <LocationPickerModal
