@@ -2881,7 +2881,15 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                             border: `1.5px dashed ${t.primary}`,
                             background: alpha(t.primary, 0.06),
                             color: t.primary, fontSize: '12px', fontWeight: 700,
-                            cursor: 'pointer', transition: 'background 0.15s',
+                            cursor: 'default', transition: 'all 0.15s',
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.background = alpha(t.primary, 0.12);
+                            e.currentTarget.style.borderColor = t.primary;
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.background = alpha(t.primary, 0.06);
+                            e.currentTarget.style.borderColor = t.primary;
                           }}
                         >
                           📍 Use My Current Location
