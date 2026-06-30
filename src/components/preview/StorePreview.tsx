@@ -2916,7 +2916,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                             <button
                               type="button"
                               onClick={e => { e.stopPropagation(); setShowLocationPicker(true); }}
-                              style={{ fontSize: '11px', fontWeight: 600, color: t.primary, background: 'none', border: 'none', cursor: 'pointer', padding: '0', flexShrink: 0 }}
+                              style={{ fontSize: '11px', fontWeight: 600, color: t.primary, background: 'none', border: 'none', cursor: 'default', padding: '0', flexShrink: 0, transition: 'color 0.15s' }}
+                              onMouseEnter={e => { e.currentTarget.style.color = '#1e40af'; }}
+                              onMouseLeave={e => { e.currentTarget.style.color = t.primary; }}
                             >
                               Change
                             </button>
