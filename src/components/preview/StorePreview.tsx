@@ -2541,7 +2541,7 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
                       onMouseEnter={e => (e.currentTarget.style.background = alpha(t.primary, 0.05))}
                       onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                     >
-                      <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '2px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ color: t.primary, minWidth: '42px', flexShrink: 0 }}>{r.code ?? '—'}</span>
                         <span style={{ width: '1px', alignSelf: 'stretch', background: alpha(t.textMuted, 0.3), flexShrink: 0, marginTop: '1px', marginBottom: '1px' }} />
                         <span style={{ color: t.textPrimary }}>{r.village}</span>
