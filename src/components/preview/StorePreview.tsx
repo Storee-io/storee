@@ -3129,7 +3129,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               />
               <button
                 onClick={() => promoCode && setPromoApplied(true)}
-                className="px-5 py-2.5 text-sm font-bold hover:opacity-85 transition-opacity"
+                className="px-5 py-2.5 text-sm font-bold hover:opacity-85 transition-opacity cursor-pointer"
                 style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
               >
                 {promoApplied ? <Check className="w-4 h-4" /> : 'Apply'}
@@ -3183,7 +3183,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               const dial = COUNTRY_CODES.find(c => c.code === phoneCountryCode)?.dial ?? '62';
               onPlaceOrder(selectedPayId, selectedShippingId, { ...form, whatsapp: form.whatsapp ? `+${dial}${form.whatsapp}` : '' });
             }}
-            className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity"
+            className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity cursor-pointer"
             style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
           >
             Place Order
