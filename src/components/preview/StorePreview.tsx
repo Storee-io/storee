@@ -2849,19 +2849,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       {touched.address && validate('address', form.address) && <p style={errStyle}>{validate('address', form.address)}</p>}
                     </div>
                     <div>
-                      <label style={lblStyle}>City</label>
-                      <input
-                        className="w-full px-4 py-2.5 text-sm outline-none"
-                        style={inpStyle}
-                        value={form.city}
-                        onChange={set('city')}
-                        placeholder="City"
-                        onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
-                        onBlur={e => { touch('city'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
-                      />
-                      {touched.city && validate('city', form.city) && <p style={errStyle}>{validate('city', form.city)}</p>}
-                    </div>
-                    <div>
                       <label style={lblStyle}>Postal Code</label>
                       <div style={{ position: 'relative' }}>
                         <input
@@ -2886,6 +2873,19 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         </button>
                       </div>
                       {touched.postal && validate('postal', form.postal) && <p style={errStyle}>{validate('postal', form.postal)}</p>}
+                    </div>
+                    <div>
+                      <label style={lblStyle}>City</label>
+                      <input
+                        className="w-full px-4 py-2.5 text-sm outline-none"
+                        style={inpStyle}
+                        value={form.city}
+                        onChange={set('city')}
+                        placeholder="City"
+                        onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
+                        onBlur={e => { touch('city'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
+                      />
+                      {touched.city && validate('city', form.city) && <p style={errStyle}>{validate('city', form.city)}</p>}
                     </div>
                     <div className="col-span-2">
                       <label style={lblStyle}>Province</label>
