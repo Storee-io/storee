@@ -2912,14 +2912,23 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                                 {[lastPickedLoc.suburb, lastPickedLoc.district, lastPickedLoc.city].filter(Boolean).join(', ')}{lastPickedLoc.postal ? `, ${lastPickedLoc.postal}` : ''}
                               </p>
                             </div>
-                            {/* Change button */}
-                            <button
-                              type="button"
-                              onClick={e => { e.stopPropagation(); setShowLocationPicker(true); }}
-                              style={{ fontSize: '11px', fontWeight: 600, color: t.primary, background: 'none', border: 'none', cursor: 'pointer', padding: '0', textDecoration: 'underline', textUnderlineOffset: '2px', flexShrink: 0 }}
-                            >
-                              Change
-                            </button>
+                            {/* Change & Remove buttons */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end', flexShrink: 0 }}>
+                              <button
+                                type="button"
+                                onClick={e => { e.stopPropagation(); setShowLocationPicker(true); }}
+                                style={{ fontSize: '11px', fontWeight: 600, color: t.primary, background: 'none', border: 'none', cursor: 'pointer', padding: '0', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+                              >
+                                Change
+                              </button>
+                              <button
+                                type="button"
+                                onClick={e => { e.stopPropagation(); setLastPickedLoc(null); setLastPickedCoords(null); setForm(f => ({ ...f, address: '', postal: '', city: '', province: '' })); }}
+                                style={{ fontSize: '10px', fontWeight: 500, color: t.textMuted, background: 'none', border: 'none', cursor: 'pointer', padding: '0', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+                              >
+                                Remove
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}
