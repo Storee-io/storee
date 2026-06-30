@@ -2563,13 +2563,12 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
           ) : (
             villages.map((v, i) => (
               <button key={v.id} type="button" onClick={() => handleVillageClick(v)}
-                style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.12)}` : 'none', cursor: 'pointer', padding: '13px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}
+                style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.12)}` : 'none', cursor: 'pointer', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '16px' }}
                 onMouseEnter={e => (e.currentTarget.style.background = alpha(t.primary, 0.05))}
                 onMouseLeave={e => (e.currentTarget.style.background = 'none')}
               >
-                <span style={{ fontSize: '14px', fontWeight: 500, color: t.textPrimary }}>
-                  {v.postal && <span style={{ fontWeight: 600, color: t.primary }}>{v.postal}&nbsp;&nbsp;&nbsp;</span>}{v.name}
-                </span>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: t.primary, minWidth: '42px', flexShrink: 0 }}>{v.postal || '—'}</span>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: t.textPrimary }}>{v.name}</span>
               </button>
             ))
           )}
