@@ -1754,7 +1754,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${t.divider}` }}>
           <span style={{ fontWeight: 700, fontSize: '15px', color: t.textPrimary }}>📍 Pick Location</span>
-          <button onClick={() => onClose(currentCoordsRef.current)} style={{ background: 'none', border: 'none', cursor: 'default', color: t.textMuted, fontSize: '18px', lineHeight: 1, padding: '2px 4px', transition: 'all 0.15s' }} onMouseEnter={e => { e.currentTarget.style.color = t.textPrimary; e.currentTarget.style.transform = 'scale(1.2)'; }} onMouseLeave={e => { e.currentTarget.style.color = t.textMuted; e.currentTarget.style.transform = 'scale(1)'; }}>✕</button>
+          <button onClick={() => onClose(currentCoordsRef.current)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted, fontSize: '18px', lineHeight: 1, padding: '2px 4px', transition: 'all 0.15s' }} onMouseEnter={e => { e.currentTarget.style.color = t.textPrimary; e.currentTarget.style.transform = 'scale(1.2)'; }} onMouseLeave={e => { e.currentTarget.style.color = t.textMuted; e.currentTarget.style.transform = 'scale(1)'; }}>✕</button>
         </div>
 
         {/* Search bar — always visible */}
@@ -1767,7 +1767,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
           <div style={{ overflowY: 'auto', flex: 1 }}>
             {searchResults.map((r, i) => (
               <div key={i} onClick={() => selectResult(r)}
-                style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 16px', cursor: 'default', borderBottom: `1px solid ${t.divider}`, color: t.textPrimary, fontSize: '13px', lineHeight: 1.5, transition: 'background 0.15s' }}
+                style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 16px', cursor: 'pointer', borderBottom: `1px solid ${t.divider}`, color: t.textPrimary, fontSize: '13px', lineHeight: 1.5, transition: 'background 0.15s' }}
                 onMouseEnter={e => (e.currentTarget.style.background = alpha(t.primary, 0.08))}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
@@ -2881,7 +2881,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                             border: `1.5px dashed ${t.primary}`,
                             background: alpha(t.primary, 0.06),
                             color: t.primary, fontSize: '12px', fontWeight: 700,
-                            cursor: 'default', transition: 'all 0.15s',
+                            cursor: 'pointer', transition: 'all 0.15s',
                           }}
                           onMouseEnter={e => {
                             e.currentTarget.style.background = alpha(t.primary, 0.12);
@@ -2898,7 +2898,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       {lastPickedLoc && (
                         <div
                           onClick={() => setShowLocationPicker(true)}
-                          style={{ borderRadius: '12px', border: `1.5px solid ${alpha(t.primary, 0.25)}`, background: alpha(t.primary, 0.05), overflow: 'hidden', cursor: 'default', transition: 'background 0.15s', marginBottom: '8px' }}
+                          style={{ borderRadius: '12px', border: `1.5px solid ${alpha(t.primary, 0.25)}`, background: alpha(t.primary, 0.05), overflow: 'hidden', cursor: 'pointer', transition: 'background 0.15s', marginBottom: '8px' }}
                           onMouseEnter={e => e.currentTarget.style.background = alpha(t.primary, 0.1)}
                           onMouseLeave={e => e.currentTarget.style.background = alpha(t.primary, 0.05)}
                         >
@@ -2924,7 +2924,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                             <button
                               type="button"
                               onClick={e => { e.stopPropagation(); setShowLocationPicker(true); }}
-                              style={{ fontSize: '11px', fontWeight: 600, color: t.primary, background: 'none', border: 'none', cursor: 'default', padding: '0', flexShrink: 0, transition: 'color 0.15s' }}
+                              style={{ fontSize: '11px', fontWeight: 600, color: t.primary, background: 'none', border: 'none', cursor: 'pointer', padding: '0', flexShrink: 0, transition: 'color 0.15s' }}
                               onMouseEnter={e => { e.currentTarget.style.color = '#1e40af'; }}
                               onMouseLeave={e => { e.currentTarget.style.color = t.primary; }}
                             >
@@ -2934,7 +2934,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                             <button
                               type="button"
                               onClick={e => { e.stopPropagation(); setLastPickedLoc(null); setLastPickedCoords(null); setForm(f => ({ ...f, address: '', postal: '', city: '', province: '' })); }}
-                              style={{ background: 'none', border: 'none', cursor: 'default', padding: '6px 8px', fontSize: '20px', fontWeight: 600, color: t.textMuted, lineHeight: 1, transition: 'all 0.2s', flexShrink: 0, marginLeft: '4px', marginRight: '-6px' }}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px', fontSize: '20px', fontWeight: 600, color: t.textMuted, lineHeight: 1, transition: 'all 0.2s', flexShrink: 0, marginLeft: '4px', marginRight: '-6px' }}
                               title="Remove location"
                               onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.transform = 'scale(1.35)'; const card = e.currentTarget.parentElement.parentElement; card.style.background = alpha(t.textMuted, 0.08); card.style.borderStyle = 'dashed'; card.style.borderColor = alpha(t.textMuted, 0.3); }}
                               onMouseLeave={e => { e.currentTarget.style.color = t.textMuted; e.currentTarget.style.transform = 'scale(1)'; const card = e.currentTarget.parentElement.parentElement; card.style.borderStyle = 'solid'; card.style.borderColor = alpha(t.primary, 0.25); const rect = card.getBoundingClientRect(); const mouseX = e.clientX, mouseY = e.clientY; if (mouseX >= rect.left && mouseX <= rect.right && mouseY >= rect.top && mouseY <= rect.bottom) { card.style.background = alpha(t.primary, 0.1); } else { card.style.background = alpha(t.primary, 0.05); } }}
