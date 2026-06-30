@@ -7204,7 +7204,7 @@ function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, on
             <span className="text-base font-black" style={{ color: primaryColor }}><StyleOnlySpan field={`products.${featured.id}.priceHtml`} value={fmtPrice(featured.price)} htmlValue={featured.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /></span>
             <button
               onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(featured, getProductImgRect(btn)); }}
-              className="px-4 py-2 text-xs font-bold"
+              className="px-4 py-2 text-xs font-bold transition-all hover:opacity-90 cursor-pointer"
               style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}
             >
               Add to Cart
@@ -7416,7 +7416,7 @@ function TkGridSpotlight({ products, tt, primaryColor, device, onProductClick, o
               </div>
             </div>
             <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(featured, getProductImgRect(btn)); }}
-              className="px-5 py-2.5 text-xs font-bold"
+              className="px-5 py-2.5 text-xs font-bold transition-all hover:opacity-90 cursor-pointer"
               style={{ background: primaryColor, color: btnText, borderRadius: tt.btnRadius }}>Add to Cart</button>
           </div>
         </div>
@@ -7433,7 +7433,7 @@ function TkGridSpotlight({ products, tt, primaryColor, device, onProductClick, o
               {p.badge && <span className="absolute top-2 left-2 text-[8px] font-black uppercase px-1.5 py-0.5 text-white"
                 style={{ background: primaryColor, borderRadius: tt.btnRadius }}><StyleOnlySpan field={`products.${p.id}.badgeHtml`} value={p.badge} htmlValue={p.badgeHtml} editMode={editMode} onFieldChange={onFieldChange} /></span>}
               <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }}
-                className={`absolute bottom-2 right-2 w-7 h-7 flex items-center justify-center text-white font-bold rounded-full shadow-md ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}
+                className={`absolute bottom-2 right-2 w-7 h-7 flex items-center justify-center text-white font-bold rounded-full shadow-md ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity hover:opacity-90 cursor-pointer`}
                 style={{ background: primaryColor }}>+</button>
             </div>
             <div style={tt.cardStyle ? { padding: '6px 8px 8px' } : undefined}>
@@ -9689,7 +9689,7 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
                       <div className="flex items-center gap-4">
                         <span className="text-2xl font-black" style={{ color: tt.textPrimary }}>{fmtPrice(p.price)}</span>
                         {p.originalPrice && <span className="text-lg line-through opacity-50" style={{ color: tt.textMuted }}>{fmtPrice(p.originalPrice)}</span>}
-                        <button onClick={e => { const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }} className="px-8 py-3 text-sm font-bold uppercase tracking-widest transition-all hover:opacity-90 active:scale-95" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: tt.btnRadius }}>Add to Cart</button>
+                        <button onClick={e => { const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }} className="px-8 py-3 text-sm font-bold uppercase tracking-widest transition-all hover:opacity-90 active:scale-95 cursor-pointer" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000', borderRadius: tt.btnRadius }}>Add to Cart</button>
                         <button data-wishlist-btn="" onClick={() => onToggleWishlist(p.id)} className="p-3 rounded-full" style={{ background: tt.surfaceBg }}>
                           <Heart className={`w-5 h-5 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
                         </button>
@@ -9738,7 +9738,7 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
                         <button data-wishlist-btn="" onClick={e => { e.stopPropagation(); onToggleWishlist(p.id); }} className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-white/80 backdrop-blur shadow">
                           <Heart className={`w-3 h-3 ${wishlist.has(p.id) ? 'text-rose-500 fill-rose-500' : ''}`} style={wishlist.has(p.id) ? undefined : { color: tt.textMuted }} />
                         </button>
-                        <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }} className="absolute bottom-0 inset-x-0 py-2.5 text-xs font-bold uppercase tracking-widest translate-y-full group-hover:translate-y-0 transition-transform" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000' }}>Add to Cart</button>
+                        <button onClick={e => { e.stopPropagation(); const btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(btn)); }} className="absolute bottom-0 inset-x-0 py-2.5 text-xs font-bold uppercase tracking-widest translate-y-full group-hover:translate-y-0 transition-transform hover:opacity-90 cursor-pointer" style={{ background: pc, color: isDark(pc) ? '#fff' : '#000' }}>Add to Cart</button>
                       </div>
                       <div className="mt-3">
                         <p className="text-xs font-semibold truncate" style={{ color: tt.textPrimary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.nameHtml`} value={p.name} htmlValue={p.nameHtml} editMode={editMode} onFieldChange={onFieldChange} /> : p.name}</p>
