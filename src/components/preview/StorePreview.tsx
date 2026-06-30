@@ -1754,7 +1754,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${t.divider}` }}>
           <span style={{ fontWeight: 700, fontSize: '15px', color: t.textPrimary }}>📍 Pick Location</span>
-          <button onClick={() => onClose(currentCoordsRef.current)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted, fontSize: '18px', lineHeight: 1, padding: '2px 4px' }}>✕</button>
+          <button onClick={() => onClose(currentCoordsRef.current)} style={{ background: 'none', border: 'none', cursor: 'default', color: t.textMuted, fontSize: '18px', lineHeight: 1, padding: '2px 4px', transition: 'all 0.15s' }} onMouseEnter={e => { e.currentTarget.style.color = t.textPrimary; e.currentTarget.style.transform = 'scale(1.2)'; }} onMouseLeave={e => { e.currentTarget.style.color = t.textMuted; e.currentTarget.style.transform = 'scale(1)'; }}>✕</button>
         </div>
 
         {/* Search bar — always visible */}
@@ -1767,8 +1767,8 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
           <div style={{ overflowY: 'auto', flex: 1 }}>
             {searchResults.map((r, i) => (
               <div key={i} onClick={() => selectResult(r)}
-                style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 16px', cursor: 'pointer', borderBottom: `1px solid ${t.divider}`, color: t.textPrimary, fontSize: '13px', lineHeight: 1.5 }}
-                onMouseEnter={e => (e.currentTarget.style.background = t.inputBg)}
+                style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 16px', cursor: 'default', borderBottom: `1px solid ${t.divider}`, color: t.textPrimary, fontSize: '13px', lineHeight: 1.5, transition: 'background 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.background = alpha(t.primary, 0.08))}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <span style={{ flexShrink: 0, marginTop: '2px', color: t.textMuted }}>📍</span>
