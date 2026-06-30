@@ -2205,6 +2205,8 @@ const WILAYAH_ABBR = new Set(['DKI', 'DI', 'DIY', 'NTB', 'NTT', 'RI', 'SD', 'SMP
 const toTitleCase = (s: string) =>
   s.split(' ').map(w => WILAYAH_ABBR.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
+const shortRegency = (name: string) => name.replace(/^Kabupaten\s+/i, 'Kab. ');
+
 
 async function loadKodeposCsv(): Promise<Map<string, string>> {
   if (kodeposCsvCache) return kodeposCsvCache;
@@ -2548,7 +2550,7 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
                       </div>
                       <div style={{ fontSize: '11px', color: t.textMuted, display: 'flex', alignItems: 'center', gap: '3px', flexWrap: 'wrap' }}>
                         <span>{r.province}</span><span style={{ opacity: 0.4 }}>›</span>
-                        <span>{r.regency}</span><span style={{ opacity: 0.4 }}>›</span>
+                        <span>{shortRegency(r.regency)}</span><span style={{ opacity: 0.4 }}>›</span>
                         <span>{r.district}</span>
                       </div>
                     </button>
@@ -2561,7 +2563,7 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
               ? <SkeletonList />
               : provinces.map((p, i) => <Row key={p.id} i={i} label={p.name} onClick={() => handleProvinceClick(p)} />)
           ) : loading ? <SkeletonList /> : level === 'regency' ? (
-            regencies.map((r, i) => <Row key={r.id} i={i} label={r.name} onClick={() => handleRegencyClick(r)} />)
+            regencies.map((r, i) => <Row key={r.id} i={i} label={shortRegency(r.name)} onClick={() => handleRegencyClick(r)} />)
           ) : level === 'district' ? (
             districts.map((d, i) => <Row key={d.id} i={i} label={d.name} onClick={() => handleDistrictClick(d)} />)
           ) : (
