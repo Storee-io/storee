@@ -2890,23 +2890,11 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       {lastPickedLoc && (
                         <div
                           onClick={() => setShowLocationPicker(true)}
-                          style={{ borderRadius: '12px', border: `1.5px solid ${alpha(t.primary, 0.25)}`, background: alpha(t.primary, 0.05), overflow: 'visible', cursor: 'pointer', transition: 'background 0.15s', marginBottom: '8px', position: 'relative' }}
+                          style={{ borderRadius: '12px', border: `1.5px solid ${alpha(t.primary, 0.25)}`, background: alpha(t.primary, 0.05), overflow: 'hidden', cursor: 'pointer', transition: 'background 0.15s', marginBottom: '8px' }}
                           onMouseEnter={e => e.currentTarget.style.background = alpha(t.primary, 0.1)}
                           onMouseLeave={e => e.currentTarget.style.background = alpha(t.primary, 0.05)}
                         >
-                          {/* Remove button — top right corner */}
-                          <button
-                            type="button"
-                            onClick={e => { e.stopPropagation(); e.preventDefault(); setLastPickedLoc(null); setLastPickedCoords(null); setForm(f => ({ ...f, address: '', postal: '', city: '', province: '' })); }}
-                            style={{ position: 'absolute', top: '-8px', right: '-8px', width: '26px', height: '26px', borderRadius: '50%', background: '#ef4444', border: '2px solid ' + t.pageBg, cursor: 'pointer', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '15px', fontWeight: 700, color: 'white', lineHeight: 1, zIndex: 10, transition: 'all 0.2s' }}
-                            title="Remove location"
-                            onMouseEnter={e => { e.currentTarget.style.background = '#dc2626'; e.currentTarget.style.transform = 'scale(1.1)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = '#ef4444'; e.currentTarget.style.transform = 'scale(1)'; }}
-                          >
-                            ×
-                          </button>
-
-                          {/* Card: map + info + change in one row */}
+                          {/* Card: map + info + change + remove in one row */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px' }}>
                             {/* Map thumbnail */}
                             {lastPickedCoords && (
@@ -2931,6 +2919,17 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                               style={{ fontSize: '11px', fontWeight: 600, color: t.primary, background: 'none', border: 'none', cursor: 'pointer', padding: '0', textDecoration: 'underline', textUnderlineOffset: '2px', flexShrink: 0 }}
                             >
                               Change
+                            </button>
+                            {/* Remove button — × only */}
+                            <button
+                              type="button"
+                              onClick={e => { e.stopPropagation(); setLastPickedLoc(null); setLastPickedCoords(null); setForm(f => ({ ...f, address: '', postal: '', city: '', province: '' })); }}
+                              style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#ef4444', border: 'none', cursor: 'pointer', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '12px', fontWeight: 700, color: 'white', lineHeight: 1, transition: 'all 0.2s', marginLeft: '4px' }}
+                              title="Remove location"
+                              onMouseEnter={e => { e.currentTarget.style.background = '#dc2626'; e.currentTarget.style.transform = 'scale(1.15)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = '#ef4444'; e.currentTarget.style.transform = 'scale(1)'; }}
+                            >
+                              ×
                             </button>
                           </div>
                         </div>
