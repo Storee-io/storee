@@ -2646,7 +2646,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [lastViewedCoords, setLastViewedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [addrSugg, setAddrSugg] = useState<{ display: string; full: string }[]>([]);
   const [showAddrSugg, setShowAddrSugg] = useState(false);
+  const [addrSuggRect, setAddrSuggRect] = useState<{ top: number; left: number; width: number } | null>(null);
   const addrTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const addrTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const selectedShipping = shippingMethods.find(m => m.id === selectedShippingId) ?? shippingMethods[0];
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
@@ -2665,6 +2667,10 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     setForm(f => ({ ...f, address: val }));
     if (addrTimer.current) clearTimeout(addrTimer.current);
     if (!val.trim() || val.length < 4) { setAddrSugg([]); setShowAddrSugg(false); return; }
+    if (addrTextareaRef.current) {
+      const r = addrTextareaRef.current.getBoundingClientRect();
+      setAddrSuggRect({ top: r.bottom + 4, left: r.left, width: r.width });
+    }
     addrTimer.current = setTimeout(async () => {
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
@@ -2690,6 +2696,29 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
 
   return (
     <>
+    {showAddrSugg && addrSugg.length > 0 && addrSuggRect && createPortal(
+      <div style={{ position: 'fixed', top: addrSuggRect.top, left: addrSuggRect.left, width: addrSuggRect.width, zIndex: 999999, background: t.pageBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, boxShadow: '0 8px 24px rgba(0,0,0,0.14)', overflow: 'hidden' }}>
+        {addrSugg.map((s, i) => (
+          <button
+            key={i}
+            type="button"
+            onMouseDown={e => {
+              e.preventDefault();
+              setForm(f => ({ ...f, address: s.display }));
+              setAddrSugg([]);
+              setShowAddrSugg(false);
+            }}
+            style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.5)}` : 'none', cursor: 'pointer', padding: '10px 14px', display: 'flex', alignItems: 'flex-start', gap: '8px', color: t.textPrimary, fontSize: '12px', lineHeight: 1.45 }}
+            onMouseEnter={e => (e.currentTarget.style.background = alpha(t.primary, 0.06))}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+          >
+            <span style={{ color: t.textMuted, flexShrink: 0, marginTop: '1px' }}>📍</span>
+            <span>{s.display}</span>
+          </button>
+        ))}
+      </div>,
+      document.body
+    )}
     {showLocationPicker && (
       <LocationPickerModal
         t={t}
@@ -2853,40 +2882,17 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           </div>
                         </div>
                       )}
-                      <div style={{ position: 'relative' }}>
-                        <textarea
-                          className="w-full px-4 py-2.5 text-sm resize-none"
-                          style={{ ...inpStyle, outline: 'none' }}
-                          rows={2}
-                          value={form.address}
-                          onChange={e => handleAddressInput(e.target.value)}
-                          onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.7); }}
-                          onBlur={e => { touch('address'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; setTimeout(() => setShowAddrSugg(false), 150); }}
-                          placeholder="Street name, number, district, subdistrict"
-                        />
-                        {showAddrSugg && addrSugg.length > 0 && (
-                          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200, background: t.pageBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, boxShadow: '0 4px 16px rgba(0,0,0,0.10)', marginTop: '4px', overflow: 'hidden' }}>
-                            {addrSugg.map((s, i) => (
-                              <button
-                                key={i}
-                                type="button"
-                                onMouseDown={e => {
-                                  e.preventDefault();
-                                  setForm(f => ({ ...f, address: s.display }));
-                                  setAddrSugg([]);
-                                  setShowAddrSugg(false);
-                                }}
-                                style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.5)}` : 'none', cursor: 'pointer', padding: '10px 14px', display: 'flex', alignItems: 'flex-start', gap: '8px', color: t.textPrimary, fontSize: '12px', lineHeight: 1.45 }}
-                                onMouseEnter={e => (e.currentTarget.style.background = alpha(t.primary, 0.06))}
-                                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                              >
-                                <span style={{ color: t.textMuted, flexShrink: 0, marginTop: '1px' }}>📍</span>
-                                <span>{s.display}</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <textarea
+                        ref={addrTextareaRef}
+                        className="w-full px-4 py-2.5 text-sm resize-none"
+                        style={{ ...inpStyle, outline: 'none' }}
+                        rows={2}
+                        value={form.address}
+                        onChange={e => handleAddressInput(e.target.value)}
+                        onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.7); }}
+                        onBlur={e => { touch('address'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; setTimeout(() => setShowAddrSugg(false), 150); }}
+                        placeholder="Street name, number, district, subdistrict"
+                      />
                       {touched.address && validate('address', form.address) && <p style={errStyle}>{validate('address', form.address)}</p>}
                     </div>
                     <div>
