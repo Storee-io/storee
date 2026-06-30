@@ -2644,6 +2644,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [lastPickedCoords, setLastPickedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [lastPickedLoc, setLastPickedLoc] = useState<PickedLocation | null>(null);
   const [lastViewedCoords, setLastViewedCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [addrSugg, setAddrSugg] = useState<{ display: string; full: string }[]>([]);
+  const [showAddrSugg, setShowAddrSugg] = useState(false);
+  const addrTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const selectedShipping = shippingMethods.find(m => m.id === selectedShippingId) ?? shippingMethods[0];
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
@@ -2657,6 +2660,20 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const t = getCommerceTheme(primaryColor, layoutStyle);
   const inpStyle: CSSProperties = { background: t.inputBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3), boxSizing: 'border-box' } as CSSProperties;
   const lblStyle: CSSProperties = { color: t.textSecondary, fontSize: '0.75rem', fontWeight: 600, marginBottom: '6px', display: 'block' };
+
+  const handleAddressInput = (val: string) => {
+    setForm(f => ({ ...f, address: val }));
+    if (addrTimer.current) clearTimeout(addrTimer.current);
+    if (!val.trim() || val.length < 4) { setAddrSugg([]); setShowAddrSugg(false); return; }
+    addrTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
+        const data: any[] = await res.json();
+        setAddrSugg(data.map(r => ({ display: parseDisplayName(r.display_name).display, full: r.display_name })));
+        setShowAddrSugg(data.length > 0);
+      } catch { setAddrSugg([]); }
+    }, 450);
+  };
 
   const handleLocationChosen = (loc: PickedLocation, coords: { lat: number; lng: number }) => {
     setForm(f => ({
@@ -2836,16 +2853,40 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           </div>
                         </div>
                       )}
-                      <textarea
-                        className="w-full px-4 py-2.5 text-sm resize-none"
-                        style={{ ...inpStyle, outline: 'none' }}
-                        rows={2}
-                        value={form.address}
-                        onChange={set('address')}
-                        onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.7); }}
-                        onBlur={e => { touch('address'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
-                        placeholder="Street name, number, district, subdistrict"
-                      />
+                      <div style={{ position: 'relative' }}>
+                        <textarea
+                          className="w-full px-4 py-2.5 text-sm resize-none"
+                          style={{ ...inpStyle, outline: 'none' }}
+                          rows={2}
+                          value={form.address}
+                          onChange={e => handleAddressInput(e.target.value)}
+                          onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.7); }}
+                          onBlur={e => { touch('address'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; setTimeout(() => setShowAddrSugg(false), 150); }}
+                          placeholder="Street name, number, district, subdistrict"
+                        />
+                        {showAddrSugg && addrSugg.length > 0 && (
+                          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200, background: t.pageBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, boxShadow: '0 4px 16px rgba(0,0,0,0.10)', marginTop: '4px', overflow: 'hidden' }}>
+                            {addrSugg.map((s, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onMouseDown={e => {
+                                  e.preventDefault();
+                                  setForm(f => ({ ...f, address: s.display }));
+                                  setAddrSugg([]);
+                                  setShowAddrSugg(false);
+                                }}
+                                style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.5)}` : 'none', cursor: 'pointer', padding: '10px 14px', display: 'flex', alignItems: 'flex-start', gap: '8px', color: t.textPrimary, fontSize: '12px', lineHeight: 1.45 }}
+                                onMouseEnter={e => (e.currentTarget.style.background = alpha(t.primary, 0.06))}
+                                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                              >
+                                <span style={{ color: t.textMuted, flexShrink: 0, marginTop: '1px' }}>📍</span>
+                                <span>{s.display}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       {touched.address && validate('address', form.address) && <p style={errStyle}>{validate('address', form.address)}</p>}
                     </div>
                     <div>
