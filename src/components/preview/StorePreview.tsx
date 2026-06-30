@@ -2684,7 +2684,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
       const ta = addrTextareaRef.current.getBoundingClientRect();
       const pr = scrollParent.getBoundingClientRect();
       setAddrSuggRect({
-        top: ta.bottom - pr.top + scrollParent.scrollTop + 4,
+        top: ta.bottom - pr.top + scrollParent.scrollTop,
         left: ta.left - pr.left + scrollParent.scrollLeft,
         width: ta.width,
       });
