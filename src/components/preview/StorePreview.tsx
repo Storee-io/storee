@@ -2924,10 +2924,10 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                             <button
                               type="button"
                               onClick={e => { e.stopPropagation(); setLastPickedLoc(null); setLastPickedCoords(null); setForm(f => ({ ...f, address: '', postal: '', city: '', province: '' })); }}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0', fontSize: '16px', fontWeight: 600, color: t.textMuted, lineHeight: 1, transition: 'color 0.2s', flexShrink: 0, marginLeft: '8px' }}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0', fontSize: '16px', fontWeight: 600, color: t.textMuted, lineHeight: 1, transition: 'all 0.2s', flexShrink: 0, marginLeft: '8px' }}
                               title="Remove location"
-                              onMouseEnter={e => { e.currentTarget.style.color = t.textPrimary; }}
-                              onMouseLeave={e => { e.currentTarget.style.color = t.textMuted; }}
+                              onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.transform = 'scale(1.2)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.color = t.textMuted; e.currentTarget.style.transform = 'scale(1)'; }}
                             >
                               ×
                             </button>
