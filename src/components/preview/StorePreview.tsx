@@ -2718,7 +2718,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
       <div style={{ position: 'absolute', top: addrSuggRect.top, left: addrSuggRect.left, width: addrSuggRect.width, zIndex: 999999, background: t.pageBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, boxShadow: '0 8px 24px rgba(0,0,0,0.14)', overflow: 'hidden' }}>
         <div style={{ padding: '7px 14px 6px', fontSize: '10px', color: t.textMuted, borderBottom: `1px solid ${alpha(t.divider, 0.4)}`, display: 'flex', alignItems: 'center', gap: '5px' }}>
           <span>🔍</span>
-          <span>Saran lokasi — boleh diabaikan, ketik alamat bebas</span>
+          <span>Location suggestions — optional, you can type freely</span>
         </div>
         {addrSugg.map((s, i) => (
           <button
