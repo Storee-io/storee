@@ -4205,7 +4205,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
                 <div className={`absolute bottom-0 inset-x-0 p-3 ${editMode ? '' : 'transition-transform duration-200'} ${isMobile || editMode ? '' : 'translate-y-full group-hover:translate-y-0'}`}>
                   <button
                     onClick={e => { e.stopPropagation(); const _btn = e.currentTarget as HTMLElement; onAddToCart(p, getProductImgRect(_btn)); }}
-                    className="w-full py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-xl text-white shadow-lg"
+                    className="w-full py-2.5 text-[11px] font-bold uppercase tracking-wider rounded-xl text-white shadow-lg transition-all hover:opacity-90 cursor-pointer"
                     style={{ background: primaryColor }}
                   >
                     + Add to Cart
