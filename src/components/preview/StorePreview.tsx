@@ -862,7 +862,7 @@ function CartToast({ item, primaryColor, fmtPrice, onClose, onViewCart, previewS
         {/* Close */}
         <button
           onClick={onClose}
-          className="flex-shrink-0 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors self-start"
+          className="flex-shrink-0 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors self-start cursor-pointer"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -874,7 +874,7 @@ function CartToast({ item, primaryColor, fmtPrice, onClose, onViewCart, previewS
       <div className="px-3 pb-3">
         <button
           onClick={onViewCart}
-          className="w-full py-2 text-xs font-semibold rounded-xl text-white transition-opacity hover:opacity-90"
+          className="w-full py-2 text-xs font-semibold rounded-xl text-white transition-opacity hover:opacity-90 cursor-pointer"
           style={{ background: primaryColor }}
         >
           View Cart ({item.cartCount})
@@ -1370,7 +1370,7 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
             style={{ color: t.textMuted }}
           >
             <X className="w-4 h-4" />
@@ -1394,13 +1394,13 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
                 <p className="text-xs font-bold mt-0.5" style={{ color: t.primary }}>{editMode ? <StyleOnlySpan field={`products.${p.id}.priceHtml`} value={fmtPrice(p.price)} htmlValue={p.priceHtml} editMode={editMode} onFieldChange={onFieldChange} /> : fmtPrice(p.price)}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.surfaceBorder}`, borderRadius: '6px' }}>
-                    <button onClick={() => onUpdateQty(p.id, -1)} className="w-6 h-6 flex items-center justify-center text-sm font-medium" style={{ color: t.textSecondary }}>−</button>
+                    <button onClick={() => onUpdateQty(p.id, -1)} className="w-6 h-6 flex items-center justify-center text-sm font-medium cursor-pointer" style={{ color: t.textSecondary }}>−</button>
                     <span className="w-6 text-center text-xs font-bold" style={{ color: t.textPrimary }}>{qty}</span>
-                    <button onClick={() => onUpdateQty(p.id, 1)} className="w-6 h-6 flex items-center justify-center text-sm font-medium" style={{ color: t.textSecondary }}>+</button>
+                    <button onClick={() => onUpdateQty(p.id, 1)} className="w-6 h-6 flex items-center justify-center text-sm font-medium cursor-pointer" style={{ color: t.textSecondary }}>+</button>
                   </div>
                   <button
                     onClick={() => onUpdateQty(p.id, -qty)}
-                    className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-50 transition-colors"
+                    className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-50 transition-colors cursor-pointer"
                     style={{ color: t.textMuted }}
                     title="Remove"
                   >
@@ -1424,14 +1424,14 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
               <p className="text-[10px] text-center" style={{ color: t.textMuted }}>{uiT.shippingNote}</p>
               <button
                 onClick={onCheckout}
-                className="w-full py-3 text-sm font-bold hover:opacity-90 transition-opacity"
+                className="w-full py-3 text-sm font-bold hover:opacity-90 transition-opacity cursor-pointer"
                 style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
               >
                 {uiT.checkout}
               </button>
               <button
                 onClick={onViewCart}
-                className="w-full py-2.5 text-xs font-semibold hover:opacity-75 transition-opacity"
+                className="w-full py-2.5 text-xs font-semibold hover:opacity-75 transition-opacity cursor-pointer"
                 style={{ color: t.primary, border: `1.5px solid ${alpha(t.primary, 0.35)}`, borderRadius: t.btnRadius }}
               >
                 {uiT.viewCart}
@@ -1440,7 +1440,7 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
           ) : (
             <button
               onClick={onClose}
-              className="w-full py-3 text-sm font-semibold hover:opacity-90 transition-opacity"
+              className="w-full py-3 text-sm font-semibold hover:opacity-90 transition-opacity cursor-pointer"
               style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
             >
               {uiT.startShopping}
@@ -1474,7 +1474,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
   return (
     <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
       <header className="px-5 h-14 flex items-center justify-between sticky top-0 z-40 shadow-sm" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
-        <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium transition-colors" style={{ color: t.textSecondary }}><ArrowLeft className="w-4 h-4" /> {uiT.continueShopping}</button>
+        <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium transition-colors cursor-pointer" style={{ color: t.textSecondary }}><ArrowLeft className="w-4 h-4" /> {uiT.continueShopping}</button>
         <span className="text-sm font-bold" style={{ color: t.textPrimary }}>Cart ({cart.reduce((s, i) => s + i.qty, 0)})</span>
         <div className="w-28" />
       </header>
@@ -1483,7 +1483,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
         <div className="flex flex-col items-center justify-center py-24 gap-4">
           <ShoppingCart className="w-12 h-12" style={{ color: t.textMuted }} />
           <p className="text-sm font-medium" style={{ color: t.textSecondary }}>{uiT.cartEmpty}</p>
-          <button onClick={onBack} className="px-6 py-2.5 text-sm font-semibold" style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}>{uiT.startShopping}</button>
+          <button onClick={onBack} className="px-6 py-2.5 text-sm font-semibold cursor-pointer" style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}>{uiT.startShopping}</button>
         </div>
       ) : (
         <div className={`max-w-4xl mx-auto px-4 py-6 ${(isMobile || isTablet) ? 'flex flex-col gap-4' : 'grid grid-cols-[1fr_320px] gap-8 items-start'}`}>
@@ -1510,7 +1510,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
                         <span className="text-sm font-bold" style={{ color: t.textPrimary }}>{fmtPrice(p.price * qty)}</span>
                         <button
                           onClick={() => onUpdateQty(p.id, -qty)}
-                          className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-50 transition-colors"
+                          className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-50 transition-colors cursor-pointer"
                           style={{ color: t.textMuted }}
                           title="Remove item"
                         >
@@ -1518,9 +1518,9 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
                         </button>
                       </div>
                       <div className="flex items-center overflow-hidden mt-2" style={{ border: `1px solid ${t.surfaceBorder}`, borderRadius: '8px' }}>
-                        <button onClick={() => onUpdateQty(p.id, -1)} className="w-8 h-8 flex items-center justify-center text-base font-medium" style={{ color: t.textSecondary }}>−</button>
+                        <button onClick={() => onUpdateQty(p.id, -1)} className="w-8 h-8 flex items-center justify-center text-base font-medium cursor-pointer" style={{ color: t.textSecondary }}>−</button>
                         <span className="w-8 text-center text-xs font-bold" style={{ color: t.textPrimary }}>{qty}</span>
-                        <button onClick={() => onUpdateQty(p.id, 1)} className="w-8 h-8 flex items-center justify-center text-base font-medium" style={{ color: t.textSecondary }}>+</button>
+                        <button onClick={() => onUpdateQty(p.id, 1)} className="w-8 h-8 flex items-center justify-center text-base font-medium cursor-pointer" style={{ color: t.textSecondary }}>+</button>
                       </div>
                     </div>
                   </div>
@@ -1530,7 +1530,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
               <div className="px-5 py-3" style={{ borderTop: `1px solid ${t.divider}` }}>
                 <button
                   onClick={onBack}
-                  className="flex items-center gap-1.5 text-xs font-semibold hover:opacity-70 transition-opacity"
+                  className="flex items-center gap-1.5 text-xs font-semibold hover:opacity-70 transition-opacity cursor-pointer"
                   style={{ color: t.primary }}
                 >
                   <Plus className="w-3.5 h-3.5" /> {uiT.addMoreItems}
@@ -1562,7 +1562,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
             </div>
             <button
               onClick={onCheckout}
-              className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity mt-1"
+              className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity mt-1 cursor-pointer"
               style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
             >
               {uiT.proceedCheckout}
