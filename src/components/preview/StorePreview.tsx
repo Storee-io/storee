@@ -3018,25 +3018,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       </div>
                       {touched.postal && validate('postal', form.postal) && <p style={errStyle}>{validate('postal', form.postal)}</p>}
                     </div>
-                    <div className="col-span-2">
-                      <label style={lblStyle}>Province</label>
-                      <div className="relative">
-                        <select
-                          value={form.province}
-                          onChange={set('province')}
-                          className="w-full px-4 py-2.5 text-sm outline-none appearance-none pr-8"
-                          style={{ ...inpStyle, cursor: 'pointer', transition: 'all 0.2s' }}
-                          onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
-                          onBlur={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
-                          onMouseEnter={e => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.5); }}
-                          onMouseLeave={e => { e.currentTarget.style.borderColor = t.inputBorder; e.currentTarget.style.background = t.inputBg; }}
-                        >
-                          <option value="">Select province...</option>
-                          {INDONESIAN_PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: t.textMuted }} />
-                      </div>
-                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
