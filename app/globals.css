@@ -271,12 +271,18 @@
 }
 
 /* Remove outline and I-beam cursor from text elements globally */
-p, h1, h2, h3, h4, h5, h6, blockquote, label {
+p, h1, h2, h3, h4, h5, h6, blockquote {
   outline: none !important;
   cursor: default !important;
 }
 
 p *, h1 *, h2 *, h3 *, h4 *, h5 *, h6 * {
+  cursor: default !important;
+}
+
+/* Labels: default cursor only inside the editor; store preview/checkout labels keep their own cursor (e.g. cursor-pointer) */
+[data-edit-mode="true"] label {
+  outline: none !important;
   cursor: default !important;
 }
 
