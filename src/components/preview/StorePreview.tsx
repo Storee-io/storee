@@ -2991,27 +2991,30 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     <div className="col-span-2">
                       <label style={lblStyle}>{uiT.postalLabel || 'Postal Code, Village, District, City, Province'}</label>
                       <div
-                        style={{ position: 'relative', cursor: 'pointer', transition: 'all 0.2s' }}
+                        style={{ ...inpStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.2s', minHeight: '60px', paddingRight: '16px' }}
                         onClick={() => setShowPostalPicker(true)}
                         onMouseEnter={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.7); }}
                         onMouseLeave={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
                       >
-                        <div
-                          className="w-full px-4 py-2.5 text-sm outline-none resize-none whitespace-pre-wrap"
-                          style={{ ...inpStyle, paddingRight: '36px', minHeight: '80px', cursor: 'pointer', lineHeight: '1.5' }}
-                        >
-                          {form.postal ? `${form.postal}${form.village ? ` | ${form.village}` : ''}\n${form.district || ''}\n${form.city || ''}\n${form.province || ''}` : `12345 | Village\n\nDistrict\nCity\nProvince`}
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <div style={{ fontSize: '14px', fontWeight: 600, color: t.textPrimary }}>
+                            {form.province || 'Province'}
+                          </div>
+                          <div style={{ fontSize: '13px', color: t.textPrimary }}>
+                            {form.city || 'City'}
+                          </div>
+                          <div style={{ fontSize: '13px', color: t.textPrimary }}>
+                            {form.district ? `${form.district}${form.village ? ` (${form.village})` : ''}` : 'District'}
+                          </div>
+                          <div style={{ fontSize: '13px', fontWeight: 500, color: t.textMuted }}>
+                            {form.postal || '12345'}
+                          </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={e => { e.stopPropagation(); setShowPostalPicker(true); }}
-                          title="Search postal code"
-                          style={{ position: 'absolute', right: '8px', top: '8px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: t.primary, display: 'flex', alignItems: 'center' }}
-                        >
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                        <div style={{ display: 'flex', alignItems: 'center', color: t.textMuted }}>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
                           </svg>
-                        </button>
+                        </div>
                       </div>
                       {touched.postal && validate('postal', form.postal) && <p style={errStyle}>{validate('postal', form.postal)}</p>}
                     </div>
