@@ -2597,6 +2597,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     let val = e.target.value;
     if (k === 'whatsapp') val = val.replace(/\D/g, ''); // numbers only
+    if (k === 'postal') val = val.replace(/\D/g, ''); // numbers only
     setForm(f => ({ ...f, [k]: val }));
   };
 
@@ -2971,7 +2972,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           className="w-full px-4 py-2.5 text-sm outline-none"
                           style={{ ...inpStyle, paddingRight: '36px' }}
                           value={form.postal}
-                          onChange={e => setForm(f => ({ ...f, postal: e.target.value }))}
+                          onChange={set('postal')}
                           placeholder="12345"
                           maxLength={5}
                           onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
