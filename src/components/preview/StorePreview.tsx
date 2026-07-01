@@ -2498,7 +2498,7 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '' }:
                       style={{ background: 'none', border: 'none', padding: 0, cursor: isLast ? 'default' : 'pointer', fontSize: '11px', color: isLast ? t.primary : t.textMuted, fontWeight: isLast ? 600 : 400, textDecoration: 'none' }}
                       onMouseEnter={e => { if (!isLast) e.currentTarget.style.color = t.primary; }}
                       onMouseLeave={e => { if (!isLast) e.currentTarget.style.color = t.textMuted; }}
-                    >{b}</button>
+                    >{shortRegency(b)}</button>
                   </span>
                 );
               })}
