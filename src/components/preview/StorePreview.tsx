@@ -2611,7 +2611,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; layoutStyle?: string; store?: Store;
   onBack: () => void; onPlaceOrder: (paymentId: string, shippingId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => void; editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
-  const [form, setForm] = useState({ email: '', whatsapp: '', name: '', address: '', city: '', province: '', postal: '' });
+  const [form, setForm] = useState({ email: '', whatsapp: '', name: '', address: '', city: '', province: '', postal: '', village: '', district: '' });
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const touch = (k: string) => setTouched(t => ({ ...t, [k]: true }));
 
@@ -2810,7 +2810,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         onSelect={r => {
           const normalizedProvince = normalizeProvince(r.province);
           const matchedProvince = INDONESIAN_PROVINCES.find(p => p === normalizedProvince) ?? INDONESIAN_PROVINCES.find(p => p.toLowerCase().includes(r.province.toLowerCase())) ?? '';
-          setForm(f => ({ ...f, postal: String(r.code), city: r.regency, province: matchedProvince || r.province }));
+          setForm(f => ({ ...f, postal: String(r.code), village: r.village || '', district: r.district || '', city: r.regency, province: matchedProvince || r.province }));
           setTouched(prev => ({ ...prev, postal: false, city: false }));
           setShowPostalPicker(false);
         }}
@@ -2988,8 +2988,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       />
                       {touched.address && validate('address', form.address) && <p style={errStyle}>{validate('address', form.address)}</p>}
                     </div>
-                    <div>
-                      <label style={lblStyle}>Postal Code</label>
+                    <div className="col-span-2">
+                      <label style={lblStyle}>Kode Pos, Kelurahan, Kecamatan, Kota, Provinsi</label>
                       <div style={{ position: 'relative' }}>
                         <input
                           type="text"
@@ -2997,10 +2997,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           pattern="[0-9]*"
                           className="w-full px-4 py-2.5 text-sm outline-none"
                           style={{ ...inpStyle, paddingRight: '36px' }}
-                          value={form.postal}
-                          onChange={e => { set('postal')(e); if (e.target.value) setShowPostalPicker(true); }}
-                          placeholder="12345"
-                          maxLength={5}
+                          value={form.postal ? `${form.postal}${form.village ? `, ${form.village}` : ''}${form.district ? `, ${form.district}` : ''}${form.city ? `, ${form.city}` : ''}${form.province ? `, ${form.province}` : ''}` : ''}
+                          readOnly
+                          placeholder="12345, Kelurahan, Kecamatan, Kota, Provinsi"
                           onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
                           onBlur={e => { touch('postal'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
                         />
@@ -3016,19 +3015,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         </button>
                       </div>
                       {touched.postal && validate('postal', form.postal) && <p style={errStyle}>{validate('postal', form.postal)}</p>}
-                    </div>
-                    <div>
-                      <label style={lblStyle}>City</label>
-                      <input
-                        className="w-full px-4 py-2.5 text-sm outline-none"
-                        style={inpStyle}
-                        value={form.city}
-                        onChange={set('city')}
-                        placeholder="City"
-                        onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
-                        onBlur={e => { touch('city'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
-                      />
-                      {touched.city && validate('city', form.city) && <p style={errStyle}>{validate('city', form.city)}</p>}
                     </div>
                     <div className="col-span-2">
                       <label style={lblStyle}>Province</label>
