@@ -270,19 +270,28 @@
   outline: none !important;
 }
 
-/* Remove outline and I-beam cursor from text elements globally */
-p, h1, h2, h3, h4, h5, h6, blockquote {
-  outline: none !important;
-  cursor: default !important;
-}
-
-p *, h1 *, h2 *, h3 *, h4 *, h5 *, h6 * {
-  cursor: default !important;
-}
-
-/* Labels: default cursor only inside the editor; store preview/checkout labels keep their own cursor (e.g. cursor-pointer) */
+/* Remove outline and I-beam cursor from text elements: editor only, so store preview/checkout
+   text inside clickable cards (labels, buttons, links) correctly inherits the pointer cursor */
+[data-edit-mode="true"] p,
+[data-edit-mode="true"] h1,
+[data-edit-mode="true"] h2,
+[data-edit-mode="true"] h3,
+[data-edit-mode="true"] h4,
+[data-edit-mode="true"] h5,
+[data-edit-mode="true"] h6,
+[data-edit-mode="true"] blockquote,
 [data-edit-mode="true"] label {
   outline: none !important;
+  cursor: default !important;
+}
+
+[data-edit-mode="true"] p *,
+[data-edit-mode="true"] h1 *,
+[data-edit-mode="true"] h2 *,
+[data-edit-mode="true"] h3 *,
+[data-edit-mode="true"] h4 *,
+[data-edit-mode="true"] h5 *,
+[data-edit-mode="true"] h6 * {
   cursor: default !important;
 }
 
