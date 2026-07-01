@@ -2640,6 +2640,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
 
   const [phoneCountryCode, setPhoneCountryCode] = useState(() => detectDefaultCountry());
 
+  // Get language-based translations
+  const uiT = UI_T[LANG_CODE_MAP[store?.language ?? ''] ?? 'en'] ?? UI_T.en;
+
   // Determine which contact fields are enabled
   const contactFields = store?.checkoutSettings?.contactFields ?? 'both';
   const showWhatsApp = contactFields === 'whatsapp' || contactFields === 'both';
@@ -2802,7 +2805,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     {showPostalPicker && (
       <PostalCodePickerModal
         t={t}
-        uiT={flags.uiT}
+        uiT={uiT}
         initialQuery={form.postal}
         onSelect={r => {
           const normalizedProvince = normalizeProvince(r.province);
