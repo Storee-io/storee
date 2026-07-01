@@ -2961,10 +2961,13 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       <label style={lblStyle}>Postal Code</label>
                       <div style={{ position: 'relative' }}>
                         <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                           className="w-full px-4 py-2.5 text-sm outline-none"
                           style={{ ...inpStyle, paddingRight: '36px' }}
                           value={form.postal}
-                          onChange={set('postal')}
+                          onChange={e => setForm(f => ({ ...f, postal: e.target.value.replace(/[^0-9]/g, '') }))}
                           placeholder="12345"
                           maxLength={5}
                           onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
