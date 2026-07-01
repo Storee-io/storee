@@ -295,6 +295,14 @@
   cursor: default !important;
 }
 
+/* Storefront: Tailwind's preflight resets <button> cursor to "default" (unlike <a>, which browsers
+   already give "pointer"). Every clickable button across the many store layout/header/hero variants
+   should show a pointer hand on hover, so restore it store-wide instead of patching each instance. */
+[data-preview-root] button:not(:disabled):not([aria-disabled="true"]),
+[data-preview-root] [role="button"] {
+  cursor: pointer;
+}
+
 /* ── Aggressive disable ALL hover effects in edit mode ────────────────────────── */
 
 /* Override .group hover on self and all descendants */
