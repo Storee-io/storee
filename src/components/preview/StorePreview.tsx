@@ -1608,7 +1608,7 @@ const parseDisplayName = (displayName: string, postcode?: string): PickedLocatio
     const streetEnd = postalIdx - cityOffset;
     const district  = parts[streetEnd - 1] ?? '';
     const suburb    = parts[streetEnd - 2] ?? '';
-    const address   = parts.slice(0, streetEnd).join(', '); // up to kelurahan/suburb only
+    const address   = parts.slice(0, streetEnd - 1).join(', '); // up to kelurahan/suburb only
     // Build display: skip supra-region, country, false extras; replace raw province with normalized
     const rawProvince   = parts[postalIdx - (hasSupra ? 2 : 1)] ?? '';
     const skipInDisplay = new Set([...(hasSupra ? [parts[postalIdx - 1]] : []), ...(falseExtra ? [falseExtra] : []), 'Indonesia']);
