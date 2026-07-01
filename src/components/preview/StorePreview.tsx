@@ -3000,17 +3000,14 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         tabIndex={0}
                       >
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
+                          <div style={{ fontSize: '15px', fontWeight: 700, color: t.primary, lineHeight: 1.2 }}>
+                            {form.postal || '12345'}
+                          </div>
+                          <div style={{ fontSize: '14px', color: t.textMuted, lineHeight: 1.2 }}>
+                            {[form.village, form.district, form.city].filter(Boolean).join(', ') || 'Village, District, City'}
+                          </div>
                           <div style={{ fontSize: '15px', fontWeight: 700, color: t.textPrimary, lineHeight: 1.2 }}>
                             {form.province || 'Province'}
-                          </div>
-                          <div style={{ fontSize: '14px', color: t.textPrimary, lineHeight: 1.2 }}>
-                            {form.city || 'City'}
-                          </div>
-                          <div style={{ fontSize: '14px', color: t.textPrimary, lineHeight: 1.2 }}>
-                            {form.district ? `${form.district}${form.village ? ` (${form.village})` : ''}` : 'District'}
-                          </div>
-                          <div style={{ fontSize: '14px', fontWeight: 500, color: t.textMuted, lineHeight: 1.2 }}>
-                            {form.postal || '12345'}
                           </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginLeft: '12px', color: t.textMuted }}>
