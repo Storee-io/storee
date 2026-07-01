@@ -2991,27 +2991,30 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     <div className="col-span-2">
                       <label style={lblStyle}>{uiT.postalLabel || 'Postal Code, Village, District, City, Province'}</label>
                       <div
-                        style={{ ...inpStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.2s', minHeight: '60px', paddingRight: '16px' }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s', minHeight: '68px', paddingLeft: '16px', paddingRight: '12px', paddingTop: '12px', paddingBottom: '12px', borderRadius: t.inputRadius, border: `1.5px solid ${alpha(t.divider, 0.4)}`, background: t.inputBg }}
                         onClick={() => setShowPostalPicker(true)}
-                        onMouseEnter={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.7); }}
-                        onMouseLeave={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.5); }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = alpha(t.divider, 0.4); e.currentTarget.style.background = t.inputBg; }}
+                        onFocus={e => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.boxShadow = `0 0 0 2px ${alpha(t.primary, 0.1)}`; }}
+                        onBlur={e => { e.currentTarget.style.borderColor = alpha(t.divider, 0.4); e.currentTarget.style.boxShadow = 'none'; }}
+                        tabIndex={0}
                       >
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <div style={{ fontSize: '14px', fontWeight: 600, color: t.textPrimary }}>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
+                          <div style={{ fontSize: '15px', fontWeight: 700, color: t.textPrimary, lineHeight: 1.2 }}>
                             {form.province || 'Province'}
                           </div>
-                          <div style={{ fontSize: '13px', color: t.textPrimary }}>
+                          <div style={{ fontSize: '14px', color: t.textPrimary, lineHeight: 1.2 }}>
                             {form.city || 'City'}
                           </div>
-                          <div style={{ fontSize: '13px', color: t.textPrimary }}>
+                          <div style={{ fontSize: '14px', color: t.textPrimary, lineHeight: 1.2 }}>
                             {form.district ? `${form.district}${form.village ? ` (${form.village})` : ''}` : 'District'}
                           </div>
-                          <div style={{ fontSize: '13px', fontWeight: 500, color: t.textMuted }}>
+                          <div style={{ fontSize: '14px', fontWeight: 500, color: t.textMuted, lineHeight: 1.2 }}>
                             {form.postal || '12345'}
                           </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', color: t.textMuted }}>
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginLeft: '12px', color: t.textMuted }}>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="9 18 15 12 9 6"></polyline>
                           </svg>
                         </div>
