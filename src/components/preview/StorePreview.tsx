@@ -3035,7 +3035,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 const cost = isFreeByThreshold ? 0 : method.price;
                 const isSelected = selectedShippingId === method.id;
                 return (
-                  <label key={method.id} className="flex items-center gap-4 p-4 cursor-pointer transition-all hover:opacity-80" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => e.currentTarget.style.borderColor = t.primary} onMouseLeave={e => e.currentTarget.style.borderColor = isSelected ? t.primary : t.surfaceBorder}>
+                  <label key={method.id} className="flex items-center gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.background = alpha(t.primary, 0.02); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.borderColor = t.surfaceBorder; e.currentTarget.style.background = t.surfaceBg; } }}>
                     <input type="radio" name="shipping" value={method.id} checked={isSelected} onChange={() => setSelectedShippingId(method.id)} className="sr-only" />
                     <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
                       {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
@@ -3071,7 +3071,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               {paymentMethods.map(pm => {
                 const isSelected = selectedPayId === pm.id;
                 return (
-                  <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all hover:opacity-80" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => e.currentTarget.style.borderColor = t.primary} onMouseLeave={e => e.currentTarget.style.borderColor = isSelected ? t.primary : t.surfaceBorder}>
+                  <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.background = alpha(t.primary, 0.02); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.borderColor = t.surfaceBorder; e.currentTarget.style.background = t.surfaceBg; } }}>
                     <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
                     <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
                       {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
