@@ -3006,7 +3006,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           <div style={{ fontSize: '14px', color: t.textMuted, lineHeight: 1.2 }}>
                             {[form.village, form.district, form.city].filter(Boolean).join(', ') || 'Village, District, City'}
                           </div>
-                          <div style={{ fontSize: '15px', fontWeight: 700, color: t.textPrimary, lineHeight: 1.2 }}>
+                          <div style={{ fontSize: '14px', color: t.textPrimary, lineHeight: 1.2 }}>
                             {form.province || 'Province'}
                           </div>
                         </div>
