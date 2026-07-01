@@ -2606,7 +2606,11 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     if (k === 'whatsapp') return v.trim().length < 5 ? 'Enter a valid phone number' : '';
     if (k === 'address')  return v.trim().length < 10 ? 'Minimum 10 characters' : '';
     if (k === 'city')     return v.trim().length < 3 ? 'Minimum 3 characters' : '';
-    if (k === 'postal')   return v.trim().length < 3 ? 'Minimum 3 characters' : '';
+    if (k === 'postal') {
+      if (v.trim().length < 3) return 'Minimum 3 characters';
+      if (!/^\d+$/.test(v.trim())) return 'Hanya angka yang diperbolehkan';
+      return '';
+    }
     return '';
   };
 
@@ -2967,7 +2971,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           className="w-full px-4 py-2.5 text-sm outline-none"
                           style={{ ...inpStyle, paddingRight: '36px' }}
                           value={form.postal}
-                          onChange={e => setForm(f => ({ ...f, postal: e.target.value.replace(/[^0-9]/g, '') }))}
+                          onChange={e => setForm(f => ({ ...f, postal: e.target.value }))}
                           placeholder="12345"
                           maxLength={5}
                           onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
