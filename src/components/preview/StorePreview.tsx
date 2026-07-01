@@ -2235,12 +2235,14 @@ async function loadKodeposCsv(): Promise<Map<string, string>> {
   return kodeposCsvLoading;
 }
 
-function PostalCodePickerModal({ t, onSelect, onClose }: {
+function PostalCodePickerModal({ t, onSelect, onClose, initialQuery = '' }: {
   t: CommerceTheme;
   onSelect: (r: PostalResult) => void;
   onClose: () => void;
+  initialQuery?: string;
 }) {
-  const [query, setQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState(initialQuery);
   type SearchNav = { id: string; name: string; type: 'province' | 'regency' | 'district'; province?: string; regency?: string };
   type SearchVillage = { code: number | null; village: string; district: string; regency: string; province: string };
   const [searchNav, setSearchNav] = useState<SearchNav[]>([]);
@@ -2272,6 +2274,22 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
       )
       .catch(() => {});
   }, []);
+
+  // Handle initial query and focus search input
+  useEffect(() => {
+    if (initialQuery && searchInputRef.current) {
+      searchInputRef.current.focus();
+      setQuery(initialQuery);
+    }
+  }, [initialQuery]);
+
+  // Trigger search when query changes from initial value
+  useEffect(() => {
+    if (query.trim().length > 0) {
+      const timer = setTimeout(() => doSearch(query), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [query]);
 
   const clearSearch = () => { setSearchNav([]); setSearchVillages([]); setSearched(false); };
 
@@ -2489,6 +2507,7 @@ function PostalCodePickerModal({ t, onSelect, onClose }: {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: t.inputBg, border: `1.5px solid ${alpha(t.divider, 0.4)}`, borderRadius: '10px', padding: '8px 12px', marginBottom: '8px' }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.textMuted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             <input
+              ref={searchInputRef}
               autoFocus
               type="text"
               placeholder="Cari kelurahan, kecamatan, kota, atau kode pos…"
@@ -2781,6 +2800,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     {showPostalPicker && (
       <PostalCodePickerModal
         t={t}
+        initialQuery={form.postal}
         onSelect={r => {
           const normalizedProvince = normalizeProvince(r.province);
           const matchedProvince = INDONESIAN_PROVINCES.find(p => p === normalizedProvince) ?? INDONESIAN_PROVINCES.find(p => p.toLowerCase().includes(r.province.toLowerCase())) ?? '';
@@ -2972,7 +2992,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           className="w-full px-4 py-2.5 text-sm outline-none"
                           style={{ ...inpStyle, paddingRight: '36px' }}
                           value={form.postal}
-                          onChange={set('postal')}
+                          onChange={e => { set('postal')(e); if (e.target.value) setShowPostalPicker(true); }}
                           placeholder="12345"
                           maxLength={5}
                           onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
