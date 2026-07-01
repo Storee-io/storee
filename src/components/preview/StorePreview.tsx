@@ -2948,7 +2948,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                                 <span style={{ fontSize: '9px', fontWeight: 700, color: t.primary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Location Pinned</span>
                               </div>
                               <p style={{ margin: 0, fontSize: '11px', color: t.textPrimary, lineHeight: 1.35, wordBreak: 'break-word' }}>
-                                {[lastPickedLoc.suburb, lastPickedLoc.district, lastPickedLoc.city].filter(Boolean).join(', ')}{lastPickedLoc.postal ? `, ${lastPickedLoc.postal}` : ''}
+                                {lastPickedLoc.suburb || 'Location'}
                               </p>
                             </div>
                             {/* Change button */}
