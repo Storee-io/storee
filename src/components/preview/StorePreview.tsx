@@ -2990,19 +2990,21 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     </div>
                     <div className="col-span-2">
                       <label style={lblStyle}>{uiT.postalLabel || 'Postal Code, Village, District, City, Province'}</label>
-                      <div style={{ position: 'relative' }}>
-                        <textarea
-                          className="w-full px-4 py-2.5 text-sm outline-none resize-none"
-                          style={{ ...inpStyle, paddingRight: '36px', minHeight: '80px' }}
-                          value={form.postal ? `${form.postal}${form.village ? ` | ${form.village}` : ''}\n${form.district || ''}\n${form.city || ''}\n${form.province || ''}` : ''}
-                          readOnly
-                          placeholder="12345 | Village&#10;&#10;District&#10;City&#10;Province"
-                          onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; }}
-                          onBlur={e => { touch('postal'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; }}
-                        />
+                      <div
+                        style={{ position: 'relative', cursor: 'pointer', transition: 'all 0.2s' }}
+                        onClick={() => setShowPostalPicker(true)}
+                        onMouseEnter={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.7); }}
+                        onMouseLeave={e => { e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
+                      >
+                        <div
+                          className="w-full px-4 py-2.5 text-sm outline-none resize-none whitespace-pre-wrap"
+                          style={{ ...inpStyle, paddingRight: '36px', minHeight: '80px', cursor: 'pointer', lineHeight: '1.5' }}
+                        >
+                          {form.postal ? `${form.postal}${form.village ? ` | ${form.village}` : ''}\n${form.district || ''}\n${form.city || ''}\n${form.province || ''}` : `12345 | Village\n\nDistrict\nCity\nProvince`}
+                        </div>
                         <button
                           type="button"
-                          onClick={() => setShowPostalPicker(true)}
+                          onClick={e => { e.stopPropagation(); setShowPostalPicker(true); }}
                           title="Search postal code"
                           style={{ position: 'absolute', right: '8px', top: '8px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: t.primary, display: 'flex', alignItems: 'center' }}
                         >
