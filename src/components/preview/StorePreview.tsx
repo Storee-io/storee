@@ -2789,7 +2789,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
       <header className="px-5 h-14 flex items-center sticky top-0 z-40 shadow-sm" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
         <span className="text-sm font-bold flex-1 text-center" style={{ color: t.textPrimary }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
-        <button onClick={onBack} className="relative p-2 hover:opacity-70 transition-opacity" style={{ color: t.textSecondary }}>
+        <button onClick={onBack} className="relative p-2 hover:opacity-70 transition-opacity cursor-pointer" style={{ color: t.textSecondary }}>
           <ShoppingCart className="w-5 h-5" />
         </button>
       </header>
