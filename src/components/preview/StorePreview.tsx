@@ -2771,8 +2771,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 postal: postcode || parsed.postal || '',
                 province: matchedProv || '',
                 display: s.display_name,
-                suburb: s.address?.suburb ?? '',
-                district: s.address?.district ?? '',
+                suburb: s.address?.village ?? s.address?.hamlet ?? s.address?.locality ?? s.address?.suburb ?? '',
+                district: s.address?.district ?? parsed.district ?? '',
               });
               setLastPickedCoords({ lat: parseFloat(s.lat), lng: parseFloat(s.lon) });
               setAddrSugg([]);
