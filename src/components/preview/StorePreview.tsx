@@ -1648,7 +1648,19 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
       const data = await res.json();
       const postcode = (data.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
-      setLoc(parseDisplayName(data.display_name ?? '', postcode));
+      const parsed = parseDisplayName(data.display_name ?? '', postcode);
+
+      // Use structured Nominatim address fields as source of truth
+      const addr = data.address || {};
+      setLoc({
+        address: parsed.address,
+        city: addr.city || addr.county || parsed.city || '',
+        postal: postcode || parsed.postal || '',
+        province: addr.state || parsed.province || '',
+        display: data.display_name || '',
+        suburb: addr.village || addr.hamlet || addr.locality || addr.suburb || parsed.suburb || '',
+        district: addr.district || parsed.district || '',
+      });
     } catch { /* ignore */ }
     finally { setGeocoding(false); setLocating(false); }
   }, []);
