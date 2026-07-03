@@ -2793,6 +2793,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               setForm(f => ({
                 ...f,
                 address: parsed.address || f.address,
+                village: s.address?.village ?? s.address?.hamlet ?? s.address?.locality ?? s.address?.suburb ?? f.village,
+                district: s.address?.district ?? parsed.district ?? f.district,
                 postal: postcode || parsed.postal || f.postal,
                 city: s.address?.city ?? s.address?.county ?? parsed.city ?? f.city,
                 province: matchedProv || f.province,
