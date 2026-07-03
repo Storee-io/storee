@@ -79,16 +79,39 @@ export default function PreviewByIdPage() {
   }, [params.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (notFound) {
+    // Try to find store in localStorage as last resort
+    const fallbackStore = params.id ? localStorage.getItem(`storee_store_${params.id}`) : null;
+
+    if (fallbackStore) {
+      try {
+        const recovered = JSON.parse(fallbackStore) as Store;
+        return <PreviewShell store={recovered} from={from} />;
+      } catch {
+        // Fall through to not found message
+      }
+    }
+
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-slate-500">
-        <p className="text-lg font-semibold">Store preview not found</p>
-        <p className="text-sm">This preview link may have expired or the store was cleared.</p>
-        <a
-          href="/"
-          className="px-5 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity"
-        >
-          Generate a new store
-        </a>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-8 text-slate-500">
+        <div className="text-center space-y-2">
+          <p className="text-lg font-semibold text-slate-700">Store preview not found</p>
+          <p className="text-sm">This preview link may have expired or the store was cleared.</p>
+          <p className="text-xs mt-3">Store ID: <code className="bg-slate-100 px-2 py-1 rounded text-slate-600">{params.id}</code></p>
+        </div>
+        <div className="flex gap-3">
+          <a
+            href="/"
+            className="px-5 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity"
+          >
+            Generate a new store
+          </a>
+          <a
+            href="/stores"
+            className="px-5 py-2.5 bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-300 transition-colors"
+          >
+            Back to My Stores
+          </a>
+        </div>
       </div>
     );
   }
