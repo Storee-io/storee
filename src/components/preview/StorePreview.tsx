@@ -1609,8 +1609,15 @@ const parseDisplayName = (displayName: string, postcode?: string): PickedLocatio
     const district  = parts[streetEnd - 1] ?? '';
     const suburb    = parts[streetEnd - 2] ?? '';
     const address   = parts.slice(0, streetEnd - 1).join(', '); // up to kelurahan/suburb only
-    // Display: use full address without deduplication (keep all levels)
-    const display = displayName;
+    // Build display manually with ALL levels (village, district, city) to show full hierarchy
+    const displayParts = [
+      ...parts.slice(0, streetEnd - 1),  // street address
+      suburb,                            // kelurahan/village
+      district,                          // kecamatan/district
+      city,                              // kota/city
+      ...parts.slice(postalIdx),         // postal and beyond
+    ].filter(Boolean);
+    const display = displayParts.join(', ');
     const postal    = (postcode ?? parts[postalIdx] ?? '').replace(/\D/g, '').slice(0, 5);
     return { address, city, postal, province, display, suburb, district };
   }
