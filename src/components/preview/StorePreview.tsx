@@ -3031,7 +3031,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       >
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
                           <div style={{ fontSize: '15px', fontWeight: 700, color: t.textPrimary, lineHeight: 1.2 }}>
-                            {form.postal || '12345'}
+                            {form.postal || '12345'}{form.village ? ` - ${form.village}` : ''}
                           </div>
                           <div style={{ fontSize: '14px', color: t.textPrimary, lineHeight: 1.2 }}>
                             {form.district || 'Kecamatan'}
