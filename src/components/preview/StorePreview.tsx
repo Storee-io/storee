@@ -1607,12 +1607,12 @@ const parseDisplayName = (displayName: string, postcode?: string): PickedLocatio
     const city      = parts[postalIdx - cityOffset] ?? '';
     const streetEnd = postalIdx - cityOffset;
     const district  = parts[streetEnd - 1] ?? '';
-    const suburb    = parts[streetEnd - 2] ?? '';
     const address   = parts.slice(0, streetEnd - 1).join(', '); // up to kelurahan/suburb only
     // Use full displayName without any deduplication or filtering
     const display = displayName;
     const postal    = (postcode ?? parts[postalIdx] ?? '').replace(/\D/g, '').slice(0, 5);
-    return { address, city, postal, province, display, suburb, district };
+    // Don't parse suburb from display_name - use Nominatim structured fields instead
+    return { address, city, postal, province, display, suburb: '', district };
   }
   return { address: displayName, city: '', postal: postcode ?? '', province: '', display: displayName, suburb: '', district: '' };
 };
