@@ -1645,28 +1645,29 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       const postcode = (data.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
       const parsed = parseDisplayName(data.display_name ?? '', postcode);
 
-      // Use structured Nominatim address fields as source of truth
+      // Get Nominatim data first
       const addr = data.address || {};
       let village = addr.village || addr.hamlet || addr.locality || addr.suburb || parsed.suburb || '';
       let district = addr.district || parsed.district || '';
       let city = addr.city || addr.county || parsed.city || '';
 
-      // Fallback: if village OR district is empty, try to lookup from postal code database
-      if ((!village || !district) && postcode) {
+      // Always match against wilayah-full.json for standardized data
+      if (postcode) {
         try {
           const dbRes = await fetch(`/api/postal/search?q=${postcode}&limit=1`);
           if (dbRes.ok) {
             const dbData = await dbRes.json();
             if (dbData.villages && dbData.villages.length > 0) {
               const entry = dbData.villages[0];
-              village = village || entry.village;
-              district = district || entry.district;
-              city = city || entry.regency;
-              console.log('[DB Lookup] Filled from postal database:', { village, district, city, postal: postcode });
+              // Prioritize wilayah-full.json data for standardization
+              village = entry.village || village;
+              district = entry.district || district;
+              city = entry.regency || city;
+              console.log('[DB Match] Standardized from postal database:', { village, district, city, postal: postcode });
             }
           }
         } catch (e) {
-          console.warn('[DB Lookup] Failed to query postal database:', e);
+          console.warn('[DB Match] Failed to query postal database:', e);
         }
       }
 
@@ -2784,29 +2785,53 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
           <button
             key={i}
             type="button"
-            onMouseDown={e => {
+            onMouseDown={async (e) => {
               e.preventDefault();
               const parsed = parseDisplayName(s.display_name);
               const postcode = (s.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
               const normalizedProv = normalizeProvince(s.address?.state ?? parsed.province ?? '');
               const matchedProv = INDONESIAN_PROVINCES.find(p => p === normalizedProv) ?? INDONESIAN_PROVINCES.find(p => p.toLowerCase().includes((s.address?.state ?? parsed.province ?? '').toLowerCase())) ?? '';
+
+              // Get initial values from Nominatim
+              let village = s.address?.village ?? s.address?.hamlet ?? s.address?.locality ?? s.address?.suburb ?? '';
+              let district = s.address?.district ?? parsed.district ?? '';
+              let city = s.address?.city ?? s.address?.county ?? parsed.city ?? '';
+
+              // Match against wilayah-full.json for standardized data
+              if (postcode) {
+                try {
+                  const dbRes = await fetch(`/api/postal/search?q=${postcode}&limit=1`);
+                  if (dbRes.ok) {
+                    const dbData = await dbRes.json();
+                    if (dbData.villages && dbData.villages.length > 0) {
+                      const entry = dbData.villages[0];
+                      village = entry.village || village;
+                      district = entry.district || district;
+                      city = entry.regency || city;
+                    }
+                  }
+                } catch (err) {
+                  console.warn('[DB Match] Failed to query postal database:', err);
+                }
+              }
+
               setForm(f => ({
                 ...f,
                 address: parsed.address || f.address,
-                village: s.address?.village ?? s.address?.hamlet ?? s.address?.locality ?? s.address?.suburb ?? f.village,
-                district: s.address?.district ?? parsed.district ?? f.district,
+                village: village || f.village,
+                district: district || f.district,
                 postal: postcode || parsed.postal || f.postal,
-                city: s.address?.city ?? s.address?.county ?? parsed.city ?? f.city,
+                city: city || f.city,
                 province: matchedProv || f.province,
               }));
               setLastPickedLoc({
                 address: parsed.address || '',
-                city: s.address?.city ?? s.address?.county ?? parsed.city ?? '',
+                city: city || '',
                 postal: postcode || parsed.postal || '',
                 province: matchedProv || '',
                 display: s.display_name,
-                suburb: s.address?.village ?? s.address?.hamlet ?? s.address?.locality ?? s.address?.suburb ?? '',
-                district: s.address?.district ?? parsed.district ?? '',
+                suburb: village || '',
+                district: district || '',
               });
               setLastPickedCoords({ lat: parseFloat(s.lat), lng: parseFloat(s.lon) });
               setAddrSugg([]);
