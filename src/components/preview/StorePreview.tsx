@@ -1650,32 +1650,39 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       const postcode = (data.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
       const parsed = parseDisplayName(data.display_name ?? '', postcode);
 
-      // Debug: log all Nominatim address fields
-      if (data.address) {
-        console.log('[Nominatim] Full address object:', {
-          village: data.address.village,
-          hamlet: data.address.hamlet,
-          locality: data.address.locality,
-          suburb: data.address.suburb,
-          district: data.address.district,
-          city: data.address.city,
-          county: data.address.county,
-          state: data.address.state,
-          postcode: data.address.postcode,
-          all_keys: Object.keys(data.address),
-        });
-      }
-
       // Use structured Nominatim address fields as source of truth
       const addr = data.address || {};
+      let village = addr.village || addr.hamlet || addr.locality || addr.suburb || parsed.suburb || '';
+      let district = addr.district || parsed.district || '';
+      let city = addr.city || addr.county || parsed.city || '';
+
+      // Fallback: if village is empty, try to lookup from postal code database
+      if (!village && postcode) {
+        try {
+          const dbRes = await fetch(`/api/postal/search?q=${postcode}&limit=1`);
+          if (dbRes.ok) {
+            const dbData = await dbRes.json();
+            if (dbData.villages && dbData.villages.length > 0) {
+              const entry = dbData.villages[0];
+              village = entry.village || village;
+              district = entry.district || district;
+              city = entry.regency || city;
+              console.log('[DB Lookup] Filled from postal database:', { village, district, city, postal: postcode });
+            }
+          }
+        } catch (e) {
+          console.warn('[DB Lookup] Failed to query postal database:', e);
+        }
+      }
+
       setLoc({
         address: parsed.address,
-        city: addr.city || addr.county || parsed.city || '',
+        city: city || '',
         postal: postcode || parsed.postal || '',
         province: addr.state || parsed.province || '',
         display: data.display_name || '',
-        suburb: addr.village || addr.hamlet || addr.locality || addr.suburb || parsed.suburb || '',
-        district: addr.district || parsed.district || '',
+        suburb: village || '',
+        district: district || '',
       });
     } catch { /* ignore */ }
     finally { setGeocoding(false); setLocating(false); }
