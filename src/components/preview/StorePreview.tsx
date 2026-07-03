@@ -3001,7 +3001,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       {touched.address && validate('address', form.address) && <p style={errStyle}>{validate('address', form.address)}</p>}
                     </div>
                     <div className="col-span-2">
-                      <label style={lblStyle}>{uiT.postalLabel || 'Postal Code, Village, District, City, Province'}</label>
+                      <label style={lblStyle}>{uiT.postalLabel || 'Kode Pos, Kecamatan, Kota'}</label>
                       <div
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s', minHeight: '68px', paddingLeft: '16px', paddingRight: '12px', paddingTop: '12px', paddingBottom: '12px', borderRadius: t.inputRadius, border: `1.5px solid ${alpha(t.divider, 0.4)}`, background: t.inputBg }}
                         onClick={() => setShowPostalPicker(true)}
@@ -3016,10 +3016,10 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                             {form.postal || '12345'}
                           </div>
                           <div style={{ fontSize: '14px', color: t.textPrimary, lineHeight: 1.2 }}>
-                            {[form.village, form.district, form.city].filter(Boolean).join(', ') || 'Village, District, City'}
+                            {form.district || 'Kecamatan'}
                           </div>
                           <div style={{ fontSize: '14px', color: t.textPrimary, lineHeight: 1.2 }}>
-                            {form.province || 'Province'}
+                            {form.city || 'Kota'}
                           </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginLeft: '12px', color: t.textMuted }}>
