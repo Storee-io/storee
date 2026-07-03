@@ -2762,6 +2762,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     setForm(f => ({
       ...f,
       address: loc.address || f.address,
+      village: loc.suburb || f.village,
+      district: loc.district || f.district,
       city: loc.city || f.city,
       postal: loc.postal || f.postal,
       province: loc.province || f.province,
