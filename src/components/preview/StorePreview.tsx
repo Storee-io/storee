@@ -1609,14 +1609,15 @@ const parseDisplayName = (displayName: string, postcode?: string): PickedLocatio
     const district  = parts[streetEnd - 1] ?? '';
     const suburb    = parts[streetEnd - 2] ?? '';
     const address   = parts.slice(0, streetEnd - 1).join(', '); // up to kelurahan/suburb only
-    // Build display manually with ALL levels (village, district, city) to show full hierarchy
-    const displayParts = [
-      ...parts.slice(0, streetEnd - 1),  // street address
-      suburb,                            // kelurahan/village
-      district,                          // kecamatan/district
-      city,                              // kota/city
-      ...parts.slice(postalIdx),         // postal and beyond
-    ].filter(Boolean);
+    // Build display with all hierarchy levels, avoiding duplicates
+    const displayParts: string[] = [];
+    for (let i = 0; i < postalIdx; i++) {
+      if (parts[i] && !displayParts.includes(parts[i])) {
+        displayParts.push(parts[i]);
+      }
+    }
+    // Add postal and country (always include)
+    displayParts.push(parts[postalIdx], ...parts.slice(postalIdx + 1).filter(p => p !== 'Indonesia' && p !== 'Jawa'));
     const display = displayParts.join(', ');
     const postal    = (postcode ?? parts[postalIdx] ?? '').replace(/\D/g, '').slice(0, 5);
     return { address, city, postal, province, display, suburb, district };
@@ -1658,17 +1659,17 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       let district = addr.district || parsed.district || '';
       let city = addr.city || addr.county || parsed.city || '';
 
-      // Fallback: if village is empty, try to lookup from postal code database
-      if (!village && postcode) {
+      // Fallback: if village OR district is empty, try to lookup from postal code database
+      if ((!village || !district) && postcode) {
         try {
           const dbRes = await fetch(`/api/postal/search?q=${postcode}&limit=1`);
           if (dbRes.ok) {
             const dbData = await dbRes.json();
             if (dbData.villages && dbData.villages.length > 0) {
               const entry = dbData.villages[0];
-              village = entry.village || village;
-              district = entry.district || district;
-              city = entry.regency || city;
+              village = village || entry.village;
+              district = district || entry.district;
+              city = city || entry.regency;
               console.log('[DB Lookup] Filled from postal database:', { village, district, city, postal: postcode });
             }
           }
