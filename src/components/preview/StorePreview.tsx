@@ -1650,6 +1650,22 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       const postcode = (data.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
       const parsed = parseDisplayName(data.display_name ?? '', postcode);
 
+      // Debug: log all Nominatim address fields
+      if (data.address) {
+        console.log('[Nominatim] Full address object:', {
+          village: data.address.village,
+          hamlet: data.address.hamlet,
+          locality: data.address.locality,
+          suburb: data.address.suburb,
+          district: data.address.district,
+          city: data.address.city,
+          county: data.address.county,
+          state: data.address.state,
+          postcode: data.address.postcode,
+          all_keys: Object.keys(data.address),
+        });
+      }
+
       // Use structured Nominatim address fields as source of truth
       const addr = data.address || {};
       setLoc({
