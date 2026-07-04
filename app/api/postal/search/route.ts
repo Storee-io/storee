@@ -24,12 +24,46 @@ async function loadData(): Promise<VillageRecord[]> {
 
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get('q')?.trim() ?? '';
+  const province = request.nextUrl.searchParams.get('province')?.trim().toLowerCase() ?? '';
+  const regency = request.nextUrl.searchParams.get('regency')?.trim().toLowerCase() ?? '';
+  const district = request.nextUrl.searchParams.get('district')?.trim().toLowerCase() ?? '';
+  const village = request.nextUrl.searchParams.get('village')?.trim().toLowerCase() ?? '';
+  const postal = request.nextUrl.searchParams.get('postal')?.trim() ?? '';
   const limit = Number(request.nextUrl.searchParams.get('limit') ?? '20');
-  if (!q) return NextResponse.json({ provinces: [], regencies: [], districts: [], villages: [] });
 
   const data = await loadData();
-  const key = q.toLowerCase();
 
+  // Hierarchical matching: from widest (province) to narrowest (postal)
+  // Only match records that satisfy ALL provided filters
+  const matches = data.filter(v => {
+    if (province && !v.province.toLowerCase().includes(province)) return false;
+    if (regency && !v.regency.toLowerCase().includes(regency)) return false;
+    if (district && !v.district.toLowerCase().includes(district)) return false;
+    if (village && !v.village.toLowerCase().includes(village)) return false;
+    if (postal && !v.postal.startsWith(postal)) return false;
+    if (q && !v.village.toLowerCase().includes(q) && !v.postal.startsWith(q)) return false;
+    return true;
+  });
+
+  // If we have hierarchical filters, return the first match (standardized data)
+  if (province || regency || district || village || postal) {
+    const result = matches.slice(0, 1)[0];
+    if (result) {
+      return NextResponse.json({
+        match: {
+          village: result.village,
+          district: result.district,
+          regency: result.regency,
+          province: result.province,
+          postal: result.postal
+        }
+      });
+    }
+    return NextResponse.json({ match: null });
+  }
+
+  // Fallback: original search behavior for plain text query
+  const key = q.toLowerCase();
   const provinceSeen = new Map<string, { id: string; name: string }>();
   const regencySeen = new Map<string, { id: string; name: string; province: string }>();
   const districtSeen = new Map<string, { id: string; name: string; regency: string; province: string }>();
