@@ -1684,7 +1684,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
 
       // Get Nominatim data first
       const addr = data.address || {};
-      let village = addr.village || addr.hamlet || addr.locality || addr.suburb || parsed.suburb || '';
+      let village = addr.village || addr.neighbourhood || addr.hamlet || addr.locality || addr.suburb || parsed.suburb || '';
       let district = addr.district || parsed.district || '';
       let city = addr.city || addr.county || parsed.city || '';
       let province = normalizeProvince(addr.state || parsed.province || '');
@@ -2825,7 +2825,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               const matchedProv = INDONESIAN_PROVINCES.find(p => p === normalizedProv) ?? INDONESIAN_PROVINCES.find(p => p.toLowerCase().includes((s.address?.state ?? parsed.province ?? '').toLowerCase())) ?? '';
 
               // Get initial values from Nominatim
-              let village = s.address?.village ?? s.address?.hamlet ?? s.address?.locality ?? s.address?.suburb ?? '';
+              let village = s.address?.village ?? s.address?.neighbourhood ?? s.address?.hamlet ?? s.address?.locality ?? s.address?.suburb ?? '';
               let district = s.address?.district ?? parsed.district ?? '';
               let city = s.address?.city ?? s.address?.county ?? parsed.city ?? '';
               let province = matchedProv || normalizeProvince(s.address?.state ?? parsed.province ?? '');
