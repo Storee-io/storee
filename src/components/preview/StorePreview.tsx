@@ -1589,6 +1589,43 @@ const PROVINCE_NORMALIZE: Record<string, string> = {
 };
 const normalizeProvince = (p: string) => PROVINCE_NORMALIZE[p] ?? p;
 
+interface WilayahMatch { village: string; district: string; regency: string; province: string; postal: string }
+
+/**
+ * Match Nominatim-derived location fields against wilayah-full.json, anchored on the
+ * administrative hierarchy (province → regency/city → district → village) rather than
+ * the postal code — a postal code from Nominatim can be wrong/generic, so the matched
+ * record's postal always wins once the admin levels line up.
+ * Any admin level missing from Nominatim is simply omitted from the filter so the
+ * remaining levels can still match (e.g. district missing → match on province+village).
+ * Postal is only used as a filter when village itself is missing, since village is the
+ * most specific/reliable anchor when present.
+ * Returns the standardized record (including the correct postal for that hierarchy),
+ * or null if nothing matches.
+ */
+async function matchWilayah(fields: { province?: string; city?: string; district?: string; village?: string; postal?: string }): Promise<WilayahMatch | null> {
+  const params = new URLSearchParams();
+  if (fields.province) params.set('province', fields.province);
+  if (fields.city) params.set('regency', fields.city);
+  if (fields.district) params.set('district', fields.district);
+  if (fields.village) {
+    params.set('village', fields.village);
+  } else if (fields.postal) {
+    // Village unknown — fall back to postal (combined with district/city/province if present)
+    params.set('postal', fields.postal);
+  }
+  if (![...params.keys()].length) return null;
+
+  try {
+    const res = await fetch(`/api/postal/search?${params.toString()}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.match ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // Parse Nominatim display_name into structured location fields
 // Structure: ..., [Kecamatan], [Kabupaten], [Provinsi], [Supra?], [PostalCode], [Indonesia]
 const parseDisplayName = (displayName: string, postcode?: string): PickedLocation => {
@@ -1650,35 +1687,30 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       let village = addr.village || addr.hamlet || addr.locality || addr.suburb || parsed.suburb || '';
       let district = addr.district || parsed.district || '';
       let city = addr.city || addr.county || parsed.city || '';
+      let province = normalizeProvince(addr.state || parsed.province || '');
+      let postal = postcode || parsed.postal || '';
 
-      // Always match against wilayah-full.json for standardized data
-      if (postcode) {
-        try {
-          const dbRes = await fetch(`/api/postal/search?q=${postcode}&limit=1`);
-          if (dbRes.ok) {
-            const dbData = await dbRes.json();
-            if (dbData.villages && dbData.villages.length > 0) {
-              const entry = dbData.villages[0];
-              // Prioritize wilayah-full.json data for standardization
-              village = entry.village || village;
-              district = entry.district || district;
-              city = entry.regency || city;
-              console.log('[DB Match] Standardized from postal database:', { village, district, city, postal: postcode });
-            }
-          }
-        } catch (e) {
-          console.warn('[DB Match] Failed to query postal database:', e);
-        }
+      // Match against wilayah-full.json hierarchically (province → city → district →
+      // village → postal). Whichever levels Nominatim actually gave us are used to find
+      // the standardized record; the postal code always comes from that match, not from
+      // Nominatim, since a wrong/generic postcode should follow the matched hierarchy.
+      const match = await matchWilayah({ province, city, district, village, postal });
+      if (match) {
+        village = match.village;
+        district = match.district;
+        city = match.regency;
+        province = match.province;
+        postal = match.postal;
       }
 
       setLoc({
         address: parsed.address,
-        city: city || '',
-        postal: postcode || parsed.postal || '',
-        province: addr.state || parsed.province || '',
+        city,
+        postal,
+        province,
         display: data.display_name || '',
-        suburb: village || '',
-        district: district || '',
+        suburb: village,
+        district,
       });
     } catch { /* ignore */ }
     finally { setGeocoding(false); setLocating(false); }
@@ -2796,23 +2828,19 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               let village = s.address?.village ?? s.address?.hamlet ?? s.address?.locality ?? s.address?.suburb ?? '';
               let district = s.address?.district ?? parsed.district ?? '';
               let city = s.address?.city ?? s.address?.county ?? parsed.city ?? '';
+              let province = matchedProv || normalizeProvince(s.address?.state ?? parsed.province ?? '');
+              let postal = postcode || parsed.postal || '';
 
-              // Match against wilayah-full.json for standardized data
-              if (postcode) {
-                try {
-                  const dbRes = await fetch(`/api/postal/search?q=${postcode}&limit=1`);
-                  if (dbRes.ok) {
-                    const dbData = await dbRes.json();
-                    if (dbData.villages && dbData.villages.length > 0) {
-                      const entry = dbData.villages[0];
-                      village = entry.village || village;
-                      district = entry.district || district;
-                      city = entry.regency || city;
-                    }
-                  }
-                } catch (err) {
-                  console.warn('[DB Match] Failed to query postal database:', err);
-                }
+              // Match against wilayah-full.json hierarchically — admin levels (province/
+              // city/district/village) take priority over the postal code, so a wrong
+              // Nominatim postcode gets replaced with the one matching the hierarchy.
+              const match = await matchWilayah({ province, city, district, village, postal });
+              if (match) {
+                village = match.village;
+                district = match.district;
+                city = match.regency;
+                province = match.province;
+                postal = match.postal;
               }
 
               setForm(f => ({
@@ -2820,18 +2848,18 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 address: parsed.address || f.address,
                 village: village || f.village,
                 district: district || f.district,
-                postal: postcode || parsed.postal || f.postal,
+                postal: postal || f.postal,
                 city: city || f.city,
-                province: matchedProv || f.province,
+                province: province || f.province,
               }));
               setLastPickedLoc({
                 address: parsed.address || '',
-                city: city || '',
-                postal: postcode || parsed.postal || '',
-                province: matchedProv || '',
+                city,
+                postal,
+                province,
                 display: s.display_name,
-                suburb: village || '',
-                district: district || '',
+                suburb: village,
+                district,
               });
               setLastPickedCoords({ lat: parseFloat(s.lat), lng: parseFloat(s.lon) });
               setAddrSugg([]);
