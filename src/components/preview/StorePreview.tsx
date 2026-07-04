@@ -2920,41 +2920,37 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     <div className="col-span-2">
                       <label style={{ ...lblStyle, marginBottom: '6px', display: 'block' }}>Full Address</label>
                       {!lastPickedLoc && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPendingGps(null);
-                              navigator.geolocation?.getCurrentPosition(
-                                pos => setPendingGps({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-                                () => {},
-                                { timeout: 10000, enableHighAccuracy: true }
-                              );
-                              setShowLocationPicker(true);
-                            }}
-                            style={{
-                              width: '100%', minHeight: '56px', marginBottom: '10px',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                              padding: '10px 14px', borderRadius: t.inputRadius,
-                              border: 'none', boxShadow: `0 2px 8px ${alpha(t.primary, 0.3)}`,
-                              background: t.primary,
-                              color: '#fff', cursor: 'pointer', transition: 'all 0.15s', boxSizing: 'border-box',
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.opacity = '0.92'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
-                          >
-                            <span style={{ fontSize: '18px', lineHeight: 1 }}>📍</span>
-                            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1px' }}>
-                              <span style={{ fontSize: '13px', fontWeight: 700 }}>Use My Current Location</span>
-                              <span style={{ fontSize: '10.5px', fontWeight: 500, opacity: 0.85 }}>Fastest way — fills address &amp; postal code automatically</span>
-                            </span>
-                          </button>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '2px 0 10px' }}>
-                            <div style={{ flex: 1, height: '1px', background: alpha(t.divider, 0.6) }} />
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: t.textMuted, letterSpacing: '0.05em', textTransform: 'uppercase' }}>or type manually</span>
-                            <div style={{ flex: 1, height: '1px', background: alpha(t.divider, 0.6) }} />
-                          </div>
-                        </>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPendingGps(null);
+                            navigator.geolocation?.getCurrentPosition(
+                              pos => setPendingGps({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                              () => {},
+                              { timeout: 10000, enableHighAccuracy: true }
+                            );
+                            setShowLocationPicker(true);
+                          }}
+                          style={{
+                            width: '100%', height: '42px', marginBottom: '8px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                            padding: '0 12px', borderRadius: t.inputRadius,
+                            border: `1.5px dashed ${t.primary}`,
+                            background: alpha(t.primary, 0.06),
+                            color: t.primary, fontSize: '12px', fontWeight: 700,
+                            cursor: 'pointer', transition: 'all 0.15s', boxSizing: 'border-box',
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.background = alpha(t.primary, 0.12);
+                            e.currentTarget.style.borderColor = t.primary;
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.background = alpha(t.primary, 0.06);
+                            e.currentTarget.style.borderColor = t.primary;
+                          }}
+                        >
+                          📍 Use My Current Location
+                        </button>
                       )}
                       {lastPickedLoc && (
                         <div
