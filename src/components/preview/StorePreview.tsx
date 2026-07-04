@@ -3004,7 +3004,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       <textarea
                         ref={addrTextareaRef}
                         className="w-full px-4 py-2.5 text-sm resize-none"
-                        style={{ ...inpStyle, outline: 'none' }}
+                        style={{ ...inpStyle, outline: 'none', height: '84px', boxSizing: 'border-box' }}
                         rows={2}
                         value={form.address}
                         onChange={e => handleAddressInput(e.target.value)}
