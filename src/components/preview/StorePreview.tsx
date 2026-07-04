@@ -1060,12 +1060,6 @@ function lighten(hex: string, amount: number) {
   const b = Math.min(255, Math.round(parseInt(hex.slice(5, 7), 16) + (255 - parseInt(hex.slice(5, 7), 16)) * amount));
   return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
 }
-function darken(hex: string, amount: number) {
-  const r = Math.max(0, Math.round(parseInt(hex.slice(1, 3), 16) * (1 - amount)));
-  const g = Math.max(0, Math.round(parseInt(hex.slice(3, 5), 16) * (1 - amount)));
-  const b = Math.max(0, Math.round(parseInt(hex.slice(5, 7), 16) * (1 - amount)));
-  return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
-}
 
 function Stars({ n = 5 }: { n?: number }) {
   return (
@@ -2939,33 +2933,26 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                               setShowLocationPicker(true);
                             }}
                             style={{
-                              width: '100%', minHeight: '64px', marginBottom: '10px',
-                              display: 'flex', alignItems: 'center', gap: '12px',
+                              width: '100%', minHeight: '56px', marginBottom: '10px',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                               padding: '10px 14px', borderRadius: t.inputRadius,
-                              border: 'none', boxShadow: `0 4px 14px ${alpha(t.primary, 0.35)}`,
-                              background: `linear-gradient(135deg, ${t.primary}, ${darken(t.primary, 0.12)})`,
-                              color: '#fff', cursor: 'pointer', transition: 'all 0.18s', boxSizing: 'border-box',
+                              border: 'none', boxShadow: `0 2px 8px ${alpha(t.primary, 0.3)}`,
+                              background: t.primary,
+                              color: '#fff', cursor: 'pointer', transition: 'all 0.15s', boxSizing: 'border-box',
                             }}
-                            onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 6px 18px ${alpha(t.primary, 0.45)}`; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.boxShadow = `0 4px 14px ${alpha(t.primary, 0.35)}`; e.currentTarget.style.transform = 'translateY(0)'; }}
+                            onMouseEnter={e => { e.currentTarget.style.opacity = '0.92'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
                           >
-                            <span style={{
-                              width: '38px', height: '38px', flexShrink: 0, borderRadius: '50%',
-                              background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: '18px', lineHeight: 1,
-                            }}>📍</span>
-                            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', flex: 1, minWidth: 0, textAlign: 'left' }}>
-                              <span style={{ fontSize: '14px', fontWeight: 700 }}>Use My Current Location</span>
-                              <span style={{ fontSize: '11px', fontWeight: 500, opacity: 0.9 }}>Fastest way — fills address &amp; postal code automatically</span>
+                            <span style={{ fontSize: '18px', lineHeight: 1 }}>📍</span>
+                            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1px' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 700 }}>Use My Current Location</span>
+                              <span style={{ fontSize: '10.5px', fontWeight: 500, opacity: 0.85 }}>Fastest way — fills address &amp; postal code automatically</span>
                             </span>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.85 }}>
-                              <path d="m9 18 6-6-6-6"/>
-                            </svg>
                           </button>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '2px 0 10px' }}>
-                            <div style={{ flex: 1, height: '1px', background: alpha(t.divider, 0.5) }} />
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: t.textMuted, letterSpacing: '0.06em', textTransform: 'uppercase' }}>or type manually</span>
-                            <div style={{ flex: 1, height: '1px', background: alpha(t.divider, 0.5) }} />
+                            <div style={{ flex: 1, height: '1px', background: alpha(t.divider, 0.6) }} />
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: t.textMuted, letterSpacing: '0.05em', textTransform: 'uppercase' }}>or type manually</span>
+                            <div style={{ flex: 1, height: '1px', background: alpha(t.divider, 0.6) }} />
                           </div>
                         </>
                       )}
