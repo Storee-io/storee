@@ -30,8 +30,49 @@ export async function GET(request: NextRequest) {
   const village = request.nextUrl.searchParams.get('village')?.trim().toLowerCase() ?? '';
   const postal = request.nextUrl.searchParams.get('postal')?.trim() ?? '';
   const limit = Number(request.nextUrl.searchParams.get('limit') ?? '20');
+  const level = request.nextUrl.searchParams.get('level') ?? '';
+  const parentId = request.nextUrl.searchParams.get('parentId') ?? '';
 
   const data = await loadData();
+
+  // Browse mode: list the next level down (province → regency → district → village)
+  // by administrative code prefix. Backs the picker's tap-through hierarchy locally,
+  // since wilayah-full.json is bundled with the app (no external API dependency).
+  if (level) {
+    if (level === 'province') {
+      const seen = new Map<string, { id: string; name: string }>();
+      for (const v of data) {
+        const id = v.code.slice(0, 2);
+        if (!seen.has(id)) seen.set(id, { id, name: v.province });
+      }
+      return NextResponse.json({ items: [...seen.values()] });
+    }
+    if (level === 'regency' && parentId) {
+      const seen = new Map<string, { id: string; name: string }>();
+      for (const v of data) {
+        if (!v.code.startsWith(parentId)) continue;
+        const id = v.code.slice(0, 4);
+        if (!seen.has(id)) seen.set(id, { id, name: v.regency });
+      }
+      return NextResponse.json({ items: [...seen.values()] });
+    }
+    if (level === 'district' && parentId) {
+      const seen = new Map<string, { id: string; name: string }>();
+      for (const v of data) {
+        if (!v.code.startsWith(parentId)) continue;
+        const id = v.code.slice(0, 6);
+        if (!seen.has(id)) seen.set(id, { id, name: v.district });
+      }
+      return NextResponse.json({ items: [...seen.values()] });
+    }
+    if (level === 'village' && parentId) {
+      const items = data
+        .filter(v => v.code.startsWith(parentId))
+        .map(v => ({ id: v.code, name: v.village, postal: v.postal }));
+      return NextResponse.json({ items });
+    }
+    return NextResponse.json({ items: [] });
+  }
 
   // Hierarchical matching: from widest (province) to narrowest (postal)
   // Only match records that satisfy ALL provided filters

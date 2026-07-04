@@ -2257,46 +2257,11 @@ interface WilayahItem { id: string; name: string; }
 
 type PostalLevel = 'province' | 'regency' | 'district' | 'village';
 
-// Module-level cache for the local kodepos CSV (loaded once per session)
-// Key: norm(district) + '|' + norm(subdistrict) → postal_code string
-let kodeposCsvCache: Map<string, string> | null = null;
-let kodeposCsvLoading: Promise<Map<string, string>> | null = null;
-
-const normStr = (s: string) => s.toLowerCase().replace(/[\s\-_.]/g, '');
-
 const WILAYAH_ABBR = new Set(['DKI', 'DI', 'DIY', 'NTB', 'NTT', 'RI', 'SD', 'SMP', 'SMA']);
 const toTitleCase = (s: string) =>
   s.split(' ').map(w => WILAYAH_ABBR.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
 const shortRegency = (name: string) => name.replace(/^Kabupaten\s+/i, 'Kab. ');
-
-
-async function loadKodeposCsv(): Promise<Map<string, string>> {
-  if (kodeposCsvCache) return kodeposCsvCache;
-  if (kodeposCsvLoading) return kodeposCsvLoading;
-  kodeposCsvLoading = fetch('/data/kodepos.csv')
-    .then(r => r.text())
-    .then(text => {
-      const map = new Map<string, string>();
-      const lines = text.split('\n');
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',');
-        if (cols.length < 5) continue;
-        const district = cols[2].trim();
-        const subdistrict = cols[3].trim();
-        const postal = cols[4].trim();
-        if (!postal) continue;
-        // Key by district+village (for district-level lookup)
-        map.set(normStr(district) + '|' + normStr(subdistrict), postal);
-        // Also key by village only as fallback
-        if (!map.has('v|' + normStr(subdistrict))) map.set('v|' + normStr(subdistrict), postal);
-      }
-      kodeposCsvCache = map;
-      return map;
-    })
-    .catch(() => { kodeposCsvCache = new Map(); return kodeposCsvCache; });
-  return kodeposCsvLoading;
-}
 
 function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '' }: {
   t: CommerceTheme;
@@ -2316,8 +2281,7 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '' }:
   const [searched, setSearched] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Hierarchy state — uses rizuku-v2.github.io/wilayah-indonesia-api
-  const BASE = 'https://rizuku-v2.github.io/wilayah-indonesia-api/api';
+  // Hierarchy state — backed by local /api/postal/search (wilayah-full.json), no external API
   const [level, setLevel] = useState<PostalLevel>('province');
   const [selProvince, setSelProvince] = useState('');
   const [selRegency, setSelRegency] = useState('');
@@ -2332,10 +2296,10 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '' }:
 
   // Load province list on mount
   useEffect(() => {
-    fetch(`${BASE}/provinces.json`)
+    fetch('/api/postal/search?level=province')
       .then(r => r.json())
-      .then((data: Array<{ code: string; name: string }>) =>
-        setProvinces(data.map(p => ({ id: p.code, name: toTitleCase(p.name) })))
+      .then((data: { items: Array<{ id: string; name: string }> }) =>
+        setProvinces((data.items ?? []).map(p => ({ id: p.id, name: toTitleCase(p.name) })))
       )
       .catch(() => {});
   }, []);
@@ -2381,35 +2345,28 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '' }:
     debounceRef.current = setTimeout(() => doSearch(v), 400);
   };
 
+  const fetchLevel = async (lvl: 'regency' | 'district' | 'village', parentId: string) => {
+    const res = await fetch(`/api/postal/search?level=${lvl}&parentId=${parentId}`);
+    const data: { items: Array<{ id: string; name: string; postal?: string }> } = await res.json();
+    return data.items ?? [];
+  };
+
   const handleSearchNavClick = async (item: SearchNav) => {
     setQuery(''); clearSearch();
     setLoading(true);
     try {
       if (item.type === 'province') {
         setSelProvince(item.name); setLevel('regency');
-        const data: Array<{ code: string; name: string }> = await fetch(`${BASE}/regencies/${item.id}.json`).then(r => r.json());
-        setRegencies(data.map(r => ({ id: r.code, name: toTitleCase(r.name) })));
+        const items = await fetchLevel('regency', item.id);
+        setRegencies(items.map(r => ({ id: r.id, name: toTitleCase(r.name) })));
       } else if (item.type === 'regency') {
         setSelProvince(item.province ?? ''); setSelRegency(item.name); setLevel('district');
-        const data: Array<{ code: string; name: string }> = await fetch(`${BASE}/districts/${item.id}.json`).then(r => r.json());
-        setDistricts(data.map(d => ({ id: d.code, name: toTitleCase(d.name) })));
+        const items = await fetchLevel('district', item.id);
+        setDistricts(items.map(d => ({ id: d.id, name: toTitleCase(d.name) })));
       } else {
         setSelProvince(item.province ?? ''); setSelRegency(item.regency ?? ''); setSelDistrict(item.name); setLevel('village');
-        const data: Array<{ code: string; name: string; postal_code?: string }> = await fetch(`${BASE}/villages/${item.id}.json`).then(r => r.json());
-        const vilList = data.map(v => ({ id: v.code, name: toTitleCase(v.name), postal: v.postal_code ?? '' }));
-        setVillages(vilList);
-        const missing = vilList.filter(v => !v.postal);
-        if (missing.length > 0) {
-          loadKodeposCsv().then(csvMap => {
-            const distKey = normStr(item.name);
-            setVillages(prev => prev.map(v => {
-              if (v.postal) return v;
-              const vKey = normStr(v.name);
-              const fromCsv = csvMap.get(distKey + '|' + vKey) ?? csvMap.get('v|' + vKey);
-              return fromCsv ? { ...v, postal: fromCsv } : v;
-            }));
-          }).catch(() => {});
-        }
+        const items = await fetchLevel('village', item.id);
+        setVillages(items.map(v => ({ id: v.id, name: toTitleCase(v.name), postal: v.postal ?? '' })));
       }
     } catch { /* keep hierarchy as-is */ }
     finally { setLoading(false); }
@@ -2420,9 +2377,8 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '' }:
     setLevel('regency');
     setLoading(true);
     try {
-      const res = await fetch(`${BASE}/regencies/${item.id}.json`);
-      const data: Array<{ code: string; name: string }> = await res.json();
-      setRegencies(data.map(r => ({ id: r.code, name: toTitleCase(r.name) })));
+      const items = await fetchLevel('regency', item.id);
+      setRegencies(items.map(r => ({ id: r.id, name: toTitleCase(r.name) })));
     } catch { setRegencies([]); }
     finally { setLoading(false); }
   };
@@ -2432,9 +2388,8 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '' }:
     setLevel('district');
     setLoading(true);
     try {
-      const res = await fetch(`${BASE}/districts/${item.id}.json`);
-      const data: Array<{ code: string; name: string }> = await res.json();
-      setDistricts(data.map(d => ({ id: d.code, name: toTitleCase(d.name) })));
+      const items = await fetchLevel('district', item.id);
+      setDistricts(items.map(d => ({ id: d.id, name: toTitleCase(d.name) })));
     } catch { setDistricts([]); }
     finally { setLoading(false); }
   };
@@ -2444,24 +2399,8 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '' }:
     setLevel('village');
     setLoading(true);
     try {
-      const res = await fetch(`${BASE}/villages/${item.id}.json`);
-      const data: Array<{ code: string; name: string; postal_code?: string }> = await res.json();
-      const vilList = data.map(v => ({ id: v.code, name: toTitleCase(v.name), postal: v.postal_code ?? '' }));
-      setVillages(vilList);
-
-      // Supplement missing postal codes from local CSV
-      const missing = vilList.filter(v => !v.postal);
-      if (missing.length > 0) {
-        loadKodeposCsv().then(csvMap => {
-          const distKey = normStr(item.name);
-          setVillages(prev => prev.map(v => {
-            if (v.postal) return v;
-            const vKey = normStr(v.name);
-            const fromCsv = csvMap.get(distKey + '|' + vKey) ?? csvMap.get('v|' + vKey);
-            return fromCsv ? { ...v, postal: fromCsv } : v;
-          }));
-        }).catch(() => {});
-      }
+      const items = await fetchLevel('village', item.id);
+      setVillages(items.map(v => ({ id: v.id, name: toTitleCase(v.name), postal: v.postal ?? '' })));
     } catch { setVillages([]); }
     finally { setLoading(false); }
   };
