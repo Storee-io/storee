@@ -3025,17 +3025,18 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         onBlur={e => { e.currentTarget.style.borderColor = alpha(t.divider, 0.4); e.currentTarget.style.boxShadow = 'none'; }}
                         tabIndex={0}
                       >
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
                           {form.postal || form.village || form.district || form.city ? (
                             <>
-                              <div style={{ fontSize: '15px', fontWeight: 700, color: t.textPrimary, lineHeight: 1.2 }}>
-                                {form.postal}{form.village ? ` - ${form.village}` : ''}
+                              <div style={{ fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ color: t.primary, fontWeight: 700, flexShrink: 0 }}>{form.postal || '—'}</span>
+                                <span style={{ width: '1px', alignSelf: 'stretch', background: alpha(t.textMuted, 0.3), flexShrink: 0 }} />
+                                <span style={{ color: t.textPrimary }}>{form.village}</span>
                               </div>
-                              <div style={{ fontSize: '14px', color: t.textPrimary, lineHeight: 1.2 }}>
-                                {form.district}
-                              </div>
-                              <div style={{ fontSize: '14px', color: t.textPrimary, lineHeight: 1.2 }}>
-                                {form.city}
+                              <div style={{ fontSize: '11px', color: t.textMuted, display: 'flex', alignItems: 'center', gap: '3px', flexWrap: 'wrap' }}>
+                                <span>{form.province}</span><span style={{ opacity: 0.4 }}>›</span>
+                                <span>{shortRegency(form.city)}</span><span style={{ opacity: 0.4 }}>›</span>
+                                <span>{form.district}</span>
                               </div>
                             </>
                           ) : (
