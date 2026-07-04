@@ -2687,7 +2687,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     const el = addrTextareaRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = `${Math.max(el.scrollHeight, 84)}px`;
+    el.style.height = `${Math.max(el.scrollHeight, 62)}px`;
   }, [form.address]);
 
 
@@ -3012,7 +3012,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       <textarea
                         ref={addrTextareaRef}
                         className="w-full px-4 py-2.5 text-sm resize-none"
-                        style={{ ...inpStyle, outline: 'none', minHeight: '84px', boxSizing: 'border-box', overflow: 'hidden' }}
+                        style={{ ...inpStyle, outline: 'none', minHeight: '62px', boxSizing: 'border-box', overflow: 'hidden' }}
                         rows={2}
                         value={form.address}
                         onChange={e => handleAddressInput(e.target.value)}
