@@ -3015,7 +3015,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       {touched.address && validate('address', form.address) && <p style={errStyle}>{validate('address', form.address)}</p>}
                     </div>
                     <div className="col-span-2">
-                      <label style={lblStyle}>{uiT.postalLabel || 'Kode Pos, Kecamatan, Kota'}</label>
+                      <label style={lblStyle}>{uiT.postalLabel || 'Postal Code or Village'}</label>
                       <div
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s', minHeight: (form.postal || form.village || form.district || form.city) ? '68px' : '42px', boxSizing: 'border-box', paddingLeft: '16px', paddingRight: '12px', paddingTop: (form.postal || form.village || form.district || form.city) ? '12px' : '0px', paddingBottom: (form.postal || form.village || form.district || form.city) ? '12px' : '0px', borderRadius: t.inputRadius, border: `1.5px solid ${alpha(t.divider, 0.4)}`, background: t.inputBg }}
                         onClick={() => setShowPostalPicker(true)}
