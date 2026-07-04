@@ -3026,15 +3026,23 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         tabIndex={0}
                       >
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
-                          <div style={{ fontSize: '15px', fontWeight: 700, color: t.textPrimary, lineHeight: 1.2 }}>
-                            {form.postal || '12345'}{form.village ? ` - ${form.village}` : ''}
-                          </div>
-                          <div style={{ fontSize: '14px', color: t.textPrimary, lineHeight: 1.2 }}>
-                            {form.district || 'Kecamatan'}
-                          </div>
-                          <div style={{ fontSize: '14px', color: t.textPrimary, lineHeight: 1.2 }}>
-                            {form.city || 'Kota'}
-                          </div>
+                          {form.postal || form.village || form.district || form.city ? (
+                            <>
+                              <div style={{ fontSize: '15px', fontWeight: 700, color: t.textPrimary, lineHeight: 1.2 }}>
+                                {form.postal}{form.village ? ` - ${form.village}` : ''}
+                              </div>
+                              <div style={{ fontSize: '14px', color: t.textPrimary, lineHeight: 1.2 }}>
+                                {form.district}
+                              </div>
+                              <div style={{ fontSize: '14px', color: t.textPrimary, lineHeight: 1.2 }}>
+                                {form.city}
+                              </div>
+                            </>
+                          ) : (
+                            <div style={{ fontSize: '14px', color: t.textMuted, lineHeight: 1.2 }}>
+                              Select Postal Code or Village
+                            </div>
+                          )}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginLeft: '12px', color: t.textMuted }}>
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
