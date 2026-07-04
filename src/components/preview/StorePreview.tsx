@@ -1644,7 +1644,7 @@ const parseDisplayName = (displayName: string, postcode?: string): PickedLocatio
     const city      = parts[postalIdx - cityOffset] ?? '';
     const streetEnd = postalIdx - cityOffset;
     const district  = parts[streetEnd - 1] ?? '';
-    const address   = parts.slice(0, streetEnd - 1).join(', '); // up to kelurahan/suburb only
+    const address   = parts.slice(0, streetEnd - 2).join(', '); // exclude kelurahan/suburb and district
     // Use full displayName without any deduplication or filtering
     const display = displayName;
     const postal    = (postcode ?? parts[postalIdx] ?? '').replace(/\D/g, '').slice(0, 5);
