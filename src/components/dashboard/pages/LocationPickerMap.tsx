@@ -48,17 +48,7 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
       { headers: { 'Accept-Language': 'id' } }
     );
-    const data = await res.json() as { display_name?: string; address?: Record<string, string> };
-    console.log('[Nominatim] Full address object', data);
-    console.log('[Nominatim] display_name', data.display_name);
-    if (data.address) {
-      console.log('[Nominatim] address.village:', data.address.village);
-      console.log('[Nominatim] address.suburb:', data.address.suburb);
-      console.log('[Nominatim] address.city:', data.address.city);
-      console.log('[Nominatim] address.postcode:', data.address.postcode);
-      console.log('[Nominatim] address.country:', data.address.country);
-    }
-    console.log('[Nominatim] Full JSON response:', JSON.stringify(data, null, 2));
+    const data = await res.json() as { display_name?: string };
     return data.display_name ?? `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   } catch {
     return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
