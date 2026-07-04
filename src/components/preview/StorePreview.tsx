@@ -2682,6 +2682,14 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const addrTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const addrTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // Auto-resize address textarea: min ~2 lines, grows to fit content beyond that
+  useEffect(() => {
+    const el = addrTextareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.max(el.scrollHeight, 84)}px`;
+  }, [form.address]);
+
 
   const selectedShipping = shippingMethods.find(m => m.id === selectedShippingId) ?? shippingMethods[0];
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
@@ -3004,7 +3012,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       <textarea
                         ref={addrTextareaRef}
                         className="w-full px-4 py-2.5 text-sm resize-none"
-                        style={{ ...inpStyle, outline: 'none', height: '84px', boxSizing: 'border-box' }}
+                        style={{ ...inpStyle, outline: 'none', minHeight: '84px', boxSizing: 'border-box', overflow: 'hidden' }}
                         rows={2}
                         value={form.address}
                         onChange={e => handleAddressInput(e.target.value)}
