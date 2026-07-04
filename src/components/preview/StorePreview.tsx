@@ -3017,7 +3017,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     <div className="col-span-2">
                       <label style={lblStyle}>{uiT.postalLabel || 'Kode Pos, Kecamatan, Kota'}</label>
                       <div
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s', minHeight: '68px', paddingLeft: '16px', paddingRight: '12px', paddingTop: '12px', paddingBottom: '12px', borderRadius: t.inputRadius, border: `1.5px solid ${alpha(t.divider, 0.4)}`, background: t.inputBg }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s', minHeight: (form.postal || form.village || form.district || form.city) ? '68px' : '46px', paddingLeft: '16px', paddingRight: '12px', paddingTop: '12px', paddingBottom: '12px', borderRadius: t.inputRadius, border: `1.5px solid ${alpha(t.divider, 0.4)}`, background: t.inputBg }}
                         onClick={() => setShowPostalPicker(true)}
                         onMouseEnter={e => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.5); }}
                         onMouseLeave={e => { e.currentTarget.style.borderColor = alpha(t.divider, 0.4); e.currentTarget.style.background = t.inputBg; }}
