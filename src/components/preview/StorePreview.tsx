@@ -3034,9 +3034,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                                 <span style={{ color: t.textPrimary }}>{form.village}</span>
                               </div>
                               <div style={{ fontSize: '13px', color: t.textMuted, display: 'flex', alignItems: 'center', gap: '3px', flexWrap: 'wrap' }}>
-                                <span>{form.province}</span><span style={{ opacity: 0.4 }}>›</span>
+                                <span>{form.district}</span><span style={{ opacity: 0.4 }}>›</span>
                                 <span>{shortRegency(form.city)}</span><span style={{ opacity: 0.4 }}>›</span>
-                                <span>{form.district}</span>
+                                <span>{form.province}</span>
                               </div>
                             </>
                           ) : (
