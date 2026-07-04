@@ -92,6 +92,7 @@ export async function GET(request: NextRequest) {
     if (result) {
       return NextResponse.json({
         match: {
+          code: result.code,
           village: result.village,
           district: result.district,
           regency: result.regency,

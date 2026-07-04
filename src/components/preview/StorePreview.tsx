@@ -1589,7 +1589,7 @@ const PROVINCE_NORMALIZE: Record<string, string> = {
 };
 const normalizeProvince = (p: string) => PROVINCE_NORMALIZE[p] ?? p;
 
-interface WilayahMatch { village: string; district: string; regency: string; province: string; postal: string }
+interface WilayahMatch { code: string; village: string; district: string; regency: string; province: string; postal: string }
 
 /**
  * Match Nominatim-derived location fields against wilayah-full.json, anchored on the
@@ -2263,16 +2263,19 @@ const toTitleCase = (s: string) =>
 
 const shortRegency = (name: string) => name.replace(/^Kabupaten\s+/i, 'Kab. ');
 
-function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '' }: {
+function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', initialSelection }: {
   t: CommerceTheme;
   uiT?: UiT;
   onSelect: (r: PostalResult) => void;
   onClose: () => void;
   initialQuery?: string;
+  // When the postal field already has a value, jump straight into the village list of the
+  // currently selected district instead of starting over from the province list.
+  initialSelection?: { province: string; regency: string; district: string };
 }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const translations = uiT || UI_T.en;
-  const [query, setQuery] = useState(initialQuery);
+  const [query, setQuery] = useState(initialSelection ? '' : initialQuery);
   type SearchNav = { id: string; name: string; type: 'province' | 'regency' | 'district'; province?: string; regency?: string };
   type SearchVillage = { code: number | null; village: string; district: string; regency: string; province: string };
   const [searchNav, setSearchNav] = useState<SearchNav[]>([]);
@@ -2304,9 +2307,31 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '' }:
       .catch(() => {});
   }, []);
 
+  // Postal already selected — resolve its district code and jump straight to the village list
+  useEffect(() => {
+    if (!initialSelection?.district) return;
+    let cancelled = false;
+    setLoading(true);
+    matchWilayah({ province: initialSelection.province, city: initialSelection.regency, district: initialSelection.district })
+      .then(async match => {
+        if (cancelled || !match) return;
+        setSelProvince(match.province);
+        setSelRegency(match.regency);
+        setSelDistrict(match.district);
+        setLevel('village');
+        const districtId = match.code.slice(0, 6);
+        const res = await fetch(`/api/postal/search?level=village&parentId=${districtId}`);
+        const data: { items: Array<{ id: string; name: string; postal?: string }> } = await res.json();
+        if (!cancelled) setVillages(data.items.map(v => ({ id: v.id, name: toTitleCase(v.name), postal: v.postal ?? '' })));
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Handle initial query and focus search input
   useEffect(() => {
-    if (initialQuery && searchInputRef.current) {
+    if (initialQuery && !initialSelection && searchInputRef.current) {
       searchInputRef.current.focus();
       setQuery(initialQuery);
     }
@@ -2841,6 +2866,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         t={t}
         uiT={uiT}
         initialQuery={form.postal}
+        initialSelection={form.district ? { province: form.province, regency: form.city, district: form.district } : undefined}
         onSelect={r => {
           const normalizedProvince = normalizeProvince(r.province);
           const matchedProvince = INDONESIAN_PROVINCES.find(p => p === normalizedProvince) ?? INDONESIAN_PROVINCES.find(p => p.toLowerCase().includes(r.province.toLowerCase())) ?? '';
