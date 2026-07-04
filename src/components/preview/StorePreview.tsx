@@ -3033,10 +3033,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                                 <span style={{ width: '1px', alignSelf: 'stretch', background: alpha(t.textMuted, 0.3), flexShrink: 0 }} />
                                 <span style={{ color: t.textPrimary }}>{form.village}</span>
                               </div>
-                              <div style={{ fontSize: '13px', color: t.textMuted, display: 'flex', alignItems: 'center', gap: '3px', flexWrap: 'wrap' }}>
-                                <span>{form.district}</span><span style={{ opacity: 0.4 }}>›</span>
-                                <span>{shortRegency(form.city)}</span><span style={{ opacity: 0.4 }}>›</span>
-                                <span>{form.province}</span>
+                              <div style={{ fontSize: '13px', color: t.textMuted, lineHeight: 1.3 }}>
+                                {[form.district, shortRegency(form.city), form.province].filter(Boolean).join(', ')}
                               </div>
                             </>
                           ) : (
