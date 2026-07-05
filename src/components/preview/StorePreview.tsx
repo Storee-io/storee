@@ -2314,8 +2314,10 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
     setLoading(true);
     (async () => {
       try {
+        console.log('[initialSelection] Attempting to load:', { province: initialSelection.province, regency: initialSelection.regency, district: initialSelection.district });
         // Try to match using all three levels (province, regency, district)
         const match = await matchWilayah({ province: initialSelection.province, city: initialSelection.regency, district: initialSelection.district });
+        console.log('[initialSelection] matchWilayah result:', match);
         if (cancelled) return;
 
         if (match) {
@@ -2330,9 +2332,12 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
           if (!cancelled) setVillages(data.items.map(v => ({ id: v.id, name: toTitleCase(v.name), postal: v.postal ?? '' })));
         } else {
           // Fallback: query full hierarchy by name to find district code
+          console.log('[initialSelection fallback] matchWilayah failed, using hierarchy matching');
           const provincesRes = await fetch(`/api/postal/search?level=province`);
           const provincesData: { items: Array<{ id: string; name: string }> } = await provincesRes.json();
+          console.log('[initialSelection] provinces:', provincesData.items);
           const foundProvince = provincesData.items?.find(p => p.name.toLowerCase().includes(initialSelection.province.toLowerCase()));
+          console.log('[initialSelection] foundProvince:', foundProvince);
           if (foundProvince && !cancelled) {
             const regenciesRes = await fetch(`/api/postal/search?level=regency&parentId=${foundProvince.id}`);
             const regenciesData: { items: Array<{ id: string; name: string }> } = await regenciesRes.json();
