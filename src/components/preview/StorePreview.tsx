@@ -2314,19 +2314,30 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
     setLoading(true);
     (async () => {
       try {
+        // Try to match using all three levels (province, regency, district)
         const match = await matchWilayah({ province: initialSelection.province, city: initialSelection.regency, district: initialSelection.district });
-        if (cancelled || !match) {
-          setLoading(false);
-          return;
+        if (cancelled) return;
+
+        if (match) {
+          // Success: load villages for this district
+          setSelProvince(match.province);
+          setSelRegency(match.regency);
+          setSelDistrict(match.district);
+          setLevel('village');
+          const districtId = match.code.slice(0, 6);
+          const res = await fetch(`/api/postal/search?level=village&parentId=${districtId}`);
+          const data: { items: Array<{ id: string; name: string; postal?: string }> } = await res.json();
+          if (!cancelled) setVillages(data.items.map(v => ({ id: v.id, name: toTitleCase(v.name), postal: v.postal ?? '' })));
+        } else {
+          // Fallback: navigate to regency level at least (user can drill down from there)
+          setSelProvince(toTitleCase(initialSelection.province));
+          setSelRegency(toTitleCase(initialSelection.regency));
+          setLevel('district');
+          // Load districts for the regency
+          const regencyRes = await fetch(`/api/postal/search?level=district&parentId=${initialSelection.regency}`);
+          const regencyData: { items: Array<{ id: string; name: string }> } = await regencyRes.json();
+          if (!cancelled) setDistricts((regencyData.items ?? []).map(d => ({ id: d.id, name: toTitleCase(d.name) })));
         }
-        setSelProvince(match.province);
-        setSelRegency(match.regency);
-        setSelDistrict(match.district);
-        setLevel('village');
-        const districtId = match.code.slice(0, 6);
-        const res = await fetch(`/api/postal/search?level=village&parentId=${districtId}`);
-        const data: { items: Array<{ id: string; name: string; postal?: string }> } = await res.json();
-        if (!cancelled) setVillages(data.items.map(v => ({ id: v.id, name: toTitleCase(v.name), postal: v.postal ?? '' })));
       } catch (err) {
         console.error('[PostalCodePickerModal] initialSelection error:', err);
       } finally {
