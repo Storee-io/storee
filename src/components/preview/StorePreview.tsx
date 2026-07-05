@@ -2329,14 +2329,26 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
           const data: { items: Array<{ id: string; name: string; postal?: string }> } = await res.json();
           if (!cancelled) setVillages(data.items.map(v => ({ id: v.id, name: toTitleCase(v.name), postal: v.postal ?? '' })));
         } else {
-          // Fallback: navigate to regency level at least (user can drill down from there)
-          setSelProvince(toTitleCase(initialSelection.province));
-          setSelRegency(toTitleCase(initialSelection.regency));
-          setLevel('district');
-          // Load districts for the regency
-          const regencyRes = await fetch(`/api/postal/search?level=district&parentId=${initialSelection.regency}`);
-          const regencyData: { items: Array<{ id: string; name: string }> } = await regencyRes.json();
-          if (!cancelled) setDistricts((regencyData.items ?? []).map(d => ({ id: d.id, name: toTitleCase(d.name) })));
+          // Fallback: query regency by province name to get its ID, then districts, then villages
+          const regenciesRes = await fetch(`/api/postal/search?level=regency&parentId=${encodeURIComponent(initialSelection.province)}`);
+          const regenciesData: { items: Array<{ id: string; name: string }> } = await regenciesRes.json();
+          const foundRegency = regenciesData.items?.find(r => r.name.toLowerCase().includes(initialSelection.regency.toLowerCase()));
+          if (foundRegency) {
+            // Found the regency, now get districts
+            const districtsRes = await fetch(`/api/postal/search?level=district&parentId=${foundRegency.id}`);
+            const districtsData: { items: Array<{ id: string; name: string }> } = await districtsRes.json();
+            const foundDistrict = districtsData.items?.find(d => d.name.toLowerCase().includes(initialSelection.district.toLowerCase()));
+            if (foundDistrict) {
+              // Found the district, now get villages
+              setSelProvince(toTitleCase(initialSelection.province));
+              setSelRegency(toTitleCase(initialSelection.regency));
+              setSelDistrict(toTitleCase(initialSelection.district));
+              setLevel('village');
+              const villagesRes = await fetch(`/api/postal/search?level=village&parentId=${foundDistrict.id}`);
+              const villagesData: { items: Array<{ id: string; name: string; postal?: string }> } = await villagesRes.json();
+              if (!cancelled) setVillages(villagesData.items.map(v => ({ id: v.id, name: toTitleCase(v.name), postal: v.postal ?? '' })));
+            }
+          }
         }
       } catch (err) {
         console.error('[PostalCodePickerModal] initialSelection error:', err);
