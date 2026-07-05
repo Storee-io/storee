@@ -2314,51 +2314,24 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
     setLoading(true);
     (async () => {
       try {
-        console.log('[initialSelection] Attempting to load:', { province: initialSelection.province, regency: initialSelection.regency, district: initialSelection.district });
-        // Try to match using all three levels (province, regency, district)
-        const match = await matchWilayah({ province: initialSelection.province, city: initialSelection.regency, district: initialSelection.district });
-        console.log('[initialSelection] matchWilayah result:', match);
-        if (cancelled) return;
-
-        if (match) {
-          // Success: load villages for this district
-          setSelProvince(match.province);
-          setSelRegency(match.regency);
-          setSelDistrict(match.district);
-          setLevel('village');
-          const districtId = match.code.slice(0, 6);
-          const res = await fetch(`/api/postal/search?level=village&parentId=${districtId}`);
-          const data: { items: Array<{ id: string; name: string; postal?: string }> } = await res.json();
-          if (!cancelled) setVillages(data.items.map(v => ({ id: v.id, name: toTitleCase(v.name), postal: v.postal ?? '' })));
-        } else {
-          // Fallback: query full hierarchy by name to find district code
-          console.log('[initialSelection fallback] matchWilayah failed, using hierarchy matching');
-          const provincesRes = await fetch(`/api/postal/search?level=province`);
-          const provincesData: { items: Array<{ id: string; name: string }> } = await provincesRes.json();
-          console.log('[initialSelection] provinces:', provincesData.items);
-          const foundProvince = provincesData.items?.find(p => p.name.toLowerCase().includes(initialSelection.province.toLowerCase()));
-          console.log('[initialSelection] foundProvince:', foundProvince);
-          if (foundProvince && !cancelled) {
-            const regenciesRes = await fetch(`/api/postal/search?level=regency&parentId=${foundProvince.id}`);
-            const regenciesData: { items: Array<{ id: string; name: string }> } = await regenciesRes.json();
-            const foundRegency = regenciesData.items?.find(r => r.name.toLowerCase().includes(initialSelection.regency.toLowerCase()));
-            if (foundRegency && !cancelled) {
-              const districtsRes = await fetch(`/api/postal/search?level=district&parentId=${foundRegency.id}`);
-              const districtsData: { items: Array<{ id: string; name: string }> } = await districtsRes.json();
-              const foundDistrict = districtsData.items?.find(d => d.name.toLowerCase().includes(initialSelection.district.toLowerCase()));
-              if (foundDistrict && !cancelled) {
-                // Got district code, load villages
-                setSelProvince(toTitleCase(initialSelection.province));
-                setSelRegency(toTitleCase(initialSelection.regency));
-                setSelDistrict(toTitleCase(initialSelection.district));
-                setLevel('village');
-                const villagesRes = await fetch(`/api/postal/search?level=village&parentId=${foundDistrict.id}`);
-                const villagesData: { items: Array<{ id: string; name: string; postal?: string }> } = await villagesRes.json();
-                if (!cancelled) setVillages(villagesData.items.map(v => ({ id: v.id, name: toTitleCase(v.name), postal: v.postal ?? '' })));
-              }
-            }
-          }
+        // Match by regency + district only. We intentionally skip province because the form
+        // stores a normalized short name (e.g. "DKI Jakarta") that won't substring-match the
+        // full database name (e.g. "Daerah Khusus Ibukota Jakarta"). Regency + district is
+        // unique enough, and the match result carries the canonical province/regency names.
+        const match = await matchWilayah({ city: initialSelection.regency, district: initialSelection.district });
+        if (cancelled || !match) {
+          setLoading(false);
+          return;
         }
+        // Load villages for this district using the administrative code prefix
+        setSelProvince(match.province);
+        setSelRegency(match.regency);
+        setSelDistrict(match.district);
+        setLevel('village');
+        const districtId = match.code.slice(0, 6);
+        const res = await fetch(`/api/postal/search?level=village&parentId=${districtId}`);
+        const data: { items: Array<{ id: string; name: string; postal?: string }> } = await res.json();
+        if (!cancelled) setVillages(data.items.map(v => ({ id: v.id, name: toTitleCase(v.name), postal: v.postal ?? '' })));
       } catch (err) {
         console.error('[PostalCodePickerModal] initialSelection error:', err);
       } finally {
