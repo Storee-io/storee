@@ -2332,13 +2332,18 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
           // Fallback: use postal code to find district if available, then query hierarchy
           // This is more reliable than name matching for extracting the district code
           const searchRes = await fetch(`/api/postal/search?q=${encodeURIComponent(initialSelection.district)}&limit=1`);
-          const searchData: { villages?: Array<{ code: string; village: string; district: string; regency: string; province: string }> } = await searchRes.json();
+          const searchData = await searchRes.json();
 
           let districtId = '';
-          if (searchData.villages?.length > 0) {
+          if (searchData.villages?.length > 0 && searchData.villages[0]) {
             // Found village record - extract district code from its administrative code
-            districtId = searchData.villages[0].code.slice(0, 6);
-          } else {
+            const code = searchData.villages[0].code || searchData.villages[0].id;
+            if (typeof code === 'string') {
+              districtId = code.slice(0, 6);
+            }
+          }
+
+          if (!districtId) {
             // Last resort: query full hierarchy by name
             const provincesRes = await fetch(`/api/postal/search?level=province`);
             const provincesData: { items: Array<{ id: string; name: string }> } = await provincesRes.json();
