@@ -75,9 +75,12 @@ export async function GET(request: NextRequest) {
   }
 
   // Hierarchical matching: from widest (province) to narrowest (postal)
-  // Only match records that satisfy ALL provided filters
-  const matches = data.filter(v => {
-    if (province && !v.province.toLowerCase().includes(province)) return false;
+  // Only match records that satisfy ALL provided filters.
+  // `useProvince` lets us retry without the province filter: caller-supplied province names are
+  // often short/aliased (e.g. "DKI Jakarta") and won't substring-match the canonical database
+  // name ("Daerah Khusus Ibukota Jakarta"). Regency + district is unique enough on its own.
+  const filterMatches = (useProvince: boolean) => data.filter(v => {
+    if (useProvince && province && !v.province.toLowerCase().includes(province)) return false;
     if (regency && !v.regency.toLowerCase().includes(regency)) return false;
     if (district && !v.district.toLowerCase().includes(district)) return false;
     if (village && !v.village.toLowerCase().includes(village)) return false;
@@ -85,6 +88,9 @@ export async function GET(request: NextRequest) {
     if (q && !v.village.toLowerCase().includes(q) && !v.postal.startsWith(q)) return false;
     return true;
   });
+  // Prefer the province-constrained match; fall back to province-agnostic if it eliminates all.
+  let matches = filterMatches(true);
+  if (matches.length === 0 && province && (regency || district)) matches = filterMatches(false);
 
   // If we have hierarchical filters, return the first match (standardized data)
   if (province || regency || district || village || postal) {
@@ -109,7 +115,7 @@ export async function GET(request: NextRequest) {
   const provinceSeen = new Map<string, { id: string; name: string }>();
   const regencySeen = new Map<string, { id: string; name: string; province: string }>();
   const districtSeen = new Map<string, { id: string; name: string; regency: string; province: string }>();
-  const villages: Array<{ code: number | null; village: string; district: string; regency: string; province: string }> = [];
+  const villages: Array<{ code: number | null; wilayahCode: string; village: string; district: string; regency: string; province: string }> = [];
 
   for (const v of data) {
     const provinceId = v.code.slice(0, 2);
@@ -126,7 +132,7 @@ export async function GET(request: NextRequest) {
       districtSeen.set(districtId, { id: districtId, name: v.district, regency: v.regency, province: v.province });
 
     if (villages.length < limit && (v.village.toLowerCase().includes(key) || v.postal.startsWith(key)))
-      villages.push({ code: v.postal ? Number(v.postal) : null, village: v.village, district: v.district, regency: v.regency, province: v.province });
+      villages.push({ code: v.postal ? Number(v.postal) : null, wilayahCode: v.code, village: v.village, district: v.district, regency: v.regency, province: v.province });
   }
 
   return NextResponse.json({

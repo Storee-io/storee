@@ -1578,7 +1578,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
 const INDONESIAN_PROVINCES = ['Aceh','Bali','Banten','Bengkulu','DI Yogyakarta','DKI Jakarta','Gorontalo','Jambi','Jawa Barat','Jawa Tengah','Jawa Timur','Kalimantan Barat','Kalimantan Selatan','Kalimantan Tengah','Kalimantan Timur','Kalimantan Utara','Kepulauan Bangka Belitung','Kepulauan Riau','Lampung','Maluku','Maluku Utara','Nusa Tenggara Barat','Nusa Tenggara Timur','Papua','Papua Barat','Riau','Sulawesi Barat','Sulawesi Selatan','Sulawesi Tengah','Sulawesi Tenggara','Sulawesi Utara','Sumatera Barat','Sumatera Selatan','Sumatera Utara'];
 
 // ── LocationPickerModal ───────────────────────────────────────────────────────
-interface PickedLocation { address: string; city: string; postal: string; province: string; display: string; suburb: string; district: string }
+interface PickedLocation { address: string; city: string; postal: string; province: string; display: string; suburb: string; district: string; districtCode?: string }
 
 const NOMINATIM_SUPRA = new Set(['Nusa Tenggara', 'Jawa', 'Java', 'Sumatera', 'Sumatra', 'Kalimantan', 'Sulawesi', 'Papua', 'Maluku']);
 
@@ -1711,6 +1711,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
         display: data.display_name || '',
         suburb: village,
         district,
+        districtCode: match?.code ? match.code.slice(0, 6) : '',
       });
     } catch { /* ignore */ }
     finally { setGeocoding(false); setLocating(false); }
@@ -2250,6 +2251,10 @@ interface PostalResult {
   district: string;
   regency: string;
   province: string;
+  // Full administrative wilayah code (10 digits, e.g. "3173051001"). The first 6 digits are
+  // the district code (e.g. "317305" = Kebon Jeruk) — a stable unique key we store and reuse
+  // to reopen the picker directly at the district's village list without any text matching.
+  wilayahCode?: string;
 }
 
 // Wilayah Indonesia API types
@@ -2271,13 +2276,15 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
   initialQuery?: string;
   // When the postal field already has a value, jump straight into the village list of the
   // currently selected district instead of starting over from the province list.
-  initialSelection?: { province: string; regency: string; district: string };
+  // districtCode is the 6-digit wilayah code (e.g. "317305") used to fetch villages directly —
+  // the province/regency/district names are only for breadcrumb display.
+  initialSelection?: { districtCode: string; province: string; regency: string; district: string };
 }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const translations = uiT || UI_T.en;
   const [query, setQuery] = useState(initialSelection ? '' : initialQuery);
   type SearchNav = { id: string; name: string; type: 'province' | 'regency' | 'district'; province?: string; regency?: string };
-  type SearchVillage = { code: number | null; village: string; district: string; regency: string; province: string };
+  type SearchVillage = { code: number | null; wilayahCode?: string; village: string; district: string; regency: string; province: string };
   const [searchNav, setSearchNav] = useState<SearchNav[]>([]);
   const [searchVillages, setSearchVillages] = useState<SearchVillage[]>([]);
   const [searching, setSearching] = useState(false);
@@ -2307,29 +2314,20 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
       .catch(() => {});
   }, []);
 
-  // Postal already selected — resolve its district code and jump straight to the village list
+  // Postal already selected — jump straight to the village list using the stored district code.
+  // No text matching: the 6-digit wilayah code (e.g. "317305") is a stable unique key, so we
+  // fetch the district's villages directly. Names are used only for breadcrumb display.
   useEffect(() => {
-    if (!initialSelection?.district) return;
+    if (!initialSelection?.districtCode) return;
     let cancelled = false;
     setLoading(true);
     (async () => {
       try {
-        // Match by regency + district only. We intentionally skip province because the form
-        // stores a normalized short name (e.g. "DKI Jakarta") that won't substring-match the
-        // full database name (e.g. "Daerah Khusus Ibukota Jakarta"). Regency + district is
-        // unique enough, and the match result carries the canonical province/regency names.
-        const match = await matchWilayah({ city: initialSelection.regency, district: initialSelection.district });
-        if (cancelled || !match) {
-          setLoading(false);
-          return;
-        }
-        // Load villages for this district using the administrative code prefix
-        setSelProvince(match.province);
-        setSelRegency(match.regency);
-        setSelDistrict(match.district);
+        setSelProvince(initialSelection.province);
+        setSelRegency(initialSelection.regency);
+        setSelDistrict(initialSelection.district);
         setLevel('village');
-        const districtId = match.code.slice(0, 6);
-        const res = await fetch(`/api/postal/search?level=village&parentId=${districtId}`);
+        const res = await fetch(`/api/postal/search?level=village&parentId=${initialSelection.districtCode}`);
         const data: { items: Array<{ id: string; name: string; postal?: string }> } = await res.json();
         if (!cancelled) setVillages(data.items.map(v => ({ id: v.id, name: toTitleCase(v.name), postal: v.postal ?? '' })));
       } catch (err) {
@@ -2339,7 +2337,7 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
       }
     })();
     return () => { cancelled = true; };
-  }, [initialSelection?.district]);
+  }, [initialSelection?.districtCode]);
 
   // Handle initial query and focus search input
   useEffect(() => {
@@ -2451,6 +2449,7 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
       district: districtKey,
       regency: regencyKey,
       province: selProvince,
+      wilayahCode: village.id, // full 10-digit admin code
     });
   };
 
@@ -2598,7 +2597,7 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
                 <>
                   <div style={{ padding: '8px 16px 4px', fontSize: '10px', fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', borderTop: searchNav.length > 0 ? `1px solid ${alpha(t.divider, 0.15)}` : 'none', marginTop: searchNav.length > 0 ? '4px' : 0 }}>Kelurahan &amp; Kode Pos</div>
                   {searchVillages.map((r, i) => (
-                    <button key={i} type="button" onClick={() => onSelect({ code: r.code ?? 0, village: r.village, district: r.district, regency: r.regency, province: r.province })}
+                    <button key={i} type="button" onClick={() => onSelect({ code: r.code ?? 0, village: r.village, district: r.district, regency: r.regency, province: r.province, wilayahCode: r.wilayahCode })}
                       style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.12)}` : 'none', cursor: 'pointer', padding: '11px 16px', display: 'block' }}
                       onMouseEnter={e => (e.currentTarget.style.background = alpha(t.primary, 0.05))}
                       onMouseLeave={e => (e.currentTarget.style.background = 'none')}
@@ -2650,7 +2649,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; layoutStyle?: string; store?: Store;
   onBack: () => void; onPlaceOrder: (paymentId: string, shippingId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => void; editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
 }) {
-  const [form, setForm] = useState({ email: '', whatsapp: '', name: '', address: '', city: '', province: '', postal: '', village: '', district: '' });
+  const [form, setForm] = useState({ email: '', whatsapp: '', name: '', address: '', city: '', province: '', postal: '', village: '', district: '', districtCode: '' });
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const touch = (k: string) => setTouched(t => ({ ...t, [k]: true }));
 
@@ -2784,6 +2783,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
       city: loc.city || f.city,
       postal: loc.postal || f.postal,
       province: loc.province || f.province,
+      districtCode: loc.districtCode ?? '',
     }));
     setTouched(prev => ({ ...prev, address: false, city: false, postal: false }));
     setLastPickedLoc(loc);
@@ -2835,6 +2835,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 postal: postal || f.postal,
                 city: city || f.city,
                 province: province || f.province,
+                districtCode: match?.code ? match.code.slice(0, 6) : '',
               }));
               setLastPickedLoc({
                 address: parsed.address || '',
@@ -2878,11 +2879,11 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         t={t}
         uiT={uiT}
         initialQuery={form.postal}
-        initialSelection={form.district ? { province: form.province, regency: form.city, district: form.district } : undefined}
+        initialSelection={form.districtCode ? { districtCode: form.districtCode, province: form.province, regency: form.city, district: form.district } : undefined}
         onSelect={r => {
           const normalizedProvince = normalizeProvince(r.province);
           const matchedProvince = INDONESIAN_PROVINCES.find(p => p === normalizedProvince) ?? INDONESIAN_PROVINCES.find(p => p.toLowerCase().includes(r.province.toLowerCase())) ?? '';
-          setForm(f => ({ ...f, postal: String(r.code), village: r.village || '', district: r.district || '', city: r.regency, province: matchedProvince || r.province }));
+          setForm(f => ({ ...f, postal: String(r.code), village: r.village || '', district: r.district || '', city: r.regency, province: matchedProvince || r.province, districtCode: r.wilayahCode ? r.wilayahCode.slice(0, 6) : '' }));
           setTouched(prev => ({ ...prev, postal: false, city: false }));
           setShowPostalPicker(false);
         }}
@@ -3036,7 +3037,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                             {/* Remove button — × only */}
                             <button
                               type="button"
-                              onClick={e => { e.stopPropagation(); setLastPickedLoc(null); setLastPickedCoords(null); setForm(f => ({ ...f, address: '', postal: '', city: '', province: '' })); }}
+                              onClick={e => { e.stopPropagation(); setLastPickedLoc(null); setLastPickedCoords(null); setForm(f => ({ ...f, address: '', postal: '', city: '', province: '', village: '', district: '', districtCode: '' })); }}
                               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px', fontSize: '20px', fontWeight: 600, color: t.textMuted, lineHeight: 1, transition: 'all 0.2s', flexShrink: 0, marginLeft: '4px', marginRight: '-6px' }}
                               title="Remove location"
                               onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.transform = 'scale(1.35)'; const card = e.currentTarget.parentElement.parentElement; card.style.background = alpha(t.textMuted, 0.08); card.style.borderStyle = 'dashed'; card.style.borderColor = alpha(t.textMuted, 0.3); }}
