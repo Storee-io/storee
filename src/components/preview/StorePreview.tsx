@@ -2312,9 +2312,13 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
     if (!initialSelection?.district) return;
     let cancelled = false;
     setLoading(true);
-    matchWilayah({ province: initialSelection.province, city: initialSelection.regency, district: initialSelection.district })
-      .then(async match => {
-        if (cancelled || !match) return;
+    (async () => {
+      try {
+        const match = await matchWilayah({ province: initialSelection.province, city: initialSelection.regency, district: initialSelection.district });
+        if (cancelled || !match) {
+          setLoading(false);
+          return;
+        }
         setSelProvince(match.province);
         setSelRegency(match.regency);
         setSelDistrict(match.district);
@@ -2323,11 +2327,14 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
         const res = await fetch(`/api/postal/search?level=village&parentId=${districtId}`);
         const data: { items: Array<{ id: string; name: string; postal?: string }> } = await res.json();
         if (!cancelled) setVillages(data.items.map(v => ({ id: v.id, name: toTitleCase(v.name), postal: v.postal ?? '' })));
-      })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      } catch (err) {
+        console.error('[PostalCodePickerModal] initialSelection error:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
     return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialSelection?.district]);
 
   // Handle initial query and focus search input
   useEffect(() => {
