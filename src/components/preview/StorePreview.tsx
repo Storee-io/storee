@@ -2329,24 +2329,30 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
           const data: { items: Array<{ id: string; name: string; postal?: string }> } = await res.json();
           if (!cancelled) setVillages(data.items.map(v => ({ id: v.id, name: toTitleCase(v.name), postal: v.postal ?? '' })));
         } else {
-          // Fallback: query regency by province name to get its ID, then districts, then villages
-          const regenciesRes = await fetch(`/api/postal/search?level=regency&parentId=${encodeURIComponent(initialSelection.province)}`);
-          const regenciesData: { items: Array<{ id: string; name: string }> } = await regenciesRes.json();
-          const foundRegency = regenciesData.items?.find(r => r.name.toLowerCase().includes(initialSelection.regency.toLowerCase()));
-          if (foundRegency) {
-            // Found the regency, now get districts
-            const districtsRes = await fetch(`/api/postal/search?level=district&parentId=${foundRegency.id}`);
-            const districtsData: { items: Array<{ id: string; name: string }> } = await districtsRes.json();
-            const foundDistrict = districtsData.items?.find(d => d.name.toLowerCase().includes(initialSelection.district.toLowerCase()));
-            if (foundDistrict) {
-              // Found the district, now get villages
-              setSelProvince(toTitleCase(initialSelection.province));
-              setSelRegency(toTitleCase(initialSelection.regency));
-              setSelDistrict(toTitleCase(initialSelection.district));
-              setLevel('village');
-              const villagesRes = await fetch(`/api/postal/search?level=village&parentId=${foundDistrict.id}`);
-              const villagesData: { items: Array<{ id: string; name: string; postal?: string }> } = await villagesRes.json();
-              if (!cancelled) setVillages(villagesData.items.map(v => ({ id: v.id, name: toTitleCase(v.name), postal: v.postal ?? '' })));
+          // Fallback: query provinces first to get province code, then regencies, districts, villages
+          const provincesRes = await fetch(`/api/postal/search?level=province`);
+          const provincesData: { items: Array<{ id: string; name: string }> } = await provincesRes.json();
+          const foundProvince = provincesData.items?.find(p => p.name.toLowerCase().includes(initialSelection.province.toLowerCase()));
+          if (foundProvince) {
+            // Got province code, now query regencies
+            const regenciesRes = await fetch(`/api/postal/search?level=regency&parentId=${foundProvince.id}`);
+            const regenciesData: { items: Array<{ id: string; name: string }> } = await regenciesRes.json();
+            const foundRegency = regenciesData.items?.find(r => r.name.toLowerCase().includes(initialSelection.regency.toLowerCase()));
+            if (foundRegency) {
+              // Got regency code, now query districts
+              const districtsRes = await fetch(`/api/postal/search?level=district&parentId=${foundRegency.id}`);
+              const districtsData: { items: Array<{ id: string; name: string }> } = await districtsRes.json();
+              const foundDistrict = districtsData.items?.find(d => d.name.toLowerCase().includes(initialSelection.district.toLowerCase()));
+              if (foundDistrict) {
+                // Got district code, now load villages
+                setSelProvince(toTitleCase(initialSelection.province));
+                setSelRegency(toTitleCase(initialSelection.regency));
+                setSelDistrict(toTitleCase(initialSelection.district));
+                setLevel('village');
+                const villagesRes = await fetch(`/api/postal/search?level=village&parentId=${foundDistrict.id}`);
+                const villagesData: { items: Array<{ id: string; name: string; postal?: string }> } = await villagesRes.json();
+                if (!cancelled) setVillages(villagesData.items.map(v => ({ id: v.id, name: toTitleCase(v.name), postal: v.postal ?? '' })));
+              }
             }
           }
         }
