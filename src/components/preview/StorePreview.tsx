@@ -79,6 +79,8 @@ interface UiT {
   yourWishlist: string; wishlistEmpty: string;
   paymentInstructions: string; back: string; remove: string;
   searchResults: string;
+  chooseProvince: string; chooseRegency: string; chooseDistrict: string; chooseVillage: string;
+  searchPostal: string; postalLabel: string;
 }
 
 const UI_T: Record<string, UiT> = {
