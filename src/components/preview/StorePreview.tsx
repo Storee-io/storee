@@ -627,7 +627,7 @@ function StyleOnlySpan({
   const [isStyling, setIsStyling] = useState(false);
   const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
   const spanRef = useRef<HTMLSpanElement>(null);
-  const tipTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const tipTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Decode incoming value to prevent double-escaping of entities
   const decodedValue = decodeHtmlEntities(value);
@@ -1672,8 +1672,8 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   const [mapReady, setMapReady] = useState(false);
   const [locating, setLocating] = useState(!initialCoords || !initialLoc);
   const [geocoding, setGeocoding] = useState(false);
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
-  const geocodeTimer = useRef<ReturnType<typeof setTimeout>>();
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const geocodeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const currentCoordsRef = useRef<{ lat: number; lng: number }>(initialCoords ?? { lat: -6.2, lng: 106.8 });
   const skipNextGeocode = useRef(!!initialLoc);
 
