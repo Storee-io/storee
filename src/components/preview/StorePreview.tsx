@@ -1305,11 +1305,12 @@ function ProductDetailPage({ product, primaryColor, storeName, device, onBack, o
 }
 
 // ── Cart Sidebar ──────────────────────────────────────────────────────────────
-function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart, onCheckout, onUpdateQty, layoutStyle, editMode, previewShell }: {
+function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart, onCheckout, onUpdateQty, layoutStyle, editMode, previewShell, onFieldChange }: {
   cart: CartItem[]; primaryColor: string; fmtPrice: (n: number) => string;
   device: DeviceMode; layoutStyle?: string; editMode?: boolean; previewShell?: boolean;
   onClose: () => void; onViewCart: () => void; onCheckout: () => void;
   onUpdateQty: (id: string, delta: number) => void;
+  onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const t = getCommerceTheme(primaryColor, layoutStyle);
   const { uiT } = useStoreFlags();
@@ -10448,6 +10449,7 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
             onViewCart={() => { setShowCartSidebar(false); setPage('cart'); }}
             onCheckout={() => { setShowCartSidebar(false); setPage('checkout'); }}
             onUpdateQty={updateQty}
+            onFieldChange={onFieldChange}
           />
         )}
       </AnimatePresence>
