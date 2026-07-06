@@ -287,7 +287,7 @@ export interface StoreDesign {
   ctaText: string;
   accentColor: string;
   navLinks: string[];
-  collections: Array<{ name: string; emoji: string }>;
+  collections: Array<{ name: string; emoji: string; nameHtml?: string; emojiHtml?: string }>;
   products: RichProduct[];
   features: Array<{ icon: string; title: string; description: string }>;
   testimonials: Array<{ text: string; author: string; role: string; rating: number }>;
@@ -345,7 +345,7 @@ export interface ClaudeStoreResponse {
   heroSubtitle: string;
   ctaText: string;
   navLinks: string[];
-  collections: Array<{ name: string; emoji: string }>;
+  collections: Array<{ name: string; emoji: string; nameHtml?: string; emojiHtml?: string }>;
   products: Array<{
     name: string;
     price: number;

@@ -5548,7 +5548,7 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
 
 // ── Fallback layout (template-based stores without AI design) ─────────────────
 
-function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClick, cartCount, onUserClick, buyerEmail, wishlist, onToggleWishlist, onWishlistClick }: {
+function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClick, cartCount, onUserClick, buyerEmail, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: {
   store: Store; device: DeviceMode;
   onProductClick: (p: RichProduct) => void;
   onAddToCart: (p: RichProduct, sourceRect?: DOMRect) => void;
@@ -5559,6 +5559,7 @@ function FallbackLayout({ store, device, onProductClick, onAddToCart, onCartClic
   wishlist: Set<string>;
   onToggleWishlist: (id: string) => void;
   onWishlistClick?: () => void;
+  editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const primaryColor = store.primaryColor || '#10b981';
   const tt = getDefaultTokenTheme(primaryColor);
@@ -8410,10 +8411,11 @@ function CountdownSection({ design, tt, primaryColor, device, variant = 'centere
 
 // ── CATEGORY SPOTLIGHT SECTION ────────────────────────────────────────────────
 
-function CategorySpotlightSection({ design, tt, primaryColor, device, variant = 'editorial', sectionPy, onProductClick }: {
+function CategorySpotlightSection({ design, tt, primaryColor, device, variant = 'editorial', sectionPy, onProductClick, editMode, onFieldChange }: {
   design: StoreDesign; tt: TokenTheme; primaryColor: string;
   device: DeviceMode; variant?: string; sectionPy: number;
   onProductClick: (p: RichProduct) => void;
+  editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const pc = primaryColor;
@@ -8706,7 +8708,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
         return <CountdownSection key="countdown" design={design} tt={tt} primaryColor={primaryColor} device={device} variant={variant ?? undefined} sectionPy={sectionPy} />;
 
       case 'categorySpotlight':
-        return <CategorySpotlightSection key="categorySpotlight" design={design} tt={tt} primaryColor={primaryColor} device={device} variant={variant ?? undefined} sectionPy={sectionPy} onProductClick={onProductClick} />;
+        return <CategorySpotlightSection key="categorySpotlight" design={design} tt={tt} primaryColor={primaryColor} device={device} variant={variant ?? undefined} sectionPy={sectionPy} onProductClick={onProductClick} editMode={editMode} onFieldChange={onFieldChange} />;
 
       default:
         return null;
@@ -10362,7 +10364,7 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
   } else if (page === 'myorders' && buyerUser) {
     content = <MyOrdersPage buyerUserId={buyerUser.id} primaryColor={primaryColor} storeName={storeName} storeId={store.id} onBack={() => setPage('home')} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} editMode={editMode} onFieldChange={onFieldChange} />;
   } else if (!design) {
-    content = <FallbackLayout store={store} device={device} onProductClick={shared.onProductClick} onAddToCart={shared.onAddToCart} onCartClick={shared.onCartClick} cartCount={shared.cartCount} onUserClick={shared.onUserClick} buyerEmail={shared.buyerEmail} wishlist={shared.wishlist} onToggleWishlist={shared.onToggleWishlist} onWishlistClick={shared.onWishlistClick} />;
+    content = <FallbackLayout store={store} device={device} onProductClick={shared.onProductClick} onAddToCart={shared.onAddToCart} onCartClick={shared.onCartClick} cartCount={shared.cartCount} onUserClick={shared.onUserClick} buyerEmail={shared.buyerEmail} wishlist={shared.wishlist} onToggleWishlist={shared.onToggleWishlist} onWishlistClick={shared.onWishlistClick} editMode={editMode} onFieldChange={onFieldChange} />;
   } else {
     const props: LayoutProps = { storeName, primaryColor, design, device, fmtPrice, ...shared, editMode, onFieldChange };
     // Phase 1: route to new layout types based on layoutType token
