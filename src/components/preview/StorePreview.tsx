@@ -1930,7 +1930,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
             {/* Footer CTA */}
             <div style={{ padding: '14px 16px', borderTop: `1px solid ${t.divider}` }}>
               <button
-                onClick={() => { onChoose(loc, currentCoordsRef.current); onClose(); }}
+                onClick={() => { onChoose(loc, currentCoordsRef.current); onClose(currentCoordsRef.current); }}
                 disabled={!loc.display || geocoding}
                 style={{ width: '100%', padding: '13px', background: (loc.display && !geocoding) ? t.primary : t.surfaceBorder, color: (loc.display && !geocoding) ? t.primaryContrast : t.textMuted, borderRadius: t.btnRadius, fontWeight: 700, fontSize: '14px', cursor: (loc.display && !geocoding) ? 'pointer' : 'not-allowed', border: 'none', transition: 'background 0.15s' }}
               >
