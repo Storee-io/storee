@@ -215,7 +215,7 @@ function EditSpan({
   field: string;
   value: string;
   editMode?: boolean;
-  onFieldChange?: (field: string, value: string) => void;
+  onFieldChange?: (field: string, value: string, label?: string) => void;
   onPositionChange?: (field: string, offset: { x: number; y: number }) => void;
   fieldOffset?: { x: number; y: number };
   className?: string;
@@ -620,7 +620,7 @@ function StyleOnlySpan({
   tipMessage = 'Product text can only be edited in the Dashboard',
 }: {
   field: string; value: string; htmlValue?: string;
-  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
   className?: string; style?: React.CSSProperties;
   tipMessage?: string;
 }) {
@@ -788,7 +788,7 @@ interface LayoutProps {
   onWishlistClick: () => void;
   // Canvas editor — optional; only set when CanvasShell is active
   editMode?: boolean;
-  onFieldChange?: (field: string, value: string) => void;
+  onFieldChange?: (field: string, value: string, label?: string) => void;
   onArrayReorder?: (field: string, newItems: unknown[]) => void;
 }
 
@@ -1243,7 +1243,7 @@ function getCommerceTheme(primaryColor: string, layoutStyle?: string): CommerceT
 function ProductDetailPage({ product, primaryColor, storeName, device, onBack, onAddToCart, onCartClick, cartCount, fmtPrice, layoutStyle, editMode, onFieldChange }: {
   product: RichProduct; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
   onBack: () => void; onAddToCart: (p: RichProduct, sourceRect?: DOMRect) => void; onCartClick: () => void; cartCount: number;
-  layoutStyle?: string; editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  layoutStyle?: string; editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
@@ -1466,7 +1466,7 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
 function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, onUpdateQty, fmtPrice, layoutStyle, editMode, onFieldChange }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
   layoutStyle?: string;
-  onBack: () => void; onCheckout: () => void; onUpdateQty: (id: string, delta: number) => void; editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  onBack: () => void; onCheckout: () => void; onUpdateQty: (id: string, delta: number) => void; editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
   const isMobile = device === 'mobile';
@@ -2724,7 +2724,7 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
 function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, layoutStyle, editMode, onFieldChange, store }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
   shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; layoutStyle?: string; store?: Store;
-  onBack: () => void; onPlaceOrder: (paymentId: string, shippingId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => void; editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  onBack: () => void; onPlaceOrder: (paymentId: string, shippingId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => void; editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const [form, setForm] = useState({ email: '', whatsapp: '', name: '', address: '', city: '', province: '', postal: '', village: '', district: '', districtCode: '' });
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -3397,7 +3397,7 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
   buyerUser?: BuyerUser | null;
   onShowAuth?: () => void;
   onMyOrders?: () => void;
-  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const [copied, setCopied] = useState(false);
   const allMethods = paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS;
@@ -3892,7 +3892,7 @@ function BuyerAuthModal({ primaryColor, onClose, onSuccess, onLogout, buyerEmail
 
 function MobileMenuDrawer({ open, onClose, navLinks, primaryColor, storeName, onScrollToProducts, editMode, onFieldChange }: {
   open: boolean; onClose: () => void; navLinks: string[]; primaryColor: string; storeName: string;
-  onScrollToProducts?: () => void; editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  onScrollToProducts?: () => void; editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   if (!open) return null;
   return (
@@ -3972,7 +3972,7 @@ function MyOrdersPage({ buyerUserId, primaryColor, storeName, storeId, onBack, f
   onBack: () => void;
   fmtPrice: (n: number) => string;
   layoutStyle?: string;
-  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const [orders, setOrders] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
@@ -4135,7 +4135,7 @@ function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onPro
   fmtPrice: (amount: number) => string;
   layoutStyle?: string;
   device: DeviceMode;
-  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const t = getCommerceTheme(primaryColor, layoutStyle);
   const { uiT } = useStoreFlags();
@@ -7134,7 +7134,7 @@ function TkGridStaggered({ products, tt, primaryColor, device, onProductClick, o
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
-  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const cols = isMobile ? 2 : 3;
@@ -7182,7 +7182,7 @@ function TkGridOverlapping({ products, tt, primaryColor, device, onProductClick,
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
-  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
@@ -7241,7 +7241,7 @@ function TkGridAsymmetric({ products, tt, primaryColor, device, onProductClick, 
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
-  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
@@ -7296,7 +7296,7 @@ function TkGridStandard({ products, tt, primaryColor, device, onProductClick, on
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
-  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const arch = getAnimArchetype(tt.personality, tt.motion, tt.styleMix);
@@ -7370,7 +7370,7 @@ function TkGridMagazine({ products, tt, primaryColor, device, onProductClick, on
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
-  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const [featured, ...rest] = products;
@@ -7455,7 +7455,7 @@ function TkGridList({ products, tt, primaryColor, onProductClick, onAddToCart, o
   products: RichProduct[]; tt: TokenTheme; primaryColor: string;
   onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
-  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
   const dv = getDensityVars(tt.density);
@@ -7521,7 +7521,7 @@ function TkGridCarousel({ products, tt, primaryColor, device, onProductClick, on
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
-  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
@@ -7577,7 +7577,7 @@ function TkGridSpotlight({ products, tt, primaryColor, device, onProductClick, o
   products: RichProduct[]; tt: TokenTheme; primaryColor: string; device: DeviceMode;
   onProductClick: (p: RichProduct) => void; onAddToCart: (p: RichProduct, r?: DOMRect) => void;
   onToggleWishlist: (id: string) => void; wishlist: Set<string>; fmtPrice: (n: number) => string;
-  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const isMobile = device === 'mobile';
   const btnText = isDark(primaryColor) ? '#fff' : '#000';
@@ -9419,7 +9419,7 @@ function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart
   onAddToCart: (p: RichProduct, rect?: DOMRect) => void;
   onToggleWishlist: (id: string) => void;
   wishlist: Set<string>;
-  editMode?: boolean; onFieldChange?: (field: string, value: string) => void;
+  editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const cv = cardVars ?? { background: 'transparent', border: 'none', boxShadow: 'none' };
   const wh = hoverMotion ?? { y: -2 };
