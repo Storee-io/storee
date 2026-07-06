@@ -1805,30 +1805,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   const selectResult = (r: any) => {
     const postcode = (r.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
     const parsed = parseDisplayName(r.display_name, postcode);
-
-    // Query API to get accurate kelurahan + wilayah code from database (parseDisplayName is unreliable for suburb)
-    if (postcode) {
-      const p = new URLSearchParams();
-      p.set('postal', postcode);
-      fetch(`/api/postal/search?${p}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.match) {
-            // Use database match to override parsed values with accurate data
-            parsed.suburb = data.match.village;
-            parsed.district = data.match.district;
-            parsed.city = data.match.regency;
-            parsed.province = data.match.province;
-            parsed.postal = String(data.match.postal ?? postcode);
-            parsed.districtCode = data.match.code.slice(0, 6);
-          }
-          setLoc(parsed);
-        })
-        .catch(() => setLoc(parsed));
-    } else {
-      setLoc(parsed);
-    }
-
+    setLoc(parsed);
     skipNextGeocode.current = true;
     panTo(parseFloat(r.lat), parseFloat(r.lon), 16);
     setSearchResults([]);
