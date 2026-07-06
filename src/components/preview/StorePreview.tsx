@@ -1802,10 +1802,32 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     }, 400);
   };
 
-  const selectResult = (r: any) => {
+  const selectResult = async (r: any) => {
     const postcode = (r.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
     const parsed = parseDisplayName(r.display_name, postcode);
-    setLoc(parsed);
+
+    // Use Nominatim's structured address fields (not text-parsed display_name) for the
+    // village, same as the address-suggestion path — display_name parsing intentionally
+    // skips suburb/village since its position in the string is unreliable.
+    let village = r.address?.village ?? r.address?.neighbourhood ?? r.address?.hamlet ?? r.address?.locality ?? r.address?.suburb ?? '';
+    let district = r.address?.district ?? parsed.district ?? '';
+    let city = r.address?.city ?? r.address?.county ?? parsed.city ?? '';
+    let province = parsed.province ?? '';
+    let postal = postcode || parsed.postal || '';
+
+    // Match against wilayah-full.json hierarchically, including village — this is the
+    // discriminator that picks the correct village within a district (regency+district
+    // alone can match the wrong village when a district has several).
+    const match = await matchWilayah({ province, city, district, village, postal });
+    if (match) {
+      village = match.village;
+      district = match.district;
+      city = match.regency;
+      province = match.province;
+      postal = match.postal;
+    }
+
+    setLoc({ ...parsed, suburb: village, district, city, province, postal, districtCode: match?.code ? match.code.slice(0, 6) : undefined });
     skipNextGeocode.current = true;
     panTo(parseFloat(r.lat), parseFloat(r.lon), 16);
     setSearchResults([]);
