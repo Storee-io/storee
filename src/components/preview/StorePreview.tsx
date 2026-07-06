@@ -78,6 +78,7 @@ interface UiT {
   deliveryDays: string; returns: string; freeReturns: string;
   yourWishlist: string; wishlistEmpty: string;
   paymentInstructions: string; back: string; remove: string;
+  searchResults: string;
 }
 
 const UI_T: Record<string, UiT> = {
