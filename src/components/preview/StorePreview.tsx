@@ -1804,7 +1804,8 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
 
   const selectResult = (r: any) => {
     const postcode = (r.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
-    setLoc(parseDisplayName(r.display_name, postcode));
+    const parsed = parseDisplayName(r.display_name, postcode);
+    setLoc(parsed);
     skipNextGeocode.current = true;
     panTo(parseFloat(r.lat), parseFloat(r.lon), 16);
     setSearchResults([]);
@@ -2775,19 +2776,41 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   };
 
   const handleLocationChosen = (loc: PickedLocation, coords: { lat: number; lng: number }) => {
-    setForm(f => ({
-      ...f,
-      address: loc.address || f.address,
-      village: loc.suburb || f.village,
-      district: loc.district || f.district,
-      city: loc.city || f.city,
-      postal: loc.postal || f.postal,
-      province: loc.province || f.province,
-      districtCode: loc.districtCode ?? '',
-    }));
-    setTouched(prev => ({ ...prev, address: false, city: false, postal: false }));
-    setLastPickedLoc(loc);
-    setLastPickedCoords(coords);
+    const updateForm = (finalLoc: PickedLocation) => {
+      setForm(f => ({
+        ...f,
+        address: finalLoc.address || f.address,
+        village: finalLoc.suburb || f.village,
+        district: finalLoc.district || f.district,
+        city: finalLoc.city || f.city,
+        postal: finalLoc.postal || f.postal,
+        province: finalLoc.province || f.province,
+        districtCode: finalLoc.districtCode ?? '',
+      }));
+      setTouched(prev => ({ ...prev, address: false, city: false, postal: false }));
+      setLastPickedLoc(finalLoc);
+      setLastPickedCoords(coords);
+    };
+
+    // If districtCode is missing but we have district + city, enrich via API
+    if (!loc.districtCode && loc.district && loc.city) {
+      const p = new URLSearchParams();
+      p.set('regency', loc.city);
+      p.set('district', loc.district);
+      fetch(`/api/postal/search?${p}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.match?.code) {
+            loc.districtCode = data.match.code.slice(0, 6);
+            if (!loc.suburb) loc.suburb = data.match.village || '';
+            if (!loc.postal) loc.postal = data.match.postal?.toString() ?? '';
+          }
+          updateForm(loc);
+        })
+        .catch(() => updateForm(loc));
+    } else {
+      updateForm(loc);
+    }
   };
 
   return (
