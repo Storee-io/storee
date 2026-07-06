@@ -2319,6 +2319,10 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
   const [selProvince, setSelProvince] = useState('');
   const [selRegency, setSelRegency] = useState('');
   const [selDistrict, setSelDistrict] = useState('');
+  // 6-digit district code for the current selection — lets breadcrumb clicks fetch the
+  // regency/district lists on demand even when we jumped straight to the village level
+  // via initialSelection (which never populates `regencies`/`districts`).
+  const [selDistrictCode, setSelDistrictCode] = useState('');
   const [provinces, setProvinces] = useState<WilayahItem[]>([]);
   const [regencies, setRegencies] = useState<WilayahItem[]>([]);
   const [districts, setDistricts] = useState<WilayahItem[]>([]);
@@ -2349,6 +2353,7 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
         setSelProvince(initialSelection.province);
         setSelRegency(initialSelection.regency);
         setSelDistrict(initialSelection.district);
+        setSelDistrictCode(initialSelection.districtCode);
         setLevel('village');
         const res = await fetch(`/api/postal/search?level=village&parentId=${initialSelection.districtCode}`);
         const data: { items: Array<{ id: string; name: string; postal?: string }> } = await res.json();
@@ -2454,6 +2459,7 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
 
   const handleDistrictClick = async (item: WilayahItem) => {
     setSelDistrict(item.name);
+    setSelDistrictCode(item.id);
     setLevel('village');
     setLoading(true);
     try {
@@ -2546,11 +2552,33 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
               {breadcrumb.map((b, i) => {
                 const levelOrder: PostalLevel[] = ['regency', 'district', 'village'];
                 const isLast = i === breadcrumb.length - 1;
-                const onClick = isLast ? undefined : () => {
+                const onClick = isLast ? undefined : async () => {
                   const target = levelOrder[i];
                   setLevel(target);
-                  if (i < 1) { setSelRegency(''); setDistricts([]); setSelDistrict(''); setVillages([]); }
-                  else if (i < 2) { setSelDistrict(''); setVillages([]); }
+                  if (i < 1) {
+                    setSelRegency(''); setDistricts([]); setSelDistrict(''); setVillages([]);
+                    // Jumped here via initialSelection (postal already picked), so `regencies`
+                    // was never fetched — load it now using the province code (first 2 digits).
+                    if (regencies.length === 0 && selDistrictCode) {
+                      setLoading(true);
+                      try {
+                        const items = await fetchLevel('regency', selDistrictCode.slice(0, 2));
+                        setRegencies(items.map(r => ({ id: r.id, name: toTitleCase(r.name) })));
+                      } catch { setRegencies([]); }
+                      finally { setLoading(false); }
+                    }
+                  } else if (i < 2) {
+                    setSelDistrict(''); setVillages([]);
+                    // Same gap for `districts` when jumping straight to the village level.
+                    if (districts.length === 0 && selDistrictCode) {
+                      setLoading(true);
+                      try {
+                        const items = await fetchLevel('district', selDistrictCode.slice(0, 4));
+                        setDistricts(items.map(d => ({ id: d.id, name: toTitleCase(d.name) })));
+                      } catch { setDistricts([]); }
+                      finally { setLoading(false); }
+                    }
+                  }
                 };
                 return (
                   <span key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
