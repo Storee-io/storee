@@ -540,7 +540,7 @@ export default function Products() {
   function toggleStatus(id: string) {
     setLocalProducts(prev => prev.map(p => {
       if (p.id === id) {
-        const updated = { ...p, status: p.status === 'Active' ? 'Draft' : 'Active' };
+        const updated: DashboardProduct = { ...p, status: p.status === 'Active' ? 'Draft' : 'Active' };
         updateProduct(updated); // Also save to API
         return updated;
       }
