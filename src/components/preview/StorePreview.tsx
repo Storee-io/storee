@@ -2482,10 +2482,33 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
     });
   };
 
-  const goBack = () => {
-    if (level === 'regency') { setLevel('province'); setSelProvince(''); setRegencies([]); }
-    else if (level === 'district') { setLevel('regency'); setSelRegency(''); setDistricts([]); }
-    else if (level === 'village') { setLevel('district'); setSelDistrict(''); setVillages([]); }
+  const goBack = async () => {
+    if (level === 'regency') {
+      setLevel('province'); setSelProvince(''); setRegencies([]);
+    } else if (level === 'district') {
+      setLevel('regency'); setSelRegency(''); setDistricts([]);
+      // Jumped straight to this level via initialSelection, so `regencies` was never
+      // fetched — load it now using the province code (first 2 digits of selDistrictCode).
+      if (regencies.length === 0 && selDistrictCode) {
+        setLoading(true);
+        try {
+          const items = await fetchLevel('regency', selDistrictCode.slice(0, 2));
+          setRegencies(items.map(r => ({ id: r.id, name: toTitleCase(r.name) })));
+        } catch { setRegencies([]); }
+        finally { setLoading(false); }
+      }
+    } else if (level === 'village') {
+      setLevel('district'); setSelDistrict(''); setVillages([]);
+      // Same gap for `districts` when jumping straight to the village level.
+      if (districts.length === 0 && selDistrictCode) {
+        setLoading(true);
+        try {
+          const items = await fetchLevel('district', selDistrictCode.slice(0, 4));
+          setDistricts(items.map(d => ({ id: d.id, name: toTitleCase(d.name) })));
+        } catch { setDistricts([]); }
+        finally { setLoading(false); }
+      }
+    }
   };
 
   const breadcrumb = [selProvince, selRegency, selDistrict].filter(Boolean);
