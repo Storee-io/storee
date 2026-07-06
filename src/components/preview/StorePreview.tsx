@@ -1669,7 +1669,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   const leafletMap = useRef<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [loc, setLoc] = useState<PickedLocation>(initialLoc ?? { address: '', city: '', postal: '', province: '', display: '' });
+  const [loc, setLoc] = useState<PickedLocation>(initialLoc ?? { address: '', city: '', postal: '', province: '', display: '', suburb: '', district: '' });
   const [mapReady, setMapReady] = useState(false);
   const [locating, setLocating] = useState(!initialCoords || !initialLoc);
   const [geocoding, setGeocoding] = useState(false);
