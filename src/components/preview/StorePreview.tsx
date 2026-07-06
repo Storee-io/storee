@@ -3920,9 +3920,10 @@ function MobileMenuDrawer({ open, onClose, navLinks, primaryColor, storeName, on
 
 // ── Search Overlay ────────────────────────────────────────────────────────────
 
-function SearchOverlay({ open, onClose, products, primaryColor, onProductClick, fmtPrice }: {
+function SearchOverlay({ open, onClose, products, primaryColor, onProductClick, fmtPrice, editMode, onFieldChange }: {
   open: boolean; onClose: () => void; products: RichProduct[]; primaryColor: string;
   onProductClick: (p: RichProduct) => void; fmtPrice: (n: number) => string;
+  editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
 }) {
   const [query, setQuery] = useState('');
   const results = query.trim()
@@ -10485,6 +10486,8 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
         primaryColor={primaryColor}
         onProductClick={(p) => { shared.onProductClick(p); setShowSearch(false); }}
         fmtPrice={fmtPrice}
+        editMode={editMode}
+        onFieldChange={onFieldChange}
       />
 
       {/* WhatsApp floating button */}
