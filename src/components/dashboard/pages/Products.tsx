@@ -117,7 +117,10 @@ interface ProductDetailProps {
 }
 
 function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps) {
-  const { storeData, setStoreData } = useStore();
+  const { storeData } = useStore();
+  // storeData is derived (useMemo) from activeStore and has no setter, so collections are
+  // tracked locally here — matches prior (never-persisted) behavior of this feature.
+  const [collections, setCollections] = useState<Collection[]>(storeData?.collections || []);
   const [name, setName] = useState(product.name);
   const [price, setPrice] = useState(String(product.price));
   const [stock, setStock] = useState(String(product.stock));
@@ -153,17 +156,11 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
       name,
       emoji,
     };
-    setStoreData(prev => ({
-      ...prev,
-      collections: [...(prev?.collections || []), newCollection],
-    }));
+    setCollections(prev => [...prev, newCollection]);
   };
 
   const handleDeleteCollection = (id: string) => {
-    setStoreData(prev => ({
-      ...prev,
-      collections: (prev?.collections || []).filter(c => c.id !== id),
-    }));
+    setCollections(prev => prev.filter(c => c.id !== id));
     if (selectedCollection === id) {
       setSelectedCollection('');
     }
@@ -314,7 +311,7 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
                 <p className="text-sm text-slate-600">
                   {selectedCollection
                     ? (() => {
-                        const col = storeData?.collections?.find(c => c.id === selectedCollection);
+                        const col = collections.find(c => c.id === selectedCollection);
                         return col ? `${col.emoji} ${col.name}` : 'Unknown';
                       })()
                     : 'No collection assigned'}
@@ -367,7 +364,7 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
       {/* Collection Modal */}
       <CollectionModal
         isOpen={showCollectionModal}
-        collections={storeData?.collections || []}
+        collections={collections}
         selectedCollection={selectedCollection}
         onClose={() => setShowCollectionModal(false)}
         onSelect={handleSelectCollection}
