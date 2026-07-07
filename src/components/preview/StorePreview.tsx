@@ -1839,7 +1839,10 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
 
   const inp: CSSProperties = { width: '100%', padding: '10px 14px', borderRadius: '8px', border: `1px solid ${t.inputBorder}`, background: t.inputBg, color: t.textPrimary, fontSize: '13px', outline: 'none', boxSizing: 'border-box' };
 
-  return createPortal(
+  // Rendered inline (not portaled to document.body) so position:fixed below is
+  // contained to the transformed frame wrapper in PreviewShell/CanvasShell —
+  // same pattern as PostalCodePickerModal — instead of covering the real viewport.
+  return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.55)', padding: '16px' }}>
       <div style={{ width: '100%', maxWidth: '480px', background: t.pageBg, borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: 'min(600px, 90vh)' }}>
         {/* Header */}
@@ -1941,8 +1944,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
         </div>
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
-    </div>,
-    document.body
+    </div>
   );
 }
 
