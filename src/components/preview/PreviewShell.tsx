@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect, Suspense, lazy } from 'react';
+import { useState, useRef, useCallback, useEffect, useLayoutEffect, Suspense, lazy } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Monitor, Tablet, Smartphone, Globe, Rocket, ArrowLeft, RefreshCw, X, Sparkles, Check, ChevronDown, PencilLine, LayoutDashboard } from 'lucide-react';
@@ -81,7 +81,11 @@ export default function PreviewShell({ store, from = null }: Props) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [frameSize, setFrameSize] = useState({ width: 0, height: 0 });
 
-  useEffect(() => {
+  // useLayoutEffect (not useEffect) so the frame gets its real size synchronously
+  // before the browser paints — otherwise frameSize stays {0,0} for the first
+  // paint, the frame renders unconstrained (briefly filling the whole canvas),
+  // and then snaps down once this runs, looking like a "zoom in then shrink" flash.
+  useLayoutEffect(() => {
     const el = canvasRef.current;
     if (!el) return;
     const compute = () => {
@@ -502,7 +506,7 @@ export default function PreviewShell({ store, from = null }: Props) {
             >
               <CartProvider storeId={liveStore.id}>
                 <WishlistProvider>
-                  <Suspense fallback={<div className="w-full h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /></div>}>
+                  <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" /></div>}>
                     <StorePreview store={liveStore} device={device} previewShell onPageChange={setCurrentPath} navigateRef={navigateRef} elementOverrides={liveStore.design?.elementOverrides} />
                   </Suspense>
                 </WishlistProvider>
