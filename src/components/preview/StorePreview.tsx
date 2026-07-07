@@ -924,8 +924,8 @@ function FlyingDot({ item, primaryColor, containerEl }: {
     return () => cancelAnimationFrame(raf1);
   }, []);
 
-  // Convert viewport coords → container-relative coords so the dot stays
-  // inside the preview frame and is clipped by its overflow:hidden.
+  // Convert viewport coords → container-relative coords so the dot's
+  // absolute positioning is relative to the preview frame.
   const containerRect = containerEl?.getBoundingClientRect();
   const ox = containerRect?.left ?? 0;
   const oy = containerRect?.top  ?? 0;
@@ -991,7 +991,7 @@ function FlyingDot({ item, primaryColor, containerEl }: {
     </div>
   );
 
-  // Portal into the preview container so the dot is clipped by its overflow:hidden.
+  // Portal into the preview container so coordinates line up with containerEl.
   if (typeof document === 'undefined' || !containerEl) return null;
   return createPortal(dot, containerEl);
 }
@@ -10408,11 +10408,19 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
       {!storeFlags.showReviews && (
         <style>{`[data-preview-root] [data-reviews-section]{display:none!important}`}</style>
       )}
-      {/* ── Store content — overflow:hidden clips layout overflow & fly dots ── */}
+      {/*
+        ── Store content ──
+        No overflow:hidden here (any overflow value other than visible on this
+        ancestor breaks position:sticky for descendants like the cart/checkout
+        headers — they'd stick to this box instead of the real scroll container
+        in PreviewShell/CanvasShell). The fly-to-cart dot below is no longer
+        clipped to this box as a result; it's a minor cosmetic trade-off since
+        both its source and target sit on-screen already.
+      */}
       <div
         ref={previewContainerRef}
         data-preview-root="1"
-        className="relative overflow-hidden"
+        className="relative"
         onClickCapture={editMode ? (e) => {
           const target = e.target as HTMLElement;
           // Never interfere with the text currently being edited.
@@ -10428,7 +10436,7 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
       >
         {content}
 
-        {/* Cart fly dots — must stay inside overflow:hidden so they are clipped */}
+        {/* Cart fly dots — positioned relative to this container (see FlyingDot) */}
         {flyItems.map(item => (
           <FlyingDot key={item.id} item={item} primaryColor={primaryColor} containerEl={previewContainerRef.current} />
         ))}
