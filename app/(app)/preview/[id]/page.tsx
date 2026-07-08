@@ -58,7 +58,9 @@ function PreviewLoadingSkeleton({ id, from, name, isPublished }: { id: string; f
         <div className="flex items-center flex-shrink-0">
           <div className="flex items-center bg-slate-100 rounded-xl h-8 px-[3px] gap-0.5">
             {[Monitor, Tablet, Smartphone].map((Icon, i) => (
-              <div key={i} className="p-1.5"><Icon className="w-3.5 h-3.5 text-slate-300" /></div>
+              <div key={i} className={`p-1.5 rounded-lg ${i === 0 ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400'}`}>
+                <Icon className="w-3.5 h-3.5" />
+              </div>
             ))}
           </div>
         </div>

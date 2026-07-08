@@ -45,7 +45,7 @@ function EditorLoadingSkeleton({ storeId, from, name, isPublished }: { storeId: 
             : <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-500">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />Draft
               </span>)}
-          <div className="h-5 w-px bg-slate-200 flex-shrink-0 ml-1" />
+          <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
           <div className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 text-sm font-medium">
             <MousePointerClick className="w-3.5 h-3.5" /><span className="hidden sm:inline">Edit</span>
           </div>
@@ -58,7 +58,9 @@ function EditorLoadingSkeleton({ storeId, from, name, isPublished }: { storeId: 
         <div className="flex items-center flex-shrink-0">
           <div className="flex items-center bg-slate-100 rounded-xl h-8 px-[3px] gap-0.5">
             {[Monitor, Tablet, Smartphone].map((Icon, i) => (
-              <div key={i} className="p-1.5"><Icon className="w-3.5 h-3.5 text-slate-300" /></div>
+              <div key={i} className={`p-1.5 rounded-lg ${i === 0 ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400'}`}>
+                <Icon className="w-3.5 h-3.5" />
+              </div>
             ))}
           </div>
         </div>
@@ -89,6 +91,23 @@ function EditorLoadingSkeleton({ storeId, from, name, isPublished }: { storeId: 
                 <Icon className="w-3.5 h-3.5" />{label}
               </div>
             ))}
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <div className="px-4 pt-4 pb-2">
+              <div className="h-2.5 w-40 rounded bg-slate-100 animate-pulse" />
+            </div>
+            <div className="px-3 pb-4 space-y-1.5">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-2 px-2.5 py-2 rounded-xl border bg-white border-slate-100">
+                  <div className="w-3.5 h-3.5 rounded bg-slate-100 animate-pulse flex-shrink-0" />
+                  <div className="w-6 h-6 rounded-lg bg-slate-100 animate-pulse flex-shrink-0" />
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="h-2.5 rounded bg-slate-100 animate-pulse" style={{ width: `${55 + (i % 3) * 12}%` }} />
+                    <div className="h-2 w-2/3 rounded bg-slate-100 animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </aside>
         <div className="flex-1 flex items-center justify-center bg-slate-50">
