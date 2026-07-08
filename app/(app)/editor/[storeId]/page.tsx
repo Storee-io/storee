@@ -84,7 +84,10 @@ function EditorLoadingSkeleton({ storeId, from, name, isPublished }: { storeId: 
         </div>
       </div>
       <div className="flex flex-1 overflow-hidden">
-        <aside className="flex-shrink-0 bg-white flex flex-col overflow-hidden" style={{ width: 280, isolation: 'isolate', boxShadow: '1px 0 2px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.05)' }}>
+        {/* width matches EditorShell's sidebarWidth default state (288) exactly —
+            any mismatch here resizes the Sections/Properties tabs the instant
+            the real component mounts. */}
+        <aside className="flex-shrink-0 bg-white flex flex-col overflow-hidden" style={{ width: 288, isolation: 'isolate', boxShadow: '1px 0 2px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.05)' }}>
           <div className="flex border-b border-slate-100 flex-shrink-0">
             {[{ label: 'Sections', Icon: Layout, active: true }, { label: 'Properties', Icon: Sparkles, active: false }].map(({ label, Icon, active }) => (
               <div
