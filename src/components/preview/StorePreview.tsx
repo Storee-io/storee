@@ -3337,8 +3337,21 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
           </div>
         </div>
 
-        {/* Right: order summary */}
-        <div className="shadow-sm p-5 space-y-3" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
+        {/* Right: order summary - sticky on desktop */}
+        <div
+          className="shadow-sm p-5 space-y-3"
+          style={{
+            background: t.surfaceBg,
+            border: `1px solid ${t.surfaceBorder}`,
+            borderRadius: t.surfaceRadius,
+            ...(!(isMobile || isTablet) ? {
+              position: 'sticky',
+              top: '60px',
+              maxHeight: 'calc(100vh - 80px)',
+              overflowY: 'auto'
+            } : {})
+          }}
+        >
           <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Order Summary ({cart.reduce((s, i) => s + i.qty, 0)} items)</h3>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {cart.map(({ product: p, qty }) => (
