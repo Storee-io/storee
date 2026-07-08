@@ -10125,6 +10125,31 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
   const [selectedShippingId, setSelectedShippingId] = useState('');
   const [selectedPaymentId, setSelectedPaymentId] = useState('');
 
+  // Load product from slug when navigating via deep link (e.g. /product/bjrk-linen-sofa--sand)
+  useEffect(() => {
+    if (page !== 'product' || selectedProduct || !store.design?.products) return;
+
+    const match = initialPath?.match(/^\/product\/(.+)$/);
+    if (!match) {
+      // Invalid product path, go home
+      setPage('home');
+      return;
+    }
+
+    const slug = match[1];
+    const product = (store.design.products as RichProduct[]).find(p => {
+      const pSlug = p.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      return pSlug === slug;
+    });
+
+    if (product) {
+      setSelectedProduct(product);
+    } else {
+      // Product not found, go home
+      setPage('home');
+    }
+  }, [page, selectedProduct, initialPath, store.design?.products]);
+
   // Auto-close cart sidebar when navigating to cart/checkout page
   useEffect(() => {
     if (page === 'cart' || page === 'checkout') setShowCartSidebar(false);
