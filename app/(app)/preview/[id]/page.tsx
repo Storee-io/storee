@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useState, useLayoutEffect } from 'react';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Monitor, Tablet, Smartphone, PencilLine, Rocket, LayoutDashboard } from 'lucide-react';
 import { useStore } from '@/src/context/StoreContext';
 import PreviewShell from '@/src/components/preview/PreviewShell';
@@ -10,12 +10,24 @@ import type { Store } from '@/src/context/StoreContext';
 // Mirrors PreviewShell's toolbar layout so the header appears instantly (same
 // position/shape) while the store is still loading, instead of a bare spinner
 // that makes the whole header look like it "pops in" once data arrives.
-function PreviewLoadingSkeleton() {
+//
+// Back and Editor don't need the full store object — just the id, which is
+// already in the URL — so they're real, clickable buttons here, not greyed-out
+// placeholders. Only the store name (genuinely unknown until data loads) and
+// Publish (needs the full store to open its modal) are shown as placeholders.
+function PreviewLoadingSkeleton({ id, from }: { id: string; from: string | null }) {
+  const router = useRouter();
+  const backHref = from ?? '/';
   return (
     <div className="h-screen bg-slate-100 flex flex-col overflow-hidden font-sans">
       <div className="bg-white border-b border-slate-200 px-4 sm:px-6 h-12 flex items-center gap-3 flex-shrink-0 z-10" style={{ isolation: 'isolate', boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <ArrowLeft className="w-4 h-4 text-slate-300 flex-shrink-0" />
+          <button
+            onClick={() => router.push(backHref)}
+            className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 transition-colors flex-shrink-0"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
           <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
           <div className="h-4 w-28 rounded bg-slate-100 animate-pulse" />
         </div>
@@ -27,9 +39,12 @@ function PreviewLoadingSkeleton() {
           </div>
         </div>
         <div className="flex items-center gap-1 flex-1 justify-end">
-          <div className="flex items-center gap-1.5 px-3.5 py-1.5 text-slate-300 text-sm font-medium">
+          <button
+            onClick={() => router.push(`/editor/${id}?from=${encodeURIComponent(`/preview/${id}`)}`)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors"
+          >
             <PencilLine className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Editor</span>
-          </div>
+          </button>
           <div className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 text-slate-300 text-sm font-medium rounded-xl">
             <Rocket className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Publish</span>
           </div>
@@ -56,7 +71,14 @@ export default function PreviewByIdPage() {
   // Don't use generatedStore from context as it may be from previous session
   const displayStore = store;
 
-  useEffect(() => {
+  // useLayoutEffect (not useEffect) so that when the store is already loaded —
+  // e.g. navigating in from the dashboard, where `stores` is already populated —
+  // it resolves synchronously before the browser paints, skipping the loading
+  // skeleton entirely instead of flashing it for one frame while an effect
+  // catches up. Initial state must still start at null (not a lazy initializer
+  // reading context) so server and client agree on the first render and avoid
+  // a hydration mismatch — this only fills in after mount, client-side only.
+  useLayoutEffect(() => {
     const id = params.id;
 
     // 1. Already in context (e.g. dashboard navigation or context loaded)
@@ -155,7 +177,7 @@ export default function PreviewByIdPage() {
   }
 
   if (!displayStore) {
-    return <PreviewLoadingSkeleton />;
+    return <PreviewLoadingSkeleton id={params.id} from={from} />;
   }
 
   return <PreviewShell store={displayStore} from={from} />;

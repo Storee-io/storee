@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, MousePointerClick, Undo2, Redo2, History, Monitor, Tablet, Smartphone, Eye, Rocket, Layout, Sparkles } from 'lucide-react';
 import { useStore } from '@/src/context/StoreContext';
 import EditorShell from '@/src/components/editor/EditorShell';
@@ -14,14 +14,23 @@ interface Props {
 // Mirrors EditorShell's top bar + sidebar layout so the chrome appears
 // instantly (same position/shape) while the store is still loading, instead
 // of a bare centered spinner that makes the whole header "pop in" once data
-// arrives — only the dynamic bits (name, undo/redo state, autosave status)
-// are missing until the real EditorShell mounts.
-function EditorLoadingSkeleton() {
+// arrives. Back and Preview only need the storeId (already in the URL), so
+// they're real buttons here — only the dynamic bits that genuinely depend on
+// the loaded store/editor state (name, undo/redo, autosave status, Publish)
+// stay as placeholders.
+function EditorLoadingSkeleton({ storeId, from }: { storeId: string; from: string | null }) {
+  const router = useRouter();
+  const backHref = from ?? `/preview/${storeId}`;
   return (
     <div className="flex flex-col h-screen bg-white overflow-hidden font-sans">
       <div className="bg-white border-b border-slate-200 px-4 sm:px-6 h-12 flex items-center gap-3 flex-shrink-0 z-10" style={{ isolation: 'isolate', boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <ArrowLeft className="w-4 h-4 text-slate-300 flex-shrink-0" />
+          <button
+            onClick={() => router.push(backHref)}
+            className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 transition-colors flex-shrink-0"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
           <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
           <div className="h-4 w-28 rounded bg-slate-100 animate-pulse" />
           <div className="h-5 w-px bg-slate-200 flex-shrink-0 ml-1" />
@@ -42,9 +51,12 @@ function EditorLoadingSkeleton() {
           </div>
         </div>
         <div className="flex items-center gap-1 flex-1 justify-end">
-          <div className="flex items-center gap-1.5 px-3.5 py-1.5 text-slate-300 text-sm font-medium">
+          <button
+            onClick={() => router.push(`/preview/${storeId}`)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors"
+          >
             <Eye className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Preview</span>
-          </div>
+          </button>
           <div className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 text-slate-300 text-sm font-medium rounded-xl">
             <Rocket className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Publish</span>
           </div>
@@ -79,7 +91,7 @@ function EditorInner({ storeId }: { storeId: string }) {
   // Always wait for mount so server and client render the same initial HTML
   // (the skeleton is fully static, so it's safe to render identically on both).
   if (!mounted) {
-    return <EditorLoadingSkeleton />;
+    return <EditorLoadingSkeleton storeId={storeId} from={from} />;
   }
 
   // Try to find the store by ID — never silently fall back to a different store.
@@ -105,7 +117,7 @@ function EditorInner({ storeId }: { storeId: string }) {
   })();
 
   if (!store) {
-    return <EditorLoadingSkeleton />;
+    return <EditorLoadingSkeleton storeId={storeId} from={from} />;
   }
 
   return <EditorShell store={store} from={from} />;
