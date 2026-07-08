@@ -27,7 +27,7 @@ function PreviewLoadingSkeleton({ id, from, name, isPublished }: { id: string; f
   const router = useRouter();
   const backHref = from ?? '/';
   return (
-    <div className="h-screen bg-slate-100 flex flex-col overflow-hidden font-sans">
+    <div className="h-screen bg-slate-100 flex flex-col overflow-hidden font-sans" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', colorScheme: 'light' }}>
       <div className="bg-white border-b border-slate-200 px-4 sm:px-6 h-12 flex items-center gap-3 flex-shrink-0 z-10" style={{ isolation: 'isolate', boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <button
