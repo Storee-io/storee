@@ -3346,8 +3346,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             borderRadius: t.surfaceRadius,
             ...(!(isMobile || isTablet) ? {
               position: 'sticky',
-              top: '60px',
-              maxHeight: 'calc(100vh - 80px)',
+              top: '80px',
+              maxHeight: 'calc(100vh - 100px)',
               overflowY: 'auto'
             } : {})
           }}
