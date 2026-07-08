@@ -2,7 +2,7 @@
 
 import { useState, useLayoutEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Monitor, Tablet, Smartphone, PencilLine, Rocket, LayoutDashboard } from 'lucide-react';
+import { ArrowLeft, Monitor, Tablet, Smartphone, PencilLine, Rocket, LayoutDashboard, RefreshCw } from 'lucide-react';
 import { useStore } from '@/src/context/StoreContext';
 import PreviewShell from '@/src/components/preview/PreviewShell';
 import type { Store } from '@/src/context/StoreContext';
@@ -11,13 +11,18 @@ import type { Store } from '@/src/context/StoreContext';
 // position/shape) while the store is still loading, instead of a bare spinner
 // that makes the whole header look like it "pops in" once data arrives.
 //
-// Back and Editor don't need the full store object — just the id, which is
-// already in the URL — so they're real, clickable buttons here, not greyed-out
-// placeholders. `name`/`isPublished` come from the slim SSR-cookie-seeded
-// activeStore when available (see StoreContext's storee_active_store cookie),
-// so the real name and Draft/Live badge show immediately instead of a pulse —
-// only Publish (needs the full store with design to open its modal) and the
-// name (when truly unknown, e.g. a cold/shared link) stay as placeholders.
+// Back, Editor, and Dashboard don't need the full store object — just the id,
+// which is already in the URL — so they're real, clickable buttons here, not
+// greyed-out placeholders. `name`/`isPublished` come from the slim
+// SSR-cookie-seeded activeStore when available (see StoreContext's
+// storee_active_store cookie), so the real name and Draft/Live badge show
+// immediately instead of a pulse. Regenerate needs the full store (prompt,
+// colors, etc.) to pre-fill its modal, so it's disabled — but styled with the
+// same disabled:opacity-40 treatment the real button already uses (not the
+// heavier grey-placeholder style), since the button itself isn't unknown,
+// just momentarily unusable. Publish (needs the full store to open its
+// modal) and the name (when truly unknown, e.g. a cold/shared link) are the
+// only genuine placeholders left.
 function PreviewLoadingSkeleton({ id, from, name, isPublished }: { id: string; from: string | null; name?: string; isPublished?: boolean }) {
   const router = useRouter();
   const backHref = from ?? '/';
@@ -42,6 +47,13 @@ function PreviewLoadingSkeleton({ id, from, name, isPublished }: { id: string; f
             : <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-500">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />Draft
               </span>)}
+          <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
+          <button
+            disabled
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40"
+          >
+            <RefreshCw className="w-3.5 h-3.5 flex-shrink-0" /><span className="hidden sm:inline">Regenerate</span>
+          </button>
         </div>
         <div className="flex items-center flex-shrink-0">
           <div className="flex items-center bg-slate-100 rounded-xl h-8 px-[3px] gap-0.5">
@@ -61,7 +73,12 @@ function PreviewLoadingSkeleton({ id, from, name, isPublished }: { id: string; f
             <Rocket className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Publish</span>
           </div>
           <div className="w-px h-5 bg-slate-200 mx-0.5 flex-shrink-0" />
-          <LayoutDashboard className="w-4 h-4 text-slate-300 p-2 box-content" />
+          <button
+            onClick={() => router.push(`/dashboard?storeId=${id}`)}
+            className="p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+          >
+            <LayoutDashboard className="w-4 h-4" />
+          </button>
         </div>
       </div>
       <div className="flex-1 flex items-center justify-center">

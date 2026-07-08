@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, MousePointerClick, Undo2, Redo2, History, Monitor, Tablet, Smartphone, Eye, Rocket, Layout, Sparkles } from 'lucide-react';
+import { ArrowLeft, MousePointerClick, Undo2, Redo2, History, Monitor, Tablet, Smartphone, Eye, Rocket, Layout, Sparkles, LayoutDashboard } from 'lucide-react';
 import { useStore } from '@/src/context/StoreContext';
 import EditorShell from '@/src/components/editor/EditorShell';
 import { use } from 'react';
@@ -14,13 +14,13 @@ interface Props {
 // Mirrors EditorShell's top bar + sidebar layout so the chrome appears
 // instantly (same position/shape) while the store is still loading, instead
 // of a bare centered spinner that makes the whole header "pop in" once data
-// arrives. Back and Preview only need the storeId (already in the URL), so
-// they're real buttons here. `name`/`isPublished` come from the slim
+// arrives. Back, Preview, and Dashboard only need the storeId (already in the
+// URL), so they're real buttons here. `name`/`isPublished` come from the slim
 // SSR-cookie-seeded activeStore when available (see StoreContext's
 // storee_active_store cookie), so the real name and Draft/Live badge show
-// immediately — only Publish and the truly editor-only state (undo/redo,
-// autosave status, which don't exist until EditorShell itself mounts) stay
-// as placeholders.
+// immediately. Only Publish and the truly editor-only state (undo/redo,
+// autosave status — nothing to undo/save until EditorShell itself mounts)
+// stay as placeholders.
 function EditorLoadingSkeleton({ storeId, from, name, isPublished }: { storeId: string; from: string | null; name?: string; isPublished?: boolean }) {
   const router = useRouter();
   const backHref = from ?? `/preview/${storeId}`;
@@ -72,6 +72,13 @@ function EditorLoadingSkeleton({ storeId, from, name, isPublished }: { storeId: 
           <div className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 text-slate-300 text-sm font-medium rounded-xl">
             <Rocket className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Publish</span>
           </div>
+          <div className="w-px h-5 bg-slate-200 mx-0.5 flex-shrink-0" />
+          <button
+            onClick={() => router.push(`/dashboard?storeId=${storeId}`)}
+            className="p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+          >
+            <LayoutDashboard className="w-4 h-4" />
+          </button>
         </div>
       </div>
       <div className="flex flex-1 overflow-hidden">
