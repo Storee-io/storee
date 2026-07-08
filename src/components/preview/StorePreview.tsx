@@ -10166,12 +10166,26 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
   // Reset scroll position to top when navigating to a new page (instant, no animation)
   useEffect(() => {
     const resetScroll = () => {
+      // Reset window scroll
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
       window.scrollTo(0, 0);
+
+      // Reset all scrollable containers (check computed style, not just inline)
+      document.querySelectorAll('*').forEach(el => {
+        const computed = window.getComputedStyle(el);
+        if ((computed.overflowY === 'auto' || computed.overflowY === 'scroll') && (el as HTMLElement).scrollTop > 0) {
+          (el as HTMLElement).scrollTop = 0;
+        }
+      });
     };
-    // Use requestAnimationFrame to ensure DOM is updated before scrolling
+
+    // Reset immediately
+    resetScroll();
+
+    // Also reset after paint and after a small delay to catch any late restores
     requestAnimationFrame(resetScroll);
+    setTimeout(resetScroll, 0);
   }, [page]);
 
   // Notify parent of page/path changes — uses STORE_PAGE_PATHS as single source of truth
