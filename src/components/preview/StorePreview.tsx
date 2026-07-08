@@ -10156,9 +10156,10 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
     if (page === 'cart' || page === 'checkout') setShowCartSidebar(false);
   }, [page]);
 
-  // Reset scroll position to top when navigating to a new page
+  // Reset scroll position to top when navigating to a new page (instant, no animation)
   useEffect(() => {
-    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }, [page]);
 
   // Notify parent of page/path changes — uses STORE_PAGE_PATHS as single source of truth
