@@ -13,9 +13,12 @@ import type { Store } from '@/src/context/StoreContext';
 //
 // Back and Editor don't need the full store object — just the id, which is
 // already in the URL — so they're real, clickable buttons here, not greyed-out
-// placeholders. Only the store name (genuinely unknown until data loads) and
-// Publish (needs the full store to open its modal) are shown as placeholders.
-function PreviewLoadingSkeleton({ id, from }: { id: string; from: string | null }) {
+// placeholders. `name`/`isPublished` come from the slim SSR-cookie-seeded
+// activeStore when available (see StoreContext's storee_active_store cookie),
+// so the real name and Draft/Live badge show immediately instead of a pulse —
+// only Publish (needs the full store with design to open its modal) and the
+// name (when truly unknown, e.g. a cold/shared link) stay as placeholders.
+function PreviewLoadingSkeleton({ id, from, name, isPublished }: { id: string; from: string | null; name?: string; isPublished?: boolean }) {
   const router = useRouter();
   const backHref = from ?? '/';
   return (
@@ -29,7 +32,16 @@ function PreviewLoadingSkeleton({ id, from }: { id: string; from: string | null 
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
-          <div className="h-4 w-28 rounded bg-slate-100 animate-pulse" />
+          {name
+            ? <span className="font-semibold text-slate-900 text-sm sm:text-base truncate">{name}</span>
+            : <div className="h-4 w-28 rounded bg-slate-100 animate-pulse" />}
+          {name && (isPublished
+            ? <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />Live
+              </span>
+            : <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-500">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />Draft
+              </span>)}
         </div>
         <div className="flex items-center flex-shrink-0">
           <div className="flex items-center bg-slate-100 rounded-xl h-8 px-[3px] gap-0.5">
@@ -63,9 +75,14 @@ export default function PreviewByIdPage() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
-  const { addStore, setGeneratedStore, generatedStore, stores, setActiveStore } = useStore();
+  const { addStore, setGeneratedStore, generatedStore, stores, setActiveStore, activeStore } = useStore();
   const [store, setStore] = useState<Store | null>(null);
   const [notFound, setNotFound] = useState(false);
+
+  // activeStore is seeded synchronously from the storee_active_store SSR cookie
+  // (see app/(app)/layout.tsx), so it's identical on server and first client
+  // render — safe to read directly without a hydration mismatch, unlike `stores`.
+  const slimActiveStore = activeStore?.id === params.id ? activeStore : null;
 
   // Always use store loaded from context/API based on params.id
   // Don't use generatedStore from context as it may be from previous session
@@ -177,7 +194,14 @@ export default function PreviewByIdPage() {
   }
 
   if (!displayStore) {
-    return <PreviewLoadingSkeleton id={params.id} from={from} />;
+    return (
+      <PreviewLoadingSkeleton
+        id={params.id}
+        from={from}
+        name={slimActiveStore?.name}
+        isPublished={slimActiveStore?.status === 'Published'}
+      />
+    );
   }
 
   return <PreviewShell store={displayStore} from={from} />;

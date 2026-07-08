@@ -15,10 +15,13 @@ interface Props {
 // instantly (same position/shape) while the store is still loading, instead
 // of a bare centered spinner that makes the whole header "pop in" once data
 // arrives. Back and Preview only need the storeId (already in the URL), so
-// they're real buttons here — only the dynamic bits that genuinely depend on
-// the loaded store/editor state (name, undo/redo, autosave status, Publish)
-// stay as placeholders.
-function EditorLoadingSkeleton({ storeId, from }: { storeId: string; from: string | null }) {
+// they're real buttons here. `name`/`isPublished` come from the slim
+// SSR-cookie-seeded activeStore when available (see StoreContext's
+// storee_active_store cookie), so the real name and Draft/Live badge show
+// immediately — only Publish and the truly editor-only state (undo/redo,
+// autosave status, which don't exist until EditorShell itself mounts) stay
+// as placeholders.
+function EditorLoadingSkeleton({ storeId, from, name, isPublished }: { storeId: string; from: string | null; name?: string; isPublished?: boolean }) {
   const router = useRouter();
   const backHref = from ?? `/preview/${storeId}`;
   return (
@@ -32,7 +35,16 @@ function EditorLoadingSkeleton({ storeId, from }: { storeId: string; from: strin
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
-          <div className="h-4 w-28 rounded bg-slate-100 animate-pulse" />
+          {name
+            ? <span className="font-semibold text-slate-900 text-sm sm:text-base truncate">{name}</span>
+            : <div className="h-4 w-28 rounded bg-slate-100 animate-pulse" />}
+          {name && (isPublished
+            ? <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />Live
+              </span>
+            : <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-500">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />Draft
+              </span>)}
           <div className="h-5 w-px bg-slate-200 flex-shrink-0 ml-1" />
           <div className="flex items-center gap-1.5 px-3 py-1.5 text-slate-300 text-sm font-medium">
             <MousePointerClick className="w-3.5 h-3.5" /><span className="hidden sm:inline">Edit</span>
@@ -88,10 +100,16 @@ function EditorInner({ storeId }: { storeId: string }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  // activeStore is seeded synchronously from the storee_active_store SSR cookie
+  // (see app/(app)/layout.tsx), so it's identical on server and first client
+  // render — safe to read directly without a hydration mismatch, unlike `stores`.
+  const slimActiveStore = activeStore?.id === storeId ? activeStore : null;
+
   // Always wait for mount so server and client render the same initial HTML
-  // (the skeleton is fully static, so it's safe to render identically on both).
+  // (the skeleton is fully static aside from the SSR-safe slimActiveStore data,
+  // so it's safe to render identically on both).
   if (!mounted) {
-    return <EditorLoadingSkeleton storeId={storeId} from={from} />;
+    return <EditorLoadingSkeleton storeId={storeId} from={from} name={slimActiveStore?.name} isPublished={slimActiveStore?.status === 'Published'} />;
   }
 
   // Try to find the store by ID — never silently fall back to a different store.
@@ -117,7 +135,7 @@ function EditorInner({ storeId }: { storeId: string }) {
   })();
 
   if (!store) {
-    return <EditorLoadingSkeleton storeId={storeId} from={from} />;
+    return <EditorLoadingSkeleton storeId={storeId} from={from} name={slimActiveStore?.name} isPublished={slimActiveStore?.status === 'Published'} />;
   }
 
   return <EditorShell store={store} from={from} />;
