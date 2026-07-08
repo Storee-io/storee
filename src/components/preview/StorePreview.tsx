@@ -10103,6 +10103,13 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
     store.design?.fieldOffsets || {}
   );
 
+  // Prevent browser auto-scroll restoration so we can control it manually
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+  }, []);
+
   // Callback to update field position (also calls parent callback for persistence)
   const handleFieldPositionChange = useCallback((field: string, offset: { x: number; y: number }) => {
     setFieldOffsets(prev => ({ ...prev, [field]: offset }));
@@ -10158,8 +10165,13 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
 
   // Reset scroll position to top when navigating to a new page (instant, no animation)
   useEffect(() => {
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
+    const resetScroll = () => {
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      window.scrollTo(0, 0);
+    };
+    // Use requestAnimationFrame to ensure DOM is updated before scrolling
+    requestAnimationFrame(resetScroll);
   }, [page]);
 
   // Notify parent of page/path changes — uses STORE_PAGE_PATHS as single source of truth
