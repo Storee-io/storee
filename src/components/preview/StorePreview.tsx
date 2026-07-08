@@ -1490,7 +1490,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
           <button onClick={onBack} className="px-6 py-2.5 text-sm font-semibold cursor-pointer" style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}>{uiT.startShopping}</button>
         </div>
       ) : (
-        <div className={`max-w-4xl mx-auto px-4 py-6 ${(isMobile || isTablet) ? 'flex flex-col gap-4' : 'grid grid-cols-[1fr_320px] gap-8 items-start'}`}>
+        <div className={`max-w-4xl mx-auto px-4 py-6 ${(isMobile || isTablet) ? 'flex flex-col gap-4' : 'grid grid-cols-[1fr_320px] gap-8 items-stretch'}`}>
 
           {/* Left: items */}
           <div className="space-y-4">
@@ -1544,7 +1544,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
           </div>
 
           {/* Right: order summary */}
-          <div className="shadow-sm p-5 space-y-3" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
+          <div className="shadow-sm p-5 space-y-3" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius, ...(!(isMobile || isTablet) ? { position: 'sticky', top: '80px', maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' } : {}) }}>
             <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>{uiT.orderSummary}</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
