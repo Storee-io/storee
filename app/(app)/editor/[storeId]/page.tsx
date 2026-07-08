@@ -86,8 +86,13 @@ function EditorLoadingSkeleton({ storeId, from, name, isPublished }: { storeId: 
       <div className="flex flex-1 overflow-hidden">
         <aside className="flex-shrink-0 bg-white flex flex-col overflow-hidden" style={{ width: 280, isolation: 'isolate', boxShadow: '1px 0 2px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.05)' }}>
           <div className="flex border-b border-slate-100 flex-shrink-0">
-            {[{ label: 'Sections', Icon: Layout }, { label: 'Properties', Icon: Sparkles }].map(({ label, Icon }) => (
-              <div key={label} className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-slate-300">
+            {[{ label: 'Sections', Icon: Layout, active: true }, { label: 'Properties', Icon: Sparkles, active: false }].map(({ label, Icon, active }) => (
+              <div
+                key={label}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold border-b-2 ${
+                  active ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-400'
+                }`}
+              >
                 <Icon className="w-3.5 h-3.5" />{label}
               </div>
             ))}
