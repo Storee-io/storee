@@ -1241,10 +1241,11 @@ function getCommerceTheme(primaryColor: string, layoutStyle?: string): CommerceT
 
 // ── Shared interactive pages ──────────────────────────────────────────────────
 
-function ProductDetailPage({ product, primaryColor, storeName, device, onBack, onAddToCart, onCartClick, cartCount, fmtPrice, layoutStyle, editMode, onFieldChange }: {
+function ProductDetailPage({ product, primaryColor, storeName, device, onBack, onAddToCart, onCartClick, cartCount, fmtPrice, layoutStyle, editMode, onFieldChange, branding }: {
   product: RichProduct; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
   onBack: () => void; onAddToCart: (p: RichProduct, sourceRect?: DOMRect) => void; onCartClick: () => void; cartCount: number;
   layoutStyle?: string; editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
+  branding?: { logoUrl?: string; faviconUrl?: string; logoFile?: string; faviconFile?: string };
 }) {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
@@ -1261,7 +1262,11 @@ function ProductDetailPage({ product, primaryColor, storeName, device, onBack, o
     <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
       <header className="px-5 h-14 flex items-center justify-between sticky top-0 z-40" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
         <button onClick={onBack} className="flex items-center gap-2 text-sm transition-colors" style={{ color: t.textSecondary }}><ArrowLeft className="w-4 h-4" /> {uiT.back}</button>
-        <span className="text-sm font-bold truncate max-w-[140px]" style={{ color: t.textPrimary }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
+        {branding?.logoUrl ? (
+          <img src={branding.logoUrl} alt={storeName} className="h-8 max-w-[100px] object-contain" />
+        ) : (
+          <span className="text-sm font-bold truncate max-w-[140px]" style={{ color: t.textPrimary }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
+        )}
         <button data-cart-btn onClick={onCartClick} className="relative p-2">
           <ShoppingCart className="w-5 h-5" style={{ color: t.textSecondary }} />
           {cartCount > 0 && <span className="absolute top-0 right-0 w-4 h-4 text-[9px] font-bold rounded-full flex items-center justify-center" style={{ background: t.primary, color: t.primaryContrast }}>{cartCount}</span>}
@@ -2725,10 +2730,11 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
   );
 }
 
-function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, layoutStyle, editMode, onFieldChange, store }: {
+function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, layoutStyle, editMode, onFieldChange, store, branding }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
   shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; layoutStyle?: string; store?: Store;
   onBack: () => void; onPlaceOrder: (paymentId: string, shippingId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => void; editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
+  branding?: { logoUrl?: string; faviconUrl?: string; logoFile?: string; faviconFile?: string };
 }) {
   const [form, setForm] = useState({ email: '', whatsapp: '', name: '', address: '', city: '', province: '', postal: '', village: '', district: '', districtCode: '' });
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -2996,7 +3002,11 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
       <header className="px-5 h-14 flex items-center justify-between sticky top-0 z-40 shadow-sm relative" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
         <div className="w-10" />
-        <span className="absolute left-1/2 -translate-x-1/2 text-sm font-bold" style={{ color: t.textPrimary }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
+        {branding?.logoUrl ? (
+          <img src={branding.logoUrl} alt={storeName} className="absolute left-1/2 -translate-x-1/2 h-8 max-w-[100px] object-contain" />
+        ) : (
+          <span className="absolute left-1/2 -translate-x-1/2 text-sm font-bold" style={{ color: t.textPrimary }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
+        )}
         <button onClick={onBack} className="relative p-2 hover:opacity-70 transition-opacity cursor-pointer" style={{ color: t.textSecondary }}>
           <ShoppingCart className="w-5 h-5" />
         </button>
@@ -8784,9 +8794,13 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
             height: '56px',
           }}>
         <div className="max-w-6xl mx-auto px-5 h-full flex items-center justify-between">
-          <span className="text-sm font-black tracking-[0.18em] uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
-            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
-          </span>
+          {branding?.logoUrl ? (
+            <img src={branding.logoUrl} alt={storeName} className="h-8 max-w-[120px] object-contain" />
+          ) : (
+            <span className="text-sm font-black tracking-[0.18em] uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
+              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
+            </span>
+          )}
           {!isMobile ? (
             <nav className="flex gap-7">
               {navLinks.map((l, li) => (
@@ -8887,7 +8901,11 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
       {/* ── Header ── */}
       <header style={{ background: pc, position: 'sticky', top: 0, zIndex: 40 }}>
         <div className="flex items-center justify-between px-4" style={{ height: '56px' }}>
-          <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine className="text-base font-bold text-white truncate max-w-[160px]" />
+          {branding?.logoUrl ? (
+            <img src={branding.logoUrl} alt={storeName} className="h-8 max-w-[120px] object-contain" />
+          ) : (
+            <EditSpan field="storeName" value={storeName} editMode={editMode} onFieldChange={onFieldChange} singleLine className="text-base font-bold text-white truncate max-w-[160px]" />
+          )}
           <div className="flex items-center gap-1">
             <button data-wishlist-nav="" onClick={onWishlistClick} className="relative p-2 text-white/70 hover:text-white">
               <Heart className="w-5 h-5" />
@@ -9282,7 +9300,11 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
           style={{ background: tt.headerBg + 'e8', borderBottom: `1px solid ${tt.divider}`, height: '52px' }}>
           <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
             {/* Brand */}
-            <span className="text-sm font-black tracking-wider uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
+            {branding?.logoUrl ? (
+              <img src={branding.logoUrl} alt={storeName} className="h-8 max-w-[120px] object-contain" />
+            ) : (
+              <span className="text-sm font-black tracking-wider uppercase" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
+            )}
 
             {/* Nav — desktop only */}
             {!isMobile && (
@@ -9555,9 +9577,13 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
         <header className="backdrop-blur-sm"
           style={{ borderBottom: `1px solid ${tt.divider}`, height: '56px' }}>
           <div className="max-w-6xl mx-auto px-5 h-full flex items-center justify-between">
-            <span className="font-black text-sm tracking-wider" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
-              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
-            </span>
+            {branding?.logoUrl ? (
+              <img src={branding.logoUrl} alt={storeName} className="h-8 max-w-[120px] object-contain" />
+            ) : (
+              <span className="font-black text-sm tracking-wider" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
+                {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
+              </span>
+            )}
             {!isMobile ? (
               <nav className="flex gap-6">
                 {navLinks.map((l, li) => (
@@ -9840,9 +9866,14 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
         {/* ── Floating header (always on top) ── */}
         <header className="flex items-center justify-between px-6"
           style={{ height: '56px', background: 'transparent', pointerEvents: 'none' }}>
-        <span className="text-sm font-black tracking-[0.2em] uppercase pointer-events-auto"
-          style={{ fontFamily: tt.headingFont, color: isDarkBg ? '#ffffff' : tt.textPrimary,
-            textShadow: isDarkBg ? '0 1px 8px rgba(0,0,0,0.5)' : 'none' }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
+        {branding?.logoUrl ? (
+          <img src={branding.logoUrl} alt={storeName} className="h-8 max-w-[120px] object-contain pointer-events-auto"
+            style={{ filter: isDarkBg ? 'drop-shadow(0 1px 8px rgba(0,0,0,0.5))' : 'none' }} />
+        ) : (
+          <span className="text-sm font-black tracking-[0.2em] uppercase pointer-events-auto"
+            style={{ fontFamily: tt.headingFont, color: isDarkBg ? '#ffffff' : tt.textPrimary,
+              textShadow: isDarkBg ? '0 1px 8px rgba(0,0,0,0.5)' : 'none' }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
+        )}
         <div className="flex items-center gap-1 pointer-events-auto">
           {!isMobile && (
             <nav className="flex gap-6 mr-3">
@@ -10448,11 +10479,11 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
   if (page === 'wishlist') {
     content = <WishlistPage wishlist={wishlist} products={allProducts} onToggleWishlist={toggleWishlist} onAddToCart={addToCart} onProductClick={p => { if (!editMode) { setSelectedProduct(p); setPage('product'); } }} onBack={() => setPage('home')} primaryColor={primaryColor} storeName={storeName} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} device={device} editMode={editMode} onFieldChange={onFieldChange} />;
   } else if (page === 'product' && selectedProduct) {
-    content = <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} onBack={() => setPage('home')} onAddToCart={handleAddToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} layoutStyle={design?.layoutStyle} editMode={editMode} onFieldChange={onFieldChange} />;
+    content = <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} onBack={() => setPage('home')} onAddToCart={handleAddToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} layoutStyle={design?.layoutStyle} editMode={editMode} onFieldChange={onFieldChange} branding={store.branding} />;
   } else if (page === 'cart') {
     content = <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} onBack={() => setPage('home')} onCheckout={() => setPage('checkout')} onUpdateQty={updateQty} editMode={editMode} onFieldChange={onFieldChange} />;
   } else if (page === 'checkout') {
-    content = <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} paymentSettings={paymentSettings} layoutStyle={design?.layoutStyle} onBack={() => setPage('cart')} onPlaceOrder={async (pid, sid, customer) => { setSelectedPaymentId(pid); setSelectedShippingId(sid); await saveOrder(pid, sid, customer); setPage('success'); }} editMode={editMode} onFieldChange={onFieldChange} store={store} />;
+    content = <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} paymentSettings={paymentSettings} layoutStyle={design?.layoutStyle} onBack={() => setPage('cart')} onPlaceOrder={async (pid, sid, customer) => { setSelectedPaymentId(pid); setSelectedShippingId(sid); await saveOrder(pid, sid, customer); setPage('success'); }} editMode={editMode} onFieldChange={onFieldChange} store={store} branding={store.branding} />;
   } else if (page === 'success') {
     content = <SuccessPage primaryColor={primaryColor} storeName={storeName} orderNum={orderNum} total={cartTotal + shippingCost} fmtPrice={fmtPrice} paymentSettings={paymentSettings} selectedPaymentId={selectedPaymentId} layoutStyle={design?.layoutStyle} onContinue={() => { clearCart(); setPage('home'); }} buyerUser={buyerUser} onShowAuth={() => setShowAuthModal(true)} onMyOrders={() => setPage('myorders')} editMode={editMode} onFieldChange={onFieldChange} />;
   } else if (page === 'myorders' && buyerUser) {
