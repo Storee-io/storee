@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingBag, Package, Users, Tag, Megaphone,
   BarChart3, Palette, Settings, ChevronDown, Plus, Store,
-  X, TrendingUp, PanelLeftClose, PanelLeftOpen, Truck, CreditCard, User, Bell, Globe, PenLine, Image as ImageIcon
+  X, TrendingUp, PanelLeftClose, PanelLeftOpen, Truck, CreditCard, User, Bell, Globe, PenLine
 } from 'lucide-react';
 import Image from 'next/image';
 import { useStore } from '../../context/StoreContext';
@@ -46,8 +46,7 @@ function buildNavSections(pendingOrders: number, newProducts: number, activeStor
     label: 'CONFIGURATION',
     items: [
       { icon: PenLine,     label: 'Editor',          path: activeStoreId ? `/editor/${activeStoreId}` : '/editor' },
-      { icon: Palette,     label: 'Appearance',     path: '/dashboard/appearance' },
-      { icon: ImageIcon,   label: 'Branding',        path: '/dashboard/branding' },
+      { icon: Palette,     label: 'Brand & Design',  path: '/dashboard/brand-design' },
       { icon: Globe,       label: 'Domain',          path: '/dashboard/domain' },
       { icon: Truck,       label: 'Shipping',        path: '/dashboard/shipping' },
       { icon: CreditCard,  label: 'Payment',         path: '/dashboard/payment' },
