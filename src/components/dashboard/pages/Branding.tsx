@@ -137,8 +137,9 @@ export default function Branding() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to save branding';
       console.error('Save error:', err);
-      toast.error('Failed to save branding');
+      toast.error(errorMsg);
     } finally {
       setIsSaving(false);
     }
