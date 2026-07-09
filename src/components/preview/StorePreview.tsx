@@ -4251,7 +4251,7 @@ function WishlistPage({ wishlist, products, onToggleWishlist, onAddToCart, onPro
 // ── MINIMAL layout ────────────────────────────────────────────────────────────
 // Inspired by: COS, Aesop, Muji — editorial, clean, whitespace-forward
 
-function MinimalLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
+function MinimalLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange, branding }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory, sectionHeadings, footerNote } = design;
   const btnText = isDark(primaryColor) ? '#fff' : '#111';
   const isMobile = device === 'mobile';
@@ -4548,7 +4548,7 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
 // ── BOLD layout ───────────────────────────────────────────────────────────────
 // Inspired by: Nike, OFF-WHITE, Supreme — dark, high-energy, high contrast
 
-function BoldLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen: _onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
+function BoldLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen: _onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange, branding }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory, sectionHeadings, footerNote } = design;
   const defaultFooterNote = `© 2026 ${storeName} · All rights reserved`;
   const isMobile = device === 'mobile';
@@ -4786,7 +4786,7 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
 // ── ELEGANT layout ────────────────────────────────────────────────────────────
 // Inspired by: Net-a-Porter, Jo Malone, Tiffany — luxury, refined, warm
 
-function ElegantLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
+function ElegantLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange, branding }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory, sectionHeadings, footerNote } = design;
   const defaultFooterNote = `© 2026 ${storeName} · All rights reserved`;
   const btnText = isDark(primaryColor) ? '#fff' : '#2a2420';
@@ -5023,7 +5023,7 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
 // ── MODERN layout ─────────────────────────────────────────────────────────────
 // Inspired by: Apple Store, Allbirds, Casper — clean, airy, contemporary
 
-function ModernLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
+function ModernLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange, branding }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory, sectionHeadings, footerNote } = design;
   const defaultFooterNote = `© 2026 ${storeName} · All rights reserved`;
   const btnText = isDark(primaryColor) ? '#fff' : '#fff';
@@ -5314,7 +5314,7 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
 // ── PLAYFUL layout ────────────────────────────────────────────────────────────
 // Inspired by: Glossier, Oatly, Warby Parker — fun, colorful, round, youthful
 
-function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen: _onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
+function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen: _onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange, branding }: LayoutProps) {
   const { heroTitle, heroSubtitle, ctaText, navLinks = [], products = [], collections = [], features = [], testimonials = [], tagline, accentColor, faq = [], stats = [], promoBar, newsletter, trustBadges = [], brandStory, sectionHeadings, footerNote } = design;
   const defaultFooterNote = `© 2026 ${storeName} · All rights reserved`;
   const heroTextColor = isDark(primaryColor) ? '#fff' : '#111';
@@ -8562,7 +8562,7 @@ function CategorySpotlightSection({ design, tt, primaryColor, device, variant = 
 
 // ── TOKEN LAYOUT — main component ─────────────────────────────────────────────
 
-function TokenLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
+function TokenLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange, branding }: LayoutProps) {
   // v2: designTokens (raw CSS values from Claude) takes priority over v1 buckets
   const dt = design.designTokens;
   const ds = design.designSystem;
@@ -8854,7 +8854,7 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
 // Mobile-app skeleton: story circles, product list rows, fixed bottom nav
 // Personality: WhatsApp-like, Discord-like, Spotify-like
 
-function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
+function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange, branding }: LayoutProps) {
   const dt = design.designTokens;
   const tt: TokenTheme = dt ? getTokenThemeV2(dt, primaryColor) : getDefaultTokenTheme(primaryColor);
 
@@ -9094,7 +9094,7 @@ function AppLikeLayout({ storeName, primaryColor, design, device, onProductClick
 // Magazine skeleton: asymmetric grid, big typography, minimal UI chrome
 // Personality: Apple-like, Notion-like, editorial fashion
 
-function EditorialLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
+function EditorialLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange, branding }: LayoutProps) {
   const dt = design.designTokens;
   const tt: TokenTheme = dt ? getTokenThemeV2(dt, primaryColor) : getDefaultTokenTheme(primaryColor);
 
@@ -9510,7 +9510,7 @@ function EditorialProductCard({ p, tt, pc, fmtPrice, onProductClick, onAddToCart
 // Pinterest-style columns, varied card heights, image-first
 // Personality: pinterest-like, airbnb-like, art/craft/handmade stores
 
-function MasonryLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
+function MasonryLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange, branding }: LayoutProps) {
   const dt = design.designTokens;
   const tt: TokenTheme = dt ? getTokenThemeV2(dt, primaryColor) : getDefaultTokenTheme(primaryColor);
 
@@ -9794,7 +9794,7 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
 // Immersive viewport sections, cinematic, one story at a time
 // Personality: zara-like, luxury fashion, high-end brands
 
-function FullscreenLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange }: LayoutProps) {
+function FullscreenLayout({ storeName, primaryColor, design, device, onProductClick, onAddToCart, onCartClick, cartCount, fmtPrice, onUserClick, buyerEmail, onSearchOpen, wishlist, onToggleWishlist, onWishlistClick, editMode, onFieldChange, branding }: LayoutProps) {
   const dt = design.designTokens;
   const tt: TokenTheme = dt ? getTokenThemeV2(dt, primaryColor) : getDefaultTokenTheme(primaryColor);
 
