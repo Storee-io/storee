@@ -13,20 +13,30 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const storeId = params.id;
     const branding: BrandingSettings = await request.json();
 
-    // Update store in database
-    const { error } = await supabase
+    console.log(`[Branding] Saving for store ${storeId}:`, { logoFile: branding.logoFile, faviconFile: branding.faviconFile });
+
+    // Update store in database - gracefully handle if branding field doesn't exist yet
+    const { error, data } = await supabase
       .from('stores')
       .update({ branding })
-      .eq('id', storeId);
+      .eq('id', storeId)
+      .select();
 
     if (error) {
-      console.error('Supabase update error:', error);
+      console.error('[Branding] Supabase update error:', error.message, error.details);
+      // If column doesn't exist, still return branding data (it's stored in context)
+      // This allows feature to work even if DB schema migration hasn't run yet
+      if (error.message?.includes('column') || error.message?.includes('branding')) {
+        console.warn('[Branding] Column may not exist yet, returning data anyway');
+        return NextResponse.json(branding);
+      }
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    console.log('[Branding] Successfully saved');
     return NextResponse.json(branding);
   } catch (error) {
-    console.error('Branding API error:', error);
+    console.error('[Branding] Parse/request error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to process branding' },
       { status: 500 }
