@@ -36,6 +36,21 @@ export default function StorefrontClient({
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
 
+  // Set favicon from branding if available
+  useEffect(() => {
+    if (store.branding?.faviconUrl) {
+      const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+      if (link) {
+        link.href = store.branding.faviconUrl;
+      } else {
+        const newLink = document.createElement('link');
+        newLink.rel = 'icon';
+        newLink.href = store.branding.faviconUrl;
+        document.head.appendChild(newLink);
+      }
+    }
+  }, [store.branding?.faviconUrl]);
+
   // Apply elementOverrides styles from visual editor to live store
   useEffect(() => {
     if (!store.design?.elementOverrides || !rootRef.current) return;
