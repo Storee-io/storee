@@ -72,8 +72,13 @@ export default function Branding() {
     if (!displayStore?.id) return;
 
     const formData = new FormData(e.currentTarget);
-    const logoFile = formData.get('logo') as File | null;
-    const faviconFile = formData.get('favicon') as File | null;
+    // An empty <input type="file"> still yields a File object (size 0) from
+    // FormData.get() rather than null, so a size check is required to treat
+    // "no file chosen" as absent.
+    const rawLogoFile = formData.get('logo') as File | null;
+    const rawFaviconFile = formData.get('favicon') as File | null;
+    const logoFile = rawLogoFile && rawLogoFile.size > 0 ? rawLogoFile : null;
+    const faviconFile = rawFaviconFile && rawFaviconFile.size > 0 ? rawFaviconFile : null;
 
     if (!logoFile && !faviconFile) {
       setError('Please select at least one file to upload');

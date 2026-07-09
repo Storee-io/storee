@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/src/lib/supabase';
 
 interface BrandingSettings {
   logoUrl?: string;
@@ -8,15 +8,18 @@ interface BrandingSettings {
   faviconFile?: string;
 }
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ storeId: string }> }
+) {
   try {
-    const storeId = params.id;
+    const { storeId } = await params;
     const branding: BrandingSettings = await request.json();
 
     console.log(`[Branding] Saving for store ${storeId}:`, { logoFile: branding.logoFile, faviconFile: branding.faviconFile });
 
-    // Update store in database - gracefully handle if branding field doesn't exist yet
-    const { error, data } = await supabase
+    // Update store in database - gracefully handle if branding column doesn't exist yet
+    const { error } = await supabase
       .from('stores')
       .update({ branding })
       .eq('id', storeId)
@@ -24,8 +27,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     if (error) {
       console.error('[Branding] Supabase update error:', error.message, error.details);
-      // If column doesn't exist, still return branding data (it's stored in context)
-      // This allows feature to work even if DB schema migration hasn't run yet
+      // If column doesn't exist, still return branding data so the feature works
+      // in-context even before the DB schema migration has run.
       if (error.message?.includes('column') || error.message?.includes('branding')) {
         console.warn('[Branding] Column may not exist yet, returning data anyway');
         return NextResponse.json(branding);
@@ -44,9 +47,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   }
 }
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ storeId: string }> }
+) {
   try {
-    const storeId = params.id;
+    const { storeId } = await params;
 
     const { data, error } = await supabase
       .from('stores')
@@ -55,13 +61,14 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       .single();
 
     if (error) {
-      console.error('Supabase fetch error:', error);
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      console.error('[Branding] Supabase fetch error:', error.message);
+      // Column may not exist yet — return empty branding instead of erroring
+      return NextResponse.json({});
     }
 
     return NextResponse.json(data?.branding || {});
   } catch (error) {
-    console.error('Branding fetch error:', error);
+    console.error('[Branding] Fetch error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to fetch branding' },
       { status: 500 }
