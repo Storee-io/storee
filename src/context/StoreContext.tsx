@@ -18,6 +18,13 @@ export interface CheckoutSettings {
   contactFields: 'whatsapp' | 'email' | 'both'; // Which contact fields to show on checkout
 }
 
+export interface BrandingSettings {
+  logoUrl?: string;      // data URL or cloud URL
+  faviconUrl?: string;   // data URL or cloud URL
+  logoFile?: string;     // filename
+  faviconFile?: string;  // filename
+}
+
 export interface StoreCurrency {
   code: string;
   symbol: string;
@@ -136,6 +143,7 @@ export interface Store {
   shippingSettings?: ShippingSettings;
   paymentSettings?: PaymentSettings;
   checkoutSettings?: CheckoutSettings; // Customize checkout form (contact fields, etc.)
+  branding?: BrandingSettings; // Store logo and favicon
   publishedDomain?: string; // set once on first publish; used to lock URL on republish
   // Appearance preferences
   font?: string;
