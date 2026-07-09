@@ -66,6 +66,7 @@ interface StoreRow {
   font: string | null;
   mood: string | null;
   audience: string | null;
+  branding: Store['branding'] | null;
   shipping_settings: Store['shippingSettings'] | null;
   payment_settings: Store['paymentSettings'] | null;
   checkout_settings: Store['checkoutSettings'] | null;
