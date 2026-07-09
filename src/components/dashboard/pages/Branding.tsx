@@ -119,7 +119,8 @@ export default function Branding() {
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Upload failed: ${response.status} ${errorData.error || response.statusText}`);
       }
 
       setBranding(updated);
