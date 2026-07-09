@@ -57,6 +57,7 @@ export default async function StorefrontPathPage({ params }: Props) {
     font: data.font ?? undefined,
     mood: data.mood ?? undefined,
     audience: data.audience ?? undefined,
+    branding: data.branding ?? undefined,
   };
 
   const initialPath = '/' + path.join('/');

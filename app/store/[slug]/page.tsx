@@ -57,6 +57,7 @@ export default async function StorefrontPage({ params }: Props) {
     font: data.font ?? undefined,
     mood: data.mood ?? undefined,
     audience: data.audience ?? undefined,
+    branding: data.branding ?? undefined,
   };
 
   return <StorefrontClient store={store} />;
