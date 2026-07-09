@@ -24,6 +24,37 @@ const fileToDataUrl = (file: File): Promise<string> => {
   });
 };
 
+// Compress image to reduce data URL size
+const compressImage = (file: File, quality: number = 0.7, maxWidth: number = 1200): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Resize if larger than maxWidth
+        if (width > maxWidth) {
+          height = (maxWidth / width) * height;
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
 export default function Branding() {
   const searchParams = useSearchParams();
   const storeId = searchParams?.get('storeId');
@@ -79,14 +110,19 @@ export default function Branding() {
       return;
     }
 
-    // Validate file size (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size must be less than 5MB');
+    // Validate file size (2MB - stricter for logo)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('File size must be less than 2MB');
       return;
     }
 
-    const dataUrl = await fileToDataUrl(file);
-    setPendingLogo({ file, dataUrl });
+    try {
+      // Compress image to reduce data URL size
+      const compressedDataUrl = await compressImage(file, 0.8, 1200);
+      setPendingLogo({ file, dataUrl: compressedDataUrl });
+    } catch (err) {
+      toast.error('Failed to process image');
+    }
   };
 
   const handleFaviconSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,14 +135,19 @@ export default function Branding() {
       return;
     }
 
-    // Validate file size (2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('File size must be less than 2MB');
+    // Validate file size (500KB - stricter for favicon)
+    if (file.size > 500 * 1024) {
+      toast.error('Favicon file size must be less than 500KB');
       return;
     }
 
-    const dataUrl = await fileToDataUrl(file);
-    setPendingFavicon({ file, dataUrl });
+    try {
+      // Compress image to reduce data URL size
+      const compressedDataUrl = await compressImage(file, 0.9, 256);
+      setPendingFavicon({ file, dataUrl: compressedDataUrl });
+    } catch (err) {
+      toast.error('Failed to process image');
+    }
   };
 
   const save = async () => {
