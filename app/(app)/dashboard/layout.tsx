@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from '@/src/components/dashboard/Sidebar';
@@ -14,16 +14,14 @@ const pageVariants = {
   exit:    { opacity: 0, y: -6, transition: { duration: 0.15, ease: 'easeIn' as const } },
 };
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const mainRef = useRef<HTMLElement>(null);
-  const setStoreFromParamRef = useRef(false);
-  const pathname = usePathname();
+// useSearchParams() bails out of static generation unless wrapped in its own
+// Suspense boundary — isolated here so it doesn't force the whole layout
+// (and every page under it) to opt out of prerendering.
+function ActiveStoreFromQueryParam() {
   const searchParams = useSearchParams();
+  const setStoreFromParamRef = useRef(false);
   const { stores, setActiveStore } = useStore();
 
-  // Set active store from query param if provided (e.g., from preview)
   useEffect(() => {
     if (setStoreFromParamRef.current) return;
 
@@ -35,7 +33,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setStoreFromParamRef.current = true;
       }
     }
-  }, [stores, setActiveStore]);
+  }, [stores, setActiveStore, searchParams]);
+
+  return null;
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0, behavior: 'instant' });
@@ -43,6 +50,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
+      <Suspense fallback={null}>
+        <ActiveStoreFromQueryParam />
+      </Suspense>
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
