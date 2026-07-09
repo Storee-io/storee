@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Upload, Loader2, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { Image as ImageIcon, Check, Loader2, Upload, X } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
 
 interface BrandingSettings {
@@ -13,6 +14,15 @@ interface BrandingSettings {
 }
 
 const STOREE_FAVICON = '/favicon.ico';
+
+const fileToDataUrl = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
 
 export default function Branding() {
   const searchParams = useSearchParams();
@@ -33,9 +43,10 @@ export default function Branding() {
   }, [storeId, stores]);
 
   const [branding, setBranding] = useState<BrandingSettings>({});
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState<string>('');
+  const [pendingLogo, setPendingLogo] = useState<{ file: File; dataUrl: string } | null>(null);
+  const [pendingFavicon, setPendingFavicon] = useState<{ file: File; dataUrl: string } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const faviconInputRef = useRef<HTMLInputElement>(null);
 
@@ -58,57 +69,48 @@ export default function Branding() {
     fetchBranding();
   }, [displayStore?.id]);
 
-  const fileToDataUrl = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+  const handleLogoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || file.size === 0) return;
+    const dataUrl = await fileToDataUrl(file);
+    setPendingLogo({ file, dataUrl });
   };
 
-  const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleFaviconSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || file.size === 0) return;
+    const dataUrl = await fileToDataUrl(file);
+    setPendingFavicon({ file, dataUrl });
+  };
+
+  const save = async () => {
     if (!displayStore?.id) return;
-
-    const formData = new FormData(e.currentTarget);
-    // An empty <input type="file"> still yields a File object (size 0) from
-    // FormData.get() rather than null, so a size check is required to treat
-    // "no file chosen" as absent.
-    const rawLogoFile = formData.get('logo') as File | null;
-    const rawFaviconFile = formData.get('favicon') as File | null;
-    const logoFile = rawLogoFile && rawLogoFile.size > 0 ? rawLogoFile : null;
-    const faviconFile = rawFaviconFile && rawFaviconFile.size > 0 ? rawFaviconFile : null;
-
-    if (!logoFile && !faviconFile) {
-      setError('Please select at least one file to upload');
+    if (!pendingLogo && !pendingFavicon) {
+      toast.error('Please select at least one file to upload');
       return;
     }
 
-    setUploading(true);
-    setError('');
-    setSuccess('');
-
+    setIsSaving(true);
     try {
       const updated: BrandingSettings = { ...branding };
 
-      if (logoFile) {
-        const logoDataUrl = await fileToDataUrl(logoFile);
-        updated.logoUrl = logoDataUrl;
-        updated.logoFile = logoFile.name;
+      if (pendingLogo) {
+        updated.logoUrl = pendingLogo.dataUrl;
+        updated.logoFile = pendingLogo.file.name;
 
         // If favicon not provided, use logo as fallback
-        if (!faviconFile) {
-          updated.faviconUrl = logoDataUrl;
+        if (!pendingFavicon) {
+          updated.faviconUrl = pendingLogo.dataUrl;
           updated.faviconFile = 'favicon-from-logo';
         }
       }
 
-      if (faviconFile) {
-        const faviconDataUrl = await fileToDataUrl(faviconFile);
-        updated.faviconUrl = faviconDataUrl;
-        updated.faviconFile = faviconFile.name;
+      if (pendingFavicon) {
+        updated.faviconUrl = pendingFavicon.dataUrl;
+        updated.faviconFile = pendingFavicon.file.name;
       }
+
+      await new Promise(resolve => setTimeout(resolve, 300)); // minimum visual feedback
 
       const response = await fetch(`/api/stores/${displayStore.id}/branding`, {
         method: 'POST',
@@ -121,179 +123,210 @@ export default function Branding() {
       }
 
       setBranding(updated);
-      setSuccess('Branding updated successfully');
-
       if (updateActiveStore) {
         updateActiveStore({ branding: updated });
       }
 
+      setPendingLogo(null);
+      setPendingFavicon(null);
       if (logoInputRef.current) logoInputRef.current.value = '';
       if (faviconInputRef.current) faviconInputRef.current.value = '';
 
-      setTimeout(() => setSuccess(''), 3000);
+      toast.success('Branding saved successfully');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed');
+      console.error('Save error:', err);
+      toast.error('Failed to save branding');
     } finally {
-      setUploading(false);
+      setIsSaving(false);
     }
   };
 
   const handleRemoveLogo = () => {
+    if (pendingLogo) {
+      setPendingLogo(null);
+      if (logoInputRef.current) logoInputRef.current.value = '';
+      return;
+    }
     const updated = { ...branding, logoUrl: undefined, logoFile: undefined };
     if (branding.faviconFile === 'favicon-from-logo') {
       updated.faviconUrl = undefined;
       updated.faviconFile = undefined;
     }
     setBranding(updated);
-    setSuccess('Logo removed');
+    if (updateActiveStore) {
+      updateActiveStore({ branding: updated });
+    }
+    toast.success('Logo removed');
   };
 
   const handleRemoveFavicon = () => {
+    if (pendingFavicon) {
+      setPendingFavicon(null);
+      if (faviconInputRef.current) faviconInputRef.current.value = '';
+      return;
+    }
     const updated = { ...branding, faviconUrl: undefined, faviconFile: undefined };
     setBranding(updated);
-    setSuccess('Favicon removed');
+    if (updateActiveStore) {
+      updateActiveStore({ branding: updated });
+    }
+    toast.success('Favicon reset to default');
   };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+        <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
       </div>
     );
   }
 
   if (!displayStore) {
-    return <div className="text-center py-12">No store selected</div>;
+    return <div className="p-6 text-center text-slate-500">No store selected</div>;
   }
 
-  const faviconToDisplay = branding.faviconUrl || STOREE_FAVICON;
+  const logoPreview = pendingLogo?.dataUrl ?? branding.logoUrl;
+  const logoLabel = pendingLogo?.file.name ?? branding.logoFile;
+  const faviconPreview = pendingFavicon?.dataUrl ?? branding.faviconUrl ?? STOREE_FAVICON;
+  const faviconLabel = pendingFavicon
+    ? pendingFavicon.file.name
+    : branding.faviconUrl
+      ? (branding.faviconFile === 'favicon-from-logo' ? 'Using logo as favicon' : branding.faviconFile)
+      : 'Storee default';
+  const hasPending = !!(pendingLogo || pendingFavicon);
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Branding</h1>
-        <p className="text-gray-600">Manage your store's logo and favicon</p>
+    <div className="p-6 max-w-2xl space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Branding</h2>
+          <p className="text-slate-500 text-sm mt-1">Manage your store&apos;s logo and favicon</p>
+        </div>
+        <button
+          onClick={save}
+          disabled={isSaving || !hasPending}
+          className="flex items-center gap-2 px-5 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+        >
+          {isSaving ? (
+            <><Loader2 className="w-4 h-4 animate-spin" />Saving...</>
+          ) : saved ? (
+            <><Check className="w-4 h-4" />Saved!</>
+          ) : (
+            'Save Changes'
+          )}
+        </button>
       </div>
 
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-          {success}
-        </div>
-      )}
-
-      <form onSubmit={handleUpload} className="space-y-8">
-        {/* Logo Section */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold mb-4">Logo</h2>
-
-          <div className="space-y-4">
-            {branding.logoUrl && (
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-4">
-                  <img
-                    src={branding.logoUrl}
-                    alt="Store Logo"
-                    className="h-12 object-contain"
-                  />
-                  <div className="text-sm text-gray-600">
-                    {branding.logoFile || 'logo'}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleRemoveLogo}
-                  disabled={uploading}
-                  className="p-2 hover:bg-red-50 text-red-600 rounded transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-              <input
-                ref={logoInputRef}
-                type="file"
-                name="logo"
-                accept="image/*"
-                className="hidden"
-                id="logo-input"
-              />
-              <label htmlFor="logo-input" className="cursor-pointer flex flex-col items-center gap-2">
-                <Upload className="w-6 h-6 text-gray-400" />
-                <span className="text-sm font-medium text-gray-700">Click to upload logo</span>
-                <span className="text-xs text-gray-500">PNG, JPG up to 5MB</span>
-              </label>
-            </div>
+      {/* Logo */}
+      <div className="bg-white rounded-2xl p-6 border border-slate-200">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
+            <ImageIcon className="w-4 h-4 text-slate-600" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900">Logo</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Displayed in your store header</p>
           </div>
         </div>
 
-        {/* Favicon Section */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold mb-4">Favicon</h2>
-
-          <div className="space-y-4">
-            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-              <div>
-                <p className="text-sm font-medium text-gray-700">Current favicon:</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {branding.faviconUrl ? (branding.faviconFile || 'favicon') : 'Storee default'}
-                </p>
+        <div className="space-y-4">
+          {logoPreview && (
+            <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-slate-200 bg-slate-50">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-12 h-12 rounded-lg bg-white border border-slate-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <img src={logoPreview} alt="Store Logo" className="max-w-full max-h-full object-contain" />
+                </div>
+                <p className="text-sm font-medium text-slate-700 truncate">{logoLabel}</p>
               </div>
-              <img src={faviconToDisplay} alt="Favicon" className="w-8 h-8 rounded" />
+              <button
+                type="button"
+                onClick={handleRemoveLogo}
+                disabled={isSaving}
+                className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors flex-shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
+          )}
 
-            {branding.faviconUrl && (
+          <label
+            htmlFor="logo-input"
+            className="flex flex-col items-center gap-2 px-4 py-6 rounded-xl border border-dashed border-slate-300 text-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/40 transition-colors"
+          >
+            <Upload className="w-5 h-5 text-slate-400" />
+            <span className="text-sm font-medium text-slate-700">Click to upload logo</span>
+            <span className="text-xs text-slate-400">PNG, JPG up to 5MB</span>
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleLogoSelect}
+              className="hidden"
+              id="logo-input"
+            />
+          </label>
+        </div>
+      </div>
+
+      {/* Favicon */}
+      <div className="bg-white rounded-2xl p-6 border border-slate-200">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
+            <ImageIcon className="w-4 h-4 text-slate-600" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900">Favicon</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Shown in browser tabs and bookmarks</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-slate-200 bg-slate-50">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <img src={faviconPreview} alt="Favicon" className="w-6 h-6 object-contain" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-slate-700">Current favicon</p>
+                <p className="text-xs text-slate-400 truncate">{faviconLabel}</p>
+              </div>
+            </div>
+            {(pendingFavicon || branding.faviconUrl) && (
               <button
                 type="button"
                 onClick={handleRemoveFavicon}
-                disabled={uploading}
-                className="text-sm text-red-600 hover:text-red-700 font-medium"
+                disabled={isSaving}
+                className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors flex-shrink-0"
               >
-                Reset to default
+                <X className="w-4 h-4" />
               </button>
             )}
-
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-              <input
-                ref={faviconInputRef}
-                type="file"
-                name="favicon"
-                accept=".ico,.png"
-                className="hidden"
-                id="favicon-input"
-              />
-              <label htmlFor="favicon-input" className="cursor-pointer flex flex-col items-center gap-2">
-                <Upload className="w-6 h-6 text-gray-400" />
-                <span className="text-sm font-medium text-gray-700">Click to upload favicon</span>
-                <span className="text-xs text-gray-500">ICO, PNG up to 2MB</span>
-              </label>
-            </div>
-
-            <p className="text-xs text-gray-500 bg-blue-50 border border-blue-200 rounded-lg p-3">
-              💡 If you only upload a logo, it will automatically be used as favicon too.
-            </p>
           </div>
-        </div>
 
-        {/* Submit Button */}
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={uploading}
-            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          <label
+            htmlFor="favicon-input"
+            className="flex flex-col items-center gap-2 px-4 py-6 rounded-xl border border-dashed border-slate-300 text-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/40 transition-colors"
           >
-            {uploading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {uploading ? 'Uploading...' : 'Save Branding'}
-          </button>
+            <Upload className="w-5 h-5 text-slate-400" />
+            <span className="text-sm font-medium text-slate-700">Click to upload favicon</span>
+            <span className="text-xs text-slate-400">ICO, PNG up to 2MB</span>
+            <input
+              ref={faviconInputRef}
+              type="file"
+              accept=".ico,.png"
+              onChange={handleFaviconSelect}
+              className="hidden"
+              id="favicon-input"
+            />
+          </label>
+
+          <p className="text-xs text-slate-500 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+            💡 If you only upload a logo, it will automatically be used as favicon too.
+          </p>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
