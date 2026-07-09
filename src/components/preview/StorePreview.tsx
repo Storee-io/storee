@@ -790,6 +790,7 @@ interface LayoutProps {
   editMode?: boolean;
   onFieldChange?: (field: string, value: string, label?: string) => void;
   onArrayReorder?: (field: string, newItems: unknown[]) => void;
+  branding?: { logoUrl?: string; faviconUrl?: string; logoFile?: string; faviconFile?: string };
 }
 
 // ── List wrapper (drag reorder removed) ─────────────────────────────────────
@@ -4270,9 +4271,13 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
       {/* Header */}
       <header className="backdrop-blur-sm border-b sticky top-0 z-40" style={{ background: `${tt.headerBg}f5`, borderColor: tt.headerBorder }}>
         <div className="max-w-6xl mx-auto px-5 h-15 flex items-center justify-between" style={{ height: '56px' }}>
-          <span className="text-sm font-black tracking-[0.18em] uppercase" style={{ color: tt.textPrimary }}>
-            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
-          </span>
+          {branding?.logoUrl ? (
+            <img src={branding.logoUrl} alt={storeName} className="h-10 max-w-[120px] object-contain" />
+          ) : (
+            <span className="text-sm font-black tracking-[0.18em] uppercase" style={{ color: tt.textPrimary }}>
+              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
+            </span>
+          )}
           {!isMobile ? (
             <nav className="flex gap-8">
               {navLinks.map((l, li) => <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-xs uppercase tracking-wider transition-colors font-medium cursor-pointer" style={{ color: tt.textMuted }}>{editMode ? <StyleOnlySpan field={`navLinks.${li}`} value={l} htmlValue={l} editMode={editMode} onFieldChange={onFieldChange} /> : l}</a>)}
@@ -4561,9 +4566,13 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
       {/* Header */}
       <header className="bg-[#0a0a0a]/96 backdrop-blur-sm border-b border-white/8 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-5 flex items-center justify-between" style={{ height: '56px' }}>
-          <span className="text-sm font-black uppercase tracking-[0.18em] text-white">
-            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
-          </span>
+          {branding?.logoUrl ? (
+            <img src={branding.logoUrl} alt={storeName} className="h-10 max-w-[120px] object-contain" />
+          ) : (
+            <span className="text-sm font-black uppercase tracking-[0.18em] text-white">
+              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
+            </span>
+          )}
           {!isMobile ? (
             <nav className="flex gap-7">
               {navLinks.map((l, li) => <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-xs uppercase tracking-widest text-white/40 hover:text-white transition-colors cursor-pointer">{editMode ? <StyleOnlySpan field={`navLinks.${li}`} value={l} htmlValue={l} editMode={editMode} onFieldChange={onFieldChange} /> : l}</a>)}
@@ -4797,14 +4806,18 @@ function ElegantLayout({ storeName, primaryColor, design, device, onProductClick
       {/* Header */}
       <header style={{ background: '#fdfcf8', borderBottom: '1px solid #ece7de' }} className="sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between" style={{ height: '60px' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shadow-sm" style={{ background: primaryColor }}>
-              {storeName[0]}
+          {branding?.logoUrl ? (
+            <img src={branding.logoUrl} alt={storeName} className="h-10 max-w-[120px] object-contain" />
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shadow-sm" style={{ background: primaryColor }}>
+                {storeName[0]}
+              </div>
+              <span className="text-sm font-bold" style={{ color: '#2a2420', letterSpacing: '0.16em' }}>
+                {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
+              </span>
             </div>
-            <span className="text-sm font-bold" style={{ color: '#2a2420', letterSpacing: '0.16em' }}>
-              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
-            </span>
-          </div>
+          )}
           {!isMobile ? (
             <nav className="flex gap-5">
               {navLinks.map((l, li) => (
@@ -5030,14 +5043,18 @@ function ModernLayout({ storeName, primaryColor, design, device, onProductClick,
       {/* Header */}
       <header className="backdrop-blur-xl border-b sticky top-0 z-40" style={{ background: `${tt.headerBg}d9`, borderColor: tt.headerBorder }}>
         <div className="max-w-6xl mx-auto px-5 flex items-center justify-between" style={{ height: '56px' }}>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-2xl flex items-center justify-center text-xs font-bold text-white shadow-md" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})` }}>
-              {storeName[0]}
+          {branding?.logoUrl ? (
+            <img src={branding.logoUrl} alt={storeName} className="h-10 max-w-[120px] object-contain" />
+          ) : (
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-2xl flex items-center justify-center text-xs font-bold text-white shadow-md" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})` }}>
+                {storeName[0]}
+              </div>
+              <span className="text-sm font-bold" style={{ color: tt.textPrimary }}>
+                {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
+              </span>
             </div>
-            <span className="text-sm font-bold" style={{ color: tt.textPrimary }}>
-              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
-            </span>
-          </div>
+          )}
           {!isMobile ? (
             <nav className="flex gap-6">
               {navLinks.map((l, li) => <a key={li} onClick={editMode ? undefined : scrollToProducts} className="text-sm transition-colors font-medium cursor-pointer" style={{ color: tt.textSecondary }}>{editMode ? <StyleOnlySpan field={`navLinks.${li}`} value={l} htmlValue={l} editMode={editMode} onFieldChange={onFieldChange} /> : l}</a>)}
@@ -5317,12 +5334,16 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
       {/* Header */}
       <header className="border-b-2 sticky top-0 z-40" style={{ background: tt.headerBg, borderColor: tt.headerBorder }}>
         <div className="max-w-6xl mx-auto px-5 flex items-center justify-between" style={{ height: '56px' }}>
-          <div className="flex items-center gap-2">
-            <span className="text-xl">{collections[0]?.emoji}</span>
-            <span className="text-sm font-black" style={{ color: tt.textPrimary }}>
-              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
-            </span>
-          </div>
+          {branding?.logoUrl ? (
+            <img src={branding.logoUrl} alt={storeName} className="h-10 max-w-[120px] object-contain" />
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-xl">{collections[0]?.emoji}</span>
+              <span className="text-sm font-black" style={{ color: tt.textPrimary }}>
+                {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
+              </span>
+            </div>
+          )}
           {!isMobile ? (
             <nav className="flex gap-2">
               {navLinks.map((l, li) => (
@@ -10439,7 +10460,7 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
   } else if (!design) {
     content = <FallbackLayout store={store} device={device} onProductClick={shared.onProductClick} onAddToCart={shared.onAddToCart} onCartClick={shared.onCartClick} cartCount={shared.cartCount} onUserClick={shared.onUserClick} buyerEmail={shared.buyerEmail} wishlist={shared.wishlist} onToggleWishlist={shared.onToggleWishlist} onWishlistClick={shared.onWishlistClick} editMode={editMode} onFieldChange={onFieldChange} />;
   } else {
-    const props: LayoutProps = { storeName, primaryColor, design, device, fmtPrice, ...shared, editMode, onFieldChange };
+    const props: LayoutProps = { storeName, primaryColor, design, device, fmtPrice, ...shared, editMode, onFieldChange, branding: store.branding };
     // Phase 1: route to new layout types based on layoutType token
     if (design.designTokens || design.designSystem) {
       const layoutType = design.designTokens?.layoutType ?? 'standard';
