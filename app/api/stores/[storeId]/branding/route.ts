@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/src/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 interface BrandingSettings {
   logoUrl?: string;
@@ -23,8 +23,14 @@ export async function POST(
       faviconUrlLength: branding.faviconUrl?.length || 0
     });
 
+    // Use SERVICE ROLE key for server-side operations (bypasses RLS)
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SECRET_KEY!
+    );
+
     // Update store in database
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('stores')
       .update({ branding })
       .eq('id', storeId)
@@ -62,7 +68,13 @@ export async function GET(
   try {
     const { storeId } = await params;
 
-    const { data, error } = await supabase
+    // Use SERVICE ROLE key for server-side operations (bypasses RLS)
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SECRET_KEY!
+    );
+
+    const { data, error } = await supabaseAdmin
       .from('stores')
       .select('branding')
       .eq('id', storeId)
