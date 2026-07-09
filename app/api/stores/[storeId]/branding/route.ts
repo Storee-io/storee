@@ -16,27 +16,35 @@ export async function POST(
     const { storeId } = await params;
     const branding: BrandingSettings = await request.json();
 
-    console.log(`[Branding] Saving for store ${storeId}:`, { logoFile: branding.logoFile, faviconFile: branding.faviconFile });
+    console.log(`[Branding] Saving for store ${storeId}:`, {
+      logoFile: branding.logoFile,
+      faviconFile: branding.faviconFile,
+      logoUrlLength: branding.logoUrl?.length || 0,
+      faviconUrlLength: branding.faviconUrl?.length || 0
+    });
 
-    // Update store in database - gracefully handle if branding column doesn't exist yet
-    const { error } = await supabase
+    // Update store in database
+    const { data, error } = await supabase
       .from('stores')
       .update({ branding })
       .eq('id', storeId)
       .select();
 
     if (error) {
-      console.error('[Branding] Supabase update error:', error.message, error.details);
-      // If column doesn't exist, still return branding data so the feature works
-      // in-context even before the DB schema migration has run.
-      if (error.message?.includes('column') || error.message?.includes('branding')) {
-        console.warn('[Branding] Column may not exist yet, returning data anyway');
-        return NextResponse.json(branding);
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      console.error('[Branding] Supabase update error:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      return NextResponse.json({
+        error: `Failed to save branding: ${error.message}`,
+        details: error.details,
+        code: error.code
+      }, { status: 400 });
     }
 
-    console.log('[Branding] Successfully saved');
+    console.log('[Branding] Successfully saved. Data:', data);
     return NextResponse.json(branding);
   } catch (error) {
     console.error('[Branding] Parse/request error:', error);
