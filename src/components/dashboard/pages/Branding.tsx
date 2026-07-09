@@ -206,7 +206,7 @@ export default function Branding() {
         </div>
         <button
           onClick={save}
-          disabled={isSaving || !hasPending}
+          disabled={isSaving}
           className="flex items-center gap-2 px-5 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
         >
           {isSaving ? (
