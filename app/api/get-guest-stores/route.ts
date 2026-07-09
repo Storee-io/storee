@@ -45,6 +45,7 @@ export async function GET(req: NextRequest) {
       paymentSettings: row.payment_settings,
       customDomain: row.custom_domain,
       publishedDomain: row.published_domain,
+      branding: row.branding || {},
     }));
 
     return NextResponse.json({ stores });

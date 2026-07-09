@@ -146,6 +146,7 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
         font: store.font,
         mood: store.mood,
         audience: store.audience,
+        branding: store.branding,
       }),
     })
       .then(async res => {
