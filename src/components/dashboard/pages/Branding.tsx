@@ -72,6 +72,19 @@ export default function Branding() {
   const handleLogoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || file.size === 0) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file (PNG, JPG, etc.)');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
     const dataUrl = await fileToDataUrl(file);
     setPendingLogo({ file, dataUrl });
   };
@@ -79,6 +92,19 @@ export default function Branding() {
   const handleFaviconSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || file.size === 0) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file (ICO, PNG, etc.)');
+      return;
+    }
+
+    // Validate file size (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('File size must be less than 2MB');
+      return;
+    }
+
     const dataUrl = await fileToDataUrl(file);
     setPendingFavicon({ file, dataUrl });
   };
@@ -263,7 +289,7 @@ export default function Branding() {
             <input
               ref={logoInputRef}
               type="file"
-              accept="image/*"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
               onChange={handleLogoSelect}
               className="hidden"
               id="logo-input"
@@ -317,7 +343,7 @@ export default function Branding() {
             <input
               ref={faviconInputRef}
               type="file"
-              accept=".ico,.png"
+              accept=".ico,image/x-icon,image/png"
               onChange={handleFaviconSelect}
               className="hidden"
               id="favicon-input"
