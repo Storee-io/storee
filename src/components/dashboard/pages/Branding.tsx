@@ -200,7 +200,7 @@ export default function Branding() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file (ICO, PNG, etc.)');
+      toast.error('Please select an image file (ICO, PNG, JPG, etc.)');
       return;
     }
 
@@ -470,11 +470,11 @@ export default function Branding() {
           >
             <Upload className="w-5 h-5 text-slate-400" />
             <span className="text-sm font-medium text-slate-700">Click to upload favicon</span>
-            <span className="text-xs text-slate-400">ICO, PNG up to 500KB</span>
+            <span className="text-xs text-slate-400">ICO, PNG, JPG up to 500KB</span>
             <input
               ref={faviconInputRef}
               type="file"
-              accept=".ico,image/x-icon,image/png"
+              accept=".ico,image/x-icon,image/png,image/jpeg,image/jpg"
               onChange={handleFaviconSelect}
               className="hidden"
               id="favicon-input"
