@@ -360,7 +360,7 @@ export default function Branding() {
           >
             <Upload className="w-5 h-5 text-slate-400" />
             <span className="text-sm font-medium text-slate-700">Click to upload logo</span>
-            <span className="text-xs text-slate-400">PNG, JPG up to 5MB</span>
+            <span className="text-xs text-slate-400">PNG, JPG up to 2MB</span>
             <input
               ref={logoInputRef}
               type="file"
@@ -414,7 +414,7 @@ export default function Branding() {
           >
             <Upload className="w-5 h-5 text-slate-400" />
             <span className="text-sm font-medium text-slate-700">Click to upload favicon</span>
-            <span className="text-xs text-slate-400">ICO, PNG up to 2MB</span>
+            <span className="text-xs text-slate-400">ICO, PNG up to 500KB</span>
             <input
               ref={faviconInputRef}
               type="file"
