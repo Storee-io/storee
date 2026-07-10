@@ -260,8 +260,17 @@ export default function Branding() {
         // If favicon not provided, use a square-cropped version of the logo
         // as fallback so it doesn't get letterboxed in the square favicon slot
         if (!pendingFavicon && !removeFavicon) {
-          updated.faviconUrl = await compressImage(pendingLogo.file, 0.9, 256, true, FAVICON_TARGET_BYTES);
-          updated.faviconFile = 'favicon-from-logo';
+          try {
+            updated.faviconUrl = await compressImage(pendingLogo.file, 0.9, 256, true, FAVICON_TARGET_BYTES);
+            updated.faviconFile = 'favicon-from-logo';
+            console.log('[Branding] Created favicon from logo:', {
+              logoFileName: pendingLogo.file.name,
+              faviconUrlLength: updated.faviconUrl?.length || 0
+            });
+          } catch (err) {
+            console.warn('[Branding] Failed to create favicon from logo:', err);
+            // Continue without favicon if compression fails
+          }
         }
       }
 
@@ -283,9 +292,27 @@ export default function Branding() {
         throw new Error(`Upload failed: ${response.status} ${errorData.error || response.statusText}`);
       }
 
-      setBranding(updated);
-      if (updateActiveStore) {
-        updateActiveStore({ branding: updated });
+      // Fetch the branding back from database to confirm persistence
+      const fetchResponse = await fetch(`/api/stores/${displayStore.id}/branding`);
+      if (fetchResponse.ok) {
+        const savedBranding = await fetchResponse.json();
+        console.log('[Branding Component] Saved from database:', {
+          faviconFile: savedBranding.faviconFile,
+          faviconUrlLength: savedBranding.faviconUrl?.length || 0,
+          logoFile: savedBranding.logoFile,
+          logoUrlLength: savedBranding.logoUrl?.length || 0
+        });
+        setBranding(savedBranding);
+        if (updateActiveStore) {
+          updateActiveStore({ branding: savedBranding });
+        }
+      } else {
+        console.warn('[Branding Component] Failed to fetch branding after save:', fetchResponse.status);
+        // Fallback: use the local state if fetch fails
+        setBranding(updated);
+        if (updateActiveStore) {
+          updateActiveStore({ branding: updated });
+        }
       }
 
       setPendingLogo(null);
