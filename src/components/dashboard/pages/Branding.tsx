@@ -392,9 +392,12 @@ export default function Branding() {
             <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-slate-200 bg-slate-50">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-12 h-12 rounded-lg bg-white border border-slate-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  <img src={logoPreview} alt="Store Logo" className="max-w-full max-h-full object-contain" />
+                  <img src={logoPreview} alt="Store Logo" className="w-full h-full object-cover" />
                 </div>
-                <p className="text-sm font-medium text-slate-700 truncate">{logoLabel}</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-slate-700">Current logo</p>
+                  <p className="text-xs text-slate-400 truncate">{logoLabel}</p>
+                </div>
               </div>
               <button
                 type="button"
