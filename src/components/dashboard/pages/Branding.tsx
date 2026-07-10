@@ -24,8 +24,12 @@ const fileToDataUrl = (file: File): Promise<string> => {
   });
 };
 
-// Compress image to reduce data URL size
+// Compress image to reduce data URL size. Keeps PNG (with alpha) for
+// sources that may have transparency (png/webp/gif) so logos with a
+// transparent background don't get flattened to black by JPEG's lack
+// of an alpha channel; only flattens to JPEG for opaque JPEG sources.
 const compressImage = (file: File, quality: number = 0.7, maxWidth: number = 1200): Promise<string> => {
+  const preserveAlpha = file.type !== 'image/jpeg' && file.type !== 'image/jpg';
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -45,7 +49,7 @@ const compressImage = (file: File, quality: number = 0.7, maxWidth: number = 120
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
+        resolve(preserveAlpha ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', quality));
       };
       img.onerror = reject;
       img.src = e.target?.result as string;
