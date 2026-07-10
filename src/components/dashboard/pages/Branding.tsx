@@ -262,7 +262,7 @@ export default function Branding() {
     }
     // Stage removal only — actual delete happens on Save Changes
     setRemoveLogo(true);
-    toast('Logo will be removed when you save', { description: 'Click Save Changes to confirm.' });
+    toast.success('Logo will be removed', { description: 'Click Save Changes to confirm.' });
   };
 
   const handleRemoveFavicon = () => {
@@ -273,7 +273,7 @@ export default function Branding() {
     }
     // Stage removal only — actual delete happens on Save Changes
     setRemoveFavicon(true);
-    toast('Favicon will reset to default when you save', { description: 'Click Save Changes to confirm.' });
+    toast.success('Favicon will reset to default', { description: 'Click Save Changes to confirm.' });
   };
 
   if (isLoading) {
