@@ -28,7 +28,10 @@ const fileToDataUrl = (file: File): Promise<string> => {
 // sources that may have transparency (png/webp/gif) so logos with a
 // transparent background don't get flattened to black by JPEG's lack
 // of an alpha channel; only flattens to JPEG for opaque JPEG sources.
-const compressImage = (file: File, quality: number = 0.7, maxWidth: number = 1200): Promise<string> => {
+// `square: true` (used for favicons) center-crops to the image's shortest
+// side first, so a non-1:1 source doesn't get letterboxed inside the
+// square favicon preview/browser-tab slot.
+const compressImage = (file: File, quality: number = 0.7, maxWidth: number = 1200, square: boolean = false): Promise<string> => {
   const preserveAlpha = file.type !== 'image/jpeg' && file.type !== 'image/jpg';
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -36,19 +39,31 @@ const compressImage = (file: File, quality: number = 0.7, maxWidth: number = 120
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
+        const ctx = canvas.getContext('2d');
 
-        // Resize if larger than maxWidth
-        if (width > maxWidth) {
-          height = (maxWidth / width) * height;
-          width = maxWidth;
+        if (square) {
+          const side = Math.min(img.width, img.height);
+          const sx = (img.width - side) / 2;
+          const sy = (img.height - side) / 2;
+          const outSide = Math.min(side, maxWidth);
+          canvas.width = outSide;
+          canvas.height = outSide;
+          ctx?.drawImage(img, sx, sy, side, side, 0, 0, outSide, outSide);
+        } else {
+          let width = img.width;
+          let height = img.height;
+
+          // Resize if larger than maxWidth
+          if (width > maxWidth) {
+            height = (maxWidth / width) * height;
+            width = maxWidth;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          ctx?.drawImage(img, 0, 0, width, height);
         }
 
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
         resolve(preserveAlpha ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', quality));
       };
       img.onerror = reject;
@@ -146,8 +161,8 @@ export default function Branding() {
     }
 
     try {
-      // Compress image to reduce data URL size
-      const compressedDataUrl = await compressImage(file, 0.9, 256);
+      // Compress image to reduce data URL size, center-cropped to a square
+      const compressedDataUrl = await compressImage(file, 0.9, 256, true);
       setPendingFavicon({ file, dataUrl: compressedDataUrl });
     } catch (err) {
       toast.error('Failed to process image');
@@ -169,9 +184,10 @@ export default function Branding() {
         updated.logoUrl = pendingLogo.dataUrl;
         updated.logoFile = pendingLogo.file.name;
 
-        // If favicon not provided, use logo as fallback
+        // If favicon not provided, use a square-cropped version of the logo
+        // as fallback so it doesn't get letterboxed in the square favicon slot
         if (!pendingFavicon) {
-          updated.faviconUrl = pendingLogo.dataUrl;
+          updated.faviconUrl = await compressImage(pendingLogo.file, 0.9, 256, true);
           updated.faviconFile = 'favicon-from-logo';
         }
       }
