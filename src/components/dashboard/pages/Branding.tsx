@@ -343,14 +343,29 @@ export default function Branding() {
 
   const logoPreview = pendingLogo?.dataUrl ?? (removeLogo ? undefined : branding.logoUrl);
   const logoLabel = pendingLogo?.file.name ?? (removeLogo ? undefined : branding.logoFile);
-  const faviconPreview = pendingFavicon?.dataUrl ?? (removeFavicon ? STOREE_FAVICON : branding.faviconUrl) ?? STOREE_FAVICON;
+
+  // A favicon the user set explicitly (their own upload, not the
+  // logo-derived fallback) always wins over a newly selected logo.
+  const hasExplicitFavicon = !removeFavicon && !!branding.faviconUrl && branding.faviconFile !== 'favicon-from-logo';
+
+  // Otherwise, live-preview the newly uploaded logo as the favicon,
+  // since that's what it'll become on save.
+  const faviconPreview = pendingFavicon?.dataUrl
+    ?? (hasExplicitFavicon ? branding.faviconUrl : undefined)
+    ?? pendingLogo?.dataUrl
+    ?? (removeFavicon ? undefined : branding.faviconUrl)
+    ?? STOREE_FAVICON;
   const faviconLabel = pendingFavicon
     ? pendingFavicon.file.name
-    : removeFavicon
-      ? 'Storee default (pending)'
-      : branding.faviconUrl
-        ? (branding.faviconFile === 'favicon-from-logo' ? 'Using logo as favicon' : branding.faviconFile)
-        : 'Storee default';
+    : hasExplicitFavicon
+      ? branding.faviconFile
+      : pendingLogo
+        ? `Using ${pendingLogo.file.name} as favicon`
+        : removeFavicon
+          ? 'Storee default (pending)'
+          : branding.faviconUrl
+            ? (branding.faviconFile === 'favicon-from-logo' ? 'Using logo as favicon' : branding.faviconFile)
+            : 'Storee default';
   const hasPending = !!(pendingLogo || pendingFavicon || removeLogo || removeFavicon);
 
   return (
