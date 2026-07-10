@@ -51,6 +51,22 @@ export async function POST(
     }
 
     console.log('[Branding] Successfully saved. Data:', data);
+
+    // If this store is already published, push branding straight to
+    // published_stores too — logo/favicon should reflect on the live
+    // site immediately, not only after the next full Publish.
+    const publishedDomain = data?.[0]?.published_domain;
+    if (publishedDomain) {
+      const { error: publishedError } = await supabaseAdmin
+        .from('published_stores')
+        .update({ branding })
+        .eq('subdomain', publishedDomain);
+
+      if (publishedError) {
+        console.error('[Branding] Failed to sync to published_stores:', publishedError.message);
+      }
+    }
+
     return NextResponse.json(branding);
   } catch (error) {
     console.error('[Branding] Parse/request error:', error);
