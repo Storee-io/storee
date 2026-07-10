@@ -15,6 +15,14 @@ interface BrandingSettings {
 
 const STOREE_FAVICON = '/favicon.ico';
 
+// Target data URL sizes the compressor aims to fit within — matches the
+// limits shown in the upload dropzones. Files over these get progressively
+// compressed instead of rejected; only truly unreasonable uploads (see
+// ABSOLUTE_MAX_UPLOAD_BYTES) are turned away outright.
+const LOGO_TARGET_BYTES = 2 * 1024 * 1024;
+const FAVICON_TARGET_BYTES = 500 * 1024;
+const ABSOLUTE_MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+
 const fileToDataUrl = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -31,40 +39,70 @@ const fileToDataUrl = (file: File): Promise<string> => {
 // `square: true` (used for favicons) center-crops to the image's shortest
 // side first, so a non-1:1 source doesn't get letterboxed inside the
 // square favicon preview/browser-tab slot.
-const compressImage = (file: File, quality: number = 0.7, maxWidth: number = 1200, square: boolean = false): Promise<string> => {
+//
+// `maxBytes`, if given, makes this a best-effort "compress to fit": after
+// the initial render, if the output data URL is still over budget it keeps
+// stepping down JPEG quality (opaque sources) then physical dimensions
+// (any source, including PNGs where quality doesn't apply) until it fits
+// or hits a sane floor — so large uploads get shrunk instead of rejected.
+const compressImage = (
+  file: File,
+  quality: number = 0.7,
+  maxWidth: number = 1200,
+  square: boolean = false,
+  maxBytes?: number
+): Promise<string> => {
   const preserveAlpha = file.type !== 'image/jpeg' && file.type !== 'image/jpg';
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const render = (width: number, q: number): string => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
 
-        if (square) {
-          const side = Math.min(img.width, img.height);
-          const sx = (img.width - side) / 2;
-          const sy = (img.height - side) / 2;
-          const outSide = Math.min(side, maxWidth);
-          canvas.width = outSide;
-          canvas.height = outSide;
-          ctx?.drawImage(img, sx, sy, side, side, 0, 0, outSide, outSide);
-        } else {
-          let width = img.width;
-          let height = img.height;
-
-          // Resize if larger than maxWidth
-          if (width > maxWidth) {
-            height = (maxWidth / width) * height;
-            width = maxWidth;
+          if (square) {
+            const side = Math.min(img.width, img.height);
+            const sx = (img.width - side) / 2;
+            const sy = (img.height - side) / 2;
+            const outSide = Math.min(side, width);
+            canvas.width = outSide;
+            canvas.height = outSide;
+            ctx?.drawImage(img, sx, sy, side, side, 0, 0, outSide, outSide);
+          } else {
+            let w = img.width;
+            let h = img.height;
+            if (w > width) {
+              h = (width / w) * h;
+              w = width;
+            }
+            canvas.width = w;
+            canvas.height = h;
+            ctx?.drawImage(img, 0, 0, w, h);
           }
 
-          canvas.width = width;
-          canvas.height = height;
-          ctx?.drawImage(img, 0, 0, width, height);
+          return preserveAlpha ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', q);
+        };
+
+        let width = maxWidth;
+        let q = quality;
+        let dataUrl = render(width, q);
+
+        if (maxBytes) {
+          let attempts = 0;
+          while (dataUrl.length > maxBytes && attempts < 14 && width >= 32) {
+            if (!preserveAlpha && q > 0.4) {
+              q = Math.max(0.4, q - 0.1);
+            } else {
+              width = Math.round(width * 0.85);
+            }
+            dataUrl = render(width, q);
+            attempts++;
+          }
         }
 
-        resolve(preserveAlpha ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', quality));
+        resolve(dataUrl);
       };
       img.onerror = reject;
       img.src = e.target?.result as string;
@@ -133,15 +171,22 @@ export default function Branding() {
       return;
     }
 
-    // Validate file size (2MB - stricter for logo)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('File size must be less than 2MB');
+    // Only reject truly unreasonable uploads — anything up to the target
+    // gets compressed to fit instead of being turned away.
+    if (file.size > ABSOLUTE_MAX_UPLOAD_BYTES) {
+      toast.error('File is too large to process (max 25MB)');
       return;
     }
 
     try {
-      // Compress image to reduce data URL size
-      const compressedDataUrl = await compressImage(file, 0.8, 1200);
+      const compressedDataUrl = await compressImage(file, 0.8, 1200, false, LOGO_TARGET_BYTES);
+      if (compressedDataUrl.length > LOGO_TARGET_BYTES) {
+        toast.error('Could not compress this image small enough — try a simpler image');
+        return;
+      }
+      if (file.size > LOGO_TARGET_BYTES) {
+        toast.success('Logo compressed to fit the size limit');
+      }
       setPendingLogo({ file, dataUrl: compressedDataUrl });
       setRemoveLogo(false);
     } catch (err) {
@@ -159,15 +204,23 @@ export default function Branding() {
       return;
     }
 
-    // Validate file size (500KB - stricter for favicon)
-    if (file.size > 500 * 1024) {
-      toast.error('Favicon file size must be less than 500KB');
+    // Only reject truly unreasonable uploads — anything up to the target
+    // gets compressed to fit instead of being turned away.
+    if (file.size > ABSOLUTE_MAX_UPLOAD_BYTES) {
+      toast.error('File is too large to process (max 25MB)');
       return;
     }
 
     try {
-      // Compress image to reduce data URL size, center-cropped to a square
-      const compressedDataUrl = await compressImage(file, 0.9, 256, true);
+      // Compressed and center-cropped to a square
+      const compressedDataUrl = await compressImage(file, 0.9, 256, true, FAVICON_TARGET_BYTES);
+      if (compressedDataUrl.length > FAVICON_TARGET_BYTES) {
+        toast.error('Could not compress this image small enough — try a simpler image');
+        return;
+      }
+      if (file.size > FAVICON_TARGET_BYTES) {
+        toast.success('Favicon compressed to fit the size limit');
+      }
       setPendingFavicon({ file, dataUrl: compressedDataUrl });
       setRemoveFavicon(false);
     } catch (err) {
@@ -207,7 +260,7 @@ export default function Branding() {
         // If favicon not provided, use a square-cropped version of the logo
         // as fallback so it doesn't get letterboxed in the square favicon slot
         if (!pendingFavicon && !removeFavicon) {
-          updated.faviconUrl = await compressImage(pendingLogo.file, 0.9, 256, true);
+          updated.faviconUrl = await compressImage(pendingLogo.file, 0.9, 256, true, FAVICON_TARGET_BYTES);
           updated.faviconFile = 'favicon-from-logo';
         }
       }
