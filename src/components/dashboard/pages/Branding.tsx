@@ -95,6 +95,8 @@ export default function Branding() {
   const [branding, setBranding] = useState<BrandingSettings>({});
   const [pendingLogo, setPendingLogo] = useState<{ file: File; dataUrl: string } | null>(null);
   const [pendingFavicon, setPendingFavicon] = useState<{ file: File; dataUrl: string } | null>(null);
+  const [removeLogo, setRemoveLogo] = useState(false);
+  const [removeFavicon, setRemoveFavicon] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +112,8 @@ export default function Branding() {
         if (response.ok) {
           const data = await response.json();
           setBranding(data);
+          setRemoveLogo(false);
+          setRemoveFavicon(false);
         }
       } catch (err) {
         console.error('Failed to fetch branding:', err);
@@ -139,6 +143,7 @@ export default function Branding() {
       // Compress image to reduce data URL size
       const compressedDataUrl = await compressImage(file, 0.8, 1200);
       setPendingLogo({ file, dataUrl: compressedDataUrl });
+      setRemoveLogo(false);
     } catch (err) {
       toast.error('Failed to process image');
     }
@@ -164,6 +169,7 @@ export default function Branding() {
       // Compress image to reduce data URL size, center-cropped to a square
       const compressedDataUrl = await compressImage(file, 0.9, 256, true);
       setPendingFavicon({ file, dataUrl: compressedDataUrl });
+      setRemoveFavicon(false);
     } catch (err) {
       toast.error('Failed to process image');
     }
@@ -171,8 +177,8 @@ export default function Branding() {
 
   const save = async () => {
     if (!displayStore?.id) return;
-    if (!pendingLogo && !pendingFavicon) {
-      toast.error('Please select at least one file to upload');
+    if (!pendingLogo && !pendingFavicon && !removeLogo && !removeFavicon) {
+      toast.error('Please make a change before saving');
       return;
     }
 
@@ -180,13 +186,27 @@ export default function Branding() {
     try {
       const updated: BrandingSettings = { ...branding };
 
+      // Removals staged by the X button only take effect here, on save
+      if (removeLogo) {
+        updated.logoUrl = undefined;
+        updated.logoFile = undefined;
+        if (branding.faviconFile === 'favicon-from-logo') {
+          updated.faviconUrl = undefined;
+          updated.faviconFile = undefined;
+        }
+      }
+      if (removeFavicon) {
+        updated.faviconUrl = undefined;
+        updated.faviconFile = undefined;
+      }
+
       if (pendingLogo) {
         updated.logoUrl = pendingLogo.dataUrl;
         updated.logoFile = pendingLogo.file.name;
 
         // If favicon not provided, use a square-cropped version of the logo
         // as fallback so it doesn't get letterboxed in the square favicon slot
-        if (!pendingFavicon) {
+        if (!pendingFavicon && !removeFavicon) {
           updated.faviconUrl = await compressImage(pendingLogo.file, 0.9, 256, true);
           updated.faviconFile = 'favicon-from-logo';
         }
@@ -217,6 +237,8 @@ export default function Branding() {
 
       setPendingLogo(null);
       setPendingFavicon(null);
+      setRemoveLogo(false);
+      setRemoveFavicon(false);
       if (logoInputRef.current) logoInputRef.current.value = '';
       if (faviconInputRef.current) faviconInputRef.current.value = '';
 
@@ -238,16 +260,9 @@ export default function Branding() {
       if (logoInputRef.current) logoInputRef.current.value = '';
       return;
     }
-    const updated = { ...branding, logoUrl: undefined, logoFile: undefined };
-    if (branding.faviconFile === 'favicon-from-logo') {
-      updated.faviconUrl = undefined;
-      updated.faviconFile = undefined;
-    }
-    setBranding(updated);
-    if (updateActiveStore) {
-      updateActiveStore({ branding: updated });
-    }
-    toast.success('Logo removed');
+    // Stage removal only — actual delete happens on Save Changes
+    setRemoveLogo(true);
+    toast('Logo will be removed when you save', { description: 'Click Save Changes to confirm.' });
   };
 
   const handleRemoveFavicon = () => {
@@ -256,12 +271,9 @@ export default function Branding() {
       if (faviconInputRef.current) faviconInputRef.current.value = '';
       return;
     }
-    const updated = { ...branding, faviconUrl: undefined, faviconFile: undefined };
-    setBranding(updated);
-    if (updateActiveStore) {
-      updateActiveStore({ branding: updated });
-    }
-    toast.success('Favicon reset to default');
+    // Stage removal only — actual delete happens on Save Changes
+    setRemoveFavicon(true);
+    toast('Favicon will reset to default when you save', { description: 'Click Save Changes to confirm.' });
   };
 
   if (isLoading) {
@@ -276,15 +288,17 @@ export default function Branding() {
     return <div className="p-6 text-center text-slate-500">No store selected</div>;
   }
 
-  const logoPreview = pendingLogo?.dataUrl ?? branding.logoUrl;
-  const logoLabel = pendingLogo?.file.name ?? branding.logoFile;
-  const faviconPreview = pendingFavicon?.dataUrl ?? branding.faviconUrl ?? STOREE_FAVICON;
+  const logoPreview = pendingLogo?.dataUrl ?? (removeLogo ? undefined : branding.logoUrl);
+  const logoLabel = pendingLogo?.file.name ?? (removeLogo ? undefined : branding.logoFile);
+  const faviconPreview = pendingFavicon?.dataUrl ?? (removeFavicon ? STOREE_FAVICON : branding.faviconUrl) ?? STOREE_FAVICON;
   const faviconLabel = pendingFavicon
     ? pendingFavicon.file.name
-    : branding.faviconUrl
-      ? (branding.faviconFile === 'favicon-from-logo' ? 'Using logo as favicon' : branding.faviconFile)
-      : 'Storee default';
-  const hasPending = !!(pendingLogo || pendingFavicon);
+    : removeFavicon
+      ? 'Storee default (pending)'
+      : branding.faviconUrl
+        ? (branding.faviconFile === 'favicon-from-logo' ? 'Using logo as favicon' : branding.faviconFile)
+        : 'Storee default';
+  const hasPending = !!(pendingLogo || pendingFavicon || removeLogo || removeFavicon);
 
   return (
     <div className="p-6 max-w-2xl space-y-6">
@@ -382,7 +396,7 @@ export default function Branding() {
                 <p className="text-xs text-slate-400 truncate">{faviconLabel}</p>
               </div>
             </div>
-            {(pendingFavicon || branding.faviconUrl) && (
+            {(pendingFavicon || (branding.faviconUrl && !removeFavicon)) && (
               <button
                 type="button"
                 onClick={handleRemoveFavicon}
