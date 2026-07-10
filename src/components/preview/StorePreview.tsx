@@ -4540,9 +4540,13 @@ function MinimalLayout({ storeName, primaryColor, design, device, onProductClick
       {/* Footer */}
       <footer className="border-t py-10" style={{ background: tt.pageBg, borderColor: tt.divider }}>
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: tt.textPrimary }}>
-            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
-          </span>
+          {branding?.logoUrl ? (
+            <img src={branding.logoUrl} alt={storeName} className="h-7 max-w-[110px] object-contain" />
+          ) : (
+            <span className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: tt.textPrimary }}>
+              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
+            </span>
+          )}
           <p className="text-xs italic" style={{ color: tt.textMuted }}>
             <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </p>
@@ -8849,9 +8853,13 @@ function TokenLayout({ storeName, primaryColor, design, device, onProductClick, 
       {/* Footer */}
       <footer style={{ borderTop: `1px solid ${tt.divider}`, background: tt.headerBg, paddingTop: '2.5rem', paddingBottom: '2.5rem' }}>
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm font-black uppercase tracking-[0.18em]" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
-            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
-          </span>
+          {branding?.logoUrl ? (
+            <img src={branding.logoUrl} alt={storeName} className="h-7 max-w-[110px] object-contain" />
+          ) : (
+            <span className="text-sm font-black uppercase tracking-[0.18em]" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
+              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
+            </span>
+          )}
           <p className="text-xs italic" style={{ color: tt.textMuted }}>
             <EditSpan field="tagline" value={design.tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </p>
@@ -10101,9 +10109,13 @@ function FullscreenLayout({ storeName, primaryColor, design, device, onProductCl
 
       <footer style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '2rem', paddingBottom: '2rem' }}>
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm font-black uppercase tracking-widest" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
-            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
-          </span>
+          {branding?.logoUrl ? (
+            <img src={branding.logoUrl} alt={storeName} className="h-7 max-w-[110px] object-contain" />
+          ) : (
+            <span className="text-sm font-black uppercase tracking-widest" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
+              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
+            </span>
+          )}
           <p className="text-xs italic" style={{ color: tt.textMuted }}>
             <EditSpan field="tagline" value={design.tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </p>
