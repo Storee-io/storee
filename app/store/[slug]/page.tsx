@@ -16,13 +16,14 @@ export async function generateMetadata({ params }: Props) {
   const db = createServerClient();
   const { data } = await db
     .from('published_stores')
-    .select('name, status')
+    .select('name, status, branding')
     .eq('subdomain', slug)
     .maybeSingle();
 
   if (!data) return { title: 'Store Not Found' };
-  if (data.status === 'inactive') return { title: `${data.name} – Currently Unavailable` };
-  return { title: data.name };
+  const icons = data.branding?.faviconUrl ? { icon: data.branding.faviconUrl } : undefined;
+  if (data.status === 'inactive') return { title: `${data.name} – Currently Unavailable`, icons };
+  return { title: data.name, icons };
 }
 
 export default async function StorefrontPage({ params }: Props) {

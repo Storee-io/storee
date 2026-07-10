@@ -36,20 +36,9 @@ export default function StorefrontClient({
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // Set favicon from branding if available
-  useEffect(() => {
-    if (store.branding?.faviconUrl) {
-      const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-      if (link) {
-        link.href = store.branding.faviconUrl;
-      } else {
-        const newLink = document.createElement('link');
-        newLink.rel = 'icon';
-        newLink.href = store.branding.faviconUrl;
-        document.head.appendChild(newLink);
-      }
-    }
-  }, [store.branding?.faviconUrl]);
+  // Favicon is set via generateMetadata's `icons` field (SSR) so it survives
+  // client-side navigation between store pages — a DOM-injected <link> here
+  // would get wiped out by Next's own metadata re-render on route change.
 
   // Apply elementOverrides styles from visual editor to live store
   useEffect(() => {
