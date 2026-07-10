@@ -442,7 +442,7 @@ export default function Branding() {
           <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-slate-200 bg-slate-50">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                <img src={faviconPreview} alt="Favicon" className="w-6 h-6 object-contain" />
+                <img src={faviconPreview} alt="Favicon" className="w-6 h-6 object-contain rounded" />
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-slate-700">Current favicon</p>
