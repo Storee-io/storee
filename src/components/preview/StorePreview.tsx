@@ -4782,9 +4782,15 @@ function BoldLayout({ storeName, primaryColor, design, device, onProductClick, o
       {/* Footer */}
       <footer className="border-t border-white/8 py-10">
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm font-black uppercase tracking-[0.18em] text-white">
-            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
-          </span>
+          {branding?.logoUrl ? (
+            <div style={{ height: '1.5rem' }}>
+              <img src={branding.logoUrl} alt={storeName} style={{ height: '100%', width: 'auto', maxWidth: '160px' }} />
+            </div>
+          ) : (
+            <span className="text-sm font-black uppercase tracking-[0.18em] text-white">
+              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
+            </span>
+          )}
           <p className="text-xs text-white/30 uppercase tracking-widest">
             <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </p>
@@ -5582,9 +5588,15 @@ function PlayfulLayout({ storeName, primaryColor, design, device, onProductClick
         </div>
         <div className="max-w-6xl mx-auto px-5 py-8 text-center">
           <p className="text-2xl mb-2">{collections[0]?.emoji}</p>
-          <p className="text-sm font-black mb-1" style={{ color: heroTextColor }}>
-            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
-          </p>
+          {branding?.logoUrl ? (
+            <div style={{ height: '1.5rem', marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>
+              <img src={branding.logoUrl} alt={storeName} style={{ height: '100%', width: 'auto', maxWidth: '160px' }} />
+            </div>
+          ) : (
+            <p className="text-sm font-black mb-1" style={{ color: heroTextColor }}>
+              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
+            </p>
+          )}
           <p className="text-xs mb-4" style={{ color: `${heroTextColor}aa` }}>
             <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </p>
@@ -9466,9 +9478,15 @@ function EditorialLayout({ storeName, primaryColor, design, device, onProductCli
       {/* ── Footer ── */}
       <footer style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '2rem', paddingBottom: '2rem' }}>
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm font-black uppercase tracking-widest" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
-            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
-          </span>
+          {branding?.logoUrl ? (
+            <div style={{ height: '2rem' }}>
+              <img src={branding.logoUrl} alt={storeName} style={{ height: '100%', width: 'auto', maxWidth: '200px' }} />
+            </div>
+          ) : (
+            <span className="text-sm font-black uppercase tracking-widest" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
+              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
+            </span>
+          )}
           <p className="text-xs italic" style={{ color: tt.textMuted }}>
             <EditSpan field="tagline" value={design.tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </p>
@@ -9809,9 +9827,15 @@ function MasonryLayout({ storeName, primaryColor, design, device, onProductClick
 
       <footer style={{ borderTop: `1px solid ${tt.divider}`, paddingTop: '1.5rem', paddingBottom: '1.5rem' }}>
         <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm font-black tracking-wider" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
-            {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
-          </span>
+          {branding?.logoUrl ? (
+            <div style={{ height: '1.5rem' }}>
+              <img src={branding.logoUrl} alt={storeName} style={{ height: '100%', width: 'auto', maxWidth: '160px' }} />
+            </div>
+          ) : (
+            <span className="text-sm font-black tracking-wider" style={{ fontFamily: tt.headingFont, color: tt.textPrimary }}>
+              {editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}
+            </span>
+          )}
           <p className="text-xs italic" style={{ color: tt.textMuted }}>
             <EditSpan field="tagline" value={tagline ?? ''} editMode={editMode} onFieldChange={onFieldChange} singleLine />
           </p>
