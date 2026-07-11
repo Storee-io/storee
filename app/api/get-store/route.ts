@@ -36,7 +36,21 @@ export async function GET(req: NextRequest) {
 
     // Map database row to Store type using rowToStore
     const { rowToStore } = await import('@/src/lib/supabase');
-    const store = rowToStore(data as any);
+    let store = rowToStore(data as any);
+
+    // If draft store has no branding but is published, fetch branding from published_stores
+    if (!store.branding && store.publishedDomain) {
+      const { data: published } = await db
+        .from('published_stores')
+        .select('branding')
+        .eq('subdomain', store.publishedDomain)
+        .maybeSingle();
+
+      if (published?.branding) {
+        store = { ...store, branding: published.branding };
+        console.log('[get-store] Synced branding from published_stores for', store.id);
+      }
+    }
 
     return NextResponse.json({ store });
   } catch (err) {
