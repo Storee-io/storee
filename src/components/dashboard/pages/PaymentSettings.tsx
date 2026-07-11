@@ -198,19 +198,36 @@ export default function PaymentSettings() {
         <>
           {/* Bank Transfer */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
-                <Landmark className="w-4 h-4 text-slate-600" />
+            <div className="flex items-center justify-between gap-3 mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
+                  <Landmark className="w-4 h-4 text-slate-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900">Bank Transfer</h3>
+                  <p className="text-xs text-slate-400">Add and manage bank accounts</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-slate-900">Bank Transfer</h3>
-                <p className="text-xs text-slate-400">Enable bank accounts to receive payments</p>
-              </div>
+              <button
+                onClick={() => {
+                  const newId = `bank-${Date.now()}`;
+                  setMethods([...methods, { id: newId, name: `Transfer Bank`, type: 'bank_transfer', enabled: false }]);
+                }}
+                className="px-3 py-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors flex-shrink-0"
+              >
+                + Add Account
+              </button>
             </div>
             <div className="space-y-3">
-              {bankMethods.map(m => (
-                <BankTransferCard key={m.id} method={m} onUpdate={p => updateMethod(m.id, p)} />
-              ))}
+              {bankMethods.length > 0 ? (
+                bankMethods.map(m => (
+                  <BankTransferAccountRow key={m.id} method={m} onUpdate={p => updateMethod(m.id, p)} onDelete={() => setMethods(methods.filter(x => x.id !== m.id))} />
+                ))
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-sm text-slate-500">No bank accounts added yet</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -472,25 +489,47 @@ function EnvToggle({ value, options, onChange }: {
   );
 }
 
-function BankTransferCard({ method, onUpdate }: { method: PaymentMethod; onUpdate: (patch: Partial<PaymentMethod>) => void }) {
-  const displayName = method.bankName ? `Transfer ${method.bankName}` : method.name;
+function BankTransferAccountRow({ method, onUpdate, onDelete }: { method: PaymentMethod; onUpdate: (patch: Partial<PaymentMethod>) => void; onDelete: () => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const displayName = method.bankName ? `${method.bankName}` : 'No bank selected';
+
   return (
-    <div className={`rounded-xl border p-4 transition-all ${method.enabled ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50 opacity-70'}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <div>
+      {/* Row Header */}
+      <div className={`flex items-center justify-between p-3 rounded-lg border transition-all ${expanded ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'}`}>
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="p-1 hover:bg-slate-200 rounded transition-colors flex-shrink-0"
+          >
+            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          </button>
           <PaymentMethodIcon id={method.bankName?.toLowerCase() ?? method.id} type={method.type} />
-          <span className="text-sm font-semibold text-slate-800">{displayName}</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-slate-800 truncate">{displayName}</p>
+            {method.accountNumber && <p className="text-xs text-slate-400 truncate">{method.accountNumber}</p>}
+          </div>
         </div>
-        <label className="relative inline-flex items-center cursor-pointer">
-          <input type="checkbox" checked={method.enabled} onChange={e => onUpdate({ enabled: e.target.checked })} className="sr-only peer" />
-          <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
-        </label>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" checked={method.enabled} onChange={e => onUpdate({ enabled: e.target.checked })} className="sr-only peer" />
+            <div className="w-8 h-4 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500" />
+          </label>
+          {expanded && (
+            <button onClick={onDelete} className="p-1 text-slate-400 hover:text-red-600 transition-colors flex-shrink-0">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
-      {method.enabled && (
-        <div className="mt-3 pt-3 border-t border-emerald-100 space-y-3">
+      {/* Expanded Details */}
+      {expanded && (
+        <div className="mt-2 p-4 bg-emerald-50/50 border border-emerald-100 rounded-lg space-y-3">
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Bank</label>
+            <label className="text-xs font-medium text-slate-600 mb-1.5 block">Bank</label>
             <div className="relative">
               <select
                 value={method.bankName ?? ''}
@@ -504,7 +543,7 @@ function BankTransferCard({ method, onUpdate }: { method: PaymentMethod; onUpdat
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Account Number</label>
+            <label className="text-xs font-medium text-slate-600 mb-1.5 block">Account Number</label>
             <input
               type="text"
               value={method.accountNumber ?? ''}
@@ -514,7 +553,7 @@ function BankTransferCard({ method, onUpdate }: { method: PaymentMethod; onUpdat
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Account Holder</label>
+            <label className="text-xs font-medium text-slate-600 mb-1.5 block">Account Holder</label>
             <input
               type="text"
               value={method.accountHolder ?? ''}
@@ -524,7 +563,7 @@ function BankTransferCard({ method, onUpdate }: { method: PaymentMethod; onUpdat
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Instructions (optional)</label>
+            <label className="text-xs font-medium text-slate-600 mb-1.5 block">Instructions (optional)</label>
             <textarea
               value={method.instructions ?? ''}
               onChange={e => onUpdate({ instructions: e.target.value })}
