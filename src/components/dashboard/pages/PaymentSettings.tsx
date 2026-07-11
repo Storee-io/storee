@@ -588,41 +588,41 @@ function BankTransferAccountRow({ method, onUpdate, onDelete, isExpanded, onTogg
 
 function OtherPaymentCard({ method, onUpdate }: { method: PaymentMethod; onUpdate: (patch: Partial<PaymentMethod>) => void }) {
   return (
-    <div className={`rounded-xl border border-slate-200 p-4 transition-all ${method.enabled ? 'bg-white' : 'bg-slate-50 opacity-70'}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <div className={`rounded-lg border transition-all ${method.enabled ? 'border-slate-200 bg-white shadow-sm hover:shadow-md' : 'border-slate-200 bg-slate-50/50'}`}>
+      <div className="flex items-center justify-between p-4">
+        <div className="flex items-center gap-3 flex-1">
           <PaymentMethodIcon id={method.id} type={method.type} />
-          <span className="text-sm font-semibold text-slate-800">{method.name}</span>
+          <span className={`text-sm font-medium ${method.enabled ? 'text-slate-900' : 'text-slate-500'}`}>{method.name}</span>
         </div>
-        <label className="relative inline-flex items-center cursor-pointer">
+        <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
           <input type="checkbox" checked={method.enabled} onChange={e => onUpdate({ enabled: e.target.checked })} className="sr-only peer" />
           <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
         </label>
       </div>
 
       {method.enabled && (
-        <div className="mt-3 pt-3 border-t border-emerald-100 space-y-3">
+        <div className="border-t border-slate-100 bg-slate-50/40 px-4 py-3 space-y-3">
           {method.type === 'ewallet' && (
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">{method.name} Number</label>
+              <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">{method.name} Number</label>
               <input
                 type="tel"
                 value={method.ewalletNumber ?? ''}
                 onChange={e => onUpdate({ ewalletNumber: e.target.value })}
                 placeholder="08123456789"
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100"
+                className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm bg-white outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 transition-colors"
               />
             </div>
           )}
           {(method.type === 'qris' || method.type === 'cod') && (
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">Instructions for customers</label>
+              <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">Instructions for customers</label>
               <textarea
                 value={method.instructions ?? ''}
                 onChange={e => onUpdate({ instructions: e.target.value })}
                 rows={2}
                 placeholder={method.type === 'qris' ? 'Scan QR code with any payment app.' : 'Have exact change ready when courier arrives.'}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 resize-none"
+                className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm bg-white outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 resize-none transition-colors"
               />
             </div>
           )}
