@@ -184,7 +184,7 @@ export default function MyStoresPage() {
                       <div className="flex items-start gap-3 mb-4">
                         <div
                           className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden"
-                          style={{ background: `${color}18` }}
+                          style={store.branding?.faviconUrl ? undefined : { background: `${color}18` }}
                         >
                           {store.branding?.faviconUrl ? (
                             <img src={store.branding.faviconUrl} alt="" className="w-full h-full object-contain" />

@@ -142,7 +142,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
             <>
               <div
                 className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden"
-                style={{ background: activeStore?.primaryColor || '#10b981' }}
+                style={activeStore?.branding?.faviconUrl ? undefined : { background: activeStore?.primaryColor || '#10b981' }}
               >
                 {activeStore?.branding?.faviconUrl ? (
                   <img src={activeStore.branding.faviconUrl} alt="" className="w-full h-full object-contain" />
@@ -182,7 +182,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                 /* No real stores — show the demo/fallback store so header & list are consistent */
                 <div className="px-3 py-2 flex items-center gap-3">
                   <div className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden"
-                    style={{ background: activeStore.primaryColor }}>
+                    style={activeStore.branding?.faviconUrl ? undefined : { background: activeStore.primaryColor }}>
                     {activeStore.branding?.faviconUrl ? (
                       <img src={activeStore.branding.faviconUrl} alt="" className="w-full h-full object-contain" />
                     ) : (
@@ -206,7 +206,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                     }`}
                   >
                     <div className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden"
-                      style={{ background: store.primaryColor }}>
+                      style={store.branding?.faviconUrl ? undefined : { background: store.primaryColor }}>
                       {store.branding?.faviconUrl ? (
                         <img src={store.branding.faviconUrl} alt="" className="w-full h-full object-contain" />
                       ) : (
