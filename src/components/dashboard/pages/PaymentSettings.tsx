@@ -298,58 +298,46 @@ export default function PaymentSettings() {
             </div>
           )}
 
-          {/* WhatsApp Confirmation */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-green-50 rounded-xl flex items-center justify-center">
-                <MessageCircle className="w-4 h-4 text-green-600" />
+          {/* Additional Settings — banner/strip style, not a card */}
+          <div className="space-y-4 px-1">
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <MessageCircle className="w-3.5 h-3.5 text-slate-400" />
+                <label className="text-sm font-medium text-slate-700">WhatsApp Confirmation Number</label>
               </div>
-              <div>
-                <h3 className="font-bold text-slate-900">WhatsApp Confirmation</h3>
-                <p className="text-xs text-slate-400">Customers send payment proof via WhatsApp</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">WhatsApp Number</label>
-                <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100">
-                  <span className="px-4 py-2.5 bg-slate-50 text-sm text-slate-500 border-r border-slate-200">+62</span>
-                  <input
-                    type="tel"
-                    value={confirmationWa.replace(/^62/, '')}
-                    onChange={e => setConfirmationWa('62' + e.target.value.replace(/^0/, ''))}
-                    placeholder="81234567890"
-                    className="flex-1 px-4 py-2.5 text-sm outline-none bg-white"
-                  />
-                </div>
+              <p className="text-xs text-slate-400 mb-2">Customers send payment proof via WhatsApp</p>
+              <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100">
+                <span className="px-4 py-2.5 bg-slate-50 text-sm text-slate-500 border-r border-slate-200">+62</span>
+                <input
+                  type="tel"
+                  value={confirmationWa.replace(/^62/, '')}
+                  onChange={e => setConfirmationWa('62' + e.target.value.replace(/^0/, ''))}
+                  placeholder="81234567890"
+                  className="flex-1 px-4 py-2.5 text-sm outline-none bg-white"
+                />
               </div>
               {confirmationWa && (
-                <p className="text-xs text-emerald-600 flex items-center gap-1.5">
+                <p className="text-xs text-emerald-600 flex items-center gap-1.5 mt-1.5">
                   <Check className="w-3.5 h-3.5" />
                   Link: wa.me/{confirmationWa}
                 </p>
               )}
             </div>
-          </div>
 
-          {/* Payment Notes */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
-                <FileText className="w-4 h-4 text-slate-600" />
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <FileText className="w-3.5 h-3.5 text-slate-400" />
+                <label className="text-sm font-medium text-slate-700">Payment Notes</label>
               </div>
-              <div>
-                <h3 className="font-bold text-slate-900">Payment Notes</h3>
-                <p className="text-xs text-slate-400">Shown below payment options at checkout</p>
-              </div>
+              <p className="text-xs text-slate-400 mb-2">Shown below payment options at checkout</p>
+              <textarea
+                value={paymentNote}
+                onChange={e => setPaymentNote(e.target.value)}
+                rows={3}
+                placeholder="e.g. Payments confirmed within 24 hrs. Orders processed after verification."
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 resize-none bg-white"
+              />
             </div>
-            <textarea
-              value={paymentNote}
-              onChange={e => setPaymentNote(e.target.value)}
-              rows={3}
-              placeholder="e.g. Payments confirmed within 24 hrs. Orders processed after verification."
-              className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 resize-none"
-            />
           </div>
         </>
       )}
