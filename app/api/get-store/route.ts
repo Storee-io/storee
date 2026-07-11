@@ -19,16 +19,16 @@ export async function GET(req: NextRequest) {
     const db = createServerClient(); // service key to bypass RLS for now
 
     // If id looks like a published domain (contains '-' and no mixed case),
-    // try to resolve it to a store ID from published_stores
+    // try to resolve it to a store ID from stores table
     if (id.includes('-') && !id.match(/[A-Z]/)) {
-      const { data: published } = await db
-        .from('published_stores')
-        .select('store_id')
-        .eq('subdomain', id)
+      const { data: store } = await db
+        .from('stores')
+        .select('id')
+        .eq('published_domain', id)
         .maybeSingle();
 
-      if (published?.store_id) {
-        id = published.store_id;
+      if (store?.id) {
+        id = store.id;
         console.log('[get-store] Resolved published domain', req.nextUrl.searchParams.get('id'), 'to store ID', id);
       }
     }
