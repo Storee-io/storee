@@ -144,7 +144,8 @@ export default function PaymentSettings() {
     setAutoPayment(prev => ({ ...prev, stripe:   { ...DEFAULT_AUTO.stripe!,   ...prev.stripe,   ...patch } }));
 
   const bankMethods  = methods.filter(m => m.type === 'bank_transfer');
-  const otherMethods = methods.filter(m => m.type !== 'bank_transfer');
+  const digitalMethods = methods.filter(m => m.type !== 'bank_transfer' && m.id !== 'cod');
+  const codMethod = methods.find(m => m.id === 'cod');
 
   const tabs: { id: Tab; label: string; icon: React.ElementType; desc: string }[] = [
     { id: 'manual', label: 'Manual Payment', icon: CreditCard, desc: 'Bank transfer, QRIS, COD, e-wallet' },
@@ -240,23 +241,41 @@ export default function PaymentSettings() {
             </div>
           </div>
 
-          {/* Other Methods */}
+          {/* Digital Payments */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200">
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
-                <Wallet className="w-4 h-4 text-slate-600" />
+              <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center">
+                <Zap className="w-4 h-4 text-indigo-600" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900">Other Methods</h3>
-                <p className="text-xs text-slate-400">QRIS, COD & e-wallets</p>
+                <h3 className="font-bold text-slate-900">Digital Payments</h3>
+                <p className="text-xs text-slate-400">QRIS & e-wallets</p>
               </div>
             </div>
             <div className="space-y-3">
-              {otherMethods.map(m => (
+              {digitalMethods.map(m => (
                 <OtherPaymentCard key={m.id} method={m} onUpdate={p => updateMethod(m.id, p)} />
               ))}
             </div>
           </div>
+
+          {/* Cash Payment */}
+          {codMethod && (
+            <div className="bg-white rounded-2xl p-6 border border-slate-200">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-8 h-8 bg-green-50 rounded-xl flex items-center justify-center">
+                  <Banknote className="w-4 h-4 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900">Cash Payment</h3>
+                  <p className="text-xs text-slate-400">Cash on delivery</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <OtherPaymentCard key={codMethod.id} method={codMethod} onUpdate={p => updateMethod(codMethod.id, p)} />
+              </div>
+            </div>
+          )}
 
           {/* WhatsApp Confirmation */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200">
