@@ -443,6 +443,14 @@ export default function PreviewShell({ store, from = null }: Props) {
                   onClick={() => setShowAddrDropdown(v => !v)}
                   className="w-full bg-white border border-slate-200 rounded-md px-2.5 py-1 flex items-center gap-2 overflow-hidden hover:border-slate-300 transition-colors text-left"
                 >
+                  {liveStore.branding?.faviconUrl ? (
+                    <img
+                      src={liveStore.branding.faviconUrl}
+                      alt="favicon"
+                      className="w-4 h-4 rounded flex-shrink-0 object-contain"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                  ) : null}
                   <Globe className={`w-3.5 h-3.5 flex-shrink-0 ${isPublished ? 'text-slate-400' : 'text-slate-300'}`} />
                   <span className={`text-xs font-mono truncate min-w-0 flex-1 ${isPublished ? 'text-slate-500' : 'text-slate-400'}`}>
                     {isPublished
