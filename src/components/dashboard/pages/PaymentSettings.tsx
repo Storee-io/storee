@@ -109,6 +109,7 @@ export default function PaymentSettings() {
     activeStore?.paymentSettings?.autoPayment ?? DEFAULT_AUTO
   );
   const [saved, setSaved] = useState(false);
+  const [expandedBankId, setExpandedBankId] = useState<string | null>(null);
 
   useEffect(() => {
     setMethods(activeStore?.paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS);
@@ -212,6 +213,7 @@ export default function PaymentSettings() {
                 onClick={() => {
                   const newId = `bank-${Date.now()}`;
                   setMethods([...methods, { id: newId, name: `Transfer Bank`, type: 'bank_transfer', enabled: false }]);
+                  setExpandedBankId(newId);
                 }}
                 className="px-3 py-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors flex-shrink-0"
               >
@@ -221,7 +223,14 @@ export default function PaymentSettings() {
             <div className="space-y-3">
               {bankMethods.length > 0 ? (
                 bankMethods.map(m => (
-                  <BankTransferAccountRow key={m.id} method={m} onUpdate={p => updateMethod(m.id, p)} onDelete={() => setMethods(methods.filter(x => x.id !== m.id))} />
+                  <BankTransferAccountRow
+                    key={m.id}
+                    method={m}
+                    onUpdate={p => updateMethod(m.id, p)}
+                    onDelete={() => setMethods(methods.filter(x => x.id !== m.id))}
+                    isExpanded={expandedBankId === m.id}
+                    onToggleExpand={(expanded) => setExpandedBankId(expanded ? m.id : null)}
+                  />
                 ))
               ) : (
                 <div className="text-center py-6">
@@ -489,20 +498,19 @@ function EnvToggle({ value, options, onChange }: {
   );
 }
 
-function BankTransferAccountRow({ method, onUpdate, onDelete }: { method: PaymentMethod; onUpdate: (patch: Partial<PaymentMethod>) => void; onDelete: () => void }) {
-  const [expanded, setExpanded] = useState(false);
+function BankTransferAccountRow({ method, onUpdate, onDelete, isExpanded, onToggleExpand }: { method: PaymentMethod; onUpdate: (patch: Partial<PaymentMethod>) => void; onDelete: () => void; isExpanded: boolean; onToggleExpand: (expanded: boolean) => void }) {
   const displayName = method.bankName ? `${method.bankName}` : 'No bank selected';
 
   return (
     <div>
       {/* Row Header */}
-      <div className={`flex items-center justify-between p-3 rounded-lg border transition-all ${expanded ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'}`}>
+      <div className={`flex items-center justify-between p-3 rounded-lg border transition-all ${isExpanded ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'}`}>
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <button
-            onClick={() => setExpanded(!expanded)}
+            onClick={() => onToggleExpand(!isExpanded)}
             className="p-1 hover:bg-slate-200 rounded transition-colors flex-shrink-0"
           >
-            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
           </button>
           <PaymentMethodIcon id={method.bankName?.toLowerCase() ?? method.id} type={method.type} />
           <div className="min-w-0 flex-1">
@@ -515,7 +523,7 @@ function BankTransferAccountRow({ method, onUpdate, onDelete }: { method: Paymen
             <input type="checkbox" checked={method.enabled} onChange={e => onUpdate({ enabled: e.target.checked })} className="sr-only peer" />
             <div className="w-8 h-4 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500" />
           </label>
-          {expanded && (
+          {isExpanded && (
             <button onClick={onDelete} className="p-1 text-slate-400 hover:text-red-600 transition-colors flex-shrink-0">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -526,8 +534,8 @@ function BankTransferAccountRow({ method, onUpdate, onDelete }: { method: Paymen
       </div>
 
       {/* Expanded Details */}
-      {expanded && (
-        <div className="mt-2 p-4 bg-emerald-50/50 border border-emerald-100 rounded-lg space-y-3">
+      {isExpanded && (
+        <div className="mt-2 p-4 bg-white border border-slate-200 rounded-lg space-y-3">
           <div>
             <label className="text-xs font-medium text-slate-600 mb-1.5 block">Bank</label>
             <div className="relative">
