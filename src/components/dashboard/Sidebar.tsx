@@ -45,12 +45,11 @@ function buildNavSections(pendingOrders: number, newProducts: number, activeStor
   {
     label: 'CONFIGURATION',
     items: [
-      { icon: PenLine,     label: 'Editor',          path: activeStoreId ? `/editor/${activeStoreId}` : '/editor' },
+      { icon: Settings,    label: 'Store Settings',   path: '/dashboard/settings' },
       { icon: Palette,     label: 'Brand & Design',  path: '/dashboard/brand-design' },
       { icon: Globe,       label: 'Domain',          path: '/dashboard/domain' },
       { icon: Truck,       label: 'Shipping',        path: '/dashboard/shipping' },
       { icon: CreditCard,  label: 'Payment',         path: '/dashboard/payment' },
-      { icon: Settings,    label: 'Store Settings',   path: '/dashboard/settings' },
       { icon: Bell,        label: 'Notifications',    path: '/dashboard/notifications' },
       { icon: User,        label: 'Account',           path: '/dashboard/account' },
     ] as NavItem[],
