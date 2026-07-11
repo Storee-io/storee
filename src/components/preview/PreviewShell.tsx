@@ -449,20 +449,12 @@ export default function PreviewShell({ store, from = null }: Props) {
                       alt="favicon"
                       className="w-4 h-4 rounded flex-shrink-0 object-contain"
                       onError={(e) => {
-                        console.warn('[PreviewShell] Favicon failed to load:', liveStore.branding?.faviconUrl);
                         e.currentTarget.style.display = 'none';
-                      }}
-                      onLoad={() => {
-                        console.log('[PreviewShell] Favicon loaded successfully');
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
                       }}
                     />
-                  ) : (
-                    <>
-                      {console.log('[PreviewShell] No favicon URL found:', liveStore.branding)}
-                      {null}
-                    </>
-                  )}
-                  <Globe className={`w-3.5 h-3.5 flex-shrink-0 ${isPublished ? 'text-slate-400' : 'text-slate-300'}`} />
+                  ) : null}
+                  <Globe className={`w-3.5 h-3.5 flex-shrink-0 ${isPublished ? 'text-slate-400' : 'text-slate-300'} ${liveStore.branding?.faviconUrl ? 'hidden' : ''}`} />
                   <span className={`text-xs font-mono truncate min-w-0 flex-1 ${isPublished ? 'text-slate-500' : 'text-slate-400'}`}>
                     {isPublished
                       ? `https://${liveStore.publishedDomain ?? liveStore.domain}${currentPath === '/' ? '' : currentPath}`
