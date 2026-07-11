@@ -502,9 +502,9 @@ function BankTransferAccountRow({ method, onUpdate, onDelete, isExpanded, onTogg
   const displayName = method.bankName ? `${method.bankName}` : 'No bank selected';
 
   return (
-    <div>
+    <div className={isExpanded ? 'border border-slate-200 rounded-lg overflow-hidden' : ''}>
       {/* Row Header */}
-      <div className={`flex items-center justify-between p-3 rounded-lg border transition-all ${isExpanded ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'}`}>
+      <div className={`flex items-center justify-between p-3 transition-all ${isExpanded ? 'border-b border-slate-200 bg-white' : 'rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100'}`}>
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <button
             onClick={() => onToggleExpand(!isExpanded)}
@@ -535,7 +535,7 @@ function BankTransferAccountRow({ method, onUpdate, onDelete, isExpanded, onTogg
 
       {/* Expanded Details */}
       {isExpanded && (
-        <div className="mt-2 p-4 bg-white border border-slate-200 rounded-lg space-y-3">
+        <div className="p-4 bg-white space-y-3">
           <div>
             <label className="text-xs font-medium text-slate-600 mb-1.5 block">Bank</label>
             <div className="relative">
