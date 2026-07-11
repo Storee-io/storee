@@ -199,6 +199,12 @@ export default function PaymentSettings() {
       {/* ── Manual tab ── */}
       {tab === 'manual' && (
         <>
+          {/* Payment Methods Header */}
+          <div className="mb-6">
+            <h2 className="text-lg font-bold text-slate-900 mb-1">Payment Methods</h2>
+            <p className="text-sm text-slate-500">Configure payment options available to customers</p>
+          </div>
+
           {/* Bank Transfer */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200">
             <div className="flex items-center justify-between gap-3 mb-5">
@@ -298,8 +304,12 @@ export default function PaymentSettings() {
             </div>
           )}
 
-          {/* WhatsApp Confirmation */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200">
+          {/* Additional Settings Section */}
+          <div className="mt-10 pt-6 border-t border-slate-200">
+            <h2 className="text-lg font-bold text-slate-900 mb-5">Additional Settings</h2>
+
+            {/* WhatsApp Confirmation */}
+            <div className="bg-slate-50/50 rounded-2xl p-6 border border-slate-100">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-8 bg-green-50 rounded-xl flex items-center justify-center">
                 <MessageCircle className="w-4 h-4 text-green-600" />
@@ -333,7 +343,7 @@ export default function PaymentSettings() {
           </div>
 
           {/* Payment Notes */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200">
+          <div className="bg-slate-50/50 rounded-2xl p-6 border border-slate-100">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
                 <FileText className="w-4 h-4 text-slate-600" />
@@ -350,6 +360,7 @@ export default function PaymentSettings() {
               placeholder="e.g. Payments confirmed within 24 hrs. Orders processed after verification."
               className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 resize-none"
             />
+          </div>
           </div>
         </>
       )}
