@@ -144,7 +144,8 @@ export default function PaymentSettings() {
     setAutoPayment(prev => ({ ...prev, stripe:   { ...DEFAULT_AUTO.stripe!,   ...prev.stripe,   ...patch } }));
 
   const bankMethods  = methods.filter(m => m.type === 'bank_transfer');
-  const digitalMethods = methods.filter(m => m.type !== 'bank_transfer' && m.id !== 'cod');
+  const ewalletMethods = methods.filter(m => m.type === 'ewallet');
+  const qrisMethod = methods.find(m => m.id === 'qris');
   const codMethod = methods.find(m => m.id === 'cod');
 
   const tabs: { id: Tab; label: string; icon: React.ElementType; desc: string }[] = [
@@ -241,34 +242,54 @@ export default function PaymentSettings() {
             </div>
           </div>
 
-          {/* Digital Payments */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center">
-                <Zap className="w-4 h-4 text-indigo-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900">Digital Payments</h3>
-                <p className="text-xs text-slate-400">QRIS & e-wallets</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {digitalMethods.map(m => (
-                <OtherPaymentCard key={m.id} method={m} onUpdate={p => updateMethod(m.id, p)} />
-              ))}
-            </div>
-          </div>
-
-          {/* Cash Payment */}
-          {codMethod && (
+          {/* E-Wallets */}
+          {ewalletMethods.length > 0 && (
             <div className="bg-white rounded-2xl p-6 border border-slate-200">
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-8 h-8 bg-green-50 rounded-xl flex items-center justify-center">
-                  <Banknote className="w-4 h-4 text-green-600" />
+                  <Wallet className="w-4 h-4 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900">Cash Payment</h3>
-                  <p className="text-xs text-slate-400">Cash on delivery</p>
+                  <h3 className="font-bold text-slate-900">E-Wallets</h3>
+                  <p className="text-xs text-slate-400">GoPay, OVO, Dana</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {ewalletMethods.map(m => (
+                  <OtherPaymentCard key={m.id} method={m} onUpdate={p => updateMethod(m.id, p)} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* QR Code */}
+          {qrisMethod && (
+            <div className="bg-white rounded-2xl p-6 border border-slate-200">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center">
+                  <QrCode className="w-4 h-4 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900">QR Code</h3>
+                  <p className="text-xs text-slate-400">QRIS</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <OtherPaymentCard key={qrisMethod.id} method={qrisMethod} onUpdate={p => updateMethod(qrisMethod.id, p)} />
+              </div>
+            </div>
+          )}
+
+          {/* Cash on Delivery */}
+          {codMethod && (
+            <div className="bg-white rounded-2xl p-6 border border-slate-200">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-8 h-8 bg-amber-50 rounded-xl flex items-center justify-center">
+                  <Banknote className="w-4 h-4 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900">Cash on Delivery</h3>
+                  <p className="text-xs text-slate-400">COD</p>
                 </div>
               </div>
               <div className="space-y-3">
