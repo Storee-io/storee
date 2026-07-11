@@ -588,7 +588,7 @@ function BankTransferAccountRow({ method, onUpdate, onDelete, isExpanded, onTogg
 
 function OtherPaymentCard({ method, onUpdate }: { method: PaymentMethod; onUpdate: (patch: Partial<PaymentMethod>) => void }) {
   return (
-    <div className={`rounded-xl border border-slate-200 p-4 transition-all ${method.enabled ? 'bg-emerald-50/50' : 'bg-slate-50 opacity-70'}`}>
+    <div className={`rounded-xl border border-slate-200 p-4 transition-all ${method.enabled ? 'bg-white' : 'bg-slate-50 opacity-70'}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <PaymentMethodIcon id={method.id} type={method.type} />
