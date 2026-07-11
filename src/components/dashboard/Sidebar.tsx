@@ -141,10 +141,14 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           ) : (
             <>
               <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden"
                 style={{ background: activeStore?.primaryColor || '#10b981' }}
               >
-                <Store className="w-4 h-4" />
+                {activeStore?.branding?.faviconUrl ? (
+                  <img src={activeStore.branding.faviconUrl} alt="" className="w-full h-full object-contain" />
+                ) : (
+                  <Store className="w-4 h-4" />
+                )}
               </div>
               {!isCollapsed && (
                 <>
@@ -177,9 +181,13 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
               {realStores.length === 0 && activeStore ? (
                 /* No real stores — show the demo/fallback store so header & list are consistent */
                 <div className="px-3 py-2 flex items-center gap-3">
-                  <div className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                  <div className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden"
                     style={{ background: activeStore.primaryColor }}>
-                    {decodeHtmlEntities(activeStore.name)[0]}
+                    {activeStore.branding?.faviconUrl ? (
+                      <img src={activeStore.branding.faviconUrl} alt="" className="w-full h-full object-contain" />
+                    ) : (
+                      decodeHtmlEntities(activeStore.name)[0]
+                    )}
                   </div>
                   <span className="text-sm font-medium text-slate-600 truncate flex-1">{decodeHtmlEntities(activeStore.name)}</span>
                   <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full flex-shrink-0">Demo</span>
@@ -197,9 +205,13 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                       activeStore?.id === store.id ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-slate-50 text-slate-600'
                     }`}
                   >
-                    <div className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                    <div className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden"
                       style={{ background: store.primaryColor }}>
-                      {decodeHtmlEntities(store.name)[0]}
+                      {store.branding?.faviconUrl ? (
+                        <img src={store.branding.faviconUrl} alt="" className="w-full h-full object-contain" />
+                      ) : (
+                        decodeHtmlEntities(store.name)[0]
+                      )}
                     </div>
                     <span className="text-sm font-medium truncate flex-1">{decodeHtmlEntities(store.name)}</span>
                     {store.status === 'Published' && (
