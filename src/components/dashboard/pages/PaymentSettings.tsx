@@ -299,13 +299,13 @@ export default function PaymentSettings() {
           )}
 
           {/* WhatsApp Confirmation */}
-          <div className="bg-slate-50 rounded-2xl p-6 border border-dashed border-slate-300">
+          <div className="bg-white rounded-2xl p-6 border border-slate-200">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-white border border-slate-200 rounded-xl flex items-center justify-center">
-                <MessageCircle className="w-4 h-4 text-slate-500" />
+              <div className="w-8 h-8 bg-green-50 rounded-xl flex items-center justify-center">
+                <MessageCircle className="w-4 h-4 text-green-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-700 text-sm">WhatsApp Confirmation</h3>
+                <h3 className="font-bold text-slate-900">WhatsApp Confirmation</h3>
                 <p className="text-xs text-slate-400">Customers send payment proof via WhatsApp</p>
               </div>
             </div>
@@ -333,13 +333,13 @@ export default function PaymentSettings() {
           </div>
 
           {/* Payment Notes */}
-          <div className="bg-slate-50 rounded-2xl p-6 border border-dashed border-slate-300">
+          <div className="bg-white rounded-2xl p-6 border border-slate-200">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-white border border-slate-200 rounded-xl flex items-center justify-center">
-                <FileText className="w-4 h-4 text-slate-500" />
+              <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
+                <FileText className="w-4 h-4 text-slate-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-700 text-sm">Payment Notes</h3>
+                <h3 className="font-bold text-slate-900">Payment Notes</h3>
                 <p className="text-xs text-slate-400">Shown below payment options at checkout</p>
               </div>
             </div>
