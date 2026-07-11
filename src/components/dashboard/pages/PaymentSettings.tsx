@@ -473,12 +473,13 @@ function EnvToggle({ value, options, onChange }: {
 }
 
 function BankTransferCard({ method, onUpdate }: { method: PaymentMethod; onUpdate: (patch: Partial<PaymentMethod>) => void }) {
+  const displayName = method.bankName ? `Transfer ${method.bankName}` : method.name;
   return (
     <div className={`rounded-xl border p-4 transition-all ${method.enabled ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50 opacity-70'}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <PaymentMethodIcon id={method.id} type={method.type} />
-          <span className="text-sm font-semibold text-slate-800">{method.name}</span>
+          <PaymentMethodIcon id={method.bankName?.toLowerCase() ?? method.id} type={method.type} />
+          <span className="text-sm font-semibold text-slate-800">{displayName}</span>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
           <input type="checkbox" checked={method.enabled} onChange={e => onUpdate({ enabled: e.target.checked })} className="sr-only peer" />
