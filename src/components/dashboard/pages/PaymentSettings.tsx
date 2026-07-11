@@ -504,7 +504,7 @@ function BankTransferAccountRow({ method, onUpdate, onDelete, isExpanded, onTogg
   return (
     <div className={`rounded-lg border transition-all ${isExpanded ? 'border-slate-200 bg-white shadow-xs overflow-hidden' : 'border-slate-200 bg-slate-50/50'}`}>
       {/* Row Header */}
-      <div className={`flex items-center justify-between p-4 transition-all ${isExpanded ? 'border-b border-slate-100 bg-white' : 'bg-slate-50/50 hover:bg-slate-50'}`}>
+      <div className={`flex items-center justify-between p-4 transition-all ${isExpanded ? 'border-b border-slate-100 bg-white' : 'rounded-lg bg-slate-50/50 hover:bg-slate-50'}`}>
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <button
             onClick={() => onToggleExpand(!isExpanded)}
