@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import {
   CreditCard, Check, Info, ChevronDown, Zap,
   Eye, EyeOff, ExternalLink, ShieldCheck,
@@ -27,25 +26,7 @@ const METHOD_ICONS: Record<string, { Icon: React.ElementType; bg: string; color:
   dana:    { Icon: Wallet,    bg: 'bg-blue-50',    color: 'text-blue-500'    },
 };
 
-// Real brand logos (icon marks where available, wordmark otherwise). Source: Wikimedia Commons.
-const METHOD_LOGOS: Record<string, { src: string; wide?: boolean }> = {
-  bca:   { src: '/logos/bca.svg' },
-  gopay: { src: '/logos/gopay.svg' },
-  dana:  { src: '/logos/dana.svg' },
-  ovo:   { src: '/logos/ovo.svg',  wide: true },
-  qris:  { src: '/logos/qris.svg', wide: true },
-};
-
 function PaymentMethodIcon({ id, type }: { id: string; type: string }) {
-  const logo = METHOD_LOGOS[id];
-  if (logo) {
-    return (
-      <div className={`h-8 ${logo.wide ? 'w-14 px-1.5' : 'w-8 p-1.5'} bg-white border border-slate-200 rounded-lg flex items-center justify-center flex-shrink-0`}>
-        <Image src={logo.src} alt={id} width={logo.wide ? 48 : 24} height={24} className="object-contain w-full h-full" />
-      </div>
-    );
-  }
-
   const entry = METHOD_ICONS[id] ?? (
     type === 'bank_transfer' ? { Icon: Landmark, bg: 'bg-slate-100', color: 'text-slate-500' } :
     type === 'ewallet'       ? { Icon: Wallet,   bg: 'bg-slate-100', color: 'text-slate-500' } :
