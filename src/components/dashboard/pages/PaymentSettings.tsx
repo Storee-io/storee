@@ -24,6 +24,7 @@ const METHOD_ICONS: Record<string, { Icon: React.ElementType; bg: string; color:
   gopay:   { Icon: Wallet,    bg: 'bg-green-50',   color: 'text-green-600'   },
   ovo:     { Icon: Wallet,    bg: 'bg-purple-50',  color: 'text-purple-600'  },
   dana:    { Icon: Wallet,    bg: 'bg-blue-50',    color: 'text-blue-500'    },
+  shopeepay: { Icon: Wallet, bg: 'bg-orange-50',  color: 'text-orange-600'  },
 };
 
 function PaymentMethodIcon({ id, type }: { id: string; type: string }) {
@@ -269,7 +270,7 @@ export default function PaymentSettings() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900">E-Wallets</h3>
-                  <p className="text-xs text-slate-400">GoPay, OVO, Dana</p>
+                  <p className="text-xs text-slate-400">GoPay, OVO, Dana, ShopeePay</p>
                 </div>
               </div>
               <div className="space-y-3">

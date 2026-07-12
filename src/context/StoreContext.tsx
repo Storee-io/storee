@@ -118,6 +118,7 @@ export const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [
   { id: 'gopay',    name: 'GoPay',                 type: 'ewallet',       enabled: false, ewalletNumber: '08123456789' },
   { id: 'ovo',      name: 'OVO',                   type: 'ewallet',       enabled: false, ewalletNumber: '08123456789' },
   { id: 'dana',     name: 'Dana',                  type: 'ewallet',       enabled: false, ewalletNumber: '08123456789' },
+  { id: 'shopeepay', name: 'ShopeePay',            type: 'ewallet',       enabled: false, ewalletNumber: '08123456789' },
 ];
 
 // ── Store ─────────────────────────────────────────────────────────────────────
