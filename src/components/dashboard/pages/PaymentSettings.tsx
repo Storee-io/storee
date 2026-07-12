@@ -308,10 +308,10 @@ export default function PaymentSettings() {
 
             <div className="space-y-5">
               {/* WhatsApp Confirmation */}
-              <div className="bg-blue-50/40 rounded-2xl p-6 border border-blue-100">
+              <div className="bg-green-50/40 rounded-2xl p-6 border border-green-100">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <MessageCircle className="w-4 h-4 text-blue-600" />
+                  <div className="w-8 h-8 bg-green-100 rounded-xl flex items-center justify-center">
+                    <MessageCircle className="w-4 h-4 text-green-600" />
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900">WhatsApp Confirmation</h3>
@@ -321,7 +321,7 @@ export default function PaymentSettings() {
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1.5">WhatsApp Number</label>
-                    <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-white focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
+                    <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-white focus-within:border-green-400 focus-within:ring-2 focus-within:ring-green-100">
                       <span className="px-4 py-2.5 bg-slate-50 text-sm text-slate-500 border-r border-slate-200">+62</span>
                       <input
                         type="tel"
@@ -333,7 +333,7 @@ export default function PaymentSettings() {
                     </div>
                   </div>
                   {confirmationWa && (
-                    <p className="text-xs text-blue-600 flex items-center gap-1.5">
+                    <p className="text-xs text-green-600 flex items-center gap-1.5">
                       <Check className="w-3.5 h-3.5" />
                       Link: wa.me/{confirmationWa}
                     </p>
@@ -342,10 +342,10 @@ export default function PaymentSettings() {
               </div>
 
               {/* Payment Notes */}
-              <div className="bg-blue-50/40 rounded-2xl p-6 border border-blue-100">
+              <div className="bg-green-50/40 rounded-2xl p-6 border border-green-100">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <FileText className="w-4 h-4 text-blue-600" />
+                  <div className="w-8 h-8 bg-green-100 rounded-xl flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-green-600" />
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900">Payment Notes</h3>
@@ -357,7 +357,7 @@ export default function PaymentSettings() {
                   onChange={e => setPaymentNote(e.target.value)}
                   rows={3}
                   placeholder="e.g. Payments confirmed within 24 hrs. Orders processed after verification."
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none bg-white focus:border-green-400 focus:ring-2 focus:ring-green-100 resize-none"
                 />
               </div>
             </div>
