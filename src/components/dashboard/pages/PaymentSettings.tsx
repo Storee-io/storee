@@ -308,7 +308,7 @@ export default function PaymentSettings() {
 
             <div className="space-y-5">
               {/* WhatsApp Confirmation */}
-              <div className="bg-green-50/40 rounded-2xl p-6 border border-green-100">
+              <div className="bg-green-50/40 rounded-2xl p-6 border border-slate-200">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-8 h-8 bg-green-100 rounded-xl flex items-center justify-center">
                     <MessageCircle className="w-4 h-4 text-green-600" />
@@ -342,7 +342,7 @@ export default function PaymentSettings() {
               </div>
 
               {/* Payment Notes */}
-              <div className="bg-green-50/40 rounded-2xl p-6 border border-green-100">
+              <div className="bg-green-50/40 rounded-2xl p-6 border border-slate-200">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-8 h-8 bg-green-100 rounded-xl flex items-center justify-center">
                     <FileText className="w-4 h-4 text-green-600" />
