@@ -11,7 +11,7 @@ import { useStore } from '../../../context/StoreContext';
 import { DEFAULT_PAYMENT_METHODS } from '../../../context/StoreContext';
 import type { PaymentMethod, AutoPaymentConfig, AutoPaymentProvider } from '../../../context/StoreContext';
 
-const BANK_OPTIONS = ['BCA', 'Mandiri', 'BNI', 'BRI', 'CIMB Niaga', 'Permata', 'Danamon'];
+const BANK_OPTIONS = ['BCA', 'Mandiri', 'BNI', 'BRI', 'CIMB Niaga', 'Permata', 'Danamon', 'Jenius', 'Jago', 'SeaBank', 'Blu by BCA Digital', 'Neobank', 'Allo Bank'];
 
 // ── Payment method icon map ───────────────────────────────────────────────────
 
