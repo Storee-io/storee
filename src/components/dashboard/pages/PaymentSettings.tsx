@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import {
   CreditCard, Check, Info, ChevronDown, Zap,
   Eye, EyeOff, ExternalLink, ShieldCheck,
@@ -27,7 +28,24 @@ const METHOD_ICONS: Record<string, { Icon: React.ElementType; bg: string; color:
   shopeepay: { Icon: Wallet, bg: 'bg-orange-50',  color: 'text-orange-600'  },
 };
 
-function PaymentMethodIcon({ id, type }: { id: string; type: string }) {
+// Real e-wallet app icons (full-bleed square), shown instead of the generic lucide icon when available.
+export const METHOD_LOGOS: Record<string, string> = {
+  gopay:     '/logos/gopay.jpg',
+  ovo:       '/logos/ovo.png',
+  dana:      '/logos/dana.png',
+  shopeepay: '/logos/shopeepay.jpg',
+};
+
+export function PaymentMethodIcon({ id, type }: { id: string; type: string }) {
+  const logo = METHOD_LOGOS[id];
+  if (logo) {
+    return (
+      <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 relative">
+        <Image src={logo} alt={id} fill unoptimized className="object-cover" />
+      </div>
+    );
+  }
+
   const entry = METHOD_ICONS[id] ?? (
     type === 'bank_transfer' ? { Icon: Landmark, bg: 'bg-slate-100', color: 'text-slate-500' } :
     type === 'ewallet'       ? { Icon: Wallet,   bg: 'bg-slate-100', color: 'text-slate-500' } :

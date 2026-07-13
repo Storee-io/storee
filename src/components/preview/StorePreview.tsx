@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import React, { useState, useEffect, useCallback, useRef, memo, useMemo } from 'react';
+import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform, Reorder } from 'framer-motion';
@@ -1981,7 +1982,24 @@ const BRAND_LOGOS: Record<string, { bg: string; color: string; label: string }> 
   'pickup':         { bg: '#64748b', color: '#fff',    label: 'Pickup' },
 };
 
+// Real e-wallet app icons (full-bleed square), shown instead of the text badge when available.
+const BRAND_IMAGES: Record<string, string> = {
+  gopay:     '/logos/gopay.jpg',
+  ovo:       '/logos/ovo.png',
+  dana:      '/logos/dana.png',
+  shopeepay: '/logos/shopeepay.jpg',
+};
+
 function BrandLogo({ id, type }: { id: string; type?: string }) {
+  const image = BRAND_IMAGES[id];
+  if (image) {
+    return (
+      <span style={{ position: 'relative', display: 'inline-block', width: '24px', height: '24px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0 }}>
+        <Image src={image} alt={id} fill unoptimized style={{ objectFit: 'cover' }} />
+      </span>
+    );
+  }
+
   const brand = BRAND_LOGOS[id] ?? BRAND_LOGOS[type ?? ''] ?? { bg: '#64748b', color: '#fff', label: id.toUpperCase().slice(0, 6) };
   return (
     <span style={{
