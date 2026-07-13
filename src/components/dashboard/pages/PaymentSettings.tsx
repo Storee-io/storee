@@ -7,7 +7,7 @@ import {
   CreditCard, Check, Info, ChevronDown, Zap,
   Eye, EyeOff, ExternalLink, ShieldCheck,
   Landmark, Wallet, MessageCircle, FileText,
-  QrCode, Banknote, Building2,
+  QrCode, Banknote, Building2, Loader2,
 } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
 import { DEFAULT_PAYMENT_METHODS } from '../../../context/StoreContext';
@@ -129,6 +129,7 @@ export default function PaymentSettings() {
     activeStore?.paymentSettings?.autoPayment ?? DEFAULT_AUTO
   );
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [expandedBankId, setExpandedBankId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -141,7 +142,8 @@ export default function PaymentSettings() {
   const updateMethod = (id: string, patch: Partial<PaymentMethod>) =>
     setMethods(prev => prev.map(m => m.id === id ? { ...m, ...patch } : m));
 
-  const save = () => {
+  const save = async () => {
+    setSaving(true);
     try {
       updateActiveStore({
         paymentSettings: {
@@ -151,12 +153,15 @@ export default function PaymentSettings() {
           autoPayment,
         },
       });
+      await new Promise(resolve => setTimeout(resolve, 500));
       toast.success('Payment settings saved');
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (error) {
       console.error('Save error:', error);
       toast.error('Failed to save payment settings');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -190,9 +195,16 @@ export default function PaymentSettings() {
         </div>
         <button
           onClick={save}
-          className="flex items-center gap-2 px-5 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-sm"
+          disabled={saving}
+          className="flex items-center gap-2 px-5 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          {saved ? <><Check className="w-4 h-4" />Saved!</> : 'Save Changes'}
+          {saving ? (
+            <><Loader2 className="w-4 h-4 animate-spin" />Saving...</>
+          ) : saved ? (
+            <><Check className="w-4 h-4" />Saved!</>
+          ) : (
+            'Save Changes'
+          )}
         </button>
       </div>
 
