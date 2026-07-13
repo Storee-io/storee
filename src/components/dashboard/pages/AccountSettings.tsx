@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { User, Mail, Lock, Bell, Shield, Trash2, Check, Eye, EyeOff, Phone } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -25,17 +26,32 @@ export default function AccountSettings() {
   const [notifProduct, setNotifProduct] = useState(true);
 
   const saveProfile = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    try {
+      toast.success('Profile saved');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to save profile');
+    }
   };
 
   const savePassword = () => {
-    if (!newPassword || newPassword !== confirmPassword) return;
-    setPasswordSaved(true);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setTimeout(() => setPasswordSaved(false), 2000);
+    if (!newPassword || newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    try {
+      toast.success('Password updated');
+      setPasswordSaved(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => setPasswordSaved(false), 2000);
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to update password');
+    }
   };
 
   return (

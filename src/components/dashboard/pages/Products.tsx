@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { StatCardSkeleton, TableSkeleton } from '../ui/Skeleton';
 import {
   Search, Plus, Edit3, Trash2, Copy, ChevronUp, ChevronDown,
@@ -706,12 +707,18 @@ export default function Products() {
         fmtPrice={fmtPrice}
         onBack={() => setEditProduct(null)}
         onSave={updated => {
-          if (isNew) {
-            setLocalProducts(prev => [{ ...updated, id: `P${Date.now()}` }, ...prev]);
-          } else {
-            updateProduct(updated);
+          try {
+            if (isNew) {
+              setLocalProducts(prev => [{ ...updated, id: `P${Date.now()}` }, ...prev]);
+            } else {
+              updateProduct(updated);
+            }
+            toast.success(isNew ? 'Product created' : 'Product saved');
+            setEditProduct(null);
+          } catch (error) {
+            console.error('Save error:', error);
+            toast.error('Failed to save product');
           }
-          setEditProduct(null);
         }}
       />
     );

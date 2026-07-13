@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Palette, Type, Layout, Check, X, SlidersHorizontal, Save, Globe, Package } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
 import { PROMPT_LANGUAGES, PROMPT_CURRENCIES, EMPTY_THEME_COLORS } from '../../shared/PromptBox';
@@ -273,43 +274,49 @@ export default function Appearance() {
       features,
     };
 
-    updateActiveStore({
-      primaryColor:    color1,
-      font,
-      mood,
-      audience,
-      language,
-      currency,
-      advancedOptions: newAdvancedOptions,
-      design:          newDesign,
-    });
+    try {
+      updateActiveStore({
+        primaryColor:    color1,
+        font,
+        mood,
+        audience,
+        language,
+        currency,
+        advancedOptions: newAdvancedOptions,
+        design:          newDesign,
+      });
 
-    // Sync to live store if published
-    if (activeStore.status === 'Published') {
-      const subdomain = activeStore.publishedDomain?.split('.')[0] ?? activeStore.domain?.split('.')[0];
-      if (subdomain) {
-        fetch('/api/publish-store', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            subdomain,
-            name:         activeStore.name,
-            primaryColor: color1,
-            category:     activeStore.category,
-            templateId:   activeStore.template?.id,
-            design:       newDesign,
-            currency,
-            language,
-            font,
-            mood,
-            audience,
-          }),
-        }).catch(console.error);
+      // Sync to live store if published
+      if (activeStore.status === 'Published') {
+        const subdomain = activeStore.publishedDomain?.split('.')[0] ?? activeStore.domain?.split('.')[0];
+        if (subdomain) {
+          fetch('/api/publish-store', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              subdomain,
+              name:         activeStore.name,
+              primaryColor: color1,
+              category:     activeStore.category,
+              templateId:   activeStore.template?.id,
+              design:       newDesign,
+              currency,
+              language,
+              font,
+              mood,
+              audience,
+            }),
+          }).catch(console.error);
+        }
       }
-    }
 
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+      toast.success('Appearance saved');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to save appearance');
+    }
   }
 
   // ── Render ───────────────────────────────────────────────────────────────────

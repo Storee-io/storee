@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import Image from 'next/image';
 import {
   CreditCard, Check, Info, ChevronDown, Zap,
@@ -141,16 +142,22 @@ export default function PaymentSettings() {
     setMethods(prev => prev.map(m => m.id === id ? { ...m, ...patch } : m));
 
   const save = () => {
-    updateActiveStore({
-      paymentSettings: {
-        methods,
-        confirmationWhatsapp: confirmationWa || undefined,
-        paymentNote: paymentNote || undefined,
-        autoPayment,
-      },
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    try {
+      updateActiveStore({
+        paymentSettings: {
+          methods,
+          confirmationWhatsapp: confirmationWa || undefined,
+          paymentNote: paymentNote || undefined,
+          autoPayment,
+        },
+      });
+      toast.success('Payment settings saved');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to save payment settings');
+    }
   };
 
   const patchAuto     = (patch: Partial<AutoPaymentConfig>) =>

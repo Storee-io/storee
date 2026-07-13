@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, lazy, Suspense } from 'react';
+import { toast } from 'sonner';
 import {
   Truck, Check, Info, MapPin, Navigation, ExternalLink,
   Package, Zap, Bike, Gift, Store, Tag,
@@ -370,14 +371,20 @@ export default function ShippingSettings() {
     setMethods(prev => prev.map(m => m.id === id ? { ...m, ...patch } : m));
 
   const save = () => {
-    updateActiveStore({
-      shippingSettings: {
-        methods,
-        freeShippingThreshold: freeThreshold ? Number(freeThreshold) : undefined,
-      },
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    try {
+      updateActiveStore({
+        shippingSettings: {
+          methods,
+          freeShippingThreshold: freeThreshold ? Number(freeThreshold) : undefined,
+        },
+      });
+      toast.success('Shipping settings saved');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to save shipping settings');
+    }
   };
 
   const [shippingTab, setShippingTab] = useState<'courier' | 'manual'>('courier');

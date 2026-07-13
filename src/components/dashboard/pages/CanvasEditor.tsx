@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Monitor, Tablet, Smartphone, ChevronDown, ChevronRight,
@@ -201,35 +202,42 @@ export default function CanvasEditor() {
       newsletter: newsletter.headline ? newsletter : undefined,
     };
 
-    updateActiveStore({ name: storeName, primaryColor, design: newDesign });
+    try {
+      updateActiveStore({ name: storeName, primaryColor, design: newDesign });
 
-    // Sync to published store if live
-    if (activeStore.status === 'Published') {
-      const subdomain = activeStore.publishedDomain?.split('.')[0] ?? activeStore.domain?.split('.')[0];
-      if (subdomain) {
-        await fetch('/api/publish-store', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            subdomain,
-            name: storeName,
-            primaryColor,
-            category: activeStore.category,
-            templateId: activeStore.template?.id,
-            design: newDesign,
-            currency: activeStore.currency,
-            language: activeStore.language,
-            font: activeStore.font,
-            mood: activeStore.mood,
-            audience: activeStore.audience,
-          }),
-        }).catch(console.error);
+      // Sync to published store if live
+      if (activeStore.status === 'Published') {
+        const subdomain = activeStore.publishedDomain?.split('.')[0] ?? activeStore.domain?.split('.')[0];
+        if (subdomain) {
+          await fetch('/api/publish-store', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              subdomain,
+              name: storeName,
+              primaryColor,
+              category: activeStore.category,
+              templateId: activeStore.template?.id,
+              design: newDesign,
+              currency: activeStore.currency,
+              language: activeStore.language,
+              font: activeStore.font,
+              mood: activeStore.mood,
+              audience: activeStore.audience,
+            }),
+          }).catch(console.error);
+        }
       }
-    }
 
-    setIsSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+      toast.success('Store design saved');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to save store design');
+    } finally {
+      setIsSaving(false);
+    }
   }, [activeStore, storeName, primaryColor, tagline, heroTitle, heroSubtitle, ctaText, promoBar, accentColor, brandStory, features, testimonials, faq, newsletter, updateActiveStore, isSaving]);
 
   if (!activeStore) {
