@@ -47,9 +47,9 @@ function buildNavSections(pendingOrders: number, newProducts: number, activeStor
     items: [
       { icon: Settings,    label: 'Store Settings',   path: '/dashboard/settings' },
       { icon: Palette,     label: 'Brand & Design',  path: '/dashboard/brand-design' },
-      { icon: Globe,       label: 'Domain',          path: '/dashboard/domain' },
       { icon: CreditCard,  label: 'Payment',         path: '/dashboard/payment' },
       { icon: Truck,       label: 'Shipping',        path: '/dashboard/shipping' },
+      { icon: Globe,       label: 'Domain',          path: '/dashboard/domain' },
       { icon: Bell,        label: 'Notifications',    path: '/dashboard/notifications' },
       { icon: User,        label: 'Account',           path: '/dashboard/account' },
     ] as NavItem[],
