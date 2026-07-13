@@ -2817,6 +2817,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     { id: 'flat', name: 'Standard Shipping', price: 15000, estimatedDays: '2–3 days', enabled: true, icon: '📦' }
   ];
   const [selectedShippingId, setSelectedShippingId] = useState(shippingMethods[0]?.id ?? '');
+  const [expandedPaymentCategories, setExpandedPaymentCategories] = useState<Set<string>>(new Set(['bank'])); // Bank Transfer expanded by default
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
@@ -3314,8 +3315,11 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 {/* E-Wallet Sub-category */}
                 {groupedManualPayments.ewallet.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold" style={{ color: t.textMuted, paddingLeft: '8px' }}>E-Wallet</p>
-                    {groupedManualPayments.ewallet.map(pm => {
+                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('ewallet') ? next.delete('ewallet') : next.add('ewallet'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-2 py-1 hover:bg-slate-50 rounded" style={{ textAlign: 'left' }}>
+                      <p className="text-xs font-semibold" style={{ color: t.textMuted }}>E-Wallet</p>
+                      <span style={{ color: t.textMuted, transform: expandedPaymentCategories.has('ewallet') ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s', display: 'inline-block' }}>▼</span>
+                    </button>
+                    {expandedPaymentCategories.has('ewallet') && groupedManualPayments.ewallet.map(pm => {
                       const isSelected = selectedPayId === pm.id;
                       return (
                         <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
@@ -3337,8 +3341,11 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 {/* Bank Transfer Sub-category */}
                 {groupedManualPayments.bank.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold" style={{ color: t.textMuted, paddingLeft: '8px' }}>Bank Transfer</p>
-                    {groupedManualPayments.bank.map(pm => {
+                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('bank') ? next.delete('bank') : next.add('bank'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-2 py-1 hover:bg-slate-50 rounded" style={{ textAlign: 'left' }}>
+                      <p className="text-xs font-semibold" style={{ color: t.textMuted }}>Bank Transfer</p>
+                      <span style={{ color: t.textMuted, transform: expandedPaymentCategories.has('bank') ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s', display: 'inline-block' }}>▼</span>
+                    </button>
+                    {expandedPaymentCategories.has('bank') && groupedManualPayments.bank.map(pm => {
                       const isSelected = selectedPayId === pm.id;
                       return (
                         <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
@@ -3367,7 +3374,11 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 {/* QRIS Sub-category */}
                 {groupedManualPayments.qris.length > 0 && (
                   <div className="space-y-2">
-                    {groupedManualPayments.qris.map(pm => {
+                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('qris') ? next.delete('qris') : next.add('qris'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-2 py-1 hover:bg-slate-50 rounded" style={{ textAlign: 'left' }}>
+                      <p className="text-xs font-semibold" style={{ color: t.textMuted }}>QRIS</p>
+                      <span style={{ color: t.textMuted, transform: expandedPaymentCategories.has('qris') ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s', display: 'inline-block' }}>▼</span>
+                    </button>
+                    {expandedPaymentCategories.has('qris') && groupedManualPayments.qris.map(pm => {
                       const isSelected = selectedPayId === pm.id;
                       return (
                         <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
@@ -3394,7 +3405,11 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 {/* Cash Sub-category */}
                 {groupedManualPayments.cash.length > 0 && (
                   <div className="space-y-2">
-                    {groupedManualPayments.cash.map(pm => {
+                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('cash') ? next.delete('cash') : next.add('cash'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-2 py-1 hover:bg-slate-50 rounded" style={{ textAlign: 'left' }}>
+                      <p className="text-xs font-semibold" style={{ color: t.textMuted }}>Cash</p>
+                      <span style={{ color: t.textMuted, transform: expandedPaymentCategories.has('cash') ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s', display: 'inline-block' }}>▼</span>
+                    </button>
+                    {expandedPaymentCategories.has('cash') && groupedManualPayments.cash.map(pm => {
                       const isSelected = selectedPayId === pm.id;
                       return (
                         <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
