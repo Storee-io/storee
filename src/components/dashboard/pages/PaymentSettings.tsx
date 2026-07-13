@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
 import { DEFAULT_PAYMENT_METHODS } from '../../../context/StoreContext';
-import type { PaymentMethod, AutoPaymentConfig, AutoPaymentProvider } from '../../../context/StoreContext';
+import type { PaymentMethod, AutoPaymentConfig, AutoPaymentProvider, AutoPaymentChannels } from '../../../context/StoreContext';
 
 const BANK_OPTIONS = ['BCA', 'Mandiri', 'BNI', 'BRI', 'CIMB Niaga', 'Permata', 'Danamon', 'Jenius', 'Jago', 'SeaBank', 'Blu by BCA Digital', 'Neobank', 'Allo Bank', 'Superbank', 'Krom', 'Bank Saqu', 'Aladin'];
 
@@ -100,13 +100,28 @@ const AUTO_PROVIDERS: {
   },
 ];
 
+const DEFAULT_AUTO_CHANNELS: AutoPaymentChannels = {
+  qris: true,
+  ewallet: true,
+  virtualAccount: true,
+  card: false,
+};
+
 const DEFAULT_AUTO: AutoPaymentConfig = {
   enabled: false,
   provider: null,
+  channels: DEFAULT_AUTO_CHANNELS,
   xendit:   { apiKey: '', webhookToken: '', environment: 'sandbox' },
   midtrans: { serverKey: '', clientKey: '', environment: 'sandbox' },
   stripe:   { publishableKey: '', secretKey: '', webhookSecret: '', environment: 'test' },
 };
+
+const AUTO_CHANNELS: { id: keyof AutoPaymentChannels; label: string; desc: string; Icon: React.ElementType }[] = [
+  { id: 'qris',           label: 'QRIS',            desc: 'Scan-to-pay with any e-wallet or mobile banking app', Icon: QrCode },
+  { id: 'ewallet',        label: 'E-Wallet',        desc: 'GoPay, OVO, Dana, ShopeePay & more',                  Icon: Wallet },
+  { id: 'virtualAccount', label: 'Virtual Account', desc: 'Bank transfer via a dedicated VA number',              Icon: Landmark },
+  { id: 'card',           label: 'Card',            desc: 'Credit & debit card payments',                        Icon: CreditCard },
+];
 
 type Tab = 'manual' | 'auto';
 
@@ -167,6 +182,8 @@ export default function PaymentSettings() {
 
   const patchAuto     = (patch: Partial<AutoPaymentConfig>) =>
     setAutoPayment(prev => ({ ...prev, ...patch }));
+  const patchChannel  = (id: keyof AutoPaymentChannels, value: boolean) =>
+    setAutoPayment(prev => ({ ...prev, channels: { ...DEFAULT_AUTO_CHANNELS, ...prev.channels, [id]: value } }));
   const patchXendit   = (patch: Partial<NonNullable<AutoPaymentConfig['xendit']>>) =>
     setAutoPayment(prev => ({ ...prev, xendit:   { ...DEFAULT_AUTO.xendit!,   ...prev.xendit,   ...patch } }));
   const patchMidtrans = (patch: Partial<NonNullable<AutoPaymentConfig['midtrans']>>) =>
@@ -237,6 +254,44 @@ export default function PaymentSettings() {
       {/* ── Manual tab ── */}
       {tab === 'manual' && (
         <>
+          {/* QR Code */}
+          {qrisMethod && (
+            <div className="bg-white rounded-2xl p-6 border border-slate-200">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center">
+                  <QrCode className="w-4 h-4 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900">QR Code</h3>
+                  <p className="text-xs text-slate-400">QRIS</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <OtherPaymentCard key={qrisMethod.id} method={qrisMethod} onUpdate={p => updateMethod(qrisMethod.id, p)} />
+              </div>
+            </div>
+          )}
+
+          {/* E-Wallets */}
+          {ewalletMethods.length > 0 && (
+            <div className="bg-white rounded-2xl p-6 border border-slate-200">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-8 h-8 bg-green-50 rounded-xl flex items-center justify-center">
+                  <Wallet className="w-4 h-4 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900">E-Wallets</h3>
+                  <p className="text-xs text-slate-400">GoPay, OVO, Dana, ShopeePay</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {ewalletMethods.map(m => (
+                  <OtherPaymentCard key={m.id} method={m} onUpdate={p => updateMethod(m.id, p)} />
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Bank Transfer */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200">
             <div className="flex items-center justify-between gap-3 mb-5">
@@ -279,44 +334,6 @@ export default function PaymentSettings() {
               )}
             </div>
           </div>
-
-          {/* QR Code */}
-          {qrisMethod && (
-            <div className="bg-white rounded-2xl p-6 border border-slate-200">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center">
-                  <QrCode className="w-4 h-4 text-indigo-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900">QR Code</h3>
-                  <p className="text-xs text-slate-400">QRIS</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <OtherPaymentCard key={qrisMethod.id} method={qrisMethod} onUpdate={p => updateMethod(qrisMethod.id, p)} />
-              </div>
-            </div>
-          )}
-
-          {/* E-Wallets */}
-          {ewalletMethods.length > 0 && (
-            <div className="bg-white rounded-2xl p-6 border border-slate-200">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-8 h-8 bg-green-50 rounded-xl flex items-center justify-center">
-                  <Wallet className="w-4 h-4 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900">E-Wallets</h3>
-                  <p className="text-xs text-slate-400">GoPay, OVO, Dana, ShopeePay</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {ewalletMethods.map(m => (
-                  <OtherPaymentCard key={m.id} method={m} onUpdate={p => updateMethod(m.id, p)} />
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Cash Payment */}
           {codMethod && (
@@ -441,6 +458,36 @@ export default function PaymentSettings() {
             </div>
           ) : (
             <>
+              {/* Channels — order: QRIS, E-Wallet, Virtual Account, Card */}
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Payment Channels</p>
+                <div className="space-y-2.5">
+                  {AUTO_CHANNELS.map(c => {
+                    const on = autoPayment.channels?.[c.id] ?? DEFAULT_AUTO_CHANNELS[c.id];
+                    return (
+                      <div
+                        key={c.id}
+                        className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${on ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50/50'}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${on ? 'bg-emerald-100' : 'bg-slate-100'}`}>
+                            <c.Icon className={`w-4 h-4 ${on ? 'text-emerald-600' : 'text-slate-400'}`} />
+                          </div>
+                          <div>
+                            <p className={`text-sm font-semibold ${on ? 'text-slate-900' : 'text-slate-500'}`}>{c.label}</p>
+                            <p className="text-xs text-slate-400">{c.desc}</p>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                          <input type="checkbox" checked={on} onChange={e => patchChannel(c.id, e.target.checked)} className="sr-only peer" />
+                          <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-emerald-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" />
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Provider selector */}
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Select Provider</p>

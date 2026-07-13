@@ -83,9 +83,17 @@ export interface PaymentMethod {
 
 export type AutoPaymentProvider = 'xendit' | 'midtrans' | 'stripe';
 
+export interface AutoPaymentChannels {
+  qris: boolean;
+  ewallet: boolean;
+  virtualAccount: boolean;
+  card: boolean;
+}
+
 export interface AutoPaymentConfig {
   enabled: boolean;
   provider: AutoPaymentProvider | null;
+  channels?: AutoPaymentChannels;
   xendit?: {
     apiKey: string;
     webhookToken: string;

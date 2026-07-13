@@ -2802,11 +2802,11 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   ];
   const hasAutoPayment = paymentSettings?.autoPayment?.enabled ?? false;
 
-  // Group manual payment methods by sub-category
+  // Group manual payment methods by sub-category (render order: QRIS, E-Wallet, Bank Transfer, Cash)
   const groupedManualPayments = {
+    qris: paymentMethods.filter(m => m.type === 'qris'),
     ewallet: paymentMethods.filter(m => m.type === 'ewallet'),
     bank: paymentMethods.filter(m => m.type === 'bank_transfer'),
-    qris: paymentMethods.filter(m => m.type === 'qris'),
     cash: paymentMethods.filter(m => m.type === 'cod'),
   };
   const [selectedPayId, setSelectedPayId] = useState(paymentMethods[0]?.id ?? '');
@@ -3313,6 +3313,40 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Complete payment & notify seller — order processes after seller verifies</p>
                 </div>
 
+                {/* QRIS Sub-category */}
+                {groupedManualPayments.qris.length > 0 && (
+                  <div className="space-y-2">
+                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('qris') ? next.delete('qris') : next.add('qris'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-3 py-2.5 transition-colors" style={{ background: expandedPaymentCategories.has('qris') ? alpha(t.primary, 0.08) : t.inputBg, border: `1px solid ${alpha(t.primary, 0.15)}`, borderRadius: t.inputRadius, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = alpha(t.primary, 0.12); }} onMouseLeave={e => { e.currentTarget.style.background = expandedPaymentCategories.has('qris') ? alpha(t.primary, 0.08) : t.inputBg; }}>
+                      <div className="flex items-center gap-2 flex-1">
+                        <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>QRIS</p>
+                        <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ background: alpha(t.primary, 0.1), color: t.primary }}>{groupedManualPayments.qris.length}</span>
+                      </div>
+                      <span style={{ color: t.primary, transform: expandedPaymentCategories.has('qris') ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.25s ease-out', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px' }}>▼</span>
+                    </button>
+                    {expandedPaymentCategories.has('qris') && groupedManualPayments.qris.map(pm => {
+                      const isSelected = selectedPayId === pm.id;
+                      return (
+                        <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
+                          <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
+                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
+                            {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
+                          </div>
+                          <BrandLogo id={pm.id} type={pm.type} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
+                            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Pay by scanning QR from any app</p>
+                            {isSelected && (
+                              <div className="mt-3 flex justify-center p-4" style={{ background: t.inputBg, borderRadius: t.inputRadius, border: `1px solid ${t.surfaceBorder}` }}>
+                                <div className="w-28 h-28 rounded-xl flex items-center justify-center text-4xl" style={{ background: t.pageBg }}>📱</div>
+                              </div>
+                            )}
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {/* E-Wallet Sub-category */}
                 {groupedManualPayments.ewallet.length > 0 && (
                   <div className="space-y-2">
@@ -3369,40 +3403,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                                 <p className="text-xs" style={{ color: t.textSecondary }}>Bank: <span className="font-bold" style={{ color: t.textPrimary }}>{pm.bankName}</span></p>
                                 <p className="text-xs" style={{ color: t.textSecondary }}>Account Number: <span className="font-bold font-mono" style={{ color: t.textPrimary }}>{pm.accountNumber}</span></p>
                                 <p className="text-xs" style={{ color: t.textSecondary }}>Account Name: <span className="font-bold" style={{ color: t.textPrimary }}>{pm.accountHolder}</span></p>
-                              </div>
-                            )}
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* QRIS Sub-category */}
-                {groupedManualPayments.qris.length > 0 && (
-                  <div className="space-y-2">
-                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('qris') ? next.delete('qris') : next.add('qris'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-3 py-2.5 transition-colors" style={{ background: expandedPaymentCategories.has('qris') ? alpha(t.primary, 0.08) : t.inputBg, border: `1px solid ${alpha(t.primary, 0.15)}`, borderRadius: t.inputRadius, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = alpha(t.primary, 0.12); }} onMouseLeave={e => { e.currentTarget.style.background = expandedPaymentCategories.has('qris') ? alpha(t.primary, 0.08) : t.inputBg; }}>
-                      <div className="flex items-center gap-2 flex-1">
-                        <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>QRIS</p>
-                        <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ background: alpha(t.primary, 0.1), color: t.primary }}>{groupedManualPayments.qris.length}</span>
-                      </div>
-                      <span style={{ color: t.primary, transform: expandedPaymentCategories.has('qris') ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.25s ease-out', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px' }}>▼</span>
-                    </button>
-                    {expandedPaymentCategories.has('qris') && groupedManualPayments.qris.map(pm => {
-                      const isSelected = selectedPayId === pm.id;
-                      return (
-                        <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
-                          <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
-                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
-                            {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
-                          </div>
-                          <BrandLogo id={pm.id} type={pm.type} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
-                            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Pay by scanning QR from any app</p>
-                            {isSelected && (
-                              <div className="mt-3 flex justify-center p-4" style={{ background: t.inputBg, borderRadius: t.inputRadius, border: `1px solid ${t.surfaceBorder}` }}>
-                                <div className="w-28 h-28 rounded-xl flex items-center justify-center text-4xl" style={{ background: t.pageBg }}>📱</div>
                               </div>
                             )}
                           </div>
