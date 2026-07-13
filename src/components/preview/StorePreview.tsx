@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import React, { useState, useEffect, useCallback, useRef, memo, useMemo } from 'react';
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform, Reorder } from 'framer-motion';
@@ -1995,7 +1995,7 @@ function BrandLogo({ id, type }: { id: string; type?: string }) {
   if (image) {
     return (
       <span style={{ position: 'relative', display: 'inline-block', width: '24px', height: '24px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0 }}>
-        <Image src={image} alt={id} fill unoptimized style={{ objectFit: 'cover' }} />
+        <NextImage src={image} alt={id} fill unoptimized style={{ objectFit: 'cover' }} />
       </span>
     );
   }
