@@ -136,7 +136,7 @@ export default function PaymentSettings() {
     setConfirmationWa(activeStore?.paymentSettings?.confirmationWhatsapp ?? '');
     setPaymentNote(activeStore?.paymentSettings?.paymentNote ?? '');
     setAutoPayment(activeStore?.paymentSettings?.autoPayment ?? DEFAULT_AUTO);
-  }, [activeStore?.id]);
+  }, [activeStore?.id, activeStore?.paymentSettings]);
 
   const updateMethod = (id: string, patch: Partial<PaymentMethod>) =>
     setMethods(prev => prev.map(m => m.id === id ? { ...m, ...patch } : m));
