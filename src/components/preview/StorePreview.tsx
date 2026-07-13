@@ -3300,7 +3300,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               <div className="space-y-2">
                 <div>
                   <p className="text-xs font-semibold" style={{ color: t.textMuted }}>MANUAL PAYMENT</p>
-                  <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Complete payment outside our platform or scan QR code</p>
+                  <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Requires confirmation — payment must be verified by seller</p>
                 </div>
                 {paymentMethods.map(pm => {
                 const isSelected = selectedPayId === pm.id;
@@ -3349,7 +3349,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 <div className="space-y-2 pt-2 border-t" style={{ borderColor: t.divider }}>
                   <div>
                     <p className="text-xs font-semibold" style={{ color: t.textMuted }}>AUTOMATIC PAYMENT</p>
-                    <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Pay securely online with your card</p>
+                    <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Instantly confirmed — order confirmed automatically upon payment</p>
                   </div>
                   <label className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${selectedPayId === 'auto-payment' ? t.primary : t.surfaceBorder}`, background: selectedPayId === 'auto-payment' ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (selectedPayId !== 'auto-payment') { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (selectedPayId !== 'auto-payment') { e.currentTarget.style.background = t.surfaceBg; } }}>
                     <input type="radio" name="payment" value="auto-payment" checked={selectedPayId === 'auto-payment'} onChange={() => setSelectedPayId('auto-payment')} className="sr-only" />
