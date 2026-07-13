@@ -3300,7 +3300,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               <div className="space-y-2">
                 <div>
                   <p className="text-xs font-semibold" style={{ color: t.textMuted }}>MANUAL PAYMENT</p>
-                  <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Requires confirmation — payment must be verified by seller</p>
+                  <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Complete payment & notify seller — order processes after seller verifies</p>
                 </div>
                 {paymentMethods.map(pm => {
                 const isSelected = selectedPayId === pm.id;
