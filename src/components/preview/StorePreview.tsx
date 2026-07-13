@@ -2801,6 +2801,14 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     { id: 'bca', name: 'Transfer BCA', type: 'bank_transfer', enabled: true, bankName: 'BCA', accountNumber: '1234567890', accountHolder: 'Nama Toko' }
   ];
   const hasAutoPayment = paymentSettings?.autoPayment?.enabled ?? false;
+
+  // Group manual payment methods by sub-category
+  const groupedManualPayments = {
+    ewallet: paymentMethods.filter(m => m.type === 'ewallet'),
+    bank: paymentMethods.filter(m => m.type === 'bank_transfer'),
+    qris: paymentMethods.filter(m => m.type === 'qris'),
+    cash: paymentMethods.filter(m => m.type === 'cod'),
+  };
   const [selectedPayId, setSelectedPayId] = useState(paymentMethods[0]?.id ?? '');
   useEffect(() => { if (!selectedPayId && paymentMethods.length) setSelectedPayId(paymentMethods[0].id); }, []);
 
@@ -3297,52 +3305,115 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             </div>
             <div className="p-5 space-y-4">
               {/* Manual Payment */}
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <div>
                   <p className="text-xs font-semibold" style={{ color: t.textMuted }}>MANUAL PAYMENT</p>
                   <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Complete payment & notify seller — order processes after seller verifies</p>
                 </div>
-                {paymentMethods.map(pm => {
-                const isSelected = selectedPayId === pm.id;
-                return (
-                  <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
-                    <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
-                    <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
-                      {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
-                    </div>
-                    <BrandLogo id={pm.id} type={pm.type} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
-                      {pm.type === 'bank_transfer' && pm.bankName && (
-                        <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{pm.bankName} · ****{pm.accountNumber?.slice(-4)}</p>
-                      )}
-                      {pm.type === 'ewallet' && pm.ewalletNumber && (
-                        <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{pm.ewalletNumber}</p>
-                      )}
-                      {pm.type === 'qris' && (
-                        <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Pay by scanning QR from any app</p>
-                      )}
-                      {pm.type === 'cod' && (
-                        <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Pay when your order arrives</p>
-                      )}
-                      {/* Expanded details when selected */}
-                      {isSelected && pm.type === 'bank_transfer' && pm.accountNumber && (
-                        <div className="mt-3 p-3 space-y-1.5" style={{ background: t.inputBg, borderRadius: t.inputRadius, border: `1px solid ${t.surfaceBorder}` }}>
-                          <p className="text-xs" style={{ color: t.textSecondary }}>Bank: <span className="font-bold" style={{ color: t.textPrimary }}>{pm.bankName}</span></p>
-                          <p className="text-xs" style={{ color: t.textSecondary }}>Account Number: <span className="font-bold font-mono" style={{ color: t.textPrimary }}>{pm.accountNumber}</span></p>
-                          <p className="text-xs" style={{ color: t.textSecondary }}>Account Name: <span className="font-bold" style={{ color: t.textPrimary }}>{pm.accountHolder}</span></p>
-                        </div>
-                      )}
-                      {isSelected && pm.type === 'qris' && (
-                        <div className="mt-3 flex justify-center p-4" style={{ background: t.inputBg, borderRadius: t.inputRadius, border: `1px solid ${t.surfaceBorder}` }}>
-                          <div className="w-28 h-28 rounded-xl flex items-center justify-center text-4xl" style={{ background: t.pageBg }}>📱</div>
-                        </div>
-                      )}
-                    </div>
-                  </label>
-                );
-              })}
+
+                {/* E-Wallet Sub-category */}
+                {groupedManualPayments.ewallet.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold" style={{ color: t.textMuted, paddingLeft: '8px' }}>E-Wallet</p>
+                    {groupedManualPayments.ewallet.map(pm => {
+                      const isSelected = selectedPayId === pm.id;
+                      return (
+                        <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
+                          <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
+                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
+                            {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
+                          </div>
+                          <BrandLogo id={pm.id} type={pm.type} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
+                            {pm.ewalletNumber && <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{pm.ewalletNumber}</p>}
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Bank Transfer Sub-category */}
+                {groupedManualPayments.bank.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold" style={{ color: t.textMuted, paddingLeft: '8px' }}>Bank Transfer</p>
+                    {groupedManualPayments.bank.map(pm => {
+                      const isSelected = selectedPayId === pm.id;
+                      return (
+                        <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
+                          <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
+                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
+                            {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
+                          </div>
+                          <BrandLogo id={pm.id} type={pm.type} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
+                            {pm.bankName && <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{pm.bankName} · ****{pm.accountNumber?.slice(-4)}</p>}
+                            {isSelected && pm.accountNumber && (
+                              <div className="mt-3 p-3 space-y-1.5" style={{ background: t.inputBg, borderRadius: t.inputRadius, border: `1px solid ${t.surfaceBorder}` }}>
+                                <p className="text-xs" style={{ color: t.textSecondary }}>Bank: <span className="font-bold" style={{ color: t.textPrimary }}>{pm.bankName}</span></p>
+                                <p className="text-xs" style={{ color: t.textSecondary }}>Account Number: <span className="font-bold font-mono" style={{ color: t.textPrimary }}>{pm.accountNumber}</span></p>
+                                <p className="text-xs" style={{ color: t.textSecondary }}>Account Name: <span className="font-bold" style={{ color: t.textPrimary }}>{pm.accountHolder}</span></p>
+                              </div>
+                            )}
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* QRIS Sub-category */}
+                {groupedManualPayments.qris.length > 0 && (
+                  <div className="space-y-2">
+                    {groupedManualPayments.qris.map(pm => {
+                      const isSelected = selectedPayId === pm.id;
+                      return (
+                        <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
+                          <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
+                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
+                            {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
+                          </div>
+                          <BrandLogo id={pm.id} type={pm.type} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
+                            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Pay by scanning QR from any app</p>
+                            {isSelected && (
+                              <div className="mt-3 flex justify-center p-4" style={{ background: t.inputBg, borderRadius: t.inputRadius, border: `1px solid ${t.surfaceBorder}` }}>
+                                <div className="w-28 h-28 rounded-xl flex items-center justify-center text-4xl" style={{ background: t.pageBg }}>📱</div>
+                              </div>
+                            )}
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Cash Sub-category */}
+                {groupedManualPayments.cash.length > 0 && (
+                  <div className="space-y-2">
+                    {groupedManualPayments.cash.map(pm => {
+                      const isSelected = selectedPayId === pm.id;
+                      return (
+                        <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
+                          <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
+                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
+                            {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
+                          </div>
+                          <BrandLogo id={pm.id} type={pm.type} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
+                            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Pay when your order arrives</p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
+
 
               {/* Auto Payment */}
               {hasAutoPayment && (
@@ -3357,8 +3428,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       {selectedPayId === 'auto-payment' && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>Pay with Card</p>
-                      <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Credit/Debit Card, Bank Transfer</p>
+                      <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>Card (Debit / Credit)</p>
+                      <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Secure online payment</p>
                     </div>
                   </label>
                 </div>
