@@ -352,14 +352,21 @@ function mergeStores(prev: Store[], next: Store[]): Store[] {
 
 /**
  * Merge a fresh active store from Supabase into the current active store.
- * If the same store is already active (same ID), only update `design` —
- * identity fields (name, status, domain) from the cookie are already correct,
- * and replacing them would cause a sidebar re-render with no visual benefit.
+ * If the same store is already active (same ID), fold in every field the
+ * SSR cookie doesn't carry (design, paymentSettings, shippingSettings, etc.)
+ * — the cookie only has slim identity fields (see slimStoreForCookie), so
+ * keeping just `prev` here silently drops settings loaded from Supabase.
  */
 function mergeActiveStore(prev: Store | null, next: Store): Store {
   if (!prev || prev.id !== next.id) return next;      // different store — full replace
-  if (prev.design === next.design) return prev;        // nothing changed — same reference
-  return { ...prev, design: next.design };             // same store — only update design
+  if (
+    prev.design === next.design &&
+    prev.paymentSettings === next.paymentSettings &&
+    prev.shippingSettings === next.shippingSettings &&
+    prev.checkoutSettings === next.checkoutSettings &&
+    prev.branding === next.branding
+  ) return prev;                                       // nothing changed — same reference
+  return { ...prev, ...next };                          // same store — fold in fresh data
 }
 
 function initializeStores(): Store[] {
