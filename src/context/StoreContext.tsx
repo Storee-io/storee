@@ -665,9 +665,19 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
       try {
         localStorage.setItem(`storee_store_${updated.id}`, JSON.stringify(updated));
       } catch { /* quota */ }
-      // Persist asynchronously to Supabase for logged-in users
+      // Persist asynchronously to Supabase for logged-in users, or to the
+      // guest_stores table (keyed by guestId) for guests — otherwise edits
+      // made after store creation only live in localStorage and vanish if
+      // it's cleared or the store is opened from another device/browser.
       if (userId) {
         upsertStore(updated, userId).catch(console.error);
+      } else {
+        const guestId = getOrCreateGuestId();
+        fetch('/api/save-guest-store', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ store: updated, guestId }),
+        }).catch(err => console.warn('[StoreContext] Failed to save guest store update:', err));
       }
       // Save to ACTIVE_STORE_KEY for persistence across page reloads
       saveActiveStore(updated);
