@@ -2851,7 +2851,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const isMobile = device === 'mobile';
   const isTablet = device === 'tablet';
   const selectedPayment = paymentMethods.find(m => m.id === selectedPayId);
-  const t = getCommerceTheme(primaryColor, layoutStyle);
+  const dt = store?.design?.designTokens;
+  const t = dt ? getTokenThemeV2(dt, primaryColor) : getCommerceTheme(primaryColor, layoutStyle);
   const inpStyle: CSSProperties = { background: t.inputBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3), boxSizing: 'border-box' } as CSSProperties;
   const lblStyle: CSSProperties = { color: t.textSecondary, fontSize: '0.75rem', fontWeight: 600, marginBottom: '6px', display: 'block' };
 
