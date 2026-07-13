@@ -3315,9 +3315,12 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 {/* E-Wallet Sub-category */}
                 {groupedManualPayments.ewallet.length > 0 && (
                   <div className="space-y-2">
-                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('ewallet') ? next.delete('ewallet') : next.add('ewallet'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-2 py-1 hover:bg-slate-50 rounded" style={{ textAlign: 'left' }}>
-                      <p className="text-xs font-semibold" style={{ color: t.textMuted }}>E-Wallet</p>
-                      <span style={{ color: t.textMuted, transform: expandedPaymentCategories.has('ewallet') ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s', display: 'inline-block' }}>▼</span>
+                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('ewallet') ? next.delete('ewallet') : next.add('ewallet'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-3 py-2.5 transition-colors" style={{ background: expandedPaymentCategories.has('ewallet') ? alpha(t.primary, 0.08) : t.inputBg, border: `1px solid ${alpha(t.primary, 0.15)}`, borderRadius: t.inputRadius, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = alpha(t.primary, 0.12); }} onMouseLeave={e => { e.currentTarget.style.background = expandedPaymentCategories.has('ewallet') ? alpha(t.primary, 0.08) : t.inputBg; }}>
+                      <div className="flex items-center gap-2 flex-1">
+                        <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>E-Wallet</p>
+                        <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ background: alpha(t.primary, 0.1), color: t.primary }}>{groupedManualPayments.ewallet.length}</span>
+                      </div>
+                      <span style={{ color: t.primary, transform: expandedPaymentCategories.has('ewallet') ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.25s ease-out', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px' }}>▼</span>
                     </button>
                     {expandedPaymentCategories.has('ewallet') && groupedManualPayments.ewallet.map(pm => {
                       const isSelected = selectedPayId === pm.id;
@@ -3341,9 +3344,12 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 {/* Bank Transfer Sub-category */}
                 {groupedManualPayments.bank.length > 0 && (
                   <div className="space-y-2">
-                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('bank') ? next.delete('bank') : next.add('bank'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-2 py-1 hover:bg-slate-50 rounded" style={{ textAlign: 'left' }}>
-                      <p className="text-xs font-semibold" style={{ color: t.textMuted }}>Bank Transfer</p>
-                      <span style={{ color: t.textMuted, transform: expandedPaymentCategories.has('bank') ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s', display: 'inline-block' }}>▼</span>
+                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('bank') ? next.delete('bank') : next.add('bank'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-3 py-2.5 transition-colors" style={{ background: expandedPaymentCategories.has('bank') ? alpha(t.primary, 0.08) : t.inputBg, border: `1px solid ${alpha(t.primary, 0.15)}`, borderRadius: t.inputRadius, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = alpha(t.primary, 0.12); }} onMouseLeave={e => { e.currentTarget.style.background = expandedPaymentCategories.has('bank') ? alpha(t.primary, 0.08) : t.inputBg; }}>
+                      <div className="flex items-center gap-2 flex-1">
+                        <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>Bank Transfer</p>
+                        <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ background: alpha(t.primary, 0.1), color: t.primary }}>{groupedManualPayments.bank.length}</span>
+                      </div>
+                      <span style={{ color: t.primary, transform: expandedPaymentCategories.has('bank') ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.25s ease-out', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px' }}>▼</span>
                     </button>
                     {expandedPaymentCategories.has('bank') && groupedManualPayments.bank.map(pm => {
                       const isSelected = selectedPayId === pm.id;
@@ -3374,9 +3380,12 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 {/* QRIS Sub-category */}
                 {groupedManualPayments.qris.length > 0 && (
                   <div className="space-y-2">
-                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('qris') ? next.delete('qris') : next.add('qris'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-2 py-1 hover:bg-slate-50 rounded" style={{ textAlign: 'left' }}>
-                      <p className="text-xs font-semibold" style={{ color: t.textMuted }}>QRIS</p>
-                      <span style={{ color: t.textMuted, transform: expandedPaymentCategories.has('qris') ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s', display: 'inline-block' }}>▼</span>
+                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('qris') ? next.delete('qris') : next.add('qris'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-3 py-2.5 transition-colors" style={{ background: expandedPaymentCategories.has('qris') ? alpha(t.primary, 0.08) : t.inputBg, border: `1px solid ${alpha(t.primary, 0.15)}`, borderRadius: t.inputRadius, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = alpha(t.primary, 0.12); }} onMouseLeave={e => { e.currentTarget.style.background = expandedPaymentCategories.has('qris') ? alpha(t.primary, 0.08) : t.inputBg; }}>
+                      <div className="flex items-center gap-2 flex-1">
+                        <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>QRIS</p>
+                        <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ background: alpha(t.primary, 0.1), color: t.primary }}>{groupedManualPayments.qris.length}</span>
+                      </div>
+                      <span style={{ color: t.primary, transform: expandedPaymentCategories.has('qris') ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.25s ease-out', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px' }}>▼</span>
                     </button>
                     {expandedPaymentCategories.has('qris') && groupedManualPayments.qris.map(pm => {
                       const isSelected = selectedPayId === pm.id;
@@ -3405,9 +3414,12 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 {/* Cash Sub-category */}
                 {groupedManualPayments.cash.length > 0 && (
                   <div className="space-y-2">
-                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('cash') ? next.delete('cash') : next.add('cash'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-2 py-1 hover:bg-slate-50 rounded" style={{ textAlign: 'left' }}>
-                      <p className="text-xs font-semibold" style={{ color: t.textMuted }}>Cash</p>
-                      <span style={{ color: t.textMuted, transform: expandedPaymentCategories.has('cash') ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s', display: 'inline-block' }}>▼</span>
+                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('cash') ? next.delete('cash') : next.add('cash'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-3 py-2.5 transition-colors" style={{ background: expandedPaymentCategories.has('cash') ? alpha(t.primary, 0.08) : t.inputBg, border: `1px solid ${alpha(t.primary, 0.15)}`, borderRadius: t.inputRadius, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.background = alpha(t.primary, 0.12); }} onMouseLeave={e => { e.currentTarget.style.background = expandedPaymentCategories.has('cash') ? alpha(t.primary, 0.08) : t.inputBg; }}>
+                      <div className="flex items-center gap-2 flex-1">
+                        <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>Cash</p>
+                        <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ background: alpha(t.primary, 0.1), color: t.primary }}>{groupedManualPayments.cash.length}</span>
+                      </div>
+                      <span style={{ color: t.primary, transform: expandedPaymentCategories.has('cash') ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.25s ease-out', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px' }}>▼</span>
                     </button>
                     {expandedPaymentCategories.has('cash') && groupedManualPayments.cash.map(pm => {
                       const isSelected = selectedPayId === pm.id;
