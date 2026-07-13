@@ -2800,6 +2800,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const paymentMethods: PaymentMethod[] = enabledPayments.length > 0 ? enabledPayments : [
     { id: 'bca', name: 'Transfer BCA', type: 'bank_transfer', enabled: true, bankName: 'BCA', accountNumber: '1234567890', accountHolder: 'Nama Toko' }
   ];
+  const hasAutoPayment = paymentSettings?.autoPayment?.enabled ?? false;
   const [selectedPayId, setSelectedPayId] = useState(paymentMethods[0]?.id ?? '');
   useEffect(() => { if (!selectedPayId && paymentMethods.length) setSelectedPayId(paymentMethods[0].id); }, []);
 
@@ -3294,8 +3295,11 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               </div>
               <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Payment Method</h3>
             </div>
-            <div className="p-5 space-y-2">
-              {paymentMethods.map(pm => {
+            <div className="p-5 space-y-4">
+              {/* Manual Payment */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold" style={{ color: t.textMuted }}>MANUAL PAYMENT</p>
+                {paymentMethods.map(pm => {
                 const isSelected = selectedPayId === pm.id;
                 return (
                   <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
@@ -3335,6 +3339,25 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   </label>
                 );
               })}
+              </div>
+
+              {/* Auto Payment */}
+              {hasAutoPayment && (
+                <div className="space-y-2 pt-2 border-t" style={{ borderColor: t.divider }}>
+                  <p className="text-xs font-semibold" style={{ color: t.textMuted }}>AUTOMATIC PAYMENT</p>
+                  <label className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${selectedPayId === 'auto-payment' ? t.primary : t.surfaceBorder}`, background: selectedPayId === 'auto-payment' ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (selectedPayId !== 'auto-payment') { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (selectedPayId !== 'auto-payment') { e.currentTarget.style.background = t.surfaceBg; } }}>
+                    <input type="radio" name="payment" value="auto-payment" checked={selectedPayId === 'auto-payment'} onChange={() => setSelectedPayId('auto-payment')} className="sr-only" />
+                    <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors" style={selectedPayId === 'auto-payment' ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
+                      {selectedPayId === 'auto-payment' && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>Pay with Card</p>
+                      <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Credit/Debit Card, Bank Transfer</p>
+                    </div>
+                  </label>
+                </div>
+              )}
+
               {paymentSettings?.paymentNote && (
                 <div className="mt-2 p-3 bg-blue-50 rounded-xl border border-blue-100">
                   <p className="text-xs text-blue-600">{paymentSettings.paymentNote}</p>
