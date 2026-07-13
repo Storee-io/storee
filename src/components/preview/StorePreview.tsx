@@ -3298,7 +3298,10 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             <div className="p-5 space-y-4">
               {/* Manual Payment */}
               <div className="space-y-2">
-                <p className="text-xs font-semibold" style={{ color: t.textMuted }}>MANUAL PAYMENT</p>
+                <div>
+                  <p className="text-xs font-semibold" style={{ color: t.textMuted }}>MANUAL PAYMENT</p>
+                  <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Complete payment outside our platform or scan QR code</p>
+                </div>
                 {paymentMethods.map(pm => {
                 const isSelected = selectedPayId === pm.id;
                 return (
@@ -3344,7 +3347,10 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               {/* Auto Payment */}
               {hasAutoPayment && (
                 <div className="space-y-2 pt-2 border-t" style={{ borderColor: t.divider }}>
-                  <p className="text-xs font-semibold" style={{ color: t.textMuted }}>AUTOMATIC PAYMENT</p>
+                  <div>
+                    <p className="text-xs font-semibold" style={{ color: t.textMuted }}>AUTOMATIC PAYMENT</p>
+                    <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Pay securely online with your card</p>
+                  </div>
                   <label className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: t.inputRadius, border: `2px solid ${selectedPayId === 'auto-payment' ? t.primary : t.surfaceBorder}`, background: selectedPayId === 'auto-payment' ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (selectedPayId !== 'auto-payment') { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (selectedPayId !== 'auto-payment') { e.currentTarget.style.background = t.surfaceBg; } }}>
                     <input type="radio" name="payment" value="auto-payment" checked={selectedPayId === 'auto-payment'} onChange={() => setSelectedPayId('auto-payment')} className="sr-only" />
                     <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors" style={selectedPayId === 'auto-payment' ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
