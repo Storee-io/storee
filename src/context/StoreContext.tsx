@@ -661,14 +661,13 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
     setActiveStoreState(prev => {
       if (!prev) return prev;
       const updated = { ...prev, ...patch };
-      // Persist asynchronously
+      // Persist to localStorage immediately (for all users as fallback)
+      try {
+        localStorage.setItem(`storee_store_${updated.id}`, JSON.stringify(updated));
+      } catch { /* quota */ }
+      // Persist asynchronously to Supabase for logged-in users
       if (userId) {
         upsertStore(updated, userId).catch(console.error);
-      } else {
-        // Guest: keep localStorage in sync so reload/navigate preserves state
-        try {
-          localStorage.setItem(`storee_store_${updated.id}`, JSON.stringify(updated));
-        } catch { /* quota */ }
       }
       // Save to ACTIVE_STORE_KEY for persistence across page reloads
       saveActiveStore(updated);
