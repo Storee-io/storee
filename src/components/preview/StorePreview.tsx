@@ -2807,7 +2807,17 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const paymentMethods: PaymentMethod[] = enabledPayments.length > 0 ? enabledPayments : [
     { id: 'bca', name: 'Transfer BCA', type: 'bank_transfer', enabled: true, bankName: 'BCA', accountNumber: '1234567890', accountHolder: 'Nama Toko' }
   ];
-  const hasAutoPayment = paymentSettings?.autoPayment?.enabled ?? false;
+  const AUTO_CHANNEL_DEFS = [
+    { id: 'qris' as const,           label: 'QRIS',                     desc: 'Instant QR payment — scan with any e-wallet or mobile banking app', Icon: QrCode },
+    { id: 'ewallet' as const,        label: 'E-Wallet',                 desc: 'GoPay, OVO, Dana, ShopeePay & more',                                 Icon: Wallet },
+    { id: 'virtualAccount' as const, label: 'Virtual Account',          desc: 'Bank transfer via a dedicated VA number',                            Icon: Building },
+    { id: 'card' as const,           label: 'Card (Debit / Credit)',    desc: 'Secure online payment',                                              Icon: CreditCard },
+  ];
+  const autoChannelsConfig = paymentSettings?.autoPayment?.channels;
+  const enabledAutoChannels = AUTO_CHANNEL_DEFS.filter(c =>
+    autoChannelsConfig ? autoChannelsConfig[c.id] : c.id !== 'card'
+  );
+  const hasAutoPayment = (paymentSettings?.autoPayment?.enabled ?? false) && enabledAutoChannels.length > 0;
 
   // Group manual payment methods by sub-category (render order: QRIS, E-Wallet, Bank Transfer, Cash)
   const groupedManualPayments = {
@@ -3461,16 +3471,26 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     <p className="text-xs font-bold uppercase tracking-wide" style={{ color: t.textMuted, letterSpacing: '0.5px' }}>Automatic Payment</p>
                     <p className="text-xs mt-1" style={{ color: t.textMuted }}>Instantly confirmed — order processes automatically</p>
                   </div>
-                  <label className="flex items-center gap-4 p-3.5 cursor-pointer transition-all rounded-lg" style={{ borderRadius: capRadius(t.inputRadius), border: `1px solid ${selectedPayId === 'auto-payment' ? t.primary : alpha(t.surfaceBorder, 0.6)}`, background: selectedPayId === 'auto-payment' ? alpha(t.primary, 0.06) : 'transparent' }} onMouseEnter={e => { if (selectedPayId !== 'auto-payment') { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (selectedPayId !== 'auto-payment') { e.currentTarget.style.background = 'transparent'; } }}>
-                    <input type="radio" name="payment" value="auto-payment" checked={selectedPayId === 'auto-payment'} onChange={() => setSelectedPayId('auto-payment')} className="sr-only" />
-                    <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all" style={{ borderColor: selectedPayId === 'auto-payment' ? t.primary : alpha(t.textMuted, 0.4), background: selectedPayId === 'auto-payment' ? t.primary : 'transparent' }}>
-                      {selectedPayId === 'auto-payment' && <div className="w-1.5 h-1.5 rounded-full" style={{ background: t.surfaceBg }} />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium" style={{ color: t.textPrimary }}>Card (Debit / Credit)</p>
-                      <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Secure online payment</p>
-                    </div>
-                  </label>
+                  {enabledAutoChannels.map(channel => {
+                    const id = `auto-${channel.id}`;
+                    const isSelected = selectedPayId === id;
+                    const ChannelIcon = channel.Icon;
+                    return (
+                      <label key={id} className="flex items-center gap-4 p-3.5 cursor-pointer transition-all rounded-lg" style={{ borderRadius: capRadius(t.inputRadius), border: `1px solid ${isSelected ? t.primary : alpha(t.surfaceBorder, 0.6)}`, background: isSelected ? alpha(t.primary, 0.06) : 'transparent' }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = 'transparent'; } }}>
+                        <input type="radio" name="payment" value={id} checked={isSelected} onChange={() => setSelectedPayId(id)} className="sr-only" />
+                        <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all" style={{ borderColor: isSelected ? t.primary : alpha(t.textMuted, 0.4), background: isSelected ? t.primary : 'transparent' }}>
+                          {isSelected && <div className="w-1.5 h-1.5 rounded-full" style={{ background: t.surfaceBg }} />}
+                        </div>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
+                          <ChannelIcon className="w-4 h-4" style={{ color: t.primary }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium" style={{ color: t.textPrimary }}>{channel.label}</p>
+                          <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{channel.desc}</p>
+                        </div>
+                      </label>
+                    );
+                  })}
                 </div>
               )}
 
