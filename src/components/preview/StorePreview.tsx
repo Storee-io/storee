@@ -3658,7 +3658,12 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
 
               {payment.type === 'qris' && (
                 <div className="text-center space-y-3">
-                  <div className="w-36 h-36 rounded-2xl mx-auto flex items-center justify-center text-5xl" style={{ background: t.inputBg }}>📱</div>
+                  {payment.qrisImageUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={payment.qrisImageUrl} alt="QRIS code" className="w-48 h-48 rounded-2xl mx-auto object-contain" style={{ background: t.inputBg, padding: '8px' }} />
+                  ) : (
+                    <div className="w-36 h-36 rounded-2xl mx-auto flex items-center justify-center text-5xl" style={{ background: t.inputBg }}>📱</div>
+                  )}
                   <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>Total: <span style={{ color: t.primary }}>{fmtPrice(total)}</span></p>
                   {payment.instructions && <p className="text-xs leading-relaxed" style={{ color: t.textMuted }}>{payment.instructions}</p>}
                 </div>

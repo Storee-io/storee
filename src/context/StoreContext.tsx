@@ -77,6 +77,7 @@ export interface PaymentMethod {
   accountNumber?: string;
   accountHolder?: string;
   qrisCode?: string;
+  qrisImageUrl?: string;
   ewalletNumber?: string;
   instructions?: string;
 }

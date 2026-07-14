@@ -8,12 +8,59 @@ import {
   Eye, EyeOff, ExternalLink, ShieldCheck,
   Landmark, Wallet, MessageCircle, FileText,
   QrCode, Banknote, Building2, Loader2,
+  Upload, X, AlertTriangle,
 } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
 import { DEFAULT_PAYMENT_METHODS } from '../../../context/StoreContext';
 import type { PaymentMethod, AutoPaymentConfig, AutoPaymentProvider, AutoPaymentChannels } from '../../../context/StoreContext';
 
 const BANK_OPTIONS = ['BCA', 'Mandiri', 'BNI', 'BRI', 'CIMB Niaga', 'Permata', 'Danamon', 'Jenius', 'Jago', 'SeaBank', 'Blu by BCA Digital', 'Neobank', 'Allo Bank', 'Superbank', 'Krom', 'Bank Saqu', 'Aladin'];
+
+// ── QRIS image upload helpers ─────────────────────────────────────────────────
+// Compresses the uploaded QR code to a reasonably small square data URL so it
+// stays cheap to store/sync (localStorage + Supabase) without visible quality loss.
+const QRIS_TARGET_BYTES = 800 * 1024;
+
+function compressQrisImage(file: File): Promise<string> {
+  const preserveAlpha = file.type !== 'image/jpeg' && file.type !== 'image/jpg';
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const render = (side: number, q: number): string => {
+          const canvas = document.createElement('canvas');
+          canvas.width = side;
+          canvas.height = side;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return e.target?.result as string;
+          const srcSide = Math.min(img.width, img.height);
+          const sx = (img.width - srcSide) / 2;
+          const sy = (img.height - srcSide) / 2;
+          if (!preserveAlpha) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, side, side);
+          }
+          ctx.drawImage(img, sx, sy, srcSide, srcSide, 0, 0, side, side);
+          return canvas.toDataURL(preserveAlpha ? 'image/png' : 'image/jpeg', q);
+        };
+        let side = Math.min(img.width, img.height, 800);
+        let quality = 0.85;
+        let out = render(side, quality);
+        while (out.length > QRIS_TARGET_BYTES * 1.37 && (side > 200 || quality > 0.4)) {
+          if (!preserveAlpha && quality > 0.4) quality -= 0.1;
+          else side = Math.round(side * 0.85);
+          out = render(side, quality);
+        }
+        resolve(out);
+      };
+      img.onerror = reject;
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 // ── Payment method icon map ───────────────────────────────────────────────────
 
@@ -158,6 +205,11 @@ export default function PaymentSettings() {
     setMethods(prev => prev.map(m => m.id === id ? { ...m, ...patch } : m));
 
   const save = async () => {
+    const qrisMissingImage = methods.find(m => m.type === 'qris' && m.enabled && !m.qrisImageUrl);
+    if (qrisMissingImage) {
+      toast.error('Upload a QRIS code image before enabling QRIS payment');
+      return;
+    }
     setSaving(true);
     try {
       updateActiveStore({
@@ -721,6 +773,27 @@ function BankTransferAccountRow({ method, onUpdate, onDelete, isExpanded, onTogg
 }
 
 function OtherPaymentCard({ method, onUpdate }: { method: PaymentMethod; onUpdate: (patch: Partial<PaymentMethod>) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const isQris = method.type === 'qris';
+  const qrisReady = !isQris || !!method.qrisImageUrl;
+
+  const handleQrisUpload = async (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+    setUploading(true);
+    try {
+      const dataUrl = await compressQrisImage(file);
+      onUpdate({ qrisImageUrl: dataUrl });
+    } catch {
+      toast.error('Failed to process image, please try another file');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className={`rounded-lg border transition-all ${method.enabled ? 'border-slate-200 bg-white shadow-xs' : 'border-slate-200 bg-slate-50/50'}`}>
       <div className="flex items-center justify-between p-4">
@@ -728,11 +801,61 @@ function OtherPaymentCard({ method, onUpdate }: { method: PaymentMethod; onUpdat
           <PaymentMethodIcon id={method.id} type={method.type} />
           <span className={`text-sm font-medium ${method.enabled ? 'text-slate-900' : 'text-slate-500'}`}>{method.name}</span>
         </div>
-        <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-          <input type="checkbox" checked={method.enabled} onChange={e => onUpdate({ enabled: e.target.checked })} className="sr-only peer" />
-          <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
+        <label className={`relative inline-flex items-center flex-shrink-0 ${qrisReady ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
+          <input
+            type="checkbox"
+            checked={method.enabled}
+            onChange={e => {
+              if (e.target.checked && !qrisReady) {
+                toast.error('Upload a QRIS code image first to enable this payment method');
+                return;
+              }
+              onUpdate({ enabled: e.target.checked });
+            }}
+            className="sr-only peer"
+          />
+          <div className={`w-9 h-5 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 ${qrisReady ? 'bg-slate-200 peer-focus:outline-none' : 'bg-slate-100 opacity-60'}`} />
         </label>
       </div>
+
+      {isQris && (
+        <div className="border-t border-slate-100 bg-slate-50/40 px-4 py-3 space-y-2">
+          <label className="text-xs font-semibold text-slate-700 block uppercase tracking-wide">
+            QR Code Image <span className="text-red-500 normal-case font-medium">(required to enable)</span>
+          </label>
+          {method.qrisImageUrl ? (
+            <div className="flex items-center gap-3">
+              <div className="w-20 h-20 rounded-lg border border-slate-200 overflow-hidden bg-white flex-shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={method.qrisImageUrl} alt="QRIS code" className="w-full h-full object-contain" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="px-3 py-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer w-fit">
+                  {uploading ? 'Processing...' : 'Replace image'}
+                  <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={e => handleQrisUpload(e.target.files?.[0])} />
+                </label>
+                <button
+                  onClick={() => onUpdate({ qrisImageUrl: undefined, enabled: false })}
+                  className="px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors w-fit flex items-center gap-1"
+                >
+                  <X className="w-3 h-3" /> Remove
+                </button>
+              </div>
+            </div>
+          ) : (
+            <label className="flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-slate-300 rounded-xl py-5 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-colors">
+              <Upload className="w-5 h-5 text-slate-400" />
+              <span className="text-xs font-medium text-slate-500">{uploading ? 'Processing...' : 'Upload your QRIS code image'}</span>
+              <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={e => handleQrisUpload(e.target.files?.[0])} />
+            </label>
+          )}
+          {!method.qrisImageUrl && (
+            <p className="flex items-center gap-1.5 text-xs text-amber-600">
+              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" /> Upload the store's QRIS code to activate this payment method.
+            </p>
+          )}
+        </div>
+      )}
 
       {method.enabled && (
         <div className="border-t border-slate-100 bg-slate-50/40 px-4 py-3 space-y-3">
