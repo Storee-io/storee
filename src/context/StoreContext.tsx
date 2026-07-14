@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useMemo, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { Template } from '../data/templates';
 import { templates } from '../data/templates';
@@ -421,6 +421,11 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
   const [generationState, setGenerationState] = useState<GenerationState | null>(null);
   const [isLoadingStores, setIsLoadingStores] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  // Timestamp of the most recent local edit (updateActiveStore call). Background
+  // fetches (loadStores/loadGuestStores) can resolve after a save with stale data —
+  // if a local edit happened after the fetch started, we keep the local state
+  // instead of letting the stale fetch clobber it.
+  const lastLocalEditAt = useRef(0);
 
   // If we have a real store in localStorage (and no cookie was provided), stop skeleton immediately
   useEffect(() => {
@@ -473,6 +478,7 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
   }, []);
 
   async function loadGuestStores() {
+    const fetchStartedAt = Date.now();
     try {
       const guestStores: Store[] = [];
 
@@ -521,7 +527,13 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
         // Honor the store the user last accessed (ACTIVE_STORE_KEY); only fall
         // back to most-recently-used when that store isn't in the list.
         const active = pickActiveStore(sorted) ?? sorted[0];
-        setActiveStoreState(prev => mergeActiveStore(prev, active));
+        setActiveStoreState(prev => {
+          // A local edit (Save) landed after this fetch started — the fetch
+          // result is stale, so keep the fresher local state instead of
+          // letting it clobber the just-saved changes.
+          if (prev && prev.id === active.id && lastLocalEditAt.current > fetchStartedAt) return prev;
+          return mergeActiveStore(prev, active);
+        });
         setPrevStoreId(active.id);
         saveActiveStore(active);
         writeLastUsed(active.id);  // Dashboard view counts as accessing the store
@@ -545,6 +557,7 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
   }
 
   async function loadStores(uid: string) {
+    const fetchStartedAt = Date.now();
     setIsLoadingStores(true);
     setUserId(uid);
     try {
@@ -575,7 +588,10 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
         setStores(prev => mergeStores(prev, combined));
         // Honor the store the user last accessed; fall back to most-recently-used.
         const active = pickActiveStore(combined) ?? combined[0];
-        setActiveStoreState(prev => mergeActiveStore(prev, active));
+        setActiveStoreState(prev => {
+          if (prev && prev.id === active.id && lastLocalEditAt.current > fetchStartedAt) return prev;
+          return mergeActiveStore(prev, active);
+        });
         setPrevStoreId(active.id);
         saveActiveStore(active);
         setIsLoadingActiveStore(false);
@@ -674,6 +690,7 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
   }, [userId]);
 
   const updateActiveStore = useCallback((patch: Partial<Store>) => {
+    lastLocalEditAt.current = Date.now();
     setActiveStoreState(prev => {
       if (!prev) return prev;
       const updated = { ...prev, ...patch };
