@@ -3378,7 +3378,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           <BrandLogo id={pm.id} type={pm.type} />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
-                            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Pay manually to seller via {pm.name}</p>
+                            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Transfer manually to seller's {pm.name} account</p>
                           </div>
                         </label>
                       );
