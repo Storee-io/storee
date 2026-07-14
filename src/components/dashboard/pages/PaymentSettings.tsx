@@ -112,8 +112,7 @@ export function PaymentMethodIcon({ id, type }: { id: string; type: string }) {
 const AUTO_PROVIDERS: {
   id: AutoPaymentProvider;
   name: string;
-  initial: string;
-  initialBg: string;
+  logo: string;
   color: string;
   desc: string;
   docsUrl: string;
@@ -121,8 +120,7 @@ const AUTO_PROVIDERS: {
   {
     id: 'xendit',
     name: 'Xendit',
-    initial: 'X',
-    initialBg: 'bg-blue-500',
+    logo: '/logos/xendit.svg',
     color: 'border-blue-300 bg-blue-50',
     desc: 'Virtual account, QRIS, e-wallet & cards — popular in Indonesia',
     docsUrl: 'https://dashboard.xendit.co/settings/developers',
@@ -130,17 +128,15 @@ const AUTO_PROVIDERS: {
   {
     id: 'midtrans',
     name: 'Midtrans',
-    initial: 'M',
-    initialBg: 'bg-orange-500',
-    color: 'border-orange-300 bg-orange-50',
+    logo: '/logos/midtrans.svg',
+    color: 'border-cyan-300 bg-cyan-50',
     desc: "Gojek's payment gateway — bank transfer, cards & e-wallets",
     docsUrl: 'https://dashboard.midtrans.com/settings/config_info',
   },
   {
     id: 'stripe',
     name: 'Stripe',
-    initial: 'S',
-    initialBg: 'bg-violet-600',
+    logo: '/logos/stripe.svg',
     color: 'border-violet-300 bg-violet-50',
     desc: 'International payments — credit cards, Apple Pay, Google Pay',
     docsUrl: 'https://dashboard.stripe.com/apikeys',
@@ -557,9 +553,9 @@ export default function PaymentSettings() {
                           <Check className="w-2.5 h-2.5 text-white" />
                         </span>
                       )}
-                      {/* Provider initial badge */}
-                      <div className={`w-8 h-8 ${p.initialBg} rounded-lg flex items-center justify-center`}>
-                        <span className="text-white text-sm font-black">{p.initial}</span>
+                      {/* Provider logo */}
+                      <div className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center p-1.5 overflow-hidden">
+                        <Image src={p.logo} alt={p.name} width={28} height={28} unoptimized className="w-full h-full object-contain" />
                       </div>
                       <span className="text-sm font-bold text-slate-800">{p.name}</span>
                       <span className="text-[10px] text-slate-500 leading-tight">{p.desc}</span>
