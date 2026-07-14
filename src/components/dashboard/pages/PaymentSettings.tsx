@@ -827,9 +827,9 @@ function OtherPaymentCard({ method, onUpdate }: { method: PaymentMethod; onUpdat
           {method.qrisImageUrl && (
             <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border border-slate-200 bg-white">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-12 h-12 rounded-lg border border-slate-200 flex items-center justify-center flex-shrink-0 overflow-hidden p-1 bg-white">
+                <div className="w-12 h-12 rounded-lg border border-slate-200 flex-shrink-0 overflow-hidden bg-white">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={method.qrisImageUrl} alt="QRIS code" className="max-w-full max-h-full w-auto h-auto object-contain" />
+                  <img src={method.qrisImageUrl} alt="QRIS code" className="w-full h-full object-cover" />
                 </div>
                 <p className="text-sm font-medium text-slate-700 truncate">QR code uploaded</p>
               </div>
