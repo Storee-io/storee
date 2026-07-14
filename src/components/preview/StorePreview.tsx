@@ -3346,11 +3346,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
                             <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Pay by scanning QR from any app</p>
-                            {isSelected && (
-                              <div className="mt-3 flex justify-center p-4" style={{ background: t.inputBg, borderRadius: capRadius(t.inputRadius), border: `1px solid ${t.surfaceBorder}` }}>
-                                <div className="w-28 h-28 rounded-xl flex items-center justify-center text-4xl" style={{ background: t.pageBg }}>📱</div>
-                              </div>
-                            )}
                           </div>
                         </label>
                       );
@@ -3417,13 +3412,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
                             {pm.bankName && <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{pm.bankName} · ****{pm.accountNumber?.slice(-4)}</p>}
-                            {isSelected && pm.accountNumber && (
-                              <div className="mt-3 p-3 space-y-1.5" style={{ background: t.inputBg, borderRadius: capRadius(t.inputRadius), border: `1px solid ${t.surfaceBorder}` }}>
-                                <p className="text-xs" style={{ color: t.textSecondary }}>Bank: <span className="font-bold" style={{ color: t.textPrimary }}>{pm.bankName}</span></p>
-                                <p className="text-xs" style={{ color: t.textSecondary }}>Account Number: <span className="font-bold font-mono" style={{ color: t.textPrimary }}>{pm.accountNumber}</span></p>
-                                <p className="text-xs" style={{ color: t.textSecondary }}>Account Name: <span className="font-bold" style={{ color: t.textPrimary }}>{pm.accountHolder}</span></p>
-                              </div>
-                            )}
                           </div>
                         </label>
                       );
