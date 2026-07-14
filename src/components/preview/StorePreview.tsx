@@ -3378,7 +3378,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           <BrandLogo id={pm.id} type={pm.type} />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
-                            {pm.ewalletNumber && <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{pm.ewalletNumber}</p>}
+                            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Pay manually to seller via {pm.name}</p>
                           </div>
                         </label>
                       );
@@ -3411,7 +3411,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           <BrandLogo id={pm.id} type={pm.type} />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
-                            {pm.bankName && <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{pm.bankName} · ****{pm.accountNumber?.slice(-4)}</p>}
+                            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Transfer manually to seller's {pm.bankName ?? 'bank'} account</p>
                           </div>
                         </label>
                       );
@@ -3444,7 +3444,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           <BrandLogo id={pm.id} type={pm.type} />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
-                            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Pay when your order arrives</p>
+                            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Pay in cash when your order arrives</p>
                           </div>
                         </label>
                       );
