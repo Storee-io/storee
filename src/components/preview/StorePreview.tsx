@@ -3337,9 +3337,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     {expandedPaymentCategories.has('qris') && groupedManualPayments.qris.map(pm => {
                       const isSelected = selectedPayId === pm.id;
                       return (
-                        <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: capRadius(t.inputRadius), border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
+                        <label key={pm.id} className="flex items-center gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: capRadius(t.inputRadius), border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
                           <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
-                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
+                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
                             {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
                           </div>
                           <BrandLogo id={pm.id} type={pm.type} />
@@ -3370,9 +3370,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     {expandedPaymentCategories.has('ewallet') && groupedManualPayments.ewallet.map(pm => {
                       const isSelected = selectedPayId === pm.id;
                       return (
-                        <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: capRadius(t.inputRadius), border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
+                        <label key={pm.id} className="flex items-center gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: capRadius(t.inputRadius), border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
                           <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
-                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
+                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
                             {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
                           </div>
                           <BrandLogo id={pm.id} type={pm.type} />
@@ -3403,9 +3403,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     {expandedPaymentCategories.has('bank') && groupedManualPayments.bank.map(pm => {
                       const isSelected = selectedPayId === pm.id;
                       return (
-                        <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: capRadius(t.inputRadius), border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
+                        <label key={pm.id} className="flex items-center gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: capRadius(t.inputRadius), border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
                           <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
-                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
+                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
                             {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
                           </div>
                           <BrandLogo id={pm.id} type={pm.type} />
@@ -3436,9 +3436,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     {expandedPaymentCategories.has('cash') && groupedManualPayments.cash.map(pm => {
                       const isSelected = selectedPayId === pm.id;
                       return (
-                        <label key={pm.id} className="flex items-start gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: capRadius(t.inputRadius), border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
+                        <label key={pm.id} className="flex items-center gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: capRadius(t.inputRadius), border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
                           <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
-                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
+                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
                             {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
                           </div>
                           <BrandLogo id={pm.id} type={pm.type} />
@@ -3461,9 +3461,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     <p className="text-xs font-bold uppercase tracking-wide" style={{ color: t.textMuted, letterSpacing: '0.5px' }}>Automatic Payment</p>
                     <p className="text-xs mt-1" style={{ color: t.textMuted }}>Instantly confirmed — order processes automatically</p>
                   </div>
-                  <label className="flex items-start gap-4 p-3.5 cursor-pointer transition-all rounded-lg" style={{ borderRadius: capRadius(t.inputRadius), border: `1px solid ${selectedPayId === 'auto-payment' ? t.primary : alpha(t.surfaceBorder, 0.6)}`, background: selectedPayId === 'auto-payment' ? alpha(t.primary, 0.06) : 'transparent' }} onMouseEnter={e => { if (selectedPayId !== 'auto-payment') { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (selectedPayId !== 'auto-payment') { e.currentTarget.style.background = 'transparent'; } }}>
+                  <label className="flex items-center gap-4 p-3.5 cursor-pointer transition-all rounded-lg" style={{ borderRadius: capRadius(t.inputRadius), border: `1px solid ${selectedPayId === 'auto-payment' ? t.primary : alpha(t.surfaceBorder, 0.6)}`, background: selectedPayId === 'auto-payment' ? alpha(t.primary, 0.06) : 'transparent' }} onMouseEnter={e => { if (selectedPayId !== 'auto-payment') { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (selectedPayId !== 'auto-payment') { e.currentTarget.style.background = 'transparent'; } }}>
                     <input type="radio" name="payment" value="auto-payment" checked={selectedPayId === 'auto-payment'} onChange={() => setSelectedPayId('auto-payment')} className="sr-only" />
-                    <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all" style={{ borderColor: selectedPayId === 'auto-payment' ? t.primary : alpha(t.textMuted, 0.4), background: selectedPayId === 'auto-payment' ? t.primary : 'transparent' }}>
+                    <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all" style={{ borderColor: selectedPayId === 'auto-payment' ? t.primary : alpha(t.textMuted, 0.4), background: selectedPayId === 'auto-payment' ? t.primary : 'transparent' }}>
                       {selectedPayId === 'auto-payment' && <div className="w-1.5 h-1.5 rounded-full" style={{ background: t.surfaceBg }} />}
                     </div>
                     <div className="flex-1 min-w-0">
