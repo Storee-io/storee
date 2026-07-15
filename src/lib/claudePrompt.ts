@@ -711,6 +711,15 @@ CONTENT RULES
 - heroTitle: evocative and brand-specific — NOT "Welcome to [Store]"
 - primaryColor: distinctive, not plain #000 or #fff
 - If user specified a brand name, use it as storeName
-- Prices MUST be realistic: IDR 50000–2000000 | USD 10–500 | EUR 10–400 | GBP 8–350 | JPY 1000–80000 | SGD 15–700
+- Prices MUST be realistic AND scaled to the product's category — never apply one flat range to every product. Pick the tier that matches each product, then use that tier's range for the store's currency:
+    Tier 1 — small items (cosmetics, stationery, phone cases, small accessories):
+      USD 5–80 | IDR 25000–350000 | EUR 5–65 | GBP 5–55 | JPY 700–11000 | SGD 8–110
+    Tier 2 — standard goods (apparel, bags, shoes, everyday home decor):
+      USD 10–500 | IDR 50000–2000000 | EUR 10–400 | GBP 8–350 | JPY 1000–80000 | SGD 15–700
+    Tier 3 — large/durable goods (furniture pieces, large electronics, appliances):
+      USD 150–3000 | IDR 700000–13500000 | EUR 120–2400 | GBP 100–2100 | JPY 21000–420000 | SGD 200–4200
+    Tier 4 — premium/luxury (fine jewelry, designer furniture, high-end electronics):
+      USD 300–8000 | IDR 1350000–36000000 | EUR 240–6400 | GBP 200–5600 | JPY 42000–1120000 | SGD 420–11200
+  A furniture store's sofas/tables belong in Tier 3 (or Tier 4 for luxury brands), NOT Tier 2 — never let a $500 cap force an unrealistic sofa price, and never jump to $10,000+ unless the brand is explicitly ultra-luxury.
 - promoBar: store-specific, not generic
 - brandStory: human and authentic, not corporate AI-speak`;
