@@ -56,16 +56,71 @@ export interface ShippingSettings {
   freeShippingThreshold?: number;
 }
 
-export const DEFAULT_SHIPPING_METHODS: ShippingMethod[] = [
-  { id: 'jne-reg',        name: 'JNE REG',              price: 15000, estimatedDays: '2–3 days', enabled: true,  icon: '📦' },
-  { id: 'jne-yes',        name: 'JNE YES (Express)',     price: 35000, estimatedDays: '1 day',    enabled: true,  icon: '⚡' },
-  { id: 'jnt-reg',        name: 'J&T Express',           price: 12000, estimatedDays: '2–4 days', enabled: true,  icon: '📫' },
-  { id: 'sicepat',        name: 'SiCepat REG',           price: 10000, estimatedDays: '2–3 days', enabled: false, icon: '🚀' },
-  { id: 'gosend',         name: 'GoSend Same Day',        price: 25000, estimatedDays: 'Today',    enabled: false, icon: '🛵' },
-  { id: 'free',           name: 'Free Shipping',          price: 0,     estimatedDays: '3–5 days', enabled: false, icon: '🎁' },
-  { id: 'seller-courier', name: 'Seller Delivery',        price: 0,     estimatedDays: 'Today',    enabled: false, icon: '🏍️', useDistancePricing: true, ratePerKm: 3000, minFee: 10000, maxKm: 15 },
-  { id: 'pickup',         name: 'In-Store Pick Up',       price: 0,     estimatedDays: '-',        enabled: false, icon: '🏪', isPickup: true, pickupAddress: '' },
-];
+// Per-currency shipping presets: [standard, express, economy, sameDay] as
+// { name, price }, plus a distance-pricing rate/min fee for the "Seller
+// Delivery" option. Keeps realistic regional courier names and costs instead
+// of showing e.g. Indonesian courier prices as raw digits under a USD store.
+const SHIPPING_PRESETS: Record<string, {
+  standard: { name: string; price: number }; express: { name: string; price: number };
+  economy: { name: string; price: number }; sameDay: { name: string; price: number };
+  ratePerKm: number; minFee: number;
+}> = {
+  IDR: {
+    standard: { name: 'JNE REG', price: 15000 }, express: { name: 'JNE YES (Express)', price: 35000 },
+    economy: { name: 'J&T Express', price: 12000 }, sameDay: { name: 'GoSend Same Day', price: 25000 },
+    ratePerKm: 3000, minFee: 10000,
+  },
+  USD: {
+    standard: { name: 'USPS Standard', price: 6 }, express: { name: 'FedEx 2-Day', price: 15 },
+    economy: { name: 'USPS Ground', price: 4 }, sameDay: { name: 'Local Courier Same-Day', price: 10 },
+    ratePerKm: 1, minFee: 4,
+  },
+  EUR: {
+    standard: { name: 'DPD Standard', price: 5 }, express: { name: 'DHL Express', price: 13 },
+    economy: { name: 'Economy Post', price: 4 }, sameDay: { name: 'Local Courier Same-Day', price: 9 },
+    ratePerKm: 1, minFee: 3,
+  },
+  GBP: {
+    standard: { name: 'Royal Mail Standard', price: 5 }, express: { name: 'DPD Next Day', price: 11 },
+    economy: { name: 'Economy Post', price: 3 }, sameDay: { name: 'Local Courier Same-Day', price: 8 },
+    ratePerKm: 1, minFee: 3,
+  },
+  JPY: {
+    standard: { name: 'Yamato Standard', price: 700 }, express: { name: 'Sagawa Express', price: 1600 },
+    economy: { name: 'Japan Post Economy', price: 500 }, sameDay: { name: 'Local Courier Same-Day', price: 1000 },
+    ratePerKm: 100, minFee: 400,
+  },
+  SGD: {
+    standard: { name: 'SingPost Standard', price: 8 }, express: { name: 'Ninja Van Express', price: 18 },
+    economy: { name: 'Economy Post', price: 6 }, sameDay: { name: 'Local Courier Same-Day', price: 12 },
+    ratePerKm: 2, minFee: 5,
+  },
+};
+
+export function getDefaultShippingMethods(currencyCode?: string): ShippingMethod[] {
+  const preset = SHIPPING_PRESETS[(currencyCode || 'IDR').toUpperCase()] ?? SHIPPING_PRESETS.IDR;
+  return [
+    { id: 'jne-reg',        name: preset.standard.name, price: preset.standard.price, estimatedDays: '2–3 days', enabled: true,  icon: '📦' },
+    { id: 'jne-yes',        name: preset.express.name,  price: preset.express.price,  estimatedDays: '1 day',    enabled: true,  icon: '⚡' },
+    { id: 'jnt-reg',        name: preset.economy.name,  price: preset.economy.price,  estimatedDays: '2–4 days', enabled: true,  icon: '📫' },
+    { id: 'sicepat',        name: preset.economy.name,  price: Math.round(preset.economy.price * 0.8), estimatedDays: '2–3 days', enabled: false, icon: '🚀' },
+    { id: 'gosend',         name: preset.sameDay.name,  price: preset.sameDay.price,  estimatedDays: 'Today',    enabled: false, icon: '🛵' },
+    { id: 'free',           name: 'Free Shipping',      price: 0,                     estimatedDays: '3–5 days', enabled: false, icon: '🎁' },
+    { id: 'seller-courier', name: 'Seller Delivery',    price: 0,                     estimatedDays: 'Today',    enabled: false, icon: '🏍️', useDistancePricing: true, ratePerKm: preset.ratePerKm, minFee: preset.minFee, maxKm: 15 },
+    { id: 'pickup',         name: 'In-Store Pick Up',   price: 0,                     estimatedDays: '-',        enabled: false, icon: '🏪', isPickup: true, pickupAddress: '' },
+  ];
+}
+
+// Backward-compatible flat default (IDR) for call sites that don't yet pass
+// the store's currency — prefer getDefaultShippingMethods(currencyCode).
+export const DEFAULT_SHIPPING_METHODS: ShippingMethod[] = getDefaultShippingMethods('IDR');
+
+// Realistic standard-shipping cost fallback for a given currency, used where
+// no shipping method is resolved yet (e.g. mid-checkout before selection).
+export function getDefaultShippingCost(currencyCode?: string): number {
+  const preset = SHIPPING_PRESETS[(currencyCode || 'IDR').toUpperCase()] ?? SHIPPING_PRESETS.IDR;
+  return preset.standard.price;
+}
 
 // ── Payment ───────────────────────────────────────────────────────────────────
 export interface PaymentMethod {

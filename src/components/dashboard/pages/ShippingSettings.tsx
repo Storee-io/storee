@@ -7,7 +7,7 @@ import {
   Package, Zap, Bike, Gift, Store, Tag,
 } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
-import { DEFAULT_SHIPPING_METHODS } from '../../../context/StoreContext';
+import { getDefaultShippingMethods } from '../../../context/StoreContext';
 import { makePriceFmt } from '../../../lib/formatCurrency';
 import type { ShippingMethod } from '../../../context/StoreContext';
 import type { PickedLocation } from './LocationPickerMap';
@@ -47,8 +47,9 @@ const DAYS_MIGRATION: Record<string, string> = {
   '3–5 hari': '3–5 days',
 };
 
-function mergeWithDefaults(stored: ShippingMethod[]): ShippingMethod[] {
-  const defaultMap = new Map(DEFAULT_SHIPPING_METHODS.map(m => [m.id, m]));
+function mergeWithDefaults(stored: ShippingMethod[], currencyCode?: string): ShippingMethod[] {
+  const defaults = getDefaultShippingMethods(currencyCode);
+  const defaultMap = new Map(defaults.map(m => [m.id, m]));
   // Patch name + migrate old Indonesian estimatedDays strings
   const patched = stored.map(m => {
     const def = defaultMap.get(m.id);
@@ -56,7 +57,7 @@ function mergeWithDefaults(stored: ShippingMethod[]): ShippingMethod[] {
     return def ? { ...m, name: def.name, estimatedDays: migratedDays } : { ...m, estimatedDays: migratedDays };
   });
   const ids = new Set(patched.map(m => m.id));
-  const missing = DEFAULT_SHIPPING_METHODS.filter(m => !ids.has(m.id));
+  const missing = defaults.filter(m => !ids.has(m.id));
   return [...patched, ...missing];
 }
 
@@ -355,7 +356,7 @@ export default function ShippingSettings() {
   const { activeStore, updateActiveStore } = useStore();
 
   const [methods, setMethods] = useState<ShippingMethod[]>(
-    mergeWithDefaults(activeStore?.shippingSettings?.methods ?? DEFAULT_SHIPPING_METHODS)
+    mergeWithDefaults(activeStore?.shippingSettings?.methods ?? [], activeStore?.currency?.code)
   );
   const [freeThreshold, setFreeThreshold] = useState(
     String(activeStore?.shippingSettings?.freeShippingThreshold ?? '')
@@ -363,7 +364,7 @@ export default function ShippingSettings() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    setMethods(mergeWithDefaults(activeStore?.shippingSettings?.methods ?? DEFAULT_SHIPPING_METHODS));
+    setMethods(mergeWithDefaults(activeStore?.shippingSettings?.methods ?? [], activeStore?.currency?.code));
     setFreeThreshold(String(activeStore?.shippingSettings?.freeShippingThreshold ?? ''));
   }, [activeStore?.id]);
 
