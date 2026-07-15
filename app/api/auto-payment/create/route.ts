@@ -24,6 +24,31 @@ interface AutoPaymentResult {
   redirectUrl?: string;
 }
 
+// Gateways return the useful detail in different shapes — pull out whatever
+// field-level info is present so failures are actually diagnosable instead of
+// just "Failed to validate the request, N errors occurred."
+function extractGatewayErrorMessage(data: unknown, fallback: string): string {
+  if (!data || typeof data !== 'object') return fallback;
+  const d = data as Record<string, unknown>;
+  const base = typeof d.message === 'string' ? d.message : (typeof d.status_message === 'string' ? d.status_message : fallback);
+  const errors = d.errors;
+  if (Array.isArray(errors) && errors.length > 0) {
+    const details = errors.map(e => {
+      if (typeof e === 'string') return e;
+      if (e && typeof e === 'object') {
+        const eo = e as Record<string, unknown>;
+        const path = Array.isArray(eo.path) ? eo.path.join('.') : eo.path;
+        const msg = eo.message ?? JSON.stringify(eo);
+        return path ? `${path}: ${msg}` : String(msg);
+      }
+      return String(e);
+    }).join('; ');
+    return `${base} (${details})`;
+  }
+  if (typeof d.error_code === 'string' && base === fallback) return `${base} [${d.error_code}]`;
+  return base;
+}
+
 // Looks up a store's autoPayment credentials server-side (never sent to the
 // client) by checking the logged-in-user `stores` table first, then the
 // `guest_stores` table (stores created without an account).
@@ -87,15 +112,19 @@ async function createXenditPayment(
   const apiKey = config.xendit?.apiKey;
   if (!apiKey) throw new Error('Xendit API key is not configured');
   const auth = `Basic ${Buffer.from(`${apiKey}:`).toString('base64')}`;
+  const amountInt = Math.round(amount); // IDR has no minor unit — Xendit rejects non-integer amounts
 
   if (channel === 'qris') {
     const res = await fetch('https://api.xendit.co/qr_codes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: auth },
-      body: JSON.stringify({ reference_id: orderId, type: 'DYNAMIC', currency: 'IDR', amount }),
+      body: JSON.stringify({ reference_id: orderId, type: 'DYNAMIC', currency: 'IDR', amount: amountInt }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data?.message ?? 'Xendit QRIS request failed');
+    if (!res.ok) {
+      console.error('[auto-payment/xendit] QRIS error:', JSON.stringify(data));
+      throw new Error(extractGatewayErrorMessage(data, 'Xendit QRIS request failed'));
+    }
     return { type: 'qris', qrString: data.qr_string };
   }
 
@@ -107,13 +136,16 @@ async function createXenditPayment(
         external_id: orderId,
         bank_code: 'BCA',
         name: customerName || 'Customer',
-        expected_amount: amount,
+        expected_amount: amountInt,
         is_closed: true,
         is_single_use: true,
       }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data?.message ?? 'Xendit Virtual Account request failed');
+    if (!res.ok) {
+      console.error('[auto-payment/xendit] VA error:', JSON.stringify(data));
+      throw new Error(extractGatewayErrorMessage(data, 'Xendit Virtual Account request failed'));
+    }
     return { type: 'va', bankCode: data.bank_code, accountNumber: data.account_number };
   }
 
@@ -124,13 +156,16 @@ async function createXenditPayment(
     headers: { 'Content-Type': 'application/json', Authorization: auth },
     body: JSON.stringify({
       external_id: orderId,
-      amount,
+      amount: amountInt,
       currency: 'IDR',
       customer: { given_names: customerName || 'Customer', email: customerEmail || undefined },
     }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.message ?? 'Xendit Invoice request failed');
+  if (!res.ok) {
+    console.error('[auto-payment/xendit] Invoice error:', JSON.stringify(data));
+    throw new Error(extractGatewayErrorMessage(data, 'Xendit Invoice request failed'));
+  }
   return { type: 'redirect', redirectUrl: data.invoice_url };
 }
 
@@ -143,6 +178,7 @@ async function createMidtransPayment(
   if (!serverKey) throw new Error('Midtrans server key is not configured');
   const env = config.midtrans?.environment === 'production' ? '' : 'sandbox.';
   const auth = `Basic ${Buffer.from(`${serverKey}:`).toString('base64')}`;
+  const grossAmount = Math.round(amount);
 
   if (channel === 'qris') {
     const res = await fetch(`https://api.${env}midtrans.com/v2/charge`, {
@@ -150,12 +186,15 @@ async function createMidtransPayment(
       headers: { 'Content-Type': 'application/json', Authorization: auth },
       body: JSON.stringify({
         payment_type: 'qris',
-        transaction_details: { order_id: orderId, gross_amount: amount },
+        transaction_details: { order_id: orderId, gross_amount: grossAmount },
         qris: { acquirer: 'gopay' },
       }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data?.status_message ?? 'Midtrans QRIS request failed');
+    if (!res.ok) {
+      console.error('[auto-payment/midtrans] QRIS error:', JSON.stringify(data));
+      throw new Error(extractGatewayErrorMessage(data, 'Midtrans QRIS request failed'));
+    }
     const qrAction = (data.actions as { name: string; url: string }[] | undefined)?.find(a => a.name === 'generate-qr-code');
     return { type: 'qris', qrImageUrl: qrAction?.url };
   }
@@ -166,12 +205,15 @@ async function createMidtransPayment(
       headers: { 'Content-Type': 'application/json', Authorization: auth },
       body: JSON.stringify({
         payment_type: 'bank_transfer',
-        transaction_details: { order_id: orderId, gross_amount: amount },
+        transaction_details: { order_id: orderId, gross_amount: grossAmount },
         bank_transfer: { bank: 'bca' },
       }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data?.status_message ?? 'Midtrans Virtual Account request failed');
+    if (!res.ok) {
+      console.error('[auto-payment/midtrans] VA error:', JSON.stringify(data));
+      throw new Error(extractGatewayErrorMessage(data, 'Midtrans Virtual Account request failed'));
+    }
     const va = (data.va_numbers as { bank: string; va_number: string }[] | undefined)?.[0];
     return { type: 'va', bankCode: va?.bank?.toUpperCase(), accountNumber: va?.va_number };
   }
@@ -182,13 +224,16 @@ async function createMidtransPayment(
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: auth },
     body: JSON.stringify({
-      transaction_details: { order_id: orderId, gross_amount: amount },
+      transaction_details: { order_id: orderId, gross_amount: grossAmount },
       customer_details: { first_name: customerName || 'Customer', email: customerEmail || undefined },
       enabled_payments: enabledPayments,
     }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.status_message ?? 'Midtrans Snap request failed');
+  if (!res.ok) {
+    console.error('[auto-payment/midtrans] Snap error:', JSON.stringify(data));
+    throw new Error(extractGatewayErrorMessage(data, 'Midtrans Snap request failed'));
+  }
   return { type: 'redirect', redirectUrl: data.redirect_url };
 }
 
@@ -224,6 +269,9 @@ async function createStripePayment(
     body: params.toString(),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.error?.message ?? 'Stripe Checkout Session request failed');
+  if (!res.ok) {
+    console.error('[auto-payment/stripe] Checkout Session error:', JSON.stringify(data));
+    throw new Error(data?.error?.message ?? 'Stripe Checkout Session request failed');
+  }
   return { type: 'redirect', redirectUrl: data.url };
 }
