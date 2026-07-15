@@ -24,6 +24,20 @@ interface AutoPaymentResult {
   redirectUrl?: string;
 }
 
+// Payment gateways sit behind Cloudflare/edge infra that occasionally resets
+// a connection mid-request (transient network blip, not an API error) — retry
+// once on network-level failures only. HTTP error responses (4xx/5xx) are
+// real API errors and are returned as-is, not retried.
+async function fetchWithRetry(url: string, init: RequestInit, retries = 1): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch (err) {
+    if (retries <= 0) throw err;
+    await new Promise(r => setTimeout(r, 300));
+    return fetchWithRetry(url, init, retries - 1);
+  }
+}
+
 // Gateways return the useful detail in different shapes — pull out whatever
 // field-level info is present so failures are actually diagnosable instead of
 // just "Failed to validate the request, N errors occurred."
@@ -115,7 +129,7 @@ async function createXenditPayment(
   const amountInt = Math.round(amount); // IDR has no minor unit — Xendit rejects non-integer amounts
 
   if (channel === 'qris') {
-    const res = await fetch('https://api.xendit.co/qr_codes', {
+    const res = await fetchWithRetry('https://api.xendit.co/qr_codes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: auth },
       body: JSON.stringify({ reference_id: orderId, type: 'DYNAMIC', currency: 'IDR', amount: amountInt }),
@@ -129,7 +143,7 @@ async function createXenditPayment(
   }
 
   if (channel === 'virtualAccount') {
-    const res = await fetch('https://api.xendit.co/callback_virtual_accounts', {
+    const res = await fetchWithRetry('https://api.xendit.co/callback_virtual_accounts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: auth },
       body: JSON.stringify({
@@ -151,7 +165,7 @@ async function createXenditPayment(
 
   // ewallet & card: use Xendit's hosted Invoice page, which itself presents
   // whichever payment methods are enabled on the merchant's Xendit dashboard.
-  const res = await fetch('https://api.xendit.co/v2/invoices', {
+  const res = await fetchWithRetry('https://api.xendit.co/v2/invoices', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: auth },
     body: JSON.stringify({
@@ -181,7 +195,7 @@ async function createMidtransPayment(
   const grossAmount = Math.round(amount);
 
   if (channel === 'qris') {
-    const res = await fetch(`https://api.${env}midtrans.com/v2/charge`, {
+    const res = await fetchWithRetry(`https://api.${env}midtrans.com/v2/charge`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: auth },
       body: JSON.stringify({
@@ -200,7 +214,7 @@ async function createMidtransPayment(
   }
 
   if (channel === 'virtualAccount') {
-    const res = await fetch(`https://api.${env}midtrans.com/v2/charge`, {
+    const res = await fetchWithRetry(`https://api.${env}midtrans.com/v2/charge`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: auth },
       body: JSON.stringify({
@@ -220,7 +234,7 @@ async function createMidtransPayment(
 
   // ewallet & card: Snap hosted redirect page
   const enabledPayments = channel === 'card' ? ['credit_card'] : ['gopay', 'shopeepay'];
-  const res = await fetch(`https://app.${env}midtrans.com/snap/v1/transactions`, {
+  const res = await fetchWithRetry(`https://app.${env}midtrans.com/snap/v1/transactions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: auth },
     body: JSON.stringify({
@@ -260,7 +274,7 @@ async function createStripePayment(
   params.set('line_items[0][quantity]', '1');
   if (customerEmail) params.set('customer_email', customerEmail);
 
-  const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+  const res = await fetchWithRetry('https://api.stripe.com/v1/checkout/sessions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
