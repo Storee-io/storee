@@ -122,7 +122,7 @@ export interface PaymentSettings {
 
 export const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [
   { id: 'bca',      name: 'Transfer BCA',         type: 'bank_transfer', enabled: true,  bankName: 'BCA',     accountNumber: '1234567890', accountHolder: 'Nama Toko Anda', instructions: 'Transfer ke rekening di atas dan kirim bukti pembayaran via WhatsApp.' },
-  { id: 'qris',     name: 'QRIS',                  type: 'qris',          enabled: true,  instructions: 'Scan QR code dengan aplikasi e-wallet atau mobile banking apapun.' },
+  { id: 'qris',     name: 'QRIS',                  type: 'qris',          enabled: false, instructions: 'Scan QR code dengan aplikasi e-wallet atau mobile banking apapun.' },
   { id: 'cod',      name: 'Cash Payment', type: 'cod',           enabled: false, instructions: 'Siapkan uang pas saat kurir tiba. Berlaku untuk area tertentu.' },
   { id: 'gopay',    name: 'GoPay',                 type: 'ewallet',       enabled: false, ewalletNumber: '08123456789' },
   { id: 'ovo',      name: 'OVO',                   type: 'ewallet',       enabled: false, ewalletNumber: '08123456789' },
