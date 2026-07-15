@@ -457,7 +457,7 @@ export default function PreviewShell({ store, from = null }: Props) {
                   <Globe className={`w-3.5 h-3.5 flex-shrink-0 ${isPublished ? 'text-slate-400' : 'text-slate-300'} ${liveStore.branding?.faviconUrl ? 'hidden' : ''}`} />
                   <span className={`text-xs font-mono truncate min-w-0 flex-1 ${isPublished ? 'text-slate-500' : 'text-slate-400'}`}>
                     {isPublished
-                      ? `https://${liveStore.publishedDomain ?? liveStore.domain}${currentPath === '/' ? '' : currentPath}`
+                      ? `https://${liveStore.customDomain ?? (liveStore.publishedDomain ? `${liveStore.publishedDomain}.storee.io` : liveStore.domain)}${currentPath === '/' ? '' : currentPath}`
                       : `https://****.storee.io${currentPath === '/' ? '' : currentPath}`}
                   </span>
                   <ChevronDown className={`w-3 h-3 flex-shrink-0 text-slate-400 transition-transform ${showAddrDropdown ? 'rotate-180' : ''}`} />
