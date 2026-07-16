@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef, memo, useMemo } from 'react';
 import NextImage from 'next/image';
 import { createPortal } from 'react-dom';
+import { toast } from 'sonner';
 import type { CSSProperties } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform, Reorder } from 'framer-motion';
 import type { Variants } from 'framer-motion';
@@ -3590,8 +3591,18 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               // Touch all fields to surface any validation errors
               const allFields = ['name', ...(showWhatsApp ? ['whatsapp'] : []), ...(showEmail ? ['email'] : []), 'address', 'city', 'postal'];
               setTouched(Object.fromEntries(allFields.map(k => [k, true])));
-              const hasErrors = allFields.some(k => validate(k, form[k as keyof typeof form]) !== '');
-              if (hasErrors) return;
+              const fieldLabels: Record<string, string> = { name: 'Name', whatsapp: 'WhatsApp', email: 'Email', address: 'Address', city: 'City', postal: 'Postal Code' };
+              const errors = allFields
+                .map(k => ({ field: k, message: validate(k, form[k as keyof typeof form]) }))
+                .filter(e => e.message !== '');
+              if (errors.length > 0) {
+                toast.error(
+                  errors.length === 1
+                    ? `${fieldLabels[errors[0].field] ?? errors[0].field}: ${errors[0].message}`
+                    : `Please fix ${errors.length} fields: ${errors.map(e => fieldLabels[e.field] ?? e.field).join(', ')}`
+                );
+                return;
+              }
               const dial = COUNTRY_CODES.find(c => c.code === phoneCountryCode)?.dial ?? '62';
               onPlaceOrder(selectedPayId, selectedShippingId, { ...form, whatsapp: form.whatsapp ? `+${dial}${form.whatsapp}` : '' });
             }}
