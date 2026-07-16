@@ -22,6 +22,9 @@ interface AutoPaymentResult {
   bankCode?: string;
   accountNumber?: string;
   redirectUrl?: string;
+  // True when generated with a sandbox/test API key — QR codes and VA numbers
+  // in this mode are dummy data and cannot be paid via a real banking app.
+  sandbox?: boolean;
 }
 
 // Payment gateways sit behind Cloudflare/edge infra that occasionally resets
@@ -127,6 +130,7 @@ async function createXenditPayment(
   if (!apiKey) throw new Error('Xendit API key is not configured');
   const auth = `Basic ${Buffer.from(`${apiKey}:`).toString('base64')}`;
   const amountInt = Math.round(amount); // IDR has no minor unit — Xendit rejects non-integer amounts
+  const sandbox = config.xendit?.environment !== 'production';
 
   if (channel === 'qris') {
     // The api-version header opts into the v2 QR Codes schema (reference_id/
@@ -142,7 +146,7 @@ async function createXenditPayment(
       console.error('[auto-payment/xendit] QRIS error:', JSON.stringify(data));
       throw new Error(extractGatewayErrorMessage(data, 'Xendit QRIS request failed'));
     }
-    return { type: 'qris', qrString: data.qr_string };
+    return { type: 'qris', qrString: data.qr_string, sandbox };
   }
 
   if (channel === 'virtualAccount') {
@@ -163,7 +167,7 @@ async function createXenditPayment(
       console.error('[auto-payment/xendit] VA error:', JSON.stringify(data));
       throw new Error(extractGatewayErrorMessage(data, 'Xendit Virtual Account request failed'));
     }
-    return { type: 'va', bankCode: data.bank_code, accountNumber: data.account_number };
+    return { type: 'va', bankCode: data.bank_code, accountNumber: data.account_number, sandbox };
   }
 
   // ewallet & card: use Xendit's hosted Invoice page, which itself presents
@@ -183,7 +187,7 @@ async function createXenditPayment(
     console.error('[auto-payment/xendit] Invoice error:', JSON.stringify(data));
     throw new Error(extractGatewayErrorMessage(data, 'Xendit Invoice request failed'));
   }
-  return { type: 'redirect', redirectUrl: data.invoice_url };
+  return { type: 'redirect', redirectUrl: data.invoice_url, sandbox };
 }
 
 // ── Midtrans ─────────────────────────────────────────────────────────────────
@@ -196,6 +200,7 @@ async function createMidtransPayment(
   const env = config.midtrans?.environment === 'production' ? '' : 'sandbox.';
   const auth = `Basic ${Buffer.from(`${serverKey}:`).toString('base64')}`;
   const grossAmount = Math.round(amount);
+  const sandbox = config.midtrans?.environment !== 'production';
 
   if (channel === 'qris') {
     const res = await fetchWithRetry(`https://api.${env}midtrans.com/v2/charge`, {
@@ -213,7 +218,7 @@ async function createMidtransPayment(
       throw new Error(extractGatewayErrorMessage(data, 'Midtrans QRIS request failed'));
     }
     const qrAction = (data.actions as { name: string; url: string }[] | undefined)?.find(a => a.name === 'generate-qr-code');
-    return { type: 'qris', qrImageUrl: qrAction?.url };
+    return { type: 'qris', qrImageUrl: qrAction?.url, sandbox };
   }
 
   if (channel === 'virtualAccount') {
@@ -232,7 +237,7 @@ async function createMidtransPayment(
       throw new Error(extractGatewayErrorMessage(data, 'Midtrans Virtual Account request failed'));
     }
     const va = (data.va_numbers as { bank: string; va_number: string }[] | undefined)?.[0];
-    return { type: 'va', bankCode: va?.bank?.toUpperCase(), accountNumber: va?.va_number };
+    return { type: 'va', bankCode: va?.bank?.toUpperCase(), accountNumber: va?.va_number, sandbox };
   }
 
   // ewallet & card: Snap hosted redirect page
@@ -251,7 +256,7 @@ async function createMidtransPayment(
     console.error('[auto-payment/midtrans] Snap error:', JSON.stringify(data));
     throw new Error(extractGatewayErrorMessage(data, 'Midtrans Snap request failed'));
   }
-  return { type: 'redirect', redirectUrl: data.redirect_url };
+  return { type: 'redirect', redirectUrl: data.redirect_url, sandbox };
 }
 
 // ── Stripe ───────────────────────────────────────────────────────────────────
@@ -260,6 +265,7 @@ async function createStripePayment(
 ): Promise<AutoPaymentResult> {
   const secretKey = config.stripe?.secretKey;
   if (!secretKey) throw new Error('Stripe secret key is not configured');
+  const sandbox = !secretKey.startsWith('sk_live_');
 
   // Stripe expects the smallest currency unit (e.g. cents); IDR is a
   // zero-decimal currency for Stripe, most others (usd, eur, ...) use 2 decimals.
@@ -290,5 +296,5 @@ async function createStripePayment(
     console.error('[auto-payment/stripe] Checkout Session error:', JSON.stringify(data));
     throw new Error(data?.error?.message ?? 'Stripe Checkout Session request failed');
   }
-  return { type: 'redirect', redirectUrl: data.url };
+  return { type: 'redirect', redirectUrl: data.url, sandbox };
 }

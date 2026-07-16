@@ -2765,6 +2765,7 @@ interface AutoPaymentResult {
   bankCode?: string;
   accountNumber?: string;
   redirectUrl?: string;
+  sandbox?: boolean;
 }
 
 function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, layoutStyle, editMode, onFieldChange, store, branding, placingOrder }: {
@@ -3699,6 +3700,14 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
 
               {autoPaymentResult?.type === 'qris' && (
                 <div className="text-center space-y-3">
+                  {autoPaymentResult.sandbox && (
+                    <div className="flex items-start gap-2 p-3 rounded-xl border text-left" style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
+                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#b45309' }} />
+                      <p className="text-xs" style={{ color: '#92400e' }}>
+                        <span className="font-bold">Test mode:</span> this QR is sandbox data from your payment gateway and won&apos;t scan in a real banking app. Switch to a production API key in Payment settings to accept real payments.
+                      </p>
+                    </div>
+                  )}
                   {autoPaymentResult.qrImageUrl ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={autoPaymentResult.qrImageUrl} alt="QRIS code" className="w-48 h-48 rounded-2xl mx-auto object-contain" style={{ background: t.inputBg, padding: '8px' }} />
@@ -3710,11 +3719,29 @@ function SuccessPage({ primaryColor, storeName, orderNum, total, onContinue, fmt
                   )}
                   <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>Total: <span style={{ color: t.primary }}>{fmtPrice(total)}</span></p>
                   <p className="text-xs" style={{ color: t.textMuted }}>Scan with any QRIS-supported app — payment confirms automatically.</p>
+                  <div className="pt-2" style={{ borderTop: `1px solid ${t.divider}` }}>
+                    <p className="text-[10px] uppercase tracking-wide mb-2" style={{ color: t.textMuted }}>Supported by</p>
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      {['qris', 'gopay', 'ovo', 'dana', 'shopeepay', 'bca', 'mandiri', 'bni', 'bri'].map(id => (
+                        <div key={id} className="h-6 px-1.5 rounded flex items-center justify-center bg-white border border-slate-200 overflow-hidden">
+                          <NextImage src={`/logos/${id}.${id === 'qris' || id === 'bca' || id === 'mandiri' || id === 'bni' || id === 'bri' ? 'svg' : id === 'gopay' || id === 'shopeepay' ? 'jpg' : 'png'}`} alt={id} width={id === 'qris' ? 40 : 20} height={20} unoptimized className="object-contain h-full w-auto" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
 
               {autoPaymentResult?.type === 'va' && (
                 <div className="space-y-4">
+                  {autoPaymentResult.sandbox && (
+                    <div className="flex items-start gap-2 p-3 rounded-xl border text-left" style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
+                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#b45309' }} />
+                      <p className="text-xs" style={{ color: '#92400e' }}>
+                        <span className="font-bold">Test mode:</span> this Virtual Account is sandbox data and can&apos;t receive a real transfer. Switch to a production API key in Payment settings to accept real payments.
+                      </p>
+                    </div>
+                  )}
                   <div className="p-4 space-y-2.5" style={{ background: t.inputBg, borderRadius: capRadius(t.inputRadius) }}>
                     <div className="flex justify-between items-center">
                       <span className="text-xs" style={{ color: t.textMuted }}>Bank</span>
