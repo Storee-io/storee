@@ -356,7 +356,7 @@ export default function ShippingSettings() {
   const { activeStore, updateActiveStore } = useStore();
 
   const [methods, setMethods] = useState<ShippingMethod[]>(
-    mergeWithDefaults(activeStore?.shippingSettings?.methods ?? [], activeStore?.currency?.code)
+    mergeWithDefaults(activeStore?.shippingSettings?.methods ?? [], activeStore?.currency?.code ?? 'IDR')
   );
   const [freeThreshold, setFreeThreshold] = useState(
     String(activeStore?.shippingSettings?.freeShippingThreshold ?? '')
@@ -364,7 +364,7 @@ export default function ShippingSettings() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    setMethods(mergeWithDefaults(activeStore?.shippingSettings?.methods ?? [], activeStore?.currency?.code));
+    setMethods(mergeWithDefaults(activeStore?.shippingSettings?.methods ?? [], activeStore?.currency?.code ?? 'IDR'));
     setFreeThreshold(String(activeStore?.shippingSettings?.freeShippingThreshold ?? ''));
   }, [activeStore?.id]);
 

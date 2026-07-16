@@ -2841,9 +2841,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [selectedPayId, setSelectedPayId] = useState(paymentMethods[0]?.id ?? '');
   useEffect(() => { if (!selectedPayId && paymentMethods.length) setSelectedPayId(paymentMethods[0].id); }, []);
 
-  const enabledShippingMethods = (shippingSettings?.methods ?? getDefaultShippingMethods(store?.currency?.code)).filter(m => m.enabled);
+  const enabledShippingMethods = (shippingSettings?.methods ?? getDefaultShippingMethods(store?.currency?.code ?? 'USD')).filter(m => m.enabled);
   const shippingMethods: ShippingMethod[] = enabledShippingMethods.length > 0 ? enabledShippingMethods : [
-    { id: 'flat', name: 'Standard Shipping', price: getDefaultShippingCost(store?.currency?.code), estimatedDays: '2–3 days', enabled: true, icon: '📦' }
+    { id: 'flat', name: 'Standard Shipping', price: getDefaultShippingCost(store?.currency?.code ?? 'USD'), estimatedDays: '2–3 days', enabled: true, icon: '📦' }
   ];
   const [selectedShippingId, setSelectedShippingId] = useState(shippingMethods[0]?.id ?? '');
   const [expandedPaymentCategories, setExpandedPaymentCategories] = useState<Set<string>>(new Set(['bank'])); // Bank Transfer expanded by default
@@ -2874,7 +2874,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const selectedShipping = shippingMethods.find(m => m.id === selectedShippingId) ?? shippingMethods[0];
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
   const freeThreshold = shippingSettings?.freeShippingThreshold;
-  const shippingCost = (freeThreshold && subtotal >= freeThreshold) ? 0 : (selectedShipping?.price ?? getDefaultShippingCost(store?.currency?.code));
+  const shippingCost = (freeThreshold && subtotal >= freeThreshold) ? 0 : (selectedShipping?.price ?? getDefaultShippingCost(store?.currency?.code ?? 'USD'));
   const discount = promoApplied ? Math.round(subtotal * 0.1) : 0;
   const total = subtotal + shippingCost - discount;
   const isMobile = device === 'mobile';
@@ -10662,16 +10662,16 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
   };
 
   // Resolve shipping cost for SuccessPage total
-  const enabledShipping = (shippingSettings?.methods ?? getDefaultShippingMethods(store.currency?.code)).filter(m => m.enabled);
+  const enabledShipping = (shippingSettings?.methods ?? getDefaultShippingMethods(currencyCode)).filter(m => m.enabled);
   const resolvedShipping = enabledShipping.find(m => m.id === selectedShippingId) ?? enabledShipping[0];
   const freeThreshold = shippingSettings?.freeShippingThreshold;
-  const shippingCost = (freeThreshold && cartTotal >= freeThreshold) ? 0 : (resolvedShipping?.price ?? getDefaultShippingCost(store.currency?.code));
+  const shippingCost = (freeThreshold && cartTotal >= freeThreshold) ? 0 : (resolvedShipping?.price ?? getDefaultShippingCost(currencyCode));
 
   const saveOrder = async (paymentId: string, shippingId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => {
-    const selectedShipping = (shippingSettings?.methods ?? getDefaultShippingMethods(store.currency?.code)).find(m => m.id === shippingId);
+    const selectedShipping = (shippingSettings?.methods ?? getDefaultShippingMethods(currencyCode)).find(m => m.id === shippingId);
     const paymentMethod = (store.paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS).find(m => m.id === paymentId);
     const freeThresholdSave = shippingSettings?.freeShippingThreshold;
-    const savedShippingCost = (freeThresholdSave && cartTotal >= freeThresholdSave) ? 0 : (selectedShipping?.price ?? getDefaultShippingCost(store.currency?.code));
+    const savedShippingCost = (freeThresholdSave && cartTotal >= freeThresholdSave) ? 0 : (selectedShipping?.price ?? getDefaultShippingCost(currencyCode));
     const subdomain = store.domain.replace('.storee.io', '');
     try {
       await fetch('/api/orders', {
@@ -10730,7 +10730,7 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
           channel,
           orderId: orderNum,
           amount: total,
-          currency: store.currency?.code,
+          currency: currencyCode,
           customerName: customer.name,
           customerEmail: customer.email,
         }),
@@ -10858,9 +10858,9 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
       setSelectedShippingId(sid);
       await saveOrder(pid, sid, customer);
       if (pid.startsWith('auto-')) {
-        const selectedShipping = (shippingSettings?.methods ?? getDefaultShippingMethods(store.currency?.code)).find(m => m.id === sid);
+        const selectedShipping = (shippingSettings?.methods ?? getDefaultShippingMethods(currencyCode)).find(m => m.id === sid);
         const freeThresholdNow = shippingSettings?.freeShippingThreshold;
-        const shipCost = (freeThresholdNow && cartTotal >= freeThresholdNow) ? 0 : (selectedShipping?.price ?? getDefaultShippingCost(store.currency?.code));
+        const shipCost = (freeThresholdNow && cartTotal >= freeThresholdNow) ? 0 : (selectedShipping?.price ?? getDefaultShippingCost(currencyCode));
         await createAutoPayment(pid, cartTotal + shipCost, { name: customer.name, email: customer.email });
       }
       setPage('success');
