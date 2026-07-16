@@ -129,9 +129,12 @@ async function createXenditPayment(
   const amountInt = Math.round(amount); // IDR has no minor unit — Xendit rejects non-integer amounts
 
   if (channel === 'qris') {
+    // The api-version header opts into the v2 QR Codes schema (reference_id/
+    // currency). Without it, Xendit validates against the legacy v1 schema
+    // (external_id/callback_url) and rejects these v2-shaped fields.
     const res = await fetchWithRetry('https://api.xendit.co/qr_codes', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: auth },
+      headers: { 'Content-Type': 'application/json', Authorization: auth, 'api-version': '2022-07-31' },
       body: JSON.stringify({ reference_id: orderId, type: 'DYNAMIC', currency: 'IDR', amount: amountInt }),
     });
     const data = await res.json();
