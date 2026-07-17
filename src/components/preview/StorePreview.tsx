@@ -2779,6 +2779,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [form, setForm] = useState({ email: '', whatsapp: '', name: '', address: '', city: '', province: '', postal: '', village: '', district: '', districtCode: '' });
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const touch = (k: string) => setTouched(t => ({ ...t, [k]: true }));
+  const [editingDetails, setEditingDetails] = useState(true); // false = show card, true = show form
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     let val = e.target.value;
@@ -2867,6 +2868,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         localStorage.setItem(CHECKOUT_PROFILE_LS_KEY, JSON.stringify(snapshot));
       }
       setSavedProfile(snapshot);
+      setEditingDetails(false);
       toast.success('Details saved for next time');
     } catch (err) {
       console.error('[checkout] save profile failed:', err);
@@ -3164,7 +3166,56 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Customer Details</h3>
             </div>
             <div className="p-5 grid grid-cols-2 gap-3">
-              {/* Always visible: Name */}
+              {/* Card: Saved profile summary (collapsed view) */}
+              {!editingDetails && savedProfile ? (
+                <>
+                  <div className="col-span-2 space-y-3">
+                    <div>
+                      <p className="text-xs" style={{ color: t.textMuted }}>Name</p>
+                      <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{savedProfile.name}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {showWhatsApp && (
+                        <div>
+                          <p className="text-xs" style={{ color: t.textMuted }}>WhatsApp</p>
+                          <p className="text-sm" style={{ color: t.textPrimary }}>{savedProfile.whatsapp}</p>
+                        </div>
+                      )}
+                      {showEmail && (
+                        <div>
+                          <p className="text-xs" style={{ color: t.textMuted }}>Email</p>
+                          <p className="text-sm" style={{ color: t.textPrimary }}>{savedProfile.email}</p>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs" style={{ color: t.textMuted }}>Address</p>
+                      <p className="text-sm" style={{ color: t.textPrimary }}>{savedProfile.address}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs" style={{ color: t.textMuted }}>City</p>
+                        <p className="text-sm" style={{ color: t.textPrimary }}>{savedProfile.city}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs" style={{ color: t.textMuted }}>Postal</p>
+                        <p className="text-sm" style={{ color: t.textPrimary }}>{savedProfile.postal}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-span-2 flex items-center justify-end gap-2">
+                    <button type="button" onClick={clearCustomerProfile} disabled={profileBusy} className="text-xs font-medium disabled:opacity-50" style={{ color: t.textMuted }}>
+                      Clear
+                    </button>
+                    <button type="button" onClick={() => setEditingDetails(true)} disabled={profileBusy} className="text-xs font-bold disabled:opacity-50 px-3 py-1.5 rounded" style={{ color: t.surfaceBg, background: t.primary }}>
+                      ✏️ Edit
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Form: Full details editing (expanded view) */}
+                  {/* Always visible: Name */}
               <div className="col-span-2">
                 <label style={lblStyle}>Full Name</label>
                 <input className="w-full px-4 py-2.5 text-sm outline-none" style={inpStyle} value={form.name} onChange={set('name')} placeholder="Recipient full name"
@@ -3383,6 +3434,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     </button>
                   </div>
                 </div>
+              )}
+                </>
               )}
             </div>
           </div>
