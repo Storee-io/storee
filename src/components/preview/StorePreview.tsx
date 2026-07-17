@@ -2828,15 +2828,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     { id: 'card' as const,           label: 'Card (Debit / Credit)',    desc: 'Secure online payment',                                              Icon: CreditCard },
   ];
   const autoChannelsConfig = paymentSettings?.autoPayment?.channels;
-  const autoProvider = paymentSettings?.autoPayment?.provider;
-  // Xendit and Midtrans settle exclusively in IDR (Indonesian domestic rails)
-  // — offering them on a non-IDR store would silently send the wrong-currency
-  // amount as if it were rupiah (e.g. a $6 charge treated as Rp 6). Hide auto
-  // payment entirely rather than let a broken transaction attempt happen.
-  const autoPaymentCurrencyOk = (autoProvider !== 'xendit' && autoProvider !== 'midtrans') || (store?.currency?.code ?? 'USD').toUpperCase() === 'IDR';
-  const enabledAutoChannels = autoPaymentCurrencyOk ? AUTO_CHANNEL_DEFS.filter(c =>
+  const enabledAutoChannels = AUTO_CHANNEL_DEFS.filter(c =>
     autoChannelsConfig ? autoChannelsConfig[c.id] : c.id !== 'card'
-  ) : [];
+  );
   const hasAutoPayment = (paymentSettings?.autoPayment?.enabled ?? false) && enabledAutoChannels.length > 0;
 
   // Group manual payment methods by sub-category (render order: QRIS, E-Wallet, Bank Transfer, Cash)

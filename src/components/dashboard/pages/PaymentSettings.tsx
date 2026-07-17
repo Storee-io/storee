@@ -506,14 +506,6 @@ export default function PaymentSettings() {
             </div>
           ) : (
             <>
-              {(autoPayment.provider === 'xendit' || autoPayment.provider === 'midtrans') && (activeStore?.currency?.code ?? 'USD').toUpperCase() !== 'IDR' && (
-                <div className="flex items-start gap-2.5 px-3.5 py-3 bg-amber-50 rounded-xl border border-amber-100">
-                  <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-700 leading-relaxed">
-                    <span className="font-semibold">{autoPayment.provider === 'xendit' ? 'Xendit' : 'Midtrans'} settles in IDR only.</span> Your store currency is {activeStore?.currency?.code ?? 'USD'}, so auto payment channels will be hidden at checkout to avoid charging the wrong amount. Set your store currency to IDR, or use Stripe for {activeStore?.currency?.code ?? 'USD'} stores.
-                  </p>
-                </div>
-              )}
               {/* Channels — order: QRIS, E-Wallet, Virtual Account, Card */}
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Payment Channels</p>
