@@ -2768,12 +2768,13 @@ interface AutoPaymentResult {
   sandbox?: boolean;
 }
 
-function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, layoutStyle, editMode, onFieldChange, store, branding, placingOrder }: {
+function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, layoutStyle, editMode, onFieldChange, store, branding, placingOrder, buyerUser }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
   shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; layoutStyle?: string; store?: Store;
   onBack: () => void; onPlaceOrder: (paymentId: string, shippingId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => void; editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
   branding?: { logoUrl?: string; faviconUrl?: string; logoFile?: string; faviconFile?: string };
   placingOrder?: boolean;
+  buyerUser?: BuyerUser | null;
 }) {
   const [form, setForm] = useState({ email: '', whatsapp: '', name: '', address: '', city: '', province: '', postal: '', village: '', district: '', districtCode: '' });
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -2816,6 +2817,83 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const showAddressFields = form.name.trim().length > 0 &&
     (showWhatsApp ? form.whatsapp.trim().length > 0 : true) &&
     (showEmail ? form.email.trim().length > 0 : true);
+
+  // "Save Data" — a saved customer profile (global to the buyer's account when
+  // logged in; local to this browser when a guest) so returning customers
+  // don't retype their details on their next order, here or on another store.
+  const CHECKOUT_PROFILE_LS_KEY = 'storee_checkout_profile';
+  const [savedProfile, setSavedProfile] = useState<typeof form | null>(null);
+  const [profileBusy, setProfileBusy] = useState(false);
+  const requiredFieldKeys = ['name', ...(showWhatsApp ? ['whatsapp'] : []), ...(showEmail ? ['email'] : []), 'address', 'city', 'postal'];
+  const allDetailsValid = requiredFieldKeys.every(k => validate(k, form[k as keyof typeof form]) === '');
+
+  // Load a previously saved profile once (buyer profile if logged in, else
+  // local guest copy) and prefill the form if it's still empty.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      let loaded: typeof form | null = null;
+      if (buyerUser) {
+        const { data } = await supabase.from('buyer_profiles').select('*').eq('user_id', buyerUser.id).maybeSingle();
+        if (data) {
+          loaded = { email: data.email ?? '', whatsapp: data.whatsapp ?? '', name: data.name ?? '', address: data.address ?? '', city: data.city ?? '', province: data.province ?? '', postal: data.postal ?? '', village: '', district: '', districtCode: '' };
+        }
+      } else {
+        try {
+          const raw = localStorage.getItem(CHECKOUT_PROFILE_LS_KEY);
+          if (raw) loaded = { ...form, ...JSON.parse(raw) };
+        } catch { /* ignore malformed */ }
+      }
+      if (cancelled || !loaded) return;
+      setSavedProfile(loaded);
+      setForm(f => (f.name || f.address ? f : loaded!));
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buyerUser?.id]);
+
+  const saveCustomerProfile = async () => {
+    setProfileBusy(true);
+    try {
+      const snapshot = { email: form.email, whatsapp: form.whatsapp, name: form.name, address: form.address, city: form.city, province: form.province, postal: form.postal, village: '', district: '', districtCode: '' };
+      if (buyerUser) {
+        const { error } = await supabase.from('buyer_profiles').upsert({
+          user_id: buyerUser.id, name: form.name, whatsapp: form.whatsapp, email: form.email,
+          address: form.address, city: form.city, province: form.province, postal: form.postal,
+          updated_at: new Date().toISOString(),
+        });
+        if (error) throw error;
+      } else {
+        localStorage.setItem(CHECKOUT_PROFILE_LS_KEY, JSON.stringify(snapshot));
+      }
+      setSavedProfile(snapshot);
+      toast.success('Details saved for next time');
+    } catch (err) {
+      console.error('[checkout] save profile failed:', err);
+      toast.error('Failed to save details');
+    } finally {
+      setProfileBusy(false);
+    }
+  };
+
+  const clearCustomerProfile = async () => {
+    setProfileBusy(true);
+    try {
+      if (buyerUser) {
+        const { error } = await supabase.from('buyer_profiles').delete().eq('user_id', buyerUser.id);
+        if (error) throw error;
+      } else {
+        localStorage.removeItem(CHECKOUT_PROFILE_LS_KEY);
+      }
+      setSavedProfile(null);
+      toast.success('Saved details cleared');
+    } catch (err) {
+      console.error('[checkout] clear profile failed:', err);
+      toast.error('Failed to clear saved details');
+    } finally {
+      setProfileBusy(false);
+    }
+  };
 
   const enabledPayments = (paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS).filter(m => m.enabled);
   const paymentMethods: PaymentMethod[] = enabledPayments.length > 0 ? enabledPayments : [
@@ -3287,6 +3365,25 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* Save Data — appears once every required field passes validation */}
+              {allDetailsValid && (
+                <div className="col-span-2 flex items-center justify-between gap-3 pt-1">
+                  <p className="text-xs" style={{ color: t.textMuted }}>
+                    {savedProfile ? '✓ Details saved for next time' : 'Save these details so you don\'t retype them next time'}
+                  </p>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    {savedProfile && (
+                      <button type="button" onClick={clearCustomerProfile} disabled={profileBusy} className="text-xs font-medium underline disabled:opacity-50" style={{ color: t.textMuted }}>
+                        Clear
+                      </button>
+                    )}
+                    <button type="button" onClick={saveCustomerProfile} disabled={profileBusy} className="text-xs font-bold disabled:opacity-50" style={{ color: t.primary }}>
+                      {savedProfile ? 'Update saved data' : '💾 Save Data'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -10921,7 +11018,7 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
         await createAutoPayment(pid, cartTotal + shipCost, { name: customer.name, email: customer.email });
       }
       setPage('success');
-    }} editMode={editMode} onFieldChange={onFieldChange} store={store} branding={store.branding} placingOrder={autoPaymentLoading} />;
+    }} editMode={editMode} onFieldChange={onFieldChange} store={store} branding={store.branding} placingOrder={autoPaymentLoading} buyerUser={buyerUser} />;
   } else if (page === 'success') {
     content = <SuccessPage primaryColor={primaryColor} storeName={storeName} orderNum={orderNum} total={cartTotal + shippingCost} fmtPrice={fmtPrice} paymentSettings={paymentSettings} selectedPaymentId={selectedPaymentId} layoutStyle={design?.layoutStyle} onContinue={() => { clearCart(); setPage('home'); }} buyerUser={buyerUser} onShowAuth={() => setShowAuthModal(true)} onMyOrders={() => setPage('myorders')} editMode={editMode} onFieldChange={onFieldChange} autoPaymentResult={autoPaymentResult} autoPaymentError={autoPaymentError} />;
   } else if (page === 'myorders' && buyerUser) {
