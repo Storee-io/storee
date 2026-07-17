@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import React, { useState, useEffect, useCallback, useRef, memo, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useRef, memo, useMemo } from 'react';
 import NextImage from 'next/image';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
@@ -10626,8 +10626,10 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
     setTimeout(resetScroll, 0);
   }, [page]);
 
-  // Notify parent of page/path changes — uses STORE_PAGE_PATHS as single source of truth
-  useEffect(() => {
+  // Notify parent of page/path changes — uses STORE_PAGE_PATHS as single source of truth.
+  // useLayoutEffect (not useEffect) so router.push fires before the browser paints the
+  // new page content — otherwise the URL bar visibly lags a frame behind what's on screen.
+  useLayoutEffect(() => {
     if (!onPageChange) return;
     if (page === 'product' && selectedProduct) {
       const slug = selectedProduct.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
