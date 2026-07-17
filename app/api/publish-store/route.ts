@@ -3,7 +3,10 @@ import { createServerClient } from '@/src/lib/supabase';
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { subdomain, name, primaryColor, category, templateId, design, currency, language, font, mood, audience, branding } = body;
+  const {
+    subdomain, name, primaryColor, category, templateId, design, currency, language, font, mood, audience, branding,
+    paymentSettings, shippingSettings, checkoutSettings,
+  } = body;
 
   if (!subdomain || !name) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -27,6 +30,9 @@ export async function POST(req: NextRequest) {
         mood: mood ?? null,
         audience: audience ?? null,
         branding: branding ?? {},
+        payment_settings: paymentSettings ?? null,
+        shipping_settings: shippingSettings ?? null,
+        checkout_settings: checkoutSettings ?? null,
         status: 'active',
       },
       { onConflict: 'subdomain' }

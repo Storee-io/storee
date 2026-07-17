@@ -224,6 +224,9 @@ export default function Editor() {
               font: activeStore.font,
               mood: activeStore.mood,
               audience: activeStore.audience,
+              paymentSettings: activeStore.paymentSettings,
+              shippingSettings: activeStore.shippingSettings,
+              checkoutSettings: activeStore.checkoutSettings,
             }),
           }).catch(console.error);
         }

@@ -208,14 +208,42 @@ export default function PaymentSettings() {
     }
     setSaving(true);
     try {
-      updateActiveStore({
-        paymentSettings: {
-          methods,
-          confirmationWhatsapp: confirmationWa || undefined,
-          paymentNote: paymentNote || undefined,
-          autoPayment,
-        },
-      });
+      const newPaymentSettings = {
+        methods,
+        confirmationWhatsapp: confirmationWa || undefined,
+        paymentNote: paymentNote || undefined,
+        autoPayment,
+      };
+      updateActiveStore({ paymentSettings: newPaymentSettings });
+
+      // Store is already live — push the updated settings to the published
+      // site too, otherwise checkout keeps showing stale payment methods
+      // until the next full re-publish.
+      if (activeStore && activeStore.status === 'Published') {
+        const subdomain = (activeStore.publishedDomain ?? activeStore.domain).replace('.storee.io', '');
+        fetch('/api/publish-store', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subdomain,
+            name: activeStore.name,
+            primaryColor: activeStore.primaryColor,
+            category: activeStore.category,
+            templateId: activeStore.template?.id,
+            design: activeStore.design,
+            currency: activeStore.currency,
+            language: activeStore.language,
+            font: activeStore.font,
+            mood: activeStore.mood,
+            audience: activeStore.audience,
+            branding: activeStore.branding,
+            paymentSettings: newPaymentSettings,
+            shippingSettings: activeStore.shippingSettings,
+            checkoutSettings: activeStore.checkoutSettings,
+          }),
+        }).catch(console.error);
+      }
+
       await new Promise(resolve => setTimeout(resolve, 500));
       toast.success('Payment settings saved');
       setSaved(true);

@@ -147,6 +147,9 @@ export default function PublishModal({ store, onPublish, onClose, fixedSubdomain
         mood: store.mood,
         audience: store.audience,
         branding: store.branding,
+        paymentSettings: store.paymentSettings,
+        shippingSettings: store.shippingSettings,
+        checkoutSettings: store.checkoutSettings,
       }),
     })
       .then(async res => {

@@ -305,6 +305,9 @@ export default function Appearance() {
               font,
               mood,
               audience,
+              paymentSettings: activeStore.paymentSettings,
+              shippingSettings: activeStore.shippingSettings,
+              checkoutSettings: activeStore.checkoutSettings,
             }),
           }).catch(console.error);
         }

@@ -442,6 +442,9 @@ export default function CanvasShell({ store, from }: Props) {
             font: liveContextStore.font,
             mood: liveContextStore.mood,
             audience: liveContextStore.audience,
+            paymentSettings: liveContextStore.paymentSettings,
+            shippingSettings: liveContextStore.shippingSettings,
+            checkoutSettings: liveContextStore.checkoutSettings,
           }),
         }).catch(() => toast.error('Failed to sync live store', { description: 'Changes saved locally but could not update the live store.' }));
       }
