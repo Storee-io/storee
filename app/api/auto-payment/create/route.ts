@@ -158,7 +158,11 @@ async function createXenditPayment(
   if (!apiKey) throw new Error('Xendit API key is not configured');
   const auth = `Basic ${Buffer.from(`${apiKey}:`).toString('base64')}`;
   const amountInt = Math.round(amount); // IDR has no minor unit — Xendit rejects non-integer amounts
-  const sandbox = config.xendit?.environment !== 'production';
+  // Xendit's own key prefix is the ground truth for sandbox vs. live — the
+  // dashboard's environment dropdown is just a label and can be set wrong
+  // (e.g. a xnd_development_ key saved while "production" is selected),
+  // which would otherwise suppress the test-mode warning on a fake QR/VA.
+  const sandbox = !apiKey.startsWith('xnd_production_');
 
   if (channel === 'qris') {
     // The api-version header opts into the v2 QR Codes schema (reference_id/
@@ -225,10 +229,13 @@ async function createMidtransPayment(
 ): Promise<AutoPaymentResult> {
   const serverKey = config.midtrans?.serverKey;
   if (!serverKey) throw new Error('Midtrans server key is not configured');
-  const env = config.midtrans?.environment === 'production' ? '' : 'sandbox.';
+  // Midtrans sandbox server keys are prefixed "SB-Mid-server-" — that prefix is
+  // the ground truth for which API host to call, not the dashboard's environment
+  // dropdown (which is just a label and can be set wrong).
+  const sandbox = serverKey.startsWith('SB-');
+  const env = sandbox ? 'sandbox.' : '';
   const auth = `Basic ${Buffer.from(`${serverKey}:`).toString('base64')}`;
   const grossAmount = Math.round(amount);
-  const sandbox = config.midtrans?.environment !== 'production';
 
   if (channel === 'qris') {
     const res = await fetchWithRetry(`https://api.${env}midtrans.com/v2/charge`, {
