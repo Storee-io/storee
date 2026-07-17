@@ -3478,7 +3478,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               </div>
 
 
-              {/* Auto Payment */}
+              {/* Auto Payment — same collapsible category pattern as Manual Payment */}
               {hasAutoPayment && (
                 <div className="space-y-3">
                   <div style={{ paddingBottom: '8px', borderBottom: `1px solid ${t.divider}` }}>
@@ -3487,22 +3487,39 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   </div>
                   {enabledAutoChannels.map(channel => {
                     const id = `auto-${channel.id}`;
+                    const catKey = `auto-${channel.id}`;
                     const isSelected = selectedPayId === id;
+                    const isExpanded = expandedPaymentCategories.has(catKey);
                     const ChannelIcon = channel.Icon;
                     return (
-                      <label key={id} className="flex items-center gap-4 p-3.5 cursor-pointer transition-all rounded-lg" style={{ borderRadius: capRadius(t.inputRadius), border: `1px solid ${isSelected ? t.primary : alpha(t.surfaceBorder, 0.6)}`, background: isSelected ? alpha(t.primary, 0.06) : 'transparent' }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = 'transparent'; } }}>
-                        <input type="radio" name="payment" value={id} checked={isSelected} onChange={() => setSelectedPayId(id)} className="sr-only" />
-                        <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all" style={{ borderColor: isSelected ? t.primary : alpha(t.textMuted, 0.4), background: isSelected ? t.primary : 'transparent' }}>
-                          {isSelected && <div className="w-1.5 h-1.5 rounded-full" style={{ background: t.surfaceBg }} />}
-                        </div>
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
-                          <ChannelIcon className="w-4 h-4" style={{ color: t.primary }} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium" style={{ color: t.textPrimary }}>{channel.label}</p>
-                          <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{channel.desc}</p>
-                        </div>
-                      </label>
+                      <div key={id} className="space-y-2">
+                        <button onClick={() => { const next = new Set(expandedPaymentCategories); isExpanded ? next.delete(catKey) : next.add(catKey); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-3.5 py-3 transition-all rounded-lg" style={{ background: isExpanded ? alpha(t.primary, 0.06) : 'transparent', border: `1px solid ${isExpanded ? t.primary : alpha(t.surfaceBorder, 0.6)}`, cursor: 'pointer' }} onMouseEnter={e => { if (!isExpanded) e.currentTarget.style.background = alpha(t.primary, 0.04); }} onMouseLeave={e => { if (!isExpanded) e.currentTarget.style.background = 'transparent'; }}>
+                          <div className="flex items-center gap-2.5 flex-1">
+                            <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
+                              <ChannelIcon className="w-2.5 h-2.5" style={{ color: t.primary }} />
+                            </div>
+                            <p className="text-sm font-medium" style={{ color: t.textPrimary }}>{channel.label}</p>
+                          </div>
+                          <span style={{ color: t.textMuted, transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease-out', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px' }}>
+                            <ChevronDown className="w-4 h-4" />
+                          </span>
+                        </button>
+                        {isExpanded && (
+                          <label className="flex items-center gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: capRadius(t.inputRadius), border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
+                            <input type="radio" name="payment" value={id} checked={isSelected} onChange={() => setSelectedPayId(id)} className="sr-only" />
+                            <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
+                              {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
+                            </div>
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
+                              <ChannelIcon className="w-4 h-4" style={{ color: t.primary }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{channel.label}</p>
+                              <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{channel.desc}</p>
+                            </div>
+                          </label>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
