@@ -104,7 +104,7 @@ export default function StorefrontClient({
   }, [router]);
 
   return (
-    <CartProvider>
+    <CartProvider storeId={store.id}>
       <WishlistProvider>
         <div ref={rootRef} className="min-h-screen">
           <StorePreview
