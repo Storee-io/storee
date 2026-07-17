@@ -1858,8 +1858,8 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   // contained to the transformed frame wrapper in PreviewShell/CanvasShell —
   // same pattern as PostalCodePickerModal — instead of covering the real viewport.
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.55)', padding: '16px' }}>
-      <div style={{ width: '100%', maxWidth: '480px', background: t.pageBg, borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: 'min(600px, 90vh)' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.55)', padding: '16px' }} onClick={() => onClose(currentCoordsRef.current)}>
+      <div style={{ width: '100%', maxWidth: '480px', background: t.pageBg, borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: 'min(600px, 90vh)' }} onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${t.divider}` }}>
           <span style={{ fontWeight: 700, fontSize: '15px', color: t.textPrimary }}>📍 Pick Location</span>
