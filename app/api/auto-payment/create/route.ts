@@ -66,6 +66,32 @@ function extractGatewayErrorMessage(data: unknown, fallback: string): string {
   return base;
 }
 
+// Xendit and Midtrans settle exclusively in IDR (Indonesian domestic rails —
+// QRIS and Virtual Account in particular). A store priced in another
+// currency still needs to charge the right rupiah amount, so convert using a
+// live rate; if the rate lookup fails, fall back to a fixed approximate rate
+// rather than blocking the payment entirely.
+const FALLBACK_IDR_RATES: Record<string, number> = {
+  USD: 16300, EUR: 17700, GBP: 20700, JPY: 108, SGD: 12100, IDR: 1,
+};
+
+async function convertToIDR(amount: number, fromCurrency?: string): Promise<number> {
+  const cur = (fromCurrency || 'IDR').toUpperCase();
+  if (cur === 'IDR') return Math.round(amount);
+  try {
+    const res = await fetch(`https://open.er-api.com/v6/latest/${cur}`, { signal: AbortSignal.timeout(5000) });
+    if (res.ok) {
+      const data = await res.json();
+      const rate = data?.rates?.IDR;
+      if (typeof rate === 'number' && rate > 0) return Math.round(amount * rate);
+    }
+  } catch (err) {
+    console.warn('[auto-payment] FX rate lookup failed, using fallback rate:', err);
+  }
+  const fallback = FALLBACK_IDR_RATES[cur] ?? FALLBACK_IDR_RATES.USD;
+  return Math.round(amount * fallback);
+}
+
 // Looks up a store's autoPayment credentials server-side (never sent to the
 // client) by checking the logged-in-user `stores` table first, then the
 // `guest_stores` table (stores created without an account).
@@ -104,9 +130,11 @@ export async function POST(req: NextRequest) {
 
     let result: AutoPaymentResult;
     if (provider === 'xendit') {
-      result = await createXenditPayment(autoPayment, channel, orderId, amount, customerName, customerEmail);
+      const amountIDR = await convertToIDR(amount, currency);
+      result = await createXenditPayment(autoPayment, channel, orderId, amountIDR, customerName, customerEmail);
     } else if (provider === 'midtrans') {
-      result = await createMidtransPayment(autoPayment, channel, orderId, amount, customerName, customerEmail);
+      const amountIDR = await convertToIDR(amount, currency);
+      result = await createMidtransPayment(autoPayment, channel, orderId, amountIDR, customerName, customerEmail);
     } else if (provider === 'stripe') {
       result = await createStripePayment(autoPayment, orderId, amount, currency, customerEmail);
     } else {
