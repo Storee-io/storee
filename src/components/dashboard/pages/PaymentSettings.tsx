@@ -143,6 +143,15 @@ const AUTO_PROVIDERS: {
   },
 ];
 
+// Which channels each provider actually supports — Stripe only ever creates
+// a card Checkout Session, so QRIS/E-Wallet/Virtual Account (Indonesia-only
+// rails) aren't meaningful choices under it.
+const PROVIDER_CHANNELS: Record<AutoPaymentProvider, (keyof AutoPaymentChannels)[]> = {
+  xendit: ['qris', 'ewallet', 'virtualAccount', 'card'],
+  midtrans: ['qris', 'ewallet', 'virtualAccount', 'card'],
+  stripe: ['card'],
+};
+
 const DEFAULT_AUTO_CHANNELS: AutoPaymentChannels = {
   qris: true,
   ewallet: true,
@@ -260,6 +269,19 @@ export default function PaymentSettings() {
     setAutoPayment(prev => ({ ...prev, ...patch }));
   const patchChannel  = (id: keyof AutoPaymentChannels, value: boolean) =>
     setAutoPayment(prev => ({ ...prev, channels: { ...DEFAULT_AUTO_CHANNELS, ...prev.channels, [id]: value } }));
+  // Switching provider resets channels to that provider's supported set (all
+  // on) — carrying over e.g. QRIS/VA toggles from Xendit into Stripe would
+  // show checkout options Stripe can't actually fulfill.
+  const selectProvider = (id: AutoPaymentProvider) => {
+    const next = autoPayment.provider === id ? null : id;
+    setAutoPayment(prev => ({
+      ...prev,
+      provider: next,
+      channels: next
+        ? { qris: false, ewallet: false, virtualAccount: false, card: false, ...Object.fromEntries(PROVIDER_CHANNELS[next].map(c => [c, true])) }
+        : prev.channels,
+    }));
+  };
   const patchXendit   = (patch: Partial<NonNullable<AutoPaymentConfig['xendit']>>) =>
     setAutoPayment(prev => ({ ...prev, xendit:   { ...DEFAULT_AUTO.xendit!,   ...prev.xendit,   ...patch } }));
   const patchMidtrans = (patch: Partial<NonNullable<AutoPaymentConfig['midtrans']>>) =>
@@ -534,44 +556,15 @@ export default function PaymentSettings() {
             </div>
           ) : (
             <>
-              {/* Channels — order: QRIS, E-Wallet, Virtual Account, Card */}
+              {/* Provider selector — choose this first so only the channels it
+                  actually supports are offered below */}
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Payment Channels</p>
-                <div className="space-y-2.5">
-                  {AUTO_CHANNELS.map(c => {
-                    const on = autoPayment.channels?.[c.id] ?? DEFAULT_AUTO_CHANNELS[c.id];
-                    return (
-                      <div
-                        key={c.id}
-                        className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${on ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50/50'}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${on ? 'bg-emerald-100' : 'bg-slate-100'}`}>
-                            <c.Icon className={`w-4 h-4 ${on ? 'text-emerald-600' : 'text-slate-400'}`} />
-                          </div>
-                          <div>
-                            <p className={`text-sm font-semibold ${on ? 'text-slate-900' : 'text-slate-500'}`}>{c.label}</p>
-                            <p className="text-xs text-slate-400">{c.desc}</p>
-                          </div>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                          <input type="checkbox" checked={on} onChange={e => patchChannel(c.id, e.target.checked)} className="sr-only peer" />
-                          <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-emerald-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" />
-                        </label>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Provider selector */}
-              <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Select Provider</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">1. Select Provider</p>
                 <div className="grid grid-cols-3 gap-3">
                   {AUTO_PROVIDERS.map(p => (
                     <button
                       key={p.id}
-                      onClick={() => patchAuto({ provider: autoPayment.provider === p.id ? null : p.id })}
+                      onClick={() => selectProvider(p.id)}
                       className={`relative flex flex-col items-start gap-2 p-3.5 rounded-xl border-2 text-left transition-all ${
                         autoPayment.provider === p.id ? p.color : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
                       }`}
@@ -592,12 +585,44 @@ export default function PaymentSettings() {
                 </div>
               </div>
 
+              {/* Channels — only the ones the selected provider supports */}
+              {autoPayment.provider && (
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">2. Payment Channels</p>
+                  <div className="space-y-2.5">
+                    {AUTO_CHANNELS.filter(c => PROVIDER_CHANNELS[autoPayment.provider!].includes(c.id)).map(c => {
+                      const on = autoPayment.channels?.[c.id] ?? DEFAULT_AUTO_CHANNELS[c.id];
+                      return (
+                        <div
+                          key={c.id}
+                          className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${on ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50/50'}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${on ? 'bg-emerald-100' : 'bg-slate-100'}`}>
+                              <c.Icon className={`w-4 h-4 ${on ? 'text-emerald-600' : 'text-slate-400'}`} />
+                            </div>
+                            <div>
+                              <p className={`text-sm font-semibold ${on ? 'text-slate-900' : 'text-slate-500'}`}>{c.label}</p>
+                              <p className="text-xs text-slate-400">{c.desc}</p>
+                            </div>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                            <input type="checkbox" checked={on} onChange={e => patchChannel(c.id, e.target.checked)} className="sr-only peer" />
+                            <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-emerald-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" />
+                          </label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Credentials */}
               {autoPayment.provider && (
                 <>
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                      {AUTO_PROVIDERS.find(p => p.id === autoPayment.provider)?.name} Credentials
+                      3. {AUTO_PROVIDERS.find(p => p.id === autoPayment.provider)?.name} Credentials
                     </p>
                     <a
                       href={AUTO_PROVIDERS.find(p => p.id === autoPayment.provider)?.docsUrl}
