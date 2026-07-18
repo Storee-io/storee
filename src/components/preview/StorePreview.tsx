@@ -2848,6 +2848,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
       if (cancelled || !loaded) return;
       setSavedProfile(loaded);
       setForm(f => (f.name || f.address ? f : loaded!));
+      setEditingDetails(false); // Start in card mode if profile exists
     })();
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
