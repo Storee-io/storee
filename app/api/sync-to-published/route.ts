@@ -48,6 +48,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Store not found', details: fetchError?.message }, { status: 404 });
     }
 
+    // stores.domain is like "my-store.storee.io" — published_stores keys off
+    // the bare subdomain, so derive it here (store.subdomain doesn't exist).
+    const storeSubdomain = (store.published_domain ?? store.domain)?.replace('.storee.io', '');
+    if (!storeSubdomain) {
+      return NextResponse.json({ error: 'Store has no domain/subdomain set' }, { status: 400 });
+    }
+
     // Update published_stores with latest data
     const { error: updateError } = await db
       .from('published_stores')
@@ -66,7 +73,7 @@ export async function POST(req: NextRequest) {
         shipping_settings: store.shipping_settings,
         checkout_settings: store.checkout_settings,
       })
-      .eq('subdomain', store.subdomain);
+      .eq('subdomain', storeSubdomain);
 
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
@@ -74,10 +81,8 @@ export async function POST(req: NextRequest) {
 
     // Revalidate published store pages
     const { revalidatePath } = await import('next/cache');
-    if (store.subdomain) {
-      revalidatePath(`/store/${store.subdomain}`);
-      revalidatePath(`/store/${store.subdomain}/[...path]`);
-    }
+    revalidatePath(`/store/${storeSubdomain}`);
+    revalidatePath(`/store/${storeSubdomain}/[...path]`);
 
     return NextResponse.json({ ok: true, message: 'Store synced to published' });
   } catch (err) {
