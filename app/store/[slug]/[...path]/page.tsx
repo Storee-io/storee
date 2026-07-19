@@ -19,27 +19,27 @@ export async function generateMetadata({ params }: Props) {
   const { slug, path } = await params;
   const db = createServerClient();
 
-  // Check if store is published
+  // Get store data from published_stores and try to get latest from stores
   const { data: publishedData } = await db
     .from('published_stores')
-    .select('id, status')
+    .select('name, status, branding, design, currency')
     .eq('subdomain', slug)
     .maybeSingle();
 
   if (!publishedData) return { title: 'Store Not Found' };
-  if (publishedData.status === 'inactive') return { title: `Store – Currently Unavailable` };
+  if (publishedData.status === 'inactive') return { title: `${publishedData.name} – Currently Unavailable` };
 
-  // Get store data from stores table (always up-to-date)
-  const { data } = await db
+  // Try to get latest data from stores table for always up-to-date info
+  const { data: freshData } = await db
     .from('stores')
     .select('name, branding, design, currency')
-    .eq('id', publishedData.id)
+    .eq('subdomain', slug)
     .maybeSingle();
 
-  if (!data) return { title: 'Store Not Found' };
+  const data = freshData ?? publishedData;
   const icons = data.branding?.faviconUrl ? { icon: data.branding.faviconUrl } : undefined;
 
-  // Per-product metadata (title, description, OG image) for /product/<slug> deep links
+  // Per-product metadata for /product/<slug> deep links
   const productMatch = path?.[0] === 'product' && path[1];
   if (productMatch) {
     const products = (data.design?.products ?? []) as RichProduct[];
@@ -65,52 +65,51 @@ export default async function StorefrontPathPage({ params }: Props) {
   const { slug, path } = await params;
   const db = createServerClient();
 
-  // First check if store is published
-  const { data: publishedData } = await db
+  // Get store data from published_stores and try to get latest from stores table
+  const { data: publishedData, error: pubError } = await db
     .from('published_stores')
-    .select('id, status')
+    .select('*')
     .eq('subdomain', slug)
     .maybeSingle();
 
-  if (!publishedData) notFound();
+  if (!publishedData || pubError) notFound();
   if (publishedData.status === 'inactive') {
-    const { data: storeData } = await db
-      .from('stores')
-      .select('name')
-      .eq('id', publishedData.id)
-      .maybeSingle();
-    return <StoreInactive name={storeData?.name ?? 'Store'} />;
+    return <StoreInactive name={publishedData.name} />;
   }
 
-  // Get store data from stores table (always up-to-date)
-  const { data, error } = await db
+  // Try to get latest data from stores table using subdomain
+  let storeData = publishedData;
+  const { data: freshData } = await db
     .from('stores')
     .select('*')
-    .eq('id', publishedData.id)
+    .eq('subdomain', slug)
     .maybeSingle();
 
-  if (!data || error) notFound();
+  // Use fresh data from stores table if available (always up-to-date)
+  if (freshData) {
+    storeData = { ...publishedData, ...freshData };
+  }
 
   const store: Store = {
-    id: data.id,
-    name: data.name,
+    id: storeData.id,
+    name: storeData.name,
     domain: `${slug}.storee.io`,
     status: 'Published',
-    primaryColor: data.primary_color,
-    createdAt: data.created_at,
-    category: data.category,
+    primaryColor: storeData.primary_color,
+    createdAt: storeData.created_at,
+    category: storeData.category,
     revenue: 0,
     orders: 0,
-    design: data.design ?? undefined,
-    currency: data.currency ?? undefined,
-    language: data.language ?? undefined,
-    font: data.font ?? undefined,
-    mood: data.mood ?? undefined,
-    audience: data.audience ?? undefined,
-    branding: data.branding ?? undefined,
-    paymentSettings: data.payment_settings ?? undefined,
-    shippingSettings: data.shipping_settings ?? undefined,
-    checkoutSettings: data.checkout_settings ?? undefined,
+    design: storeData.design ?? undefined,
+    currency: storeData.currency ?? undefined,
+    language: storeData.language ?? undefined,
+    font: storeData.font ?? undefined,
+    mood: storeData.mood ?? undefined,
+    audience: storeData.audience ?? undefined,
+    branding: storeData.branding ?? undefined,
+    paymentSettings: storeData.payment_settings ?? undefined,
+    shippingSettings: storeData.shipping_settings ?? undefined,
+    checkoutSettings: storeData.checkout_settings ?? undefined,
   };
 
   const initialPath = '/' + path.join('/');
