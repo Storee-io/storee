@@ -30,17 +30,32 @@ export default async function StorefrontPage({ params }: Props) {
   const { slug } = await params;
   const db = createServerClient();
 
-  const { data, error } = await db
+  // First try to find the store from published_stores to check if it's published
+  const { data: publishedData } = await db
     .from('published_stores')
-    .select('*')
+    .select('id, status')
     .eq('subdomain', slug)
     .maybeSingle();
 
-  if (!data || error) notFound();
-
-  if (data.status === 'inactive') {
-    return <StoreInactive name={data.name} />;
+  if (!publishedData) notFound();
+  if (publishedData.status === 'inactive') {
+    // Get name from stores table for inactive message
+    const { data: storeData } = await db
+      .from('stores')
+      .select('name')
+      .eq('id', publishedData.id)
+      .maybeSingle();
+    return <StoreInactive name={storeData?.name ?? 'Store'} />;
   }
+
+  // Get the actual store data from stores table (always up-to-date)
+  const { data, error } = await db
+    .from('stores')
+    .select('*')
+    .eq('id', publishedData.id)
+    .maybeSingle();
+
+  if (!data || error) notFound();
 
   const store: Store = {
     id: data.id,

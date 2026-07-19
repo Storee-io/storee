@@ -18,19 +18,28 @@ const productSlugify = (name: string) => name.toLowerCase().replace(/\s+/g, '-')
 export async function generateMetadata({ params }: Props) {
   const { slug, path } = await params;
   const db = createServerClient();
-  const { data } = await db
+
+  // Check if store is published
+  const { data: publishedData } = await db
     .from('published_stores')
-    .select('name, status, branding, design, currency')
+    .select('id, status')
     .eq('subdomain', slug)
+    .maybeSingle();
+
+  if (!publishedData) return { title: 'Store Not Found' };
+  if (publishedData.status === 'inactive') return { title: `Store – Currently Unavailable` };
+
+  // Get store data from stores table (always up-to-date)
+  const { data } = await db
+    .from('stores')
+    .select('name, branding, design, currency')
+    .eq('id', publishedData.id)
     .maybeSingle();
 
   if (!data) return { title: 'Store Not Found' };
   const icons = data.branding?.faviconUrl ? { icon: data.branding.faviconUrl } : undefined;
-  if (data.status === 'inactive') return { title: `${data.name} – Currently Unavailable`, icons };
 
-  // Per-product metadata (title, description, OG image) for /product/<slug> deep links —
-  // otherwise every product page would share the generic store-name title, which is bad
-  // for SEO and for link previews shared on social/chat apps.
+  // Per-product metadata (title, description, OG image) for /product/<slug> deep links
   const productMatch = path?.[0] === 'product' && path[1];
   if (productMatch) {
     const products = (data.design?.products ?? []) as RichProduct[];
@@ -56,17 +65,31 @@ export default async function StorefrontPathPage({ params }: Props) {
   const { slug, path } = await params;
   const db = createServerClient();
 
-  const { data, error } = await db
+  // First check if store is published
+  const { data: publishedData } = await db
     .from('published_stores')
-    .select('*')
+    .select('id, status')
     .eq('subdomain', slug)
     .maybeSingle();
 
-  if (!data || error) notFound();
-
-  if (data.status === 'inactive') {
-    return <StoreInactive name={data.name} />;
+  if (!publishedData) notFound();
+  if (publishedData.status === 'inactive') {
+    const { data: storeData } = await db
+      .from('stores')
+      .select('name')
+      .eq('id', publishedData.id)
+      .maybeSingle();
+    return <StoreInactive name={storeData?.name ?? 'Store'} />;
   }
+
+  // Get store data from stores table (always up-to-date)
+  const { data, error } = await db
+    .from('stores')
+    .select('*')
+    .eq('id', publishedData.id)
+    .maybeSingle();
+
+  if (!data || error) notFound();
 
   const store: Store = {
     id: data.id,
