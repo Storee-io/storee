@@ -3499,11 +3499,11 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   className="w-full flex items-center justify-between px-3.5 py-3 transition-colors outline-none"
                   style={{
                     borderRadius: capRadius(t.surfaceRadius, 12),
-                    background: isExpanded ? alpha(t.primary, 0.06) : 'transparent',
+                    background: 'transparent',
                     cursor: 'pointer',
                   }}
-                  onMouseEnter={e => { if (!isExpanded) e.currentTarget.style.background = alpha(t.primary, 0.035); }}
-                  onMouseLeave={e => { if (!isExpanded) e.currentTarget.style.background = 'transparent'; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = alpha(t.primary, 0.035); }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors" style={{ background: alpha(t.primary, isExpanded ? 0.14 : 0.08) }}>
