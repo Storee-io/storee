@@ -3523,17 +3523,14 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               return (
                 <label
                   key={id}
-                  className="flex items-center gap-3.5 p-3.5 cursor-pointer transition-colors outline-none"
-                  style={{
-                    borderRadius: capRadius(t.surfaceRadius, 12),
-                    background: isSelected ? alpha(t.primary, 0.06) : 'transparent',
-                  }}
-                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = alpha(t.primary, 0.035); }}
-                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                  className="flex items-center gap-4 p-4 cursor-pointer transition-all outline-none"
+                  style={{ borderRadius: capRadius(t.inputRadius), border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }}
+                  onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }}
+                  onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}
                 >
                   <input type="radio" name="payment" value={id} checked={isSelected} onChange={() => setSelectedPayId(id)} className="sr-only" />
-                  <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
-                    {isSelected && <div className="w-2.5 h-2.5 rounded-full" style={{ background: t.primary }} />}
+                  <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
+                    {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
                   </div>
                   {iconEl}
                   <div className="flex-1 min-w-0">
