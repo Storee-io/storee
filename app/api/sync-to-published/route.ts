@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   const db = createServerClient();
 
   try {
-    // Get store data from stores table - try both ID and subdomain
+    // Get store data from stores table - try both ID and domain/subdomain
     let store;
     let fetchError;
 
@@ -24,11 +24,22 @@ export async function POST(req: NextRequest) {
       store = result.data;
       fetchError = result.error;
     } else if (subdomain) {
-      const result = await db
+      // Try exact domain match first
+      let result = await db
         .from('stores')
         .select('*')
-        .eq('subdomain', subdomain)
+        .eq('domain', subdomain)
         .maybeSingle();
+
+      // If not found, try with .storee.io suffix
+      if (!result.data && !subdomain.includes('.')) {
+        result = await db
+          .from('stores')
+          .select('*')
+          .eq('domain', `${subdomain}.storee.io`)
+          .maybeSingle();
+      }
+
       store = result.data;
       fetchError = result.error;
     }
