@@ -173,6 +173,14 @@ export default function StoreSettings() {
                 setSelectedCurrency(curr);
                 updateActiveStore({ currency: curr });
                 toast.success(`Currency changed to ${curr.code}`);
+                // Sync to published store if live
+                if (activeStore?.status === 'Published' && activeStore?.id) {
+                  fetch('/api/sync-to-published', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ storeId: activeStore.id }),
+                  }).catch(err => console.error('[sync] currency sync failed:', err));
+                }
               }}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
                 selectedCurrency.code === curr.code
@@ -214,6 +222,14 @@ export default function StoreSettings() {
                 setSelectedLanguage(lang);
                 updateActiveStore({ language: lang.label });
                 toast.success(`Language changed to ${lang.label}`);
+                // Sync to published store if live
+                if (activeStore?.status === 'Published' && activeStore?.id) {
+                  fetch('/api/sync-to-published', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ storeId: activeStore.id }),
+                  }).catch(err => console.error('[sync] language sync failed:', err));
+                }
               }}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
                 selectedLanguage.code === lang.code

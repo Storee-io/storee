@@ -253,6 +253,15 @@ export default function PaymentSettings() {
         }).catch(console.error);
       }
 
+      // Sync payment changes to published store (for real-time updates)
+      if (activeStore?.status === 'Published' && activeStore?.id) {
+        fetch('/api/sync-to-published', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ storeId: activeStore.id }),
+        }).catch(err => console.error('[sync] payment sync failed:', err));
+      }
+
       await new Promise(resolve => setTimeout(resolve, 500));
       toast.success('Payment settings saved');
       setSaved(true);

@@ -407,6 +407,15 @@ export default function ShippingSettings() {
         }).catch(console.error);
       }
 
+      // Sync shipping changes to published store (for real-time updates)
+      if (activeStore?.status === 'Published' && activeStore?.id) {
+        fetch('/api/sync-to-published', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ storeId: activeStore.id }),
+        }).catch(err => console.error('[sync] shipping sync failed:', err));
+      }
+
       toast.success('Shipping settings saved');
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
