@@ -3464,41 +3464,31 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 return (
                   <label
                     key={method.id}
-                    className="flex items-center gap-4 p-4 cursor-pointer transition-all"
+                    className="flex items-center gap-3.5 p-3.5 cursor-pointer transition-colors"
                     style={{
-                      borderRadius: capRadius(t.surfaceRadius, 14),
-                      border: `1.5px solid ${isSelected ? t.primary : t.divider}`,
-                      background: isSelected ? alpha(t.primary, 0.05) : t.surfaceBg,
-                      boxShadow: isSelected ? `0 2px 10px ${alpha(t.primary, 0.14)}` : 'none',
+                      borderRadius: capRadius(t.surfaceRadius, 12),
+                      border: `1px solid ${isSelected ? t.primary : t.divider}`,
+                      background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg,
                     }}
-                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.borderColor = alpha(t.primary, 0.35); }}
-                    onMouseLeave={e => { if (!isSelected) e.currentTarget.style.borderColor = t.divider; }}
                   >
                     <input type="radio" name="shipping" value={method.id} checked={isSelected} onChange={() => setSelectedShippingId(method.id)} className="sr-only" />
-                    <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
-                      {isSelected && <div className="w-2.5 h-2.5 rounded-full" style={{ background: t.primary }} />}
+                    <div className="self-center w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
+                      {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
                     </div>
                     <BrandLogo id={method.id} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{method.name}</p>
-                      <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: t.textMuted }}>
-                        <Clock className="w-3 h-3 flex-shrink-0" /> Est. arrival: {method.estimatedDays}
-                      </p>
+                      <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Est. arrival: {method.estimatedDays}</p>
                     </div>
-                    {cost === 0 ? (
-                      <span className="text-[10px] font-bold px-2 py-1 rounded-full flex-shrink-0" style={{ background: alpha(t.successText ?? '#16a34a', 0.12), color: t.successText ?? '#16a34a' }}>
-                        FREE
-                      </span>
-                    ) : (
-                      <span className="text-sm font-bold flex-shrink-0" style={{ color: t.primary }}>{fmtPrice(cost)}</span>
-                    )}
+                    <span className="text-sm font-bold flex-shrink-0" style={{ color: cost === 0 ? (t.successText ?? '#16a34a') : t.primary }}>
+                      {cost === 0 ? 'FREE' : fmtPrice(cost)}
+                    </span>
                   </label>
                 );
               })}
               {freeThreshold && subtotal < freeThreshold && (
-                <div className="flex items-center gap-2.5 mt-1 px-4 py-3 rounded-2xl" style={{ background: alpha('#f59e0b', 0.1) }}>
-                  <Gift className="w-4 h-4 flex-shrink-0" style={{ color: '#d97706' }} />
-                  <p className="text-xs font-medium" style={{ color: '#92400e' }}>Add {fmtPrice(freeThreshold - subtotal)} more for free shipping!</p>
+                <div className="mt-1 px-3.5 py-2.5 rounded-xl text-xs" style={{ background: alpha(t.primary, 0.05), color: t.textSecondary }}>
+                  Add {fmtPrice(freeThreshold - subtotal)} more for free shipping!
                 </div>
               )}
             </div>
