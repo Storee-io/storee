@@ -3551,13 +3551,13 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             </div>
             <div className="p-4 space-y-5">
               {/* Manual Payment */}
-              <div className="space-y-2.5">
+              <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: t.primary }} />
                   <p className="text-xs font-bold uppercase" style={{ color: t.textSecondary, letterSpacing: '0.07em' }}>Manual Payment</p>
                   <span className="flex-1 h-px" style={{ background: t.divider }} />
                 </div>
-                <p className="text-xs -mt-1.5" style={{ color: t.textMuted }}>Complete payment & notify seller</p>
+                <p className="text-xs -mt-1 mb-1" style={{ color: t.textMuted }}>Complete payment & notify seller</p>
 
                 {/* QRIS Sub-category */}
                 {groupedManualPayments.qris.length > 0 && (
@@ -3602,13 +3602,13 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
 
               {/* Auto Payment — same collapsible category pattern as Manual Payment */}
               {hasAutoPayment && (
-                <div className="space-y-2.5">
+                <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
                     <Zap className="w-3 h-3 flex-shrink-0" style={{ color: t.primary, fill: t.primary }} />
                     <p className="text-xs font-bold uppercase" style={{ color: t.textSecondary, letterSpacing: '0.07em' }}>Automatic Payment</p>
                     <span className="flex-1 h-px" style={{ background: t.divider }} />
                   </div>
-                  <p className="text-xs -mt-1.5" style={{ color: t.textMuted }}>Instantly confirmed — order processes automatically</p>
+                  <p className="text-xs -mt-1 mb-1" style={{ color: t.textMuted }}>Instantly confirmed — order processes automatically</p>
                   {enabledAutoChannels.map(channel => {
                     const id = `auto-${channel.id}`;
                     const catKey = `auto-${channel.id}`;
