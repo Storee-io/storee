@@ -2,24 +2,39 @@ import { createServerClient } from '@/src/lib/supabase';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
-  const { storeId } = await req.json();
+  const { storeId, subdomain } = await req.json();
 
-  if (!storeId) {
-    return NextResponse.json({ error: 'Missing storeId' }, { status: 400 });
+  if (!storeId && !subdomain) {
+    return NextResponse.json({ error: 'Missing storeId or subdomain' }, { status: 400 });
   }
 
   const db = createServerClient();
 
   try {
-    // Get store data from stores table
-    const { data: store, error: fetchError } = await db
-      .from('stores')
-      .select('*')
-      .eq('id', storeId)
-      .maybeSingle();
+    // Get store data from stores table - try both ID and subdomain
+    let store;
+    let fetchError;
+
+    if (storeId) {
+      const result = await db
+        .from('stores')
+        .select('*')
+        .eq('id', storeId)
+        .maybeSingle();
+      store = result.data;
+      fetchError = result.error;
+    } else if (subdomain) {
+      const result = await db
+        .from('stores')
+        .select('*')
+        .eq('subdomain', subdomain)
+        .maybeSingle();
+      store = result.data;
+      fetchError = result.error;
+    }
 
     if (!store || fetchError) {
-      return NextResponse.json({ error: 'Store not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Store not found', details: fetchError?.message }, { status: 404 });
     }
 
     // Update published_stores with latest data
