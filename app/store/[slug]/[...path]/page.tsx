@@ -18,28 +18,19 @@ const productSlugify = (name: string) => name.toLowerCase().replace(/\s+/g, '-')
 export async function generateMetadata({ params }: Props) {
   const { slug, path } = await params;
   const db = createServerClient();
-
-  // Get store data from published_stores and try to get latest from stores
-  const { data: publishedData } = await db
+  const { data } = await db
     .from('published_stores')
     .select('name, status, branding, design, currency')
     .eq('subdomain', slug)
     .maybeSingle();
 
-  if (!publishedData) return { title: 'Store Not Found' };
-  if (publishedData.status === 'inactive') return { title: `${publishedData.name} – Currently Unavailable` };
-
-  // Try to get latest data from stores table for always up-to-date info
-  const { data: freshData } = await db
-    .from('stores')
-    .select('name, branding, design, currency')
-    .eq('subdomain', slug)
-    .maybeSingle();
-
-  const data = freshData ?? publishedData;
+  if (!data) return { title: 'Store Not Found' };
   const icons = data.branding?.faviconUrl ? { icon: data.branding.faviconUrl } : undefined;
+  if (data.status === 'inactive') return { title: `${data.name} – Currently Unavailable`, icons };
 
-  // Per-product metadata for /product/<slug> deep links
+  // Per-product metadata (title, description, OG image) for /product/<slug> deep links —
+  // otherwise every product page would share the generic store-name title, which is bad
+  // for SEO and for link previews shared on social/chat apps.
   const productMatch = path?.[0] === 'product' && path[1];
   if (productMatch) {
     const products = (data.design?.products ?? []) as RichProduct[];
@@ -65,51 +56,38 @@ export default async function StorefrontPathPage({ params }: Props) {
   const { slug, path } = await params;
   const db = createServerClient();
 
-  // Get store data from published_stores and try to get latest from stores table
-  const { data: publishedData, error: pubError } = await db
+  const { data, error } = await db
     .from('published_stores')
     .select('*')
     .eq('subdomain', slug)
     .maybeSingle();
 
-  if (!publishedData || pubError) notFound();
-  if (publishedData.status === 'inactive') {
-    return <StoreInactive name={publishedData.name} />;
-  }
+  if (!data || error) notFound();
 
-  // Try to get latest data from stores table using subdomain
-  let storeData = publishedData;
-  const { data: freshData } = await db
-    .from('stores')
-    .select('*')
-    .eq('subdomain', slug)
-    .maybeSingle();
-
-  // Use fresh data from stores table if available (always up-to-date)
-  if (freshData) {
-    storeData = { ...publishedData, ...freshData };
+  if (data.status === 'inactive') {
+    return <StoreInactive name={data.name} />;
   }
 
   const store: Store = {
-    id: storeData.id,
-    name: storeData.name,
+    id: data.id,
+    name: data.name,
     domain: `${slug}.storee.io`,
     status: 'Published',
-    primaryColor: storeData.primary_color,
-    createdAt: storeData.created_at,
-    category: storeData.category,
+    primaryColor: data.primary_color,
+    createdAt: data.created_at,
+    category: data.category,
     revenue: 0,
     orders: 0,
-    design: storeData.design ?? undefined,
-    currency: storeData.currency ?? undefined,
-    language: storeData.language ?? undefined,
-    font: storeData.font ?? undefined,
-    mood: storeData.mood ?? undefined,
-    audience: storeData.audience ?? undefined,
-    branding: storeData.branding ?? undefined,
-    paymentSettings: storeData.payment_settings ?? undefined,
-    shippingSettings: storeData.shipping_settings ?? undefined,
-    checkoutSettings: storeData.checkout_settings ?? undefined,
+    design: data.design ?? undefined,
+    currency: data.currency ?? undefined,
+    language: data.language ?? undefined,
+    font: data.font ?? undefined,
+    mood: data.mood ?? undefined,
+    audience: data.audience ?? undefined,
+    branding: data.branding ?? undefined,
+    paymentSettings: data.payment_settings ?? undefined,
+    shippingSettings: data.shipping_settings ?? undefined,
+    checkoutSettings: data.checkout_settings ?? undefined,
   };
 
   const initialPath = '/' + path.join('/');
