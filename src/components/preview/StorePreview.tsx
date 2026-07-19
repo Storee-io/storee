@@ -3451,7 +3451,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
           {/* Shipping Method */}
           <div className="shadow-sm overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
             <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(t.primary, 0.1) }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
                 <Truck className="w-3.5 h-3.5" style={{ color: t.primary }} />
               </div>
               <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Shipping Method</h3>
@@ -3462,25 +3462,43 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 const cost = isFreeByThreshold ? 0 : method.price;
                 const isSelected = selectedShippingId === method.id;
                 return (
-                  <label key={method.id} className="flex items-center gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: capRadius(t.inputRadius), border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
+                  <label
+                    key={method.id}
+                    className="flex items-center gap-4 p-4 cursor-pointer transition-all"
+                    style={{
+                      borderRadius: capRadius(t.surfaceRadius, 14),
+                      border: `1.5px solid ${isSelected ? t.primary : t.divider}`,
+                      background: isSelected ? alpha(t.primary, 0.05) : t.surfaceBg,
+                      boxShadow: isSelected ? `0 2px 10px ${alpha(t.primary, 0.14)}` : 'none',
+                    }}
+                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.borderColor = alpha(t.primary, 0.35); }}
+                    onMouseLeave={e => { if (!isSelected) e.currentTarget.style.borderColor = t.divider; }}
+                  >
                     <input type="radio" name="shipping" value={method.id} checked={isSelected} onChange={() => setSelectedShippingId(method.id)} className="sr-only" />
-                    <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
-                      {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
+                    <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
+                      {isSelected && <div className="w-2.5 h-2.5 rounded-full" style={{ background: t.primary }} />}
                     </div>
                     <BrandLogo id={method.id} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{method.name}</p>
-                      <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Est. arrival: {method.estimatedDays}</p>
+                      <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: t.textMuted }}>
+                        <Clock className="w-3 h-3 flex-shrink-0" /> Est. arrival: {method.estimatedDays}
+                      </p>
                     </div>
-                    <span className="text-sm font-bold flex-shrink-0" style={{ color: t.primary }}>
-                      {cost === 0 ? 'FREE' : fmtPrice(cost)}
-                    </span>
+                    {cost === 0 ? (
+                      <span className="text-[10px] font-bold px-2 py-1 rounded-full flex-shrink-0" style={{ background: alpha(t.successText ?? '#16a34a', 0.12), color: t.successText ?? '#16a34a' }}>
+                        FREE
+                      </span>
+                    ) : (
+                      <span className="text-sm font-bold flex-shrink-0" style={{ color: t.primary }}>{fmtPrice(cost)}</span>
+                    )}
                   </label>
                 );
               })}
               {freeThreshold && subtotal < freeThreshold && (
-                <div className="mt-2 px-4 py-2.5 rounded-xl border text-xs text-amber-700" style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
-                  🎁 Add {fmtPrice(freeThreshold - subtotal)} more for free shipping!
+                <div className="flex items-center gap-2.5 mt-1 px-4 py-3 rounded-2xl" style={{ background: alpha('#f59e0b', 0.1) }}>
+                  <Gift className="w-4 h-4 flex-shrink-0" style={{ color: '#d97706' }} />
+                  <p className="text-xs font-medium" style={{ color: '#92400e' }}>Add {fmtPrice(freeThreshold - subtotal)} more for free shipping!</p>
                 </div>
               )}
             </div>
