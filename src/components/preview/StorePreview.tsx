@@ -1054,10 +1054,17 @@ function isDark(hex: string): boolean {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.55;
 }
 
-function alpha(hex: string, a: number) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
+function alpha(color: string, a: number) {
+  // Theme tokens are sometimes already an rgb()/rgba() string (e.g. surfaceBorder
+  // computed as alpha(primary, 0.15) elsewhere) rather than a hex color — parsing
+  // that as hex below would yield NaN and silently drop the whole CSS property.
+  const rgbMatch = color.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i);
+  if (rgbMatch) {
+    return `rgba(${rgbMatch[1]},${rgbMatch[2]},${rgbMatch[3]},${a})`;
+  }
+  const r = parseInt(color.slice(1, 3), 16);
+  const g = parseInt(color.slice(3, 5), 16);
+  const b = parseInt(color.slice(5, 7), 16);
   return `rgba(${r},${g},${b},${a})`;
 }
 function lighten(hex: string, amount: number) {
