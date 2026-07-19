@@ -3486,197 +3486,152 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             </div>
           </div>
 
-          {/* Payment method */}
+          {/* Payment method — shared render helpers keep the collapsible category
+              header and the selectable option row visually identical across every
+              manual + automatic payment category. */}
+          {(() => {
+            const paymentCategoryHeader = (catKey: string, Icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>, label: string) => {
+              const isExpanded = expandedPaymentCategories.has(catKey);
+              return (
+                <button
+                  type="button"
+                  onClick={() => { const next = new Set(expandedPaymentCategories); isExpanded ? next.delete(catKey) : next.add(catKey); setExpandedPaymentCategories(next); }}
+                  className="w-full flex items-center justify-between px-4 py-3.5 transition-all"
+                  style={{
+                    borderRadius: capRadius(t.surfaceRadius, 14),
+                    border: `1px solid ${isExpanded ? alpha(t.primary, 0.35) : t.divider}`,
+                    background: isExpanded ? alpha(t.primary, 0.05) : t.surfaceBg,
+                    boxShadow: isExpanded ? `0 1px 4px ${alpha(t.primary, 0.1)}` : 'none',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={e => { if (!isExpanded) e.currentTarget.style.borderColor = alpha(t.primary, 0.3); }}
+                  onMouseLeave={e => { if (!isExpanded) e.currentTarget.style.borderColor = t.divider; }}
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors" style={{ background: alpha(t.primary, isExpanded ? 0.14 : 0.08) }}>
+                      <Icon className="w-3.5 h-3.5" style={{ color: t.primary }} />
+                    </div>
+                    <p className="text-sm font-semibold truncate" style={{ color: t.textPrimary }}>{label}</p>
+                  </div>
+                  <span style={{ color: isExpanded ? t.primary : t.textMuted, transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease-out, color 0.2s ease-out', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '22px', flexShrink: 0 }}>
+                    <ChevronDown className="w-4 h-4" />
+                  </span>
+                </button>
+              );
+            };
+
+            const paymentOptionRow = (id: string, iconEl: React.ReactNode, title: string, subtitle: string) => {
+              const isSelected = selectedPayId === id;
+              return (
+                <label
+                  key={id}
+                  className="flex items-center gap-3.5 p-4 cursor-pointer transition-all"
+                  style={{
+                    borderRadius: capRadius(t.surfaceRadius, 14),
+                    border: `1.5px solid ${isSelected ? t.primary : t.divider}`,
+                    background: isSelected ? alpha(t.primary, 0.05) : t.surfaceBg,
+                    boxShadow: isSelected ? `0 2px 10px ${alpha(t.primary, 0.14)}` : 'none',
+                  }}
+                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.borderColor = alpha(t.primary, 0.35); }}
+                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.borderColor = t.divider; }}
+                >
+                  <input type="radio" name="payment" value={id} checked={isSelected} onChange={() => setSelectedPayId(id)} className="sr-only" />
+                  <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
+                    {isSelected && <div className="w-2.5 h-2.5 rounded-full" style={{ background: t.primary }} />}
+                  </div>
+                  {iconEl}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{title}</p>
+                    <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{subtitle}</p>
+                  </div>
+                </label>
+              );
+            };
+
+            return (
           <div className="shadow-sm overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
             <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: alpha(t.primary, 0.1) }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
                 <Phone className="w-3.5 h-3.5" style={{ color: t.primary }} />
               </div>
               <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Payment Method</h3>
             </div>
-            <div className="p-4 space-y-3">
+            <div className="p-4 space-y-5">
               {/* Manual Payment */}
-              <div className="space-y-3">
-                <div style={{ paddingBottom: '8px', borderBottom: `1px solid ${t.divider}` }}>
-                  <p className="text-xs font-bold uppercase tracking-wide" style={{ color: t.textMuted, letterSpacing: '0.5px' }}>Manual Payment</p>
-                  <p className="text-xs mt-1" style={{ color: t.textMuted }}>Complete payment & notify seller</p>
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: t.primary }} />
+                  <p className="text-xs font-bold uppercase" style={{ color: t.textSecondary, letterSpacing: '0.07em' }}>Manual Payment</p>
+                  <span className="flex-1 h-px" style={{ background: t.divider }} />
                 </div>
+                <p className="text-xs -mt-1.5" style={{ color: t.textMuted }}>Complete payment & notify seller</p>
 
                 {/* QRIS Sub-category */}
                 {groupedManualPayments.qris.length > 0 && (
                   <div className="space-y-2">
-                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('qris') ? next.delete('qris') : next.add('qris'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-3.5 py-3 transition-all rounded-lg" style={{ background: expandedPaymentCategories.has('qris') ? alpha(t.primary, 0.06) : 'transparent', border: `1px solid ${expandedPaymentCategories.has('qris') ? t.primary : alpha(t.surfaceBorder, 0.6)}`, cursor: 'pointer' }} onMouseEnter={e => { if (!expandedPaymentCategories.has('qris')) e.currentTarget.style.background = alpha(t.primary, 0.04); }} onMouseLeave={e => { if (!expandedPaymentCategories.has('qris')) e.currentTarget.style.background = 'transparent'; }}>
-                      <div className="flex items-center gap-2.5 flex-1">
-                        <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
-                          <QrCode className="w-2.5 h-2.5" style={{ color: t.primary }} />
-                        </div>
-                        <p className="text-sm font-medium" style={{ color: t.textPrimary }}>QRIS</p>
-                      </div>
-                      <span style={{ color: t.textMuted, transform: expandedPaymentCategories.has('qris') ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease-out', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px' }}>
-                        <ChevronDown className="w-4 h-4" />
-                      </span>
-                    </button>
-                    {expandedPaymentCategories.has('qris') && groupedManualPayments.qris.map(pm => {
-                      const isSelected = selectedPayId === pm.id;
-                      return (
-                        <label key={pm.id} className="flex items-center gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: capRadius(t.inputRadius), border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
-                          <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
-                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
-                            {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
-                          </div>
-                          <BrandLogo id={pm.id} type={pm.type} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
-                            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Pay by scanning QR from any app</p>
-                          </div>
-                        </label>
-                      );
-                    })}
+                    {paymentCategoryHeader('qris', QrCode, 'QRIS')}
+                    {expandedPaymentCategories.has('qris') && groupedManualPayments.qris.map(pm =>
+                      paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, 'Pay by scanning QR from any app')
+                    )}
                   </div>
                 )}
 
                 {/* E-Wallet Sub-category */}
                 {groupedManualPayments.ewallet.length > 0 && (
                   <div className="space-y-2">
-                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('ewallet') ? next.delete('ewallet') : next.add('ewallet'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-3.5 py-3 transition-all rounded-lg" style={{ background: expandedPaymentCategories.has('ewallet') ? alpha(t.primary, 0.06) : 'transparent', border: `1px solid ${expandedPaymentCategories.has('ewallet') ? t.primary : alpha(t.surfaceBorder, 0.6)}`, cursor: 'pointer' }} onMouseEnter={e => { if (!expandedPaymentCategories.has('ewallet')) e.currentTarget.style.background = alpha(t.primary, 0.04); }} onMouseLeave={e => { if (!expandedPaymentCategories.has('ewallet')) e.currentTarget.style.background = 'transparent'; }}>
-                      <div className="flex items-center gap-2.5 flex-1">
-                        <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
-                          <Wallet className="w-2.5 h-2.5" style={{ color: t.primary }} />
-                        </div>
-                        <p className="text-sm font-medium" style={{ color: t.textPrimary }}>E-Wallet</p>
-                      </div>
-                      <span style={{ color: t.textMuted, transform: expandedPaymentCategories.has('ewallet') ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease-out', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px' }}>
-                        <ChevronDown className="w-4 h-4" />
-                      </span>
-                    </button>
-                    {expandedPaymentCategories.has('ewallet') && groupedManualPayments.ewallet.map(pm => {
-                      const isSelected = selectedPayId === pm.id;
-                      return (
-                        <label key={pm.id} className="flex items-center gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: capRadius(t.inputRadius), border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
-                          <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
-                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
-                            {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
-                          </div>
-                          <BrandLogo id={pm.id} type={pm.type} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
-                            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Transfer manually to seller's {pm.name} account</p>
-                          </div>
-                        </label>
-                      );
-                    })}
+                    {paymentCategoryHeader('ewallet', Wallet, 'E-Wallet')}
+                    {expandedPaymentCategories.has('ewallet') && groupedManualPayments.ewallet.map(pm =>
+                      paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, `Transfer manually to seller's ${pm.name} account`)
+                    )}
                   </div>
                 )}
 
                 {/* Bank Transfer Sub-category */}
                 {groupedManualPayments.bank.length > 0 && (
                   <div className="space-y-2">
-                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('bank') ? next.delete('bank') : next.add('bank'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-3.5 py-3 transition-all rounded-lg" style={{ background: expandedPaymentCategories.has('bank') ? alpha(t.primary, 0.06) : 'transparent', border: `1px solid ${expandedPaymentCategories.has('bank') ? t.primary : alpha(t.surfaceBorder, 0.6)}`, cursor: 'pointer' }} onMouseEnter={e => { if (!expandedPaymentCategories.has('bank')) e.currentTarget.style.background = alpha(t.primary, 0.04); }} onMouseLeave={e => { if (!expandedPaymentCategories.has('bank')) e.currentTarget.style.background = 'transparent'; }}>
-                      <div className="flex items-center gap-2.5 flex-1">
-                        <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
-                          <Building className="w-2.5 h-2.5" style={{ color: t.primary }} />
-                        </div>
-                        <p className="text-sm font-medium" style={{ color: t.textPrimary }}>Bank Transfer</p>
-                      </div>
-                      <span style={{ color: t.textMuted, transform: expandedPaymentCategories.has('bank') ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease-out', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px' }}>
-                        <ChevronDown className="w-4 h-4" />
-                      </span>
-                    </button>
-                    {expandedPaymentCategories.has('bank') && groupedManualPayments.bank.map(pm => {
-                      const isSelected = selectedPayId === pm.id;
-                      return (
-                        <label key={pm.id} className="flex items-center gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: capRadius(t.inputRadius), border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
-                          <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
-                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
-                            {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
-                          </div>
-                          <BrandLogo id={pm.id} type={pm.type} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
-                            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Transfer manually to seller's {pm.bankName ?? 'bank'} account</p>
-                          </div>
-                        </label>
-                      );
-                    })}
+                    {paymentCategoryHeader('bank', Building, 'Bank Transfer')}
+                    {expandedPaymentCategories.has('bank') && groupedManualPayments.bank.map(pm =>
+                      paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, `Transfer manually to seller's ${pm.bankName ?? 'bank'} account`)
+                    )}
                   </div>
                 )}
 
                 {/* Cash Sub-category */}
                 {groupedManualPayments.cash.length > 0 && (
                   <div className="space-y-2">
-                    <button onClick={() => { const next = new Set(expandedPaymentCategories); next.has('cash') ? next.delete('cash') : next.add('cash'); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-3.5 py-3 transition-all rounded-lg" style={{ background: expandedPaymentCategories.has('cash') ? alpha(t.primary, 0.06) : 'transparent', border: `1px solid ${expandedPaymentCategories.has('cash') ? t.primary : alpha(t.surfaceBorder, 0.6)}`, cursor: 'pointer' }} onMouseEnter={e => { if (!expandedPaymentCategories.has('cash')) e.currentTarget.style.background = alpha(t.primary, 0.04); }} onMouseLeave={e => { if (!expandedPaymentCategories.has('cash')) e.currentTarget.style.background = 'transparent'; }}>
-                      <div className="flex items-center gap-2.5 flex-1">
-                        <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
-                          <Banknote className="w-2.5 h-2.5" style={{ color: t.primary }} />
-                        </div>
-                        <p className="text-sm font-medium" style={{ color: t.textPrimary }}>Cash</p>
-                      </div>
-                      <span style={{ color: t.textMuted, transform: expandedPaymentCategories.has('cash') ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease-out', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px' }}>
-                        <ChevronDown className="w-4 h-4" />
-                      </span>
-                    </button>
-                    {expandedPaymentCategories.has('cash') && groupedManualPayments.cash.map(pm => {
-                      const isSelected = selectedPayId === pm.id;
-                      return (
-                        <label key={pm.id} className="flex items-center gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: capRadius(t.inputRadius), border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
-                          <input type="radio" name="payment" value={pm.id} checked={isSelected} onChange={() => setSelectedPayId(pm.id)} className="sr-only" />
-                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
-                            {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
-                          </div>
-                          <BrandLogo id={pm.id} type={pm.type} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{pm.name}</p>
-                            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Pay in cash when your order arrives</p>
-                          </div>
-                        </label>
-                      );
-                    })}
+                    {paymentCategoryHeader('cash', Banknote, 'Cash')}
+                    {expandedPaymentCategories.has('cash') && groupedManualPayments.cash.map(pm =>
+                      paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, 'Pay in cash when your order arrives')
+                    )}
                   </div>
                 )}
               </div>
 
-
               {/* Auto Payment — same collapsible category pattern as Manual Payment */}
               {hasAutoPayment && (
-                <div className="space-y-3">
-                  <div style={{ paddingBottom: '8px', borderBottom: `1px solid ${t.divider}` }}>
-                    <p className="text-xs font-bold uppercase tracking-wide" style={{ color: t.textMuted, letterSpacing: '0.5px' }}>Automatic Payment</p>
-                    <p className="text-xs mt-1" style={{ color: t.textMuted }}>Instantly confirmed — order processes automatically</p>
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-3 h-3 flex-shrink-0" style={{ color: t.primary, fill: t.primary }} />
+                    <p className="text-xs font-bold uppercase" style={{ color: t.textSecondary, letterSpacing: '0.07em' }}>Automatic Payment</p>
+                    <span className="flex-1 h-px" style={{ background: t.divider }} />
                   </div>
+                  <p className="text-xs -mt-1.5" style={{ color: t.textMuted }}>Instantly confirmed — order processes automatically</p>
                   {enabledAutoChannels.map(channel => {
                     const id = `auto-${channel.id}`;
                     const catKey = `auto-${channel.id}`;
-                    const isSelected = selectedPayId === id;
-                    const isExpanded = expandedPaymentCategories.has(catKey);
                     const ChannelIcon = channel.Icon;
                     return (
                       <div key={id} className="space-y-2">
-                        <button onClick={() => { const next = new Set(expandedPaymentCategories); isExpanded ? next.delete(catKey) : next.add(catKey); setExpandedPaymentCategories(next); }} className="w-full flex items-center justify-between px-3.5 py-3 transition-all rounded-lg" style={{ background: isExpanded ? alpha(t.primary, 0.06) : 'transparent', border: `1px solid ${isExpanded ? t.primary : alpha(t.surfaceBorder, 0.6)}`, cursor: 'pointer' }} onMouseEnter={e => { if (!isExpanded) e.currentTarget.style.background = alpha(t.primary, 0.04); }} onMouseLeave={e => { if (!isExpanded) e.currentTarget.style.background = 'transparent'; }}>
-                          <div className="flex items-center gap-2.5 flex-1">
-                            <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
-                              <ChannelIcon className="w-2.5 h-2.5" style={{ color: t.primary }} />
-                            </div>
-                            <p className="text-sm font-medium" style={{ color: t.textPrimary }}>{channel.label}</p>
-                          </div>
-                          <span style={{ color: t.textMuted, transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease-out', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px' }}>
-                            <ChevronDown className="w-4 h-4" />
-                          </span>
-                        </button>
-                        {isExpanded && (
-                          <label className="flex items-center gap-4 p-4 cursor-pointer transition-all" style={{ borderRadius: capRadius(t.inputRadius), border: `2px solid ${isSelected ? t.primary : t.surfaceBorder}`, background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg }} onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = alpha(t.primary, 0.04); } }} onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = t.surfaceBg; } }}>
-                            <input type="radio" name="payment" value={id} checked={isSelected} onChange={() => setSelectedPayId(id)} className="sr-only" />
-                            <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={isSelected ? { borderColor: t.primary } : { borderColor: t.surfaceBorder }}>
-                              {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
-                            </div>
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
+                        {paymentCategoryHeader(catKey, ChannelIcon, channel.label)}
+                        {expandedPaymentCategories.has(catKey) &&
+                          paymentOptionRow(
+                            id,
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
                               <ChannelIcon className="w-4 h-4" style={{ color: t.primary }} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{channel.label}</p>
-                              <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{channel.desc}</p>
-                            </div>
-                          </label>
-                        )}
+                            </div>,
+                            channel.label,
+                            channel.desc
+                          )}
                       </div>
                     );
                   })}
@@ -3690,6 +3645,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               )}
             </div>
           </div>
+            );
+          })()}
 
           {/* Promo Code */}
           <div className="shadow-sm p-5" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
