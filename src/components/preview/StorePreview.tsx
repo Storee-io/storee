@@ -3496,16 +3496,14 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 <button
                   type="button"
                   onClick={() => { const next = new Set(expandedPaymentCategories); isExpanded ? next.delete(catKey) : next.add(catKey); setExpandedPaymentCategories(next); }}
-                  className="w-full flex items-center justify-between px-4 py-3.5 transition-all"
+                  className="w-full flex items-center justify-between px-3.5 py-3 transition-colors outline-none"
                   style={{
-                    borderRadius: capRadius(t.surfaceRadius, 14),
-                    border: `1px solid ${isExpanded ? alpha(t.primary, 0.35) : t.divider}`,
-                    background: isExpanded ? alpha(t.primary, 0.05) : t.surfaceBg,
-                    boxShadow: isExpanded ? `0 1px 4px ${alpha(t.primary, 0.1)}` : 'none',
+                    borderRadius: capRadius(t.surfaceRadius, 12),
+                    background: isExpanded ? alpha(t.primary, 0.06) : 'transparent',
                     cursor: 'pointer',
                   }}
-                  onMouseEnter={e => { if (!isExpanded) e.currentTarget.style.borderColor = alpha(t.primary, 0.3); }}
-                  onMouseLeave={e => { if (!isExpanded) e.currentTarget.style.borderColor = t.divider; }}
+                  onMouseEnter={e => { if (!isExpanded) e.currentTarget.style.background = alpha(t.primary, 0.035); }}
+                  onMouseLeave={e => { if (!isExpanded) e.currentTarget.style.background = 'transparent'; }}
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors" style={{ background: alpha(t.primary, isExpanded ? 0.14 : 0.08) }}>
@@ -3525,15 +3523,13 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               return (
                 <label
                   key={id}
-                  className="flex items-center gap-3.5 p-4 cursor-pointer transition-all"
+                  className="flex items-center gap-3.5 p-3.5 cursor-pointer transition-colors outline-none"
                   style={{
-                    borderRadius: capRadius(t.surfaceRadius, 14),
-                    border: `1.5px solid ${isSelected ? t.primary : t.divider}`,
-                    background: isSelected ? alpha(t.primary, 0.05) : t.surfaceBg,
-                    boxShadow: isSelected ? `0 2px 10px ${alpha(t.primary, 0.14)}` : 'none',
+                    borderRadius: capRadius(t.surfaceRadius, 12),
+                    background: isSelected ? alpha(t.primary, 0.06) : 'transparent',
                   }}
-                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.borderColor = alpha(t.primary, 0.35); }}
-                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.borderColor = t.divider; }}
+                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = alpha(t.primary, 0.035); }}
+                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
                 >
                   <input type="radio" name="payment" value={id} checked={isSelected} onChange={() => setSelectedPayId(id)} className="sr-only" />
                   <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
