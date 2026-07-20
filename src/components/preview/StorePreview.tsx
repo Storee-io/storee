@@ -3493,7 +3493,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 return (
                   <label
                     key={method.id}
-                    className="flex items-center gap-3.5 p-3.5 cursor-pointer transition-colors"
+                    className="flex items-center justify-between gap-3.5 p-3.5 cursor-pointer transition-colors"
                     style={{
                       borderRadius: capRadius(t.surfaceRadius, 12),
                       border: `1px solid ${isSelected ? t.primary : t.divider}`,
@@ -3503,17 +3503,21 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = t.surfaceBg; }}
                   >
                     <input type="radio" name="shipping" value={method.id} checked={isSelected} onChange={() => setSelectedShippingId(method.id)} className="sr-only" />
-                    <div className="self-center w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
-                      {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
+                    <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                      <BrandLogo id={method.id} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{method.name}</p>
+                        <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Est. arrival: {method.estimatedDays}</p>
+                      </div>
                     </div>
-                    <BrandLogo id={method.id} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{method.name}</p>
-                      <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Est. arrival: {method.estimatedDays}</p>
+                    <div className="flex items-center gap-3.5 flex-shrink-0">
+                      <span className="text-sm font-bold" style={{ color: cost === 0 ? (t.successText ?? '#16a34a') : t.primary }}>
+                        {cost === 0 ? 'FREE' : fmtPrice(cost)}
+                      </span>
+                      <div className="self-center w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
+                        {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
+                      </div>
                     </div>
-                    <span className="text-sm font-bold flex-shrink-0" style={{ color: cost === 0 ? (t.successText ?? '#16a34a') : t.primary }}>
-                      {cost === 0 ? 'FREE' : fmtPrice(cost)}
-                    </span>
                   </label>
                 );
               })}
@@ -3564,7 +3568,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               return (
                 <label
                   key={id}
-                  className="flex items-center gap-3.5 p-3.5 cursor-pointer transition-colors outline-none"
+                  className="flex items-center justify-between gap-3.5 p-3.5 cursor-pointer transition-colors outline-none"
                   style={{
                     borderRadius: capRadius(t.surfaceRadius, 12),
                     border: `1px solid ${isSelected ? t.primary : t.divider}`,
@@ -3574,13 +3578,15 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = t.surfaceBg; }}
                 >
                   <input type="radio" name="payment" value={id} checked={isSelected} onChange={() => setSelectedPayId(id)} className="sr-only" />
+                  <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                    {iconEl}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{title}</p>
+                      <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{subtitle}</p>
+                    </div>
+                  </div>
                   <div className="self-center w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
                     {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
-                  </div>
-                  {iconEl}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{title}</p>
-                    <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{subtitle}</p>
                   </div>
                 </label>
               );
