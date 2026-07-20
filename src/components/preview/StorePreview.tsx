@@ -3588,55 +3588,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Payment Method</h3>
             </div>
             <div className="p-4 space-y-5">
-              {/* Manual Payment */}
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: t.primary }} />
-                  <p className="text-xs font-bold uppercase" style={{ color: t.textSecondary, letterSpacing: '0.07em' }}>Manual Payment</p>
-                </div>
-                <p className="text-xs -mt-1 mb-1" style={{ color: t.textMuted }}>Complete payment & notify seller</p>
-
-                {/* QR Sub-category */}
-                {groupedManualPayments.qris.length > 0 && (
-                  <div className="space-y-2">
-                    {paymentCategoryHeader('qris', QrCode, 'QR')}
-                    {expandedPaymentCategories.has('qris') && groupedManualPayments.qris.map(pm =>
-                      paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, 'Pay by scanning QR from any app')
-                    )}
-                  </div>
-                )}
-
-                {/* E-Wallet Sub-category */}
-                {groupedManualPayments.ewallet.length > 0 && (
-                  <div className="space-y-2">
-                    {paymentCategoryHeader('ewallet', Wallet, 'E-Wallet')}
-                    {expandedPaymentCategories.has('ewallet') && groupedManualPayments.ewallet.map(pm =>
-                      paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, `Transfer manually to seller's ${pm.name} account`)
-                    )}
-                  </div>
-                )}
-
-                {/* Bank Transfer Sub-category */}
-                {groupedManualPayments.bank.length > 0 && (
-                  <div className="space-y-2">
-                    {paymentCategoryHeader('bank', Building, 'Bank Transfer')}
-                    {expandedPaymentCategories.has('bank') && groupedManualPayments.bank.map(pm =>
-                      paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, `Transfer manually to seller's ${pm.bankName ?? 'bank'} account`)
-                    )}
-                  </div>
-                )}
-
-                {/* Cash Sub-category */}
-                {groupedManualPayments.cash.length > 0 && (
-                  <div className="space-y-2">
-                    {paymentCategoryHeader('cash', Banknote, 'Cash')}
-                    {expandedPaymentCategories.has('cash') && groupedManualPayments.cash.map(pm =>
-                      paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, 'Pay in cash when your order arrives')
-                    )}
-                  </div>
-                )}
-              </div>
-
               {/* Auto Payment — same collapsible category pattern as Manual Payment */}
               {hasAutoPayment && (
                 <div className="space-y-1.5">
@@ -3686,6 +3637,55 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   })}
                 </div>
               )}
+
+              {/* Manual Payment */}
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: t.primary }} />
+                  <p className="text-xs font-bold uppercase" style={{ color: t.textSecondary, letterSpacing: '0.07em' }}>Manual Payment</p>
+                </div>
+                <p className="text-xs -mt-1 mb-1" style={{ color: t.textMuted }}>Complete payment & notify seller</p>
+
+                {/* QR Sub-category */}
+                {groupedManualPayments.qris.length > 0 && (
+                  <div className="space-y-2">
+                    {paymentCategoryHeader('qris', QrCode, 'QR')}
+                    {expandedPaymentCategories.has('qris') && groupedManualPayments.qris.map(pm =>
+                      paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, 'Pay by scanning QR from any app')
+                    )}
+                  </div>
+                )}
+
+                {/* E-Wallet Sub-category */}
+                {groupedManualPayments.ewallet.length > 0 && (
+                  <div className="space-y-2">
+                    {paymentCategoryHeader('ewallet', Wallet, 'E-Wallet')}
+                    {expandedPaymentCategories.has('ewallet') && groupedManualPayments.ewallet.map(pm =>
+                      paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, `Transfer manually to seller's ${pm.name} account`)
+                    )}
+                  </div>
+                )}
+
+                {/* Bank Transfer Sub-category */}
+                {groupedManualPayments.bank.length > 0 && (
+                  <div className="space-y-2">
+                    {paymentCategoryHeader('bank', Building, 'Bank Transfer')}
+                    {expandedPaymentCategories.has('bank') && groupedManualPayments.bank.map(pm =>
+                      paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, `Transfer manually to seller's ${pm.bankName ?? 'bank'} account`)
+                    )}
+                  </div>
+                )}
+
+                {/* Cash Sub-category */}
+                {groupedManualPayments.cash.length > 0 && (
+                  <div className="space-y-2">
+                    {paymentCategoryHeader('cash', Banknote, 'Cash')}
+                    {expandedPaymentCategories.has('cash') && groupedManualPayments.cash.map(pm =>
+                      paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, 'Pay in cash when your order arrives')
+                    )}
+                  </div>
+                )}
+              </div>
 
               {paymentSettings?.paymentNote && (
                 <div className="mt-2 p-3 bg-blue-50 rounded-xl border border-blue-100">

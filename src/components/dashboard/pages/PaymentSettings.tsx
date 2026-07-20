@@ -182,7 +182,7 @@ type Tab = 'manual' | 'auto';
 export default function PaymentSettings() {
   const { activeStore, updateActiveStore } = useStore();
 
-  const [tab, setTab]             = useState<Tab>('manual');
+  const [tab, setTab]             = useState<Tab>('auto');
   const [methods, setMethods]     = useState<PaymentMethod[]>(
     activeStore?.paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS
   );
@@ -304,8 +304,8 @@ export default function PaymentSettings() {
   const codMethod = methods.find(m => m.id === 'cod');
 
   const tabs: { id: Tab; label: string; icon: React.ElementType; desc: string }[] = [
-    { id: 'manual', label: 'Manual Payment', icon: CreditCard, desc: 'Bank transfer, QRIS, COD, e-wallet' },
     { id: 'auto',   label: 'Auto Payment',   icon: Zap,        desc: 'Payment gateway API integration'   },
+    { id: 'manual', label: 'Manual Payment', icon: CreditCard, desc: 'Bank transfer, QRIS, COD, e-wallet' },
   ];
 
   return (
