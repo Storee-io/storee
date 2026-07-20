@@ -2910,7 +2910,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     { id: 'bca', name: 'Transfer BCA', type: 'bank_transfer', enabled: true, bankName: 'BCA', accountNumber: '1234567890', accountHolder: 'Nama Toko' }
   ];
   const AUTO_CHANNEL_DEFS = [
-    { id: 'qris' as const,           label: 'QRIS',                     desc: 'Instant QR payment — scan with any e-wallet or mobile banking app', Icon: QrCode },
+    { id: 'qris' as const,           label: 'QR',                       desc: 'Instant QR payment — scan with any e-wallet or mobile banking app', Icon: QrCode },
     { id: 'ewallet' as const,        label: 'E-Wallet',                 desc: 'GoPay, OVO, Dana, ShopeePay & more',                                 Icon: Wallet },
     { id: 'virtualAccount' as const, label: 'Virtual Account',          desc: 'Bank transfer via a dedicated VA number',                            Icon: Building },
     { id: 'card' as const,           label: 'Card (Debit / Credit)',    desc: 'Secure online payment',                                              Icon: CreditCard },
@@ -3596,10 +3596,10 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 </div>
                 <p className="text-xs -mt-1 mb-1" style={{ color: t.textMuted }}>Complete payment & notify seller</p>
 
-                {/* QRIS Sub-category */}
+                {/* QR Sub-category */}
                 {groupedManualPayments.qris.length > 0 && (
                   <div className="space-y-2">
-                    {paymentCategoryHeader('qris', QrCode, 'QRIS')}
+                    {paymentCategoryHeader('qris', QrCode, 'QR')}
                     {expandedPaymentCategories.has('qris') && groupedManualPayments.qris.map(pm =>
                       paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, 'Pay by scanning QR from any app')
                     )}

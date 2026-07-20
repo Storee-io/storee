@@ -169,7 +169,7 @@ const DEFAULT_AUTO: AutoPaymentConfig = {
 };
 
 const AUTO_CHANNELS: { id: keyof AutoPaymentChannels; label: string; desc: string; Icon: React.ElementType }[] = [
-  { id: 'qris',           label: 'QRIS',            desc: 'Scan-to-pay with any e-wallet or mobile banking app', Icon: QrCode },
+  { id: 'qris',           label: 'QR',              desc: 'Scan-to-pay with any e-wallet or mobile banking app', Icon: QrCode },
   { id: 'ewallet',        label: 'E-Wallet',        desc: 'GoPay, OVO, Dana, ShopeePay & more',                  Icon: Wallet },
   { id: 'virtualAccount', label: 'Virtual Account', desc: 'Bank transfer via a dedicated VA number',              Icon: Landmark },
   { id: 'card',           label: 'Card',            desc: 'Credit & debit card payments',                        Icon: CreditCard },
