@@ -2915,6 +2915,35 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     { id: 'virtualAccount' as const, label: 'Virtual Account',          desc: 'Bank transfer via a dedicated VA number',                            Icon: Building },
     { id: 'card' as const,           label: 'Card (Debit / Credit)',    desc: 'Secure online payment',                                              Icon: CreditCard },
   ];
+
+  // Xendit payment sub-methods per channel (Indonesia)
+  const XENDIT_PAYMENT_METHODS: Record<string, Array<{ id: string; name: string }>> = {
+    ewallet: [
+      { id: 'gopay', name: 'GoPay' },
+      { id: 'ovo', name: 'OVO' },
+      { id: 'dana', name: 'DANA' },
+      { id: 'linkaja', name: 'LinkAja' },
+      { id: 'shopeepay', name: 'ShopeePay' },
+    ],
+    virtualAccount: [
+      { id: 'bca', name: 'BCA' },
+      { id: 'bni', name: 'BNI' },
+      { id: 'bri', name: 'BRI' },
+      { id: 'mandiri', name: 'Mandiri' },
+      { id: 'permata', name: 'Permata' },
+      { id: 'cimb', name: 'CIMB Niaga' },
+    ],
+    qris: [
+      { id: 'qris', name: 'QRIS' },
+    ],
+    card: [
+      { id: 'visa', name: 'Visa' },
+      { id: 'mastercard', name: 'Mastercard' },
+      { id: 'jcb', name: 'JCB' },
+      { id: 'amex', name: 'American Express' },
+    ],
+  };
+
   const autoChannelsConfig = paymentSettings?.autoPayment?.channels;
   const enabledAutoChannels = AUTO_CHANNEL_DEFS.filter(c =>
     autoChannelsConfig ? autoChannelsConfig[c.id] : c.id !== 'card'
@@ -3617,21 +3646,41 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   </div>
                   <p className="text-xs -mt-1 mb-1" style={{ color: t.textMuted }}>Instantly confirmed — order processes automatically</p>
                   {enabledAutoChannels.map(channel => {
-                    const id = `auto-${channel.id}`;
                     const catKey = `auto-${channel.id}`;
                     const ChannelIcon = channel.Icon;
+                    const subMethods = XENDIT_PAYMENT_METHODS[channel.id] || [];
                     return (
-                      <div key={id} className="space-y-2">
+                      <div key={catKey} className="space-y-2">
                         {paymentCategoryHeader(catKey, ChannelIcon, channel.label)}
-                        {expandedPaymentCategories.has(catKey) &&
-                          paymentOptionRow(
-                            id,
-                            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
-                              <ChannelIcon className="w-4 h-4" style={{ color: t.primary }} />
-                            </div>,
-                            channel.label,
-                            channel.desc
-                          )}
+                        {expandedPaymentCategories.has(catKey) && subMethods.map(method => {
+                          const methodId = `auto-${channel.id}-${method.id}`;
+                          const isSelected = selectedPayId === methodId;
+                          return (
+                            <label
+                              key={methodId}
+                              className="flex items-center gap-3.5 p-3.5 cursor-pointer transition-colors outline-none"
+                              style={{
+                                borderRadius: capRadius(t.surfaceRadius, 12),
+                                border: `1px solid ${isSelected ? t.primary : t.divider}`,
+                                background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg,
+                              }}
+                              onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = alpha(t.primary, 0.02); }}
+                              onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = t.surfaceBg; }}
+                            >
+                              <input type="radio" name="payment" value={methodId} checked={isSelected} onChange={() => setSelectedPayId(methodId)} className="sr-only" />
+                              <div className="self-center w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
+                                {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
+                              </div>
+                              <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
+                                <ChannelIcon className="w-4 h-4" style={{ color: t.primary }} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{method.name}</p>
+                                <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{channel.desc}</p>
+                              </div>
+                            </label>
+                          );
+                        })}
                       </div>
                     );
                   })}
