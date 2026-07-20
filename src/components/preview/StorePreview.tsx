@@ -3504,7 +3504,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 <button
                   type="button"
                   onClick={() => { const next = new Set(expandedPaymentCategories); isExpanded ? next.delete(catKey) : next.add(catKey); setExpandedPaymentCategories(next); }}
-                  className="w-full flex items-center justify-between px-3.5 py-3 transition-colors outline-none"
+                  className="w-full flex items-center justify-between px-3.5 py-2 transition-colors outline-none"
                   style={{
                     borderRadius: capRadius(t.surfaceRadius, 12),
                     background: 'transparent',
@@ -3514,8 +3514,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                 >
                   <p className="text-sm font-semibold truncate" style={{ color: t.textPrimary }}>{label}</p>
-                  <span style={{ color: isExpanded ? t.primary : t.textMuted, transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease-out, color 0.2s ease-out', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '22px', flexShrink: 0 }}>
-                    <ChevronDown className="w-4 h-4" />
+                  <span style={{ color: isExpanded ? t.primary : t.textMuted, transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease-out, color 0.2s ease-out', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', flexShrink: 0 }}>
+                    <ChevronDown className="w-3.5 h-3.5" />
                   </span>
                 </button>
               );
