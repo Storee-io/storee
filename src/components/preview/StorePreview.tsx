@@ -2936,7 +2936,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     { id: 'flat', name: 'Standard Shipping', price: getDefaultShippingCost(store?.currency?.code ?? 'USD'), estimatedDays: '2–3 days', enabled: true, icon: '📦' }
   ];
   const [selectedShippingId, setSelectedShippingId] = useState(shippingMethods[0]?.id ?? '');
-  const [expandedPaymentCategories, setExpandedPaymentCategories] = useState<Set<string>>(new Set(['bank'])); // Bank Transfer expanded by default
+  const [expandedPaymentCategories, setExpandedPaymentCategories] = useState<Set<string>>(new Set(['qris', 'ewallet', 'bank', 'cash', 'auto-qris', 'auto-ewallet', 'auto-virtualAccount', 'auto-card'])); // All categories expanded by default
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
@@ -3470,6 +3470,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       border: `1px solid ${isSelected ? t.primary : t.divider}`,
                       background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg,
                     }}
+                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = alpha(t.primary, 0.02); }}
+                    onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = t.surfaceBg; }}
                   >
                     <input type="radio" name="shipping" value={method.id} checked={isSelected} onChange={() => setSelectedShippingId(method.id)} className="sr-only" />
                     <div className="self-center w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
@@ -3532,6 +3534,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     border: `1px solid ${isSelected ? t.primary : t.divider}`,
                     background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg,
                   }}
+                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = alpha(t.primary, 0.02); }}
+                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = t.surfaceBg; }}
                 >
                   <input type="radio" name="payment" value={id} checked={isSelected} onChange={() => setSelectedPayId(id)} className="sr-only" />
                   <div className="self-center w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
