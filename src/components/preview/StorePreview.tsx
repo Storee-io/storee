@@ -3514,8 +3514,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       <span className="text-sm font-bold" style={{ color: cost === 0 ? (t.successText ?? '#16a34a') : t.primary }}>
                         {cost === 0 ? 'FREE' : fmtPrice(cost)}
                       </span>
-                      <div className="self-center w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
-                        {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
+                      <div className="self-center w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder, background: isSelected ? t.primary : 'transparent' }}>
+                        {isSelected && <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
                       </div>
                     </div>
                   </label>
@@ -3585,8 +3585,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{subtitle}</p>
                     </div>
                   </div>
-                  <div className="self-center w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
-                    {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
+                  <div className="self-center w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder, background: isSelected ? t.primary : 'transparent' }}>
+                    {isSelected && <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
                   </div>
                 </label>
               );
@@ -3622,7 +3622,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           return (
                             <label
                               key={methodId}
-                              className="flex items-center gap-3.5 p-3.5 cursor-pointer transition-colors outline-none"
+                              className="flex items-center justify-between gap-3.5 p-3.5 cursor-pointer transition-colors outline-none"
                               style={{
                                 borderRadius: capRadius(t.surfaceRadius, 12),
                                 border: `1px solid ${isSelected ? t.primary : t.divider}`,
@@ -3632,15 +3632,17 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                               onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = t.surfaceBg; }}
                             >
                               <input type="radio" name="payment" value={methodId} checked={isSelected} onChange={() => setSelectedPayId(methodId)} className="sr-only" />
-                              <div className="self-center w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder }}>
-                                {isSelected && <div className="w-2 h-2 rounded-full" style={{ background: t.primary }} />}
+                              <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                                <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
+                                  <ChannelIcon className="w-4 h-4" style={{ color: t.primary }} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{method.name}</p>
+                                  <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{channel.desc}</p>
+                                </div>
                               </div>
-                              <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
-                                <ChannelIcon className="w-4 h-4" style={{ color: t.primary }} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{method.name}</p>
-                                <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{channel.desc}</p>
+                              <div className="self-center w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder, background: isSelected ? t.primary : 'transparent' }}>
+                                {isSelected && <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
                               </div>
                             </label>
                           );
