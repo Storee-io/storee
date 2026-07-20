@@ -3590,12 +3590,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             <div className="p-4 space-y-5">
               {/* Auto Payment — same collapsible category pattern as Manual Payment */}
               {hasAutoPayment && (
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-3 h-3 flex-shrink-0" style={{ color: t.primary, fill: t.primary }} />
-                    <p className="text-xs font-bold uppercase" style={{ color: t.textSecondary, letterSpacing: '0.07em' }}>Automatic Payment</p>
-                  </div>
-                  <p className="text-xs -mt-1 mb-1" style={{ color: t.textMuted }}>Instantly confirmed — order processes automatically</p>
+                <div className="space-y-2.5">
+                  <div className="inline-block px-3 py-1.5 rounded-full text-xs font-semibold" style={{ background: alpha(t.primary, 0.1), color: t.primary }}>Instant</div>
                   {enabledAutoChannels.map(channel => {
                     const catKey = `auto-${channel.id}`;
                     const ChannelIcon = channel.Icon;
@@ -3639,12 +3635,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               )}
 
               {/* Manual Payment */}
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: t.primary }} />
-                  <p className="text-xs font-bold uppercase" style={{ color: t.textSecondary, letterSpacing: '0.07em' }}>Manual Payment</p>
-                </div>
-                <p className="text-xs -mt-1 mb-1" style={{ color: t.textMuted }}>Complete payment & notify seller</p>
+              <div className="space-y-2.5">
+                <div className="inline-block px-3 py-1.5 rounded-full text-xs font-semibold" style={{ background: alpha(t.divider, 0.4), color: t.textSecondary }}>Manual</div>
 
                 {/* QR Sub-category */}
                 {groupedManualPayments.qris.length > 0 && (
