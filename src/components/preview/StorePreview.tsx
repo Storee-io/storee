@@ -3529,7 +3529,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               header and the selectable option row visually identical across every
               manual + automatic payment category. */}
           {(() => {
-            const paymentCategoryHeader = (catKey: string, Icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>, label: string) => {
+            const paymentCategoryHeader = (catKey: string, Icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>, label: string, badge?: string) => {
               const isExpanded = expandedPaymentCategories.has(catKey);
               return (
                 <button
@@ -3544,7 +3544,14 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   onMouseEnter={e => { e.currentTarget.style.background = alpha(t.primary, 0.035); }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                 >
-                  <p className="text-sm font-semibold truncate" style={{ color: t.textPrimary }}>{label}</p>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: t.textPrimary }}>{label}</p>
+                    {badge && (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: alpha(t.primary, 0.1), color: t.primary }}>
+                        {badge}
+                      </span>
+                    )}
+                  </div>
                   <span style={{ color: isExpanded ? t.primary : t.textMuted, transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease-out, color 0.2s ease-out', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', flexShrink: 0 }}>
                     <ChevronDown className="w-3.5 h-3.5" />
                   </span>
@@ -3602,7 +3609,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     const subMethods = XENDIT_PAYMENT_METHODS[channel.id] || [];
                     return (
                       <div key={catKey} className="space-y-2">
-                        {paymentCategoryHeader(catKey, ChannelIcon, channel.label)}
+                        {paymentCategoryHeader(catKey, ChannelIcon, channel.label, 'Instant')}
                         {expandedPaymentCategories.has(catKey) && subMethods.map(method => {
                           const methodId = `auto-${channel.id}-${method.id}`;
                           const isSelected = selectedPayId === methodId;
@@ -3649,7 +3656,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 {/* QR Sub-category */}
                 {groupedManualPayments.qris.length > 0 && (
                   <div className="space-y-2">
-                    {paymentCategoryHeader('qris', QrCode, 'QR')}
+                    {paymentCategoryHeader('qris', QrCode, 'QR', 'Manual')}
                     {expandedPaymentCategories.has('qris') && groupedManualPayments.qris.map(pm =>
                       paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, 'Pay by scanning QR from any app')
                     )}
@@ -3659,7 +3666,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 {/* E-Wallet Sub-category */}
                 {groupedManualPayments.ewallet.length > 0 && (
                   <div className="space-y-2">
-                    {paymentCategoryHeader('ewallet', Wallet, 'E-Wallet')}
+                    {paymentCategoryHeader('ewallet', Wallet, 'E-Wallet', 'Manual')}
                     {expandedPaymentCategories.has('ewallet') && groupedManualPayments.ewallet.map(pm =>
                       paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, `Transfer manually to seller's ${pm.name} account`)
                     )}
@@ -3669,7 +3676,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 {/* Bank Transfer Sub-category */}
                 {groupedManualPayments.bank.length > 0 && (
                   <div className="space-y-2">
-                    {paymentCategoryHeader('bank', Building, 'Bank Transfer')}
+                    {paymentCategoryHeader('bank', Building, 'Bank Transfer', 'Manual')}
                     {expandedPaymentCategories.has('bank') && groupedManualPayments.bank.map(pm =>
                       paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, `Transfer manually to seller's ${pm.bankName ?? 'bank'} account`)
                     )}
@@ -3679,7 +3686,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 {/* Cash Sub-category */}
                 {groupedManualPayments.cash.length > 0 && (
                   <div className="space-y-2">
-                    {paymentCategoryHeader('cash', Banknote, 'Cash')}
+                    {paymentCategoryHeader('cash', Banknote, 'Cash', 'Manual')}
                     {expandedPaymentCategories.has('cash') && groupedManualPayments.cash.map(pm =>
                       paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, 'Pay in cash when your order arrives')
                     )}
