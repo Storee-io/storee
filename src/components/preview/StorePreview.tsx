@@ -3513,12 +3513,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   onMouseEnter={e => { e.currentTarget.style.background = alpha(t.primary, 0.035); }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                 >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors" style={{ background: alpha(t.primary, isExpanded ? 0.14 : 0.08) }}>
-                      <Icon className="w-3.5 h-3.5" style={{ color: t.primary }} />
-                    </div>
-                    <p className="text-sm font-semibold truncate" style={{ color: t.textPrimary }}>{label}</p>
-                  </div>
+                  <p className="text-sm font-semibold truncate" style={{ color: t.textPrimary }}>{label}</p>
                   <span style={{ color: isExpanded ? t.primary : t.textMuted, transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease-out, color 0.2s ease-out', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '22px', flexShrink: 0 }}>
                     <ChevronDown className="w-4 h-4" />
                   </span>
