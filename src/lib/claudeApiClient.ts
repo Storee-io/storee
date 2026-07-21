@@ -301,10 +301,21 @@ export async function generateStoreWithClaude(
         body: JSON.stringify({ prompt: enrichedPrompt, currency, language, advanced, variationSeed: seed }),
         signal: controller.signal,
       });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        console.warn('[generateStoreWithClaude] API error:', res.status, res.statusText);
+        return null;
+      }
       const text = await res.text();
-      return parseStoreResponse(text);
-    } catch {
+      console.log('[generateStoreWithClaude] API response preview:', text.substring(0, 200));
+      const parsed = parseStoreResponse(text);
+      if (parsed) {
+        console.log('[generateStoreWithClaude] Successfully parsed store:', parsed.storeName);
+      } else {
+        console.warn('[generateStoreWithClaude] Failed to parse response as valid store');
+      }
+      return parsed;
+    } catch (err) {
+      console.error('[generateStoreWithClaude] Attempt failed:', err);
       return null; // AbortError or network failure → retry / fallback
     } finally {
       clearTimeout(timer);

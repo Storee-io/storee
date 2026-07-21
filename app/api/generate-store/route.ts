@@ -182,6 +182,8 @@ export async function POST(req: NextRequest) {
 
   const client = new Anthropic({ apiKey });
 
+  console.log('[generate-store] Sending prompt to Claude:', { model: config.model, promptLength: userMessage.length, promptPreview: userMessage.substring(0, 100) });
+
   const stream = await client.messages.stream({
     model:      config.model,
     max_tokens: config.maxTokens,
