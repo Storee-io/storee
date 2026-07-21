@@ -487,10 +487,26 @@ export function decodeHtmlEntities(text: string): string {
 
 export function parseStoreResponse(raw: string): GeneratedStoreConfig | null {
   try {
-    const cleaned = raw
-      .trim()
+    let cleaned = raw.trim();
+
+    // Remove markdown code fences
+    cleaned = cleaned
       .replace(/^```(?:json)?\n?/, '')
-      .replace(/\n?```$/, '');
+      .replace(/\n?```[\s\S]*$/, ''); // Remove ``` and everything after it
+
+    // If still not valid JSON, try to extract JSON object boundaries
+    if (!cleaned.startsWith('{')) {
+      const jsonStart = cleaned.indexOf('{');
+      if (jsonStart !== -1) {
+        cleaned = cleaned.substring(jsonStart);
+      }
+    }
+
+    // Find the last closing brace and truncate everything after it
+    const lastBrace = cleaned.lastIndexOf('}');
+    if (lastBrace !== -1) {
+      cleaned = cleaned.substring(0, lastBrace + 1);
+    }
 
     const parsed: ClaudeStoreResponse = JSON.parse(cleaned);
 
