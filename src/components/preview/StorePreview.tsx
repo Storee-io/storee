@@ -3202,7 +3202,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               </div>
               <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Customer Details</h3>
             </div>
-            <div className="p-5 grid grid-cols-2 gap-3">
+            <div className={`p-5 grid gap-3 ${(isMobile || isTablet) ? 'grid-cols-1' : 'grid-cols-2'}`}>
               {/* Card: Saved profile summary (collapsed view) */}
               {!editingDetails && savedProfile ? (
                 <>
