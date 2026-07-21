@@ -311,7 +311,15 @@ export async function generateStoreWithClaude(
 
       // Try to parse JSON to check structure before validation
       try {
-        const jsonPreview = JSON.parse(text.trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, ''));
+        let cleaned = text.trim()
+          .replace(/^```(?:json)?\n?/, '')
+          .replace(/\n?```[\s\S]*$/, '');
+        // Find the last closing brace and truncate
+        const lastBrace = cleaned.lastIndexOf('}');
+        if (lastBrace !== -1) {
+          cleaned = cleaned.substring(0, lastBrace + 1);
+        }
+        const jsonPreview = JSON.parse(cleaned);
         console.log('[generateStoreWithClaude] JSON structure:', {
           storeName: jsonPreview.storeName,
           primaryColor: jsonPreview.primaryColor,
@@ -320,7 +328,7 @@ export async function generateStoreWithClaude(
           productCount: jsonPreview.products?.length || 0,
         });
       } catch (e) {
-        console.error('[generateStoreWithClaude] JSON parse preview failed:', e);
+        console.warn('[generateStoreWithClaude] JSON parse preview warning (non-critical):', e.message?.substring(0, 100));
       }
 
       const parsed = parseStoreResponse(text);
