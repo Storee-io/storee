@@ -223,6 +223,16 @@ export default function PreviewShell({ store, from = null }: Props) {
     await new Promise<void>(r => setTimeout(r, 600));
     setGenerationState(null);
 
+    // Check if generation failed
+    if (!aiResult) {
+      wakeLock?.release().catch(() => {});
+      setIsRegenerating(false);
+      toast.error('Generation failed', {
+        description: 'Claude AI could not generate a new store design. Please check your internet connection and try again.',
+      });
+      return;
+    }
+
     // ── Resolve final values (mirrors HeroSection logic) ──────────────────
     const finalName = regenBrandName.trim() || aiResult?.storeName || liveStore.name;
 
