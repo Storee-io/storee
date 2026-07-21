@@ -3192,7 +3192,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
       <div className={`max-w-4xl mx-auto px-4 py-6 ${(isMobile || isTablet) ? 'flex flex-col gap-4' : 'grid grid-cols-[1fr_300px] gap-8 items-start'}`}>
 
         {/* Left: form sections */}
-        <div className="space-y-4">
+        <div className={`space-y-4 ${(isMobile || isTablet) ? 'pb-28' : ''}`}>
 
           {/* Contact & Shipping — merged */}
           <div className="shadow-sm overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
