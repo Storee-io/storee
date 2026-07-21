@@ -497,10 +497,17 @@ export function parseStoreResponse(raw: string): GeneratedStoreConfig | null {
     if (
       !parsed.storeName ||
       !parsed.primaryColor ||
-      !parsed.layoutStyle ||
       !Array.isArray(parsed.products) ||
-      parsed.products.length === 0
+      parsed.products.length === 0 ||
+      !parsed.designTokens
     ) {
+      console.warn('[parseStoreResponse] Validation failed:', {
+        storeName: !!parsed.storeName,
+        primaryColor: !!parsed.primaryColor,
+        products: Array.isArray(parsed.products) && parsed.products.length > 0,
+        designTokens: !!parsed.designTokens,
+        layoutStyle: !!parsed.layoutStyle,
+      });
       return null;
     }
 
