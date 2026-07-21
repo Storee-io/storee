@@ -3720,12 +3720,12 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 value={promoCode}
                 onChange={e => { setPromoCode(e.target.value.toUpperCase()); setPromoApplied(false); }}
                 placeholder="Enter promo code"
-                className="flex-1 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent"
+                className="flex-1 min-w-0 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent"
                 style={{ background: t.inputBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}
               />
               <button
                 onClick={() => promoCode && setPromoApplied(true)}
-                className="px-5 py-2.5 text-sm font-bold hover:opacity-85 transition-opacity cursor-pointer"
+                className="px-5 py-2.5 text-sm font-bold hover:opacity-85 transition-opacity cursor-pointer flex-shrink-0"
                 style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
               >
                 {promoApplied ? <Check className="w-4 h-4" /> : 'Apply'}
