@@ -306,12 +306,28 @@ export async function generateStoreWithClaude(
         return null;
       }
       const text = await res.text();
-      console.log('[generateStoreWithClaude] API response preview:', text.substring(0, 200));
+      console.log('[generateStoreWithClaude] API response length:', text.length);
+      console.log('[generateStoreWithClaude] API response preview:', text.substring(0, 300));
+
+      // Try to parse JSON to check structure before validation
+      try {
+        const jsonPreview = JSON.parse(text.trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, ''));
+        console.log('[generateStoreWithClaude] JSON structure:', {
+          storeName: jsonPreview.storeName,
+          primaryColor: jsonPreview.primaryColor,
+          hasDesignTokens: !!jsonPreview.designTokens,
+          designTokensFields: jsonPreview.designTokens ? Object.keys(jsonPreview.designTokens).slice(0, 10) : 'none',
+          productCount: jsonPreview.products?.length || 0,
+        });
+      } catch (e) {
+        console.error('[generateStoreWithClaude] JSON parse preview failed:', e);
+      }
+
       const parsed = parseStoreResponse(text);
       if (parsed) {
-        console.log('[generateStoreWithClaude] Successfully parsed store:', parsed.storeName);
+        console.log('[generateStoreWithClaude] ✅ Successfully parsed store:', parsed.storeName);
       } else {
-        console.warn('[generateStoreWithClaude] Failed to parse response as valid store');
+        console.warn('[generateStoreWithClaude] ❌ Failed to parse response as valid store - validation failed');
       }
       return parsed;
     } catch (err) {
