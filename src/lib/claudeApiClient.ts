@@ -328,7 +328,7 @@ export async function generateStoreWithClaude(
           productCount: jsonPreview.products?.length || 0,
         });
       } catch (e) {
-        console.warn('[generateStoreWithClaude] JSON parse preview warning (non-critical):', e.message?.substring(0, 100));
+        console.warn('[generateStoreWithClaude] JSON parse preview warning (non-critical):', (e instanceof Error ? e.message : String(e))?.substring(0, 100));
       }
 
       const parsed = parseStoreResponse(text);
