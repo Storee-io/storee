@@ -494,19 +494,32 @@ export function parseStoreResponse(raw: string): GeneratedStoreConfig | null {
 
     const parsed: ClaudeStoreResponse = JSON.parse(cleaned);
 
+    // Strict validation: require designTokens with key fields
+    const hasCompleteDesignTokens = parsed.designTokens &&
+      typeof parsed.designTokens === 'object' &&
+      parsed.designTokens.layoutType &&
+      parsed.designTokens.heroStyle &&
+      parsed.designTokens.pageBg &&
+      parsed.designTokens.textPrimary;
+
     if (
       !parsed.storeName ||
       !parsed.primaryColor ||
       !Array.isArray(parsed.products) ||
       parsed.products.length === 0 ||
-      !parsed.designTokens
+      !hasCompleteDesignTokens
     ) {
       console.warn('[parseStoreResponse] Validation failed:', {
         storeName: !!parsed.storeName,
         primaryColor: !!parsed.primaryColor,
         products: Array.isArray(parsed.products) && parsed.products.length > 0,
-        designTokens: !!parsed.designTokens,
-        layoutStyle: !!parsed.layoutStyle,
+        designTokens: {
+          exists: !!parsed.designTokens,
+          layoutType: parsed.designTokens?.layoutType,
+          heroStyle: parsed.designTokens?.heroStyle,
+          pageBg: parsed.designTokens?.pageBg,
+          textPrimary: parsed.designTokens?.textPrimary,
+        },
       });
       return null;
     }
