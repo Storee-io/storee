@@ -3782,33 +3782,51 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               <span style={{ color: t.primary }}>{fmtPrice(total)}</span>
             </div>
           </div>
-          <button
-            disabled={placingOrder}
-            onClick={() => {
-              // Touch all fields to surface any validation errors
-              const allFields = ['name', ...(showWhatsApp ? ['whatsapp'] : []), ...(showEmail ? ['email'] : []), 'address', 'city', 'postal'];
-              setTouched(Object.fromEntries(allFields.map(k => [k, true])));
-              const fieldLabels: Record<string, string> = { name: 'Name', whatsapp: 'WhatsApp', email: 'Email', address: 'Address', city: 'City', postal: 'Postal Code' };
-              const errors = allFields
-                .map(k => ({ field: k, message: validate(k, form[k as keyof typeof form]) }))
-                .filter(e => e.message !== '');
-              if (errors.length > 0) {
-                toast.error(
-                  errors.length === 1
-                    ? `${fieldLabels[errors[0].field] ?? errors[0].field}: ${errors[0].message}`
-                    : `Please fix ${errors.length} fields: ${errors.map(e => fieldLabels[e.field] ?? e.field).join(', ')}`
-                );
-                return;
-              }
-              const dial = COUNTRY_CODES.find(c => c.code === phoneCountryCode)?.dial ?? '62';
-              onPlaceOrder(selectedPayId, selectedShippingId, { ...form, whatsapp: form.whatsapp ? `+${dial}${form.whatsapp}` : '' });
-            }}
-            className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
+          <div
+            style={
+              (isMobile || isTablet) ? {
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                background: t.pageBg,
+                borderTop: `1px solid ${t.divider}`,
+                padding: '12px 16px 16px',
+                zIndex: 50,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px'
+              } : {}
+            }
           >
-            {placingOrder ? (<><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>) : 'Place Order'}
-          </button>
-          <p className="text-[10px] text-center" style={{ color: t.textMuted }}>🔒 Secure &amp; protected payment</p>
+            <button
+              disabled={placingOrder}
+              onClick={() => {
+                // Touch all fields to surface any validation errors
+                const allFields = ['name', ...(showWhatsApp ? ['whatsapp'] : []), ...(showEmail ? ['email'] : []), 'address', 'city', 'postal'];
+                setTouched(Object.fromEntries(allFields.map(k => [k, true])));
+                const fieldLabels: Record<string, string> = { name: 'Name', whatsapp: 'WhatsApp', email: 'Email', address: 'Address', city: 'City', postal: 'Postal Code' };
+                const errors = allFields
+                  .map(k => ({ field: k, message: validate(k, form[k as keyof typeof form]) }))
+                  .filter(e => e.message !== '');
+                if (errors.length > 0) {
+                  toast.error(
+                    errors.length === 1
+                      ? `${fieldLabels[errors[0].field] ?? errors[0].field}: ${errors[0].message}`
+                      : `Please fix ${errors.length} fields: ${errors.map(e => fieldLabels[e.field] ?? e.field).join(', ')}`
+                  );
+                  return;
+                }
+                const dial = COUNTRY_CODES.find(c => c.code === phoneCountryCode)?.dial ?? '62';
+                onPlaceOrder(selectedPayId, selectedShippingId, { ...form, whatsapp: form.whatsapp ? `+${dial}${form.whatsapp}` : '' });
+              }}
+              className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
+            >
+              {placingOrder ? (<><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>) : 'Place Order'}
+            </button>
+            <p className="text-[10px] text-center" style={{ color: t.textMuted }}>🔒 Secure &amp; protected payment</p>
+          </div>
         </div>
       </div>
     </div>
