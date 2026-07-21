@@ -3742,6 +3742,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             background: t.surfaceBg,
             border: `1px solid ${t.surfaceBorder}`,
             borderRadius: t.surfaceRadius,
+            ...(isMobile || isTablet ? {
+              paddingBottom: '16px'
+            } : {}),
             ...(!(isMobile || isTablet) ? {
               position: 'sticky',
               top: '80px',
