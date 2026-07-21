@@ -3747,7 +3747,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               top: '80px',
               maxHeight: 'calc(100vh - 100px)',
               overflowY: 'auto'
-            } : {})
+            } : {
+              marginBottom: '120px'
+            })
           }}
         >
           <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Order Summary ({cart.reduce((s, i) => s + i.qty, 0)} items)</h3>
