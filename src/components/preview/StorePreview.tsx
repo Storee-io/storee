@@ -3748,7 +3748,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               maxHeight: 'calc(100vh - 100px)',
               overflowY: 'auto'
             } : {
-              marginBottom: '120px'
+              marginBottom: '20px'
             })
           }}
         >
