@@ -303,7 +303,7 @@ export default function PreviewShell({ store, from = null }: Props) {
     setGeneratedStore(newStore);
 
     const guestId = getGuestId();
-    fetch('/api/save-draft-store', {
+    await fetch('/api/save-draft-store', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ guestId, store: newStore }),
