@@ -3743,7 +3743,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             border: `1px solid ${t.surfaceBorder}`,
             borderRadius: t.surfaceRadius,
             ...(isMobile || isTablet ? {
-              paddingBottom: '16px'
+              paddingBottom: '8px'
             } : {}),
             ...(!(isMobile || isTablet) ? {
               position: 'sticky',
