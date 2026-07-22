@@ -3105,7 +3105,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const dt = store?.design?.designTokens;
   const t = dt ? getTokenThemeV2(dt, primaryColor) : getCommerceTheme(primaryColor, layoutStyle);
   const googleFontsUrl = dt ? buildGoogleFontsUrl(dt.headingFont, dt.bodyFont) : '';
-  const inpStyle: CSSProperties = { background: t.inputBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3), boxSizing: 'border-box' } as CSSProperties;
+  const inpStyle: CSSProperties = { background: alpha(t.primary, 0.04), border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3), boxSizing: 'border-box' } as CSSProperties;
   const lblStyle: CSSProperties = { color: t.textSecondary, fontSize: '0.75rem', fontWeight: 600, marginBottom: '6px', display: 'block' };
 
   const handleAddressInput = (val: string) => {
