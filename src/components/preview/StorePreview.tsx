@@ -1516,7 +1516,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
           <button onClick={onBack} className="px-6 py-2.5 text-sm font-semibold cursor-pointer" style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}>{uiT.startShopping}</button>
         </div>
       ) : (
-        <div className={`max-w-4xl mx-auto px-4 py-6 ${(isMobile || isTablet) ? 'flex flex-col gap-4' : 'grid grid-cols-[1fr_320px] gap-8 items-stretch'}`}>
+        <div className={`max-w-4xl mx-auto px-4 py-6 ${(isMobile || isTablet) ? 'flex flex-col gap-4 pb-28' : 'grid grid-cols-[1fr_320px] gap-8 items-stretch'}`}>
 
           {/* Left: items */}
           <div className="space-y-4">
@@ -1590,15 +1590,47 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
               <span style={{ color: t.textPrimary }}>{uiT.total}</span>
               <span style={{ color: t.primary }}>{fmtPrice(subtotal)}</span>
             </div>
-            <button
-              onClick={onCheckout}
-              className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity mt-1 cursor-pointer"
-              style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
-            >
-              {uiT.proceedCheckout}
-            </button>
-            <p className="text-[10px] text-center" style={{ color: t.textMuted }}>{uiT.secureNote}</p>
+            {!(isMobile || isTablet) && (
+              <>
+                <button
+                  onClick={onCheckout}
+                  className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity mt-1 cursor-pointer"
+                  style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
+                >
+                  {uiT.proceedCheckout}
+                </button>
+                <p className="text-[10px] text-center" style={{ color: t.textMuted }}>{uiT.secureNote}</p>
+              </>
+            )}
           </div>
+
+          {/* Mobile/Tablet: sticky CTA */}
+          {(isMobile || isTablet) && (
+            <div
+              style={{
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                background: t.pageBg,
+                borderTop: `1px solid ${t.divider}`,
+                padding: '12px 16px 16px',
+                zIndex: 50,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px'
+              }}
+            >
+              <button
+                onClick={onCheckout}
+                className="w-full py-3.5 text-sm font-bold hover:opacity-90 transition-opacity cursor-pointer"
+                style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}
+              >
+                {uiT.proceedCheckout}
+              </button>
+              <p className="text-[10px] text-center" style={{ color: t.textMuted }}>{uiT.secureNote}</p>
+            </div>
+          )}
         </div>
       )}
     </div>
