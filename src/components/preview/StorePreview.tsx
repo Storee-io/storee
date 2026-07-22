@@ -3915,7 +3915,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             >
               {placingOrder ? (<><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>) : 'Place Order'}
             </button>
-            <p className="text-[10px] text-center" style={{ color: t.textMuted }}>🔒 Secure &amp; protected payment</p>
+            <p className="text-[10px] text-center mt-3" style={{ color: t.textMuted }}>🔒 Secure &amp; protected payment</p>
           </div>
         </div>
       </div>
