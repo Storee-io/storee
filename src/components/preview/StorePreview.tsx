@@ -3946,7 +3946,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     onBack();
                   }}
                   className="flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors cursor-pointer"
-                  style={{ background: 'transparent', border: `1.5px solid ${t.textSecondary}`, color: t.textSecondary }}
+                  style={{ background: 'transparent', border: `1.5px solid ${t.primary}`, color: t.primary }}
                 >
                   Leave
                 </button>
