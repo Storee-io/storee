@@ -2811,9 +2811,9 @@ interface AutoPaymentResult {
   sandbox?: boolean;
 }
 
-function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, layoutStyle, editMode, onFieldChange, store, branding, placingOrder, buyerUser }: {
+function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, layoutStyle, editMode, onFieldChange, store, branding, placingOrder, buyerUser, previousPage }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
-  shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; layoutStyle?: string; store?: Store;
+  shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; layoutStyle?: string; store?: Store; previousPage?: StorePage | null;
   onBack: () => void; onPlaceOrder: (paymentId: string, shippingId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => void; editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
   branding?: { logoUrl?: string; faviconUrl?: string; logoFile?: string; faviconFile?: string };
   placingOrder?: boolean;
@@ -3280,15 +3280,24 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     )}
     <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
       <header className="px-5 h-14 flex items-center justify-between sticky top-0 z-40 shadow-sm relative" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
-        <div className="w-10" />
+        {previousPage ? (
+          <button onClick={onBack} className="flex items-center justify-center transition-colors cursor-pointer" style={{ color: t.textSecondary }}>
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+        ) : (
+          <div className="w-10" />
+        )}
         {branding?.logoUrl ? (
           <img src={branding.logoUrl} alt={storeName} className="absolute left-1/2 -translate-x-1/2 h-8 max-w-[100px] object-contain" />
         ) : (
           <span className="absolute left-1/2 -translate-x-1/2 text-sm font-bold" style={{ color: t.textPrimary }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
         )}
-        <button onClick={onBack} className="relative p-2 hover:opacity-70 transition-opacity cursor-pointer" style={{ color: t.textSecondary }}>
-          <ShoppingCart className="w-5 h-5" />
-        </button>
+        {!previousPage && (
+          <button onClick={onBack} className="relative p-2 hover:opacity-70 transition-opacity cursor-pointer" style={{ color: t.textSecondary }}>
+            <ShoppingCart className="w-5 h-5" />
+          </button>
+        )}
+        {previousPage && <div className="w-10" />}
       </header>
 
       <div className={`max-w-4xl mx-auto px-4 py-6 ${(isMobile || isTablet) ? 'flex flex-col gap-4' : 'grid grid-cols-[1fr_300px] gap-8 items-start'}`}>
@@ -10835,6 +10844,7 @@ function pathToStorePage(path: string): StorePage {
 
 function StorePreview({ store, device, editMode, previewShell, onFieldChange, onFieldPositionChange, onArrayReorder, onPageChange, initialPath, navigateRef, elementOverrides }: StorePreviewProps) {
   const [page, setPage] = useState<StorePage>(() => pathToStorePage(initialPath ?? '/'));
+  const [previousPage, setPreviousPage] = useState<StorePage | null>(null);
   const [showCartSidebar, setShowCartSidebar] = useState(false);
 
   // Local field position state initialized from design.fieldOffsets
@@ -10848,6 +10858,13 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
       history.scrollRestoration = 'manual';
     }
   }, []);
+
+  // Track previous page when navigating
+  useEffect(() => {
+    if (page !== 'checkout' || previousPage === null) {
+      setPreviousPage(page);
+    }
+  }, [page, previousPage]);
 
   // Callback to update field position (also calls parent callback for persistence)
   const handleFieldPositionChange = useCallback((field: string, offset: { x: number; y: number }) => {
@@ -11197,7 +11214,7 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
   } else if (page === 'cart') {
     content = <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} onBack={() => setPage('home')} onCheckout={() => setPage('checkout')} onUpdateQty={updateQty} editMode={editMode} onFieldChange={onFieldChange} store={store} />;
   } else if (page === 'checkout') {
-    content = <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} paymentSettings={paymentSettings} layoutStyle={design?.layoutStyle} onBack={() => setPage('cart')} onPlaceOrder={async (pid, sid, customer) => {
+    content = <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} paymentSettings={paymentSettings} layoutStyle={design?.layoutStyle} onBack={() => setPage(previousPage || 'cart')} previousPage={previousPage} onPlaceOrder={async (pid, sid, customer) => {
       setSelectedPaymentId(pid);
       setSelectedShippingId(sid);
       await saveOrder(pid, sid, customer);
