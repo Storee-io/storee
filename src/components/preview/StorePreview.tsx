@@ -3670,7 +3670,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   <div className="space-y-2">
                     {paymentCategoryHeader('bank', Building, 'Bank Transfer', 'Manual')}
                     {expandedPaymentCategories.has('bank') && groupedManualPayments.bank.map(pm =>
-                      paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, `${pm.name} VA`, `Transfer manually to seller's ${pm.bankName ?? 'bank'} account`)
+                      paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, `Transfer manually to seller's ${pm.bankName ?? 'bank'} account`)
                     )}
                   </div>
                 )}
