@@ -1570,7 +1570,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
           </div>
 
           {/* Right: order summary */}
-          <div className="shadow-sm p-5 space-y-3" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius, ...(!(isMobile || isTablet) ? { position: 'sticky', top: '80px', maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' } : {}) }}>
+          <div className="shadow-sm p-5 space-y-3" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius, ...(!(isMobile || isTablet) ? { position: 'sticky', top: '80px' } : {}) }}>
             <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>{uiT.orderSummary}</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
