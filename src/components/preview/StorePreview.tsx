@@ -2926,12 +2926,12 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
       { id: 'shopeepay', name: 'ShopeePay' },
     ],
     virtualAccount: [
-      { id: 'bca', name: 'BCA' },
-      { id: 'bni', name: 'BNI' },
-      { id: 'bri', name: 'BRI' },
-      { id: 'mandiri', name: 'Mandiri' },
-      { id: 'permata', name: 'Permata' },
-      { id: 'cimb', name: 'CIMB Niaga' },
+      { id: 'bca', name: 'BCA VA' },
+      { id: 'bni', name: 'BNI VA' },
+      { id: 'bri', name: 'BRI VA' },
+      { id: 'mandiri', name: 'Mandiri VA' },
+      { id: 'permata', name: 'Permata VA' },
+      { id: 'cimb', name: 'CIMB Niaga VA' },
     ],
     qris: [
       { id: 'qris', name: 'QRIS' },
@@ -3670,7 +3670,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   <div className="space-y-2">
                     {paymentCategoryHeader('bank', Building, 'Bank Transfer', 'Manual')}
                     {expandedPaymentCategories.has('bank') && groupedManualPayments.bank.map(pm =>
-                      paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, pm.name, `Transfer manually to seller's ${pm.bankName ?? 'bank'} account`)
+                      paymentOptionRow(pm.id, <BrandLogo id={pm.id} type={pm.type} />, `${pm.name} VA`, `Transfer manually to seller's ${pm.bankName ?? 'bank'} account`)
                     )}
                   </div>
                 )}
