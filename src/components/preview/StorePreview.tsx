@@ -1516,7 +1516,7 @@ function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, o
           <button onClick={onBack} className="px-6 py-2.5 text-sm font-semibold cursor-pointer" style={{ background: t.primary, color: t.primaryContrast, borderRadius: t.btnRadius }}>{uiT.startShopping}</button>
         </div>
       ) : (
-        <div className={`max-w-4xl mx-auto px-4 ${(isMobile || isTablet) ? 'flex flex-col gap-4 py-4 pb-28' : 'grid grid-cols-[1fr_320px] gap-8 items-start py-4'}`}>
+        <div className={`max-w-4xl mx-auto px-4 ${(isMobile || isTablet) ? 'flex flex-col gap-4 py-6 pb-28' : 'grid grid-cols-[1fr_320px] gap-8 items-start py-6'}`}>
 
           {/* Left: items */}
           <div className="space-y-4">
