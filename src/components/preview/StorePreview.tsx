@@ -817,14 +817,19 @@ interface CartToastItem {
   cartCount: number;
 }
 
-function CartToast({ item, primaryColor, fmtPrice, onClose, onViewCart, previewShell }: {
+function CartToast({ item, primaryColor, fmtPrice, onClose, onViewCart, previewShell, store, layoutStyle }: {
   item: CartToastItem;
   primaryColor: string;
   fmtPrice: (n: number) => string;
   onClose: () => void;
   onViewCart: () => void;
   previewShell?: boolean;
+  store?: Store;
+  layoutStyle?: string;
 }) {
+  const dt = store?.design?.designTokens;
+  const t = dt ? getTokenThemeV2(dt, primaryColor) : getCommerceTheme(primaryColor, layoutStyle);
+
   const toast = (
     <motion.div
       key={item.id}
@@ -832,7 +837,7 @@ function CartToast({ item, primaryColor, fmtPrice, onClose, onViewCart, previewS
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 20, scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-      style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 99999, width: 256, background: '#fff', border: '1px solid #e5e7eb' }}
+      style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 99999, width: 256, background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}` }}
       className="rounded-2xl shadow-2xl overflow-hidden"
     >
       {/* Progress bar auto-dismiss */}
@@ -845,11 +850,11 @@ function CartToast({ item, primaryColor, fmtPrice, onClose, onViewCart, previewS
 
       <div className="p-3 flex items-center gap-3">
         {/* Product image */}
-        <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100">
+        <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0" style={{ background: alpha(primaryColor, 0.08) }}>
           {item.product.image ? (
             <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-slate-300">
+            <div className="w-full h-full flex items-center justify-center" style={{ color: alpha(t.textPrimary, 0.5) }}>
               <ShoppingCart className="w-5 h-5" />
             </div>
           )}
@@ -861,14 +866,15 @@ function CartToast({ item, primaryColor, fmtPrice, onClose, onViewCart, previewS
             <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: primaryColor }} />
             <span className="text-[11px] font-semibold" style={{ color: primaryColor }}>Added to cart</span>
           </div>
-          <p className="text-sm font-semibold text-slate-800 truncate leading-tight">{item.product.name}</p>
-          <p className="text-xs text-slate-500">{fmtPrice(item.product.price)}</p>
+          <p className="text-sm font-semibold truncate leading-tight" style={{ color: t.textPrimary }}>{item.product.name}</p>
+          <p className="text-xs" style={{ color: t.textMuted }}>{fmtPrice(item.product.price)}</p>
         </div>
 
         {/* Close */}
         <button
           onClick={onClose}
-          className="flex-shrink-0 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors self-start cursor-pointer"
+          className="flex-shrink-0 p-1 rounded-lg transition-colors self-start cursor-pointer"
+          style={{ color: t.textMuted, background: alpha(t.textPrimary, 0.05) }}
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -11374,6 +11380,8 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
           primaryColor={primaryColor}
           fmtPrice={fmtPrice}
           previewShell={previewShell}
+          store={store}
+          layoutStyle={design?.layoutStyle}
           onClose={() => { setCartToast(null); if (cartToastTimer.current) clearTimeout(cartToastTimer.current); }}
           onViewCart={() => { setCartToast(null); if (cartToastTimer.current) clearTimeout(cartToastTimer.current); setShowCartSidebar(true); }}
         />
