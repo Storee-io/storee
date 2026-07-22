@@ -3941,21 +3941,21 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               <p className="text-sm" style={{ color: t.textSecondary }}>Are you sure you want to go back? Your items will stay in your cart.</p>
               <div className="flex gap-3 pt-2">
                 <button
-                  onClick={() => setShowBackConfirmation(false)}
-                  className="flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors cursor-pointer"
-                  style={{ background: alpha(t.divider, 0.5), color: t.textPrimary }}
-                >
-                  Stay
-                </button>
-                <button
                   onClick={() => {
                     setShowBackConfirmation(false);
                     onBack();
                   }}
                   className="flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors cursor-pointer"
-                  style={{ background: t.primary, color: t.primaryContrast }}
+                  style={{ background: alpha(t.divider, 0.5), color: t.textPrimary }}
                 >
                   Leave
+                </button>
+                <button
+                  onClick={() => setShowBackConfirmation(false)}
+                  className="flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors cursor-pointer"
+                  style={{ background: t.primary, color: t.primaryContrast }}
+                >
+                  Stay
                 </button>
               </div>
             </div>
