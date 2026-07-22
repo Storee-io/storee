@@ -2957,6 +2957,52 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     bank: paymentMethods.filter(m => m.type === 'bank_transfer'),
     cash: paymentMethods.filter(m => m.type === 'cod'),
   };
+
+  // Default expanded categories: auto payment expanded by default, manual collapsed unless no auto payment
+  const getDefaultExpandedPaymentCategories = () => {
+    const defaultExpanded = new Set<string>();
+
+    // Rule 2: Automatic payment methods expanded by default
+    if (hasAutoPayment) {
+      enabledAutoChannels.forEach(c => {
+        defaultExpanded.add(`auto-${c.id}`);
+      });
+    }
+
+    // Rule 3: Manual payment methods collapsed by default, except if no active auto payment
+    const manualCategories: (keyof typeof groupedManualPayments)[] = ['qris', 'ewallet', 'bank', 'cash'];
+    if (!hasAutoPayment) {
+      manualCategories.forEach(cat => {
+        if (groupedManualPayments[cat].length > 0) {
+          defaultExpanded.add(cat);
+        }
+      });
+    }
+
+    // Rule 1: Ensure minimum 3 payment methods are expanded
+    if (defaultExpanded.size < 3) {
+      if (hasAutoPayment) {
+        // If not enough auto channels expanded, add manual categories
+        for (const cat of manualCategories) {
+          if (defaultExpanded.size >= 3) break;
+          if (groupedManualPayments[cat].length > 0) {
+            defaultExpanded.add(cat);
+          }
+        }
+      } else {
+        // If no auto payment, add more manual categories
+        for (const cat of manualCategories) {
+          if (defaultExpanded.size >= 3) break;
+          if (!defaultExpanded.has(cat) && groupedManualPayments[cat].length > 0) {
+            defaultExpanded.add(cat);
+          }
+        }
+      }
+    }
+
+    return defaultExpanded;
+  };
+
   const [selectedPayId, setSelectedPayId] = useState(paymentMethods[0]?.id ?? '');
   useEffect(() => { if (!selectedPayId && paymentMethods.length) setSelectedPayId(paymentMethods[0].id); }, []);
 
@@ -2965,7 +3011,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     { id: 'flat', name: 'Standard Shipping', price: getDefaultShippingCost(store?.currency?.code ?? 'USD'), estimatedDays: '2–3 days', enabled: true, icon: '📦' }
   ];
   const [selectedShippingId, setSelectedShippingId] = useState(shippingMethods[0]?.id ?? '');
-  const [expandedPaymentCategories, setExpandedPaymentCategories] = useState<Set<string>>(new Set(['qris', 'ewallet', 'bank', 'cash', 'auto-qris', 'auto-ewallet', 'auto-virtualAccount', 'auto-card'])); // All categories expanded by default
+  const [expandedPaymentCategories, setExpandedPaymentCategories] = useState<Set<string>>(getDefaultExpandedPaymentCategories());
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
