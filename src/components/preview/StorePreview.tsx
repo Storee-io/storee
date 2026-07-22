@@ -3104,6 +3104,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const selectedPayment = paymentMethods.find(m => m.id === selectedPayId);
   const dt = store?.design?.designTokens;
   const t = dt ? getTokenThemeV2(dt, primaryColor) : getCommerceTheme(primaryColor, layoutStyle);
+  const googleFontsUrl = dt ? buildGoogleFontsUrl(dt.headingFont, dt.bodyFont) : '';
   const inpStyle: CSSProperties = { background: t.inputBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3), boxSizing: 'border-box' } as CSSProperties;
   const lblStyle: CSSProperties = { color: t.textSecondary, fontSize: '0.75rem', fontWeight: 600, marginBottom: '6px', display: 'block' };
 
@@ -3279,6 +3280,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         onClose={() => setShowPostalPicker(false)}
       />
     )}
+    {googleFontsUrl && <TkFontInjector url={googleFontsUrl} />}
     <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
       <header className="px-5 h-14 flex items-center justify-between sticky top-0 z-40 shadow-sm relative" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
         {previousPage ? (
