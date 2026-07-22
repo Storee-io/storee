@@ -3600,68 +3600,51 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               </div>
               <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Payment Method</h3>
             </div>
-            <div className="p-4 space-y-5">
-              {/* Auto Payment — same collapsible category pattern as Manual Payment */}
-              {hasAutoPayment && (
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-3 h-3 flex-shrink-0" style={{ color: t.primary, fill: t.primary }} />
-                    <p className="text-xs font-bold uppercase" style={{ color: t.textSecondary, letterSpacing: '0.07em' }}>Automatic Payment</p>
+            <div className="p-4 space-y-2">
+              {/* Auto Payment */}
+              {hasAutoPayment && enabledAutoChannels.map(channel => {
+                const catKey = `auto-${channel.id}`;
+                const ChannelIcon = channel.Icon;
+                const subMethods = XENDIT_PAYMENT_METHODS[channel.id] || [];
+                return (
+                  <div key={catKey} className="space-y-2">
+                    {paymentCategoryHeader(catKey, ChannelIcon, channel.label, 'Instant')}
+                    {expandedPaymentCategories.has(catKey) && subMethods.map(method => {
+                      const methodId = `auto-${channel.id}-${method.id}`;
+                      const isSelected = selectedPayId === methodId;
+                      return (
+                        <label
+                          key={methodId}
+                          className="flex items-center justify-between gap-3.5 p-3.5 cursor-pointer transition-colors outline-none"
+                          style={{
+                            borderRadius: capRadius(t.surfaceRadius, 12),
+                            border: `1px solid ${isSelected ? t.primary : t.divider}`,
+                            background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg,
+                          }}
+                          onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = alpha(t.primary, 0.02); }}
+                          onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = t.surfaceBg; }}
+                        >
+                          <input type="radio" name="payment" value={methodId} checked={isSelected} onChange={() => setSelectedPayId(methodId)} className="sr-only" />
+                          <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
+                              <ChannelIcon className="w-4 h-4" style={{ color: t.primary }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{method.name}</p>
+                              <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{channel.desc}</p>
+                            </div>
+                          </div>
+                          <div className="self-center w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder, background: isSelected ? t.primary : 'transparent' }}>
+                            {isSelected && <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
+                          </div>
+                        </label>
+                      );
+                    })}
                   </div>
-                  <p className="text-xs -mt-1 mb-1" style={{ color: t.textMuted }}>Instantly confirmed — order processes automatically</p>
-                  {enabledAutoChannels.map(channel => {
-                    const catKey = `auto-${channel.id}`;
-                    const ChannelIcon = channel.Icon;
-                    const subMethods = XENDIT_PAYMENT_METHODS[channel.id] || [];
-                    return (
-                      <div key={catKey} className="space-y-2">
-                        {paymentCategoryHeader(catKey, ChannelIcon, channel.label, 'Instant')}
-                        {expandedPaymentCategories.has(catKey) && subMethods.map(method => {
-                          const methodId = `auto-${channel.id}-${method.id}`;
-                          const isSelected = selectedPayId === methodId;
-                          return (
-                            <label
-                              key={methodId}
-                              className="flex items-center justify-between gap-3.5 p-3.5 cursor-pointer transition-colors outline-none"
-                              style={{
-                                borderRadius: capRadius(t.surfaceRadius, 12),
-                                border: `1px solid ${isSelected ? t.primary : t.divider}`,
-                                background: isSelected ? alpha(t.primary, 0.04) : t.surfaceBg,
-                              }}
-                              onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = alpha(t.primary, 0.02); }}
-                              onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = t.surfaceBg; }}
-                            >
-                              <input type="radio" name="payment" value={methodId} checked={isSelected} onChange={() => setSelectedPayId(methodId)} className="sr-only" />
-                              <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                                <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
-                                  <ChannelIcon className="w-4 h-4" style={{ color: t.primary }} />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{method.name}</p>
-                                  <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>{channel.desc}</p>
-                                </div>
-                              </div>
-                              <div className="self-center w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: isSelected ? t.primary : t.surfaceBorder, background: isSelected ? t.primary : 'transparent' }}>
-                                {isSelected && <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
-                              </div>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                );
+              })}
 
-              {/* Manual Payment */}
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: t.primary }} />
-                  <p className="text-xs font-bold uppercase" style={{ color: t.textSecondary, letterSpacing: '0.07em' }}>Manual Payment</p>
-                </div>
-                <p className="text-xs -mt-1 mb-1" style={{ color: t.textMuted }}>Complete payment & notify seller</p>
-
-                {/* QR Sub-category */}
+              {/* QR Sub-category */}
                 {groupedManualPayments.qris.length > 0 && (
                   <div className="space-y-2">
                     {paymentCategoryHeader('qris', QrCode, 'QR', 'Manual')}
@@ -3700,7 +3683,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     )}
                   </div>
                 )}
-              </div>
 
               {paymentSettings?.paymentNote && (
                 <div className="mt-2 p-3 bg-blue-50 rounded-xl border border-blue-100">
