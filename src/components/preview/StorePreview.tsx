@@ -2970,22 +2970,41 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     }
 
     // Rule 3: Manual payment methods collapsed by default, except if no active auto payment
+    // Rule 4: If auto QR is active, manual QR should be collapsed
+    // Rule 5: If auto E-Wallet is active, manual E-Wallet should be collapsed
     const manualCategories: (keyof typeof groupedManualPayments)[] = ['qris', 'ewallet', 'bank', 'cash'];
+    const autoQrisActive = hasAutoPayment && enabledAutoChannels.some(c => c.id === 'qris');
+    const autoEwalletActive = hasAutoPayment && enabledAutoChannels.some(c => c.id === 'ewallet');
+
     if (!hasAutoPayment) {
       manualCategories.forEach(cat => {
         if (groupedManualPayments[cat].length > 0) {
           defaultExpanded.add(cat);
         }
       });
+    } else {
+      // If auto payment is active, only expand manual categories that don't have auto equivalents active
+      if (!autoQrisActive && groupedManualPayments.qris.length > 0) {
+        defaultExpanded.add('qris');
+      }
+      if (!autoEwalletActive && groupedManualPayments.ewallet.length > 0) {
+        defaultExpanded.add('ewallet');
+      }
+      if (groupedManualPayments.bank.length > 0) {
+        defaultExpanded.add('bank');
+      }
+      if (groupedManualPayments.cash.length > 0) {
+        defaultExpanded.add('cash');
+      }
     }
 
     // Rule 1: Ensure minimum 3 payment methods are expanded
     if (defaultExpanded.size < 3) {
       if (hasAutoPayment) {
-        // If not enough auto channels expanded, add manual categories
+        // If not enough expanded, add remaining manual categories
         for (const cat of manualCategories) {
           if (defaultExpanded.size >= 3) break;
-          if (groupedManualPayments[cat].length > 0) {
+          if (!defaultExpanded.has(cat) && groupedManualPayments[cat].length > 0) {
             defaultExpanded.add(cat);
           }
         }
