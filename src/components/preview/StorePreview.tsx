@@ -3550,9 +3550,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <p className="text-sm font-semibold truncate" style={{ color: t.textPrimary }}>{label}</p>
-                    {badge && (
+                    {badge === 'Instant' && (
                       <span className="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: alpha(t.primary, 0.1), color: t.primary }}>
-                        {badge}
+                        ⚡ Instant
                       </span>
                     )}
                   </div>
