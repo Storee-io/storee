@@ -2821,6 +2821,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
 }) {
   const [form, setForm] = useState({ email: '', whatsapp: '', name: '', address: '', city: '', province: '', postal: '', village: '', district: '', districtCode: '' });
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [showBackConfirmation, setShowBackConfirmation] = useState(false);
   const touch = (k: string) => setTouched(t => ({ ...t, [k]: true }));
   const [editingDetails, setEditingDetails] = useState(true); // false = show card, true = show form
 
@@ -3281,7 +3282,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     <div className="min-h-screen" style={{ background: t.pageBg, fontFamily: t.fontFamily }}>
       <header className="px-5 h-14 flex items-center justify-between sticky top-0 z-40 shadow-sm relative" style={{ background: t.headerBg, borderBottom: `1px solid ${t.headerBorder}` }}>
         {previousPage ? (
-          <button onClick={onBack} className="flex items-center justify-center transition-colors cursor-pointer" style={{ color: t.textSecondary }}>
+          <button onClick={() => setShowBackConfirmation(true)} className="flex items-center justify-center transition-colors cursor-pointer" style={{ color: t.textSecondary }}>
             <ArrowLeft className="w-5 h-5" />
           </button>
         ) : (
@@ -3928,6 +3929,37 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
           </div>
         </div>
       </div>
+
+      {/* Back Confirmation Modal */}
+      {showBackConfirmation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-lg max-w-sm w-full" style={{ background: t.surfaceBg }}>
+            <div className="p-6 space-y-4">
+              <h2 className="text-lg font-bold" style={{ color: t.textPrimary }}>Leave Checkout?</h2>
+              <p className="text-sm" style={{ color: t.textSecondary }}>Are you sure you want to go back? Your items will stay in your cart.</p>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setShowBackConfirmation(false)}
+                  className="flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors cursor-pointer"
+                  style={{ background: alpha(t.divider, 0.5), color: t.textPrimary }}
+                >
+                  Stay
+                </button>
+                <button
+                  onClick={() => {
+                    setShowBackConfirmation(false);
+                    onBack();
+                  }}
+                  className="flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors cursor-pointer"
+                  style={{ background: t.primary, color: t.primaryContrast }}
+                >
+                  Leave
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </>
   );
