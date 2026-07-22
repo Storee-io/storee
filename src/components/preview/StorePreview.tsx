@@ -2990,10 +2990,11 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
       if (!autoEwalletActive && groupedManualPayments.ewallet.length > 0) {
         defaultExpanded.add('ewallet');
       }
-      if (groupedManualPayments.bank.length > 0) {
+      // Bank transfer and Cash: only add if we need more to reach minimum 3
+      if (defaultExpanded.size < 3 && groupedManualPayments.bank.length > 0) {
         defaultExpanded.add('bank');
       }
-      if (groupedManualPayments.cash.length > 0) {
+      if (defaultExpanded.size < 3 && groupedManualPayments.cash.length > 0) {
         defaultExpanded.add('cash');
       }
     }
