@@ -11368,14 +11368,16 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
       </AnimatePresence>
 
       {/* Cart toast — sticky bottom-right of frame (canvas/preview) or viewport (live) */}
-      <CartToast
-        item={cartToast}
-        primaryColor={primaryColor}
-        fmtPrice={fmtPrice}
-        previewShell={previewShell}
-        onClose={() => { setCartToast(null); if (cartToastTimer.current) clearTimeout(cartToastTimer.current); }}
-        onViewCart={() => { setCartToast(null); if (cartToastTimer.current) clearTimeout(cartToastTimer.current); setShowCartSidebar(true); }}
-      />
+      {cartToast && (
+        <CartToast
+          item={cartToast}
+          primaryColor={primaryColor}
+          fmtPrice={fmtPrice}
+          previewShell={previewShell}
+          onClose={() => { setCartToast(null); if (cartToastTimer.current) clearTimeout(cartToastTimer.current); }}
+          onViewCart={() => { setCartToast(null); if (cartToastTimer.current) clearTimeout(cartToastTimer.current); setShowCartSidebar(true); }}
+        />
+      )}
 
       {/* Auth modal */}
       {showAuthModal && (
