@@ -3371,7 +3371,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 <label style={lblStyle}>Full Name</label>
                 <input className="w-full px-4 py-2.5 text-sm outline-none" style={inpStyle} value={form.name} onChange={set('name')} placeholder="Recipient full name"
                   onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.7); }}
-                  onBlur={e => { touch('name'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
+                  onBlur={e => { touch('name'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = alpha(t.primary, 0.04); }}
                 />
                 {touched.name && validate('name', form.name) && <p style={errStyle}>{validate('name', form.name)}</p>}
               </div>
@@ -3380,13 +3380,13 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               {showWhatsApp && (
                 <div className={contactFields === 'both' ? '' : 'col-span-2'}>
                   <label style={lblStyle}>WhatsApp</label>
-                  <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, background: t.inputBg, transition: 'border-color 0.15s, outline 0.15s' }}
+                  <div className="flex items-center overflow-hidden" style={{ border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, background: alpha(t.primary, 0.04), transition: 'border-color 0.15s, outline 0.15s' }}
                     ref={el => {
                       if (!el) return;
                       const inp = el.querySelector('input[type=tel]') as HTMLInputElement | null;
                       if (!inp) return;
                       inp.onfocus = () => { el.style.outline = `2px solid ${t.primary}`; el.style.outlineOffset = '-2px'; el.style.background = alpha(lighten(t.pageBg, 0.3), 0.7); };
-                      inp.onblur  = () => { touch('whatsapp'); el.style.outline = 'none'; el.style.outlineOffset = '0'; el.style.background = t.inputBg; };
+                      inp.onblur  = () => { touch('whatsapp'); el.style.outline = 'none'; el.style.outlineOffset = '0'; el.style.background = alpha(t.primary, 0.04); };
                     }}
                   >
                     <PhoneCountrySelect selectedCode={phoneCountryCode} onChangeCode={setPhoneCountryCode} t={t} />
@@ -3400,7 +3400,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   <label style={lblStyle}>Email</label>
                   <input type="email" className="w-full px-4 py-2.5 text-sm outline-none" style={inpStyle} value={form.email} onChange={set('email')} placeholder="name@email.com"
                     onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.7); }}
-                    onBlur={e => { touch('email'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; }}
+                    onBlur={e => { touch('email'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = alpha(t.primary, 0.04); }}
                   />
                   {touched.email && validate('email', form.email) && <p style={errStyle}>{validate('email', form.email)}</p>}
                 </div>
@@ -3510,7 +3510,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         value={form.address}
                         onChange={e => handleAddressInput(e.target.value)}
                         onFocus={e => { e.currentTarget.style.outline = `2px solid ${t.primary}`; e.currentTarget.style.outlineOffset = '-2px'; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.7); }}
-                        onBlur={e => { touch('address'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = t.inputBg; setTimeout(() => setShowAddrSugg(false), 150); }}
+                        onBlur={e => { touch('address'); e.currentTarget.style.outline = 'none'; e.currentTarget.style.outlineOffset = '0'; e.currentTarget.style.background = alpha(t.primary, 0.04); setTimeout(() => setShowAddrSugg(false), 150); }}
                         placeholder="Street name, number, district, subdistrict"
                       />
                       {touched.address && validate('address', form.address) && <p style={errStyle}>{validate('address', form.address)}</p>}
@@ -3528,10 +3528,10 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         >
                           <label style={lblStyle}>{uiT.postalLabel || 'Postal Code or Village'}</label>
                           <div
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s', minHeight: (form.postal || form.village || form.district || form.city) ? '68px' : '42px', boxSizing: 'border-box', paddingLeft: '16px', paddingRight: '12px', paddingTop: (form.postal || form.village || form.district || form.city) ? '12px' : '0px', paddingBottom: (form.postal || form.village || form.district || form.city) ? '12px' : '0px', borderRadius: t.inputRadius, border: `1.5px solid ${alpha(t.divider, 0.4)}`, background: t.inputBg }}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s', minHeight: (form.postal || form.village || form.district || form.city) ? '68px' : '42px', boxSizing: 'border-box', paddingLeft: '16px', paddingRight: '12px', paddingTop: (form.postal || form.village || form.district || form.city) ? '12px' : '0px', paddingBottom: (form.postal || form.village || form.district || form.city) ? '12px' : '0px', borderRadius: t.inputRadius, border: `1.5px solid ${alpha(t.divider, 0.4)}`, background: alpha(t.primary, 0.04) }}
                             onClick={() => setShowPostalPicker(true)}
                             onMouseEnter={e => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.5); }}
-                            onMouseLeave={e => { e.currentTarget.style.borderColor = alpha(t.divider, 0.4); e.currentTarget.style.background = t.inputBg; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = alpha(t.divider, 0.4); e.currentTarget.style.background = alpha(t.primary, 0.04); }}
                             onFocus={e => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.boxShadow = `0 0 0 2px ${alpha(t.primary, 0.1)}`; }}
                             onBlur={e => { e.currentTarget.style.borderColor = alpha(t.divider, 0.4); e.currentTarget.style.boxShadow = 'none'; }}
                             tabIndex={0}
@@ -3818,7 +3818,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 onChange={e => { setPromoCode(e.target.value.toUpperCase()); setPromoApplied(false); }}
                 placeholder="Enter promo code"
                 className="flex-1 min-w-0 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:border-transparent"
-                style={{ background: t.inputBg, border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}
+                style={{ background: alpha(t.primary, 0.04), border: `1px solid ${t.inputBorder}`, borderRadius: t.inputRadius, color: t.textPrimary, '--tw-ring-color': alpha(t.primary, 0.3) } as CSSProperties}
               />
               <button
                 onClick={() => promoCode && setPromoApplied(true)}
