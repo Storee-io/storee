@@ -1486,15 +1486,17 @@ function CartSidebar({ cart, primaryColor, fmtPrice, device, onClose, onViewCart
   return content;
 }
 
-function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, onUpdateQty, fmtPrice, layoutStyle, editMode, onFieldChange }: {
+function CartPage({ cart, primaryColor, storeName, device, onBack, onCheckout, onUpdateQty, fmtPrice, layoutStyle, editMode, onFieldChange, store }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
   layoutStyle?: string;
   onBack: () => void; onCheckout: () => void; onUpdateQty: (id: string, delta: number) => void; editMode?: boolean; onFieldChange?: (field: string, value: string, label?: string) => void;
+  store?: Store;
 }) {
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
   const isMobile = device === 'mobile';
   const isTablet = device === 'tablet';
-  const t = getCommerceTheme(primaryColor, layoutStyle);
+  const dt = store?.design?.designTokens;
+  const t = dt ? getTokenThemeV2(dt, primaryColor) : getCommerceTheme(primaryColor, layoutStyle);
   const { uiT } = useStoreFlags();
 
   return (
@@ -11159,7 +11161,7 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
   } else if (page === 'product' && selectedProduct) {
     content = <ProductDetailPage product={selectedProduct} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} onBack={() => setPage('home')} onAddToCart={handleAddToCart} onCartClick={() => setPage('cart')} cartCount={cartCount} layoutStyle={design?.layoutStyle} editMode={editMode} onFieldChange={onFieldChange} branding={store.branding} />;
   } else if (page === 'cart') {
-    content = <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} onBack={() => setPage('home')} onCheckout={() => setPage('checkout')} onUpdateQty={updateQty} editMode={editMode} onFieldChange={onFieldChange} />;
+    content = <CartPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} layoutStyle={design?.layoutStyle} onBack={() => setPage('home')} onCheckout={() => setPage('checkout')} onUpdateQty={updateQty} editMode={editMode} onFieldChange={onFieldChange} store={store} />;
   } else if (page === 'checkout') {
     content = <CheckoutPage cart={cart} primaryColor={primaryColor} storeName={storeName} device={device} fmtPrice={fmtPrice} shippingSettings={shippingSettings} paymentSettings={paymentSettings} layoutStyle={design?.layoutStyle} onBack={() => setPage('cart')} onPlaceOrder={async (pid, sid, customer) => {
       setSelectedPaymentId(pid);
