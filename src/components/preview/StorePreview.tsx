@@ -3291,7 +3291,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         {branding?.logoUrl ? (
           <img src={branding.logoUrl} alt={storeName} className="absolute left-1/2 -translate-x-1/2 h-8 max-w-[100px] object-contain" />
         ) : (
-          <span className="absolute left-1/2 -translate-x-1/2 text-sm font-bold" style={{ color: t.textPrimary }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
+          <span className="absolute left-1/2 -translate-x-1/2 text-sm font-black tracking-[0.18em] uppercase" style={{ color: t.textPrimary, fontFamily: '"Playfair Display", Georgia, "Times New Roman", serif' }}>{editMode ? <StyleOnlySpan field="storeName" value={storeName} htmlValue={storeName} editMode={editMode} onFieldChange={onFieldChange} /> : storeName}</span>
         )}
         {!previousPage && (
           <button onClick={onBack} className="relative p-2 hover:opacity-70 transition-opacity cursor-pointer" style={{ color: t.textSecondary }}>
