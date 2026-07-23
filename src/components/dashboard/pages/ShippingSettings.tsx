@@ -4,7 +4,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { toast } from 'sonner';
 import {
   Truck, Check, Info, MapPin, Navigation, ExternalLink,
-  Package, Zap, Bike, Gift, Store, Tag,
+  Package, Zap, Bike, Gift, Store, Tag, Scooter,
 } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
 import { getDefaultShippingMethods } from '../../../context/StoreContext';
@@ -23,7 +23,7 @@ const METHOD_ICONS: Record<string, { Icon: React.ElementType; bg: string; color:
   'sicepat':        { Icon: Zap,     bg: 'bg-red-50',      color: 'text-red-500'    },
   'gosend':         { Icon: Bike,    bg: 'bg-green-50',    color: 'text-green-600'  },
   'free':           { Icon: Gift,    bg: 'bg-emerald-50',  color: 'text-emerald-600'},
-  'seller-courier': { Icon: Bike,    bg: 'bg-orange-50',   color: 'text-orange-500' },
+  'seller-courier': { Icon: Scooter, bg: 'bg-orange-50',   color: 'text-orange-500' },
   'pickup':         { Icon: Store,   bg: 'bg-purple-50',   color: 'text-purple-600' },
 };
 
