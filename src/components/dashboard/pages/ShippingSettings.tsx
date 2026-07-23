@@ -541,16 +541,7 @@ export default function ShippingSettings() {
           </div>
 
           {/* Pick Up */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-8 h-8 bg-purple-50 rounded-xl flex items-center justify-center">
-                <Store className="w-4 h-4 text-purple-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900">Pick Up</h3>
-                <p className="text-xs text-slate-400">Customer picks up in person — no shipping fee</p>
-              </div>
-            </div>
+          <div>
             {pickupMethod && <PickUpCard {...cardProps(pickupMethod)} />}
           </div>
         </>
