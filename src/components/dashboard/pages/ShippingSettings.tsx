@@ -514,19 +514,56 @@ export default function ShippingSettings() {
             )}
           </div>
 
-          {/* Courier Services */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200">
-            <div className="flex items-center gap-3 mb-5">
+          {/* 3PL Courier Providers */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-6">
+            <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
                 <Truck className="w-4 h-4 text-slate-600" />
               </div>
               <div>
                 <h3 className="font-bold text-slate-900">Courier Services</h3>
-                <p className="text-xs text-slate-400">JNE, J&T, SiCepat, GoSend, and more</p>
+                <p className="text-xs text-slate-400">Integration with 3PL logistics providers</p>
               </div>
             </div>
-            <div className="space-y-3">
-              {courierMethods.map(m => <CourierCard key={m.id} {...cardProps(m)} />)}
+
+            {/* Biteship Provider */}
+            <div className="border-t border-slate-100 pt-6">
+              <div className="flex items-center justify-between pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <Truck className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">Biteship</p>
+                    <p className="text-xs text-slate-400">Multiple couriers integrated</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                  <input type="checkbox" className="sr-only peer" disabled />
+                  <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-emerald-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" />
+                </label>
+              </div>
+              <input type="text" placeholder="Enter Biteship API Key" className="w-full mt-3 px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100" />
+            </div>
+
+            {/* KiriminAja Provider */}
+            <div className="border-t border-slate-100 pt-6">
+              <div className="flex items-center justify-between pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center">
+                    <Truck className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">KiriminAja</p>
+                    <p className="text-xs text-slate-400">Premium logistics partner</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                  <input type="checkbox" className="sr-only peer" disabled />
+                  <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-emerald-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" />
+                </label>
+              </div>
+              <input type="text" placeholder="Enter KiriminAja API Key" className="w-full mt-3 px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-green-400 focus:ring-1 focus:ring-green-100" />
             </div>
           </div>
         </>
