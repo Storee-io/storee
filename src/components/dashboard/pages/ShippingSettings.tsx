@@ -436,7 +436,7 @@ export default function ShippingSettings() {
 
   const tabs: { id: 'courier' | 'manual'; label: string; icon: React.ElementType; desc: string }[] = [
     { id: 'courier', label: 'Courier Delivery', icon: Truck, desc: 'JNE, J&T, SiCepat, GoSend & more' },
-    { id: 'manual',  label: 'Manual Delivery',  icon: Bike,  desc: 'Seller delivery & store pickup'   },
+    { id: 'manual',  label: 'Manual Delivery',  icon: Motorbike,  desc: 'Seller delivery & store pickup'   },
   ];
 
   return (
