@@ -210,11 +210,30 @@ export default function PaymentSettings() {
     setMethods(prev => prev.map(m => m.id === id ? { ...m, ...patch } : m));
 
   const save = async () => {
+    // Validation: QR - must have image uploaded
     const qrisMissingImage = methods.find(m => m.type === 'qris' && m.enabled && !m.qrisImageUrl);
     if (qrisMissingImage) {
       toast.error('Upload a QRIS code image before enabling QRIS payment');
       return;
     }
+
+    // Validation: E-Wallet - must have number filled in
+    const ewalletMissingNumber = methods.find(m => m.type === 'ewallet' && m.enabled && !m.ewalletNumber?.trim());
+    if (ewalletMissingNumber) {
+      toast.error('Fill in the e-wallet account number before enabling e-wallet payment');
+      return;
+    }
+
+    // Validation: Bank Transfer - must have all mandatory fields
+    const bankMissingFields = methods.find(m =>
+      m.type === 'bank_transfer' && m.enabled &&
+      (!m.bankName?.trim() || !m.accountNumber?.trim() || !m.accountHolder?.trim())
+    );
+    if (bankMissingFields) {
+      toast.error('Fill in all mandatory fields (Bank, Account Number, Account Holder) before enabling bank transfer');
+      return;
+    }
+
     setSaving(true);
     try {
       const newPaymentSettings = {
