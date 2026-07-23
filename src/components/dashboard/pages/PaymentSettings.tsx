@@ -748,7 +748,7 @@ function BankTransferAccountRow({ method, onUpdate, onDelete, isExpanded, onTogg
   const displayName = method.bankName ? `${method.bankName}` : 'No bank selected';
 
   return (
-    <div className={`rounded-xl border-2 transition-all ${method.enabled ? 'border-emerald-300 bg-emerald-50 overflow-hidden' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 overflow-hidden'}`}>
+    <div className={`rounded-lg border transition-all ${method.enabled ? 'border-emerald-200 bg-emerald-50/40 overflow-hidden' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100 overflow-hidden'}`}>
       {/* Row Header */}
       <div className={`flex items-center justify-between p-4 transition-all ${isExpanded ? 'border-b' : ''} ${method.enabled ? 'border-emerald-200' : 'border-slate-100'}`}>
         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -853,11 +853,11 @@ function OtherPaymentCard({ method, onUpdate }: { method: PaymentMethod; onUpdat
   };
 
   return (
-    <div className={`rounded-xl border-2 transition-all ${method.enabled ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'}`}>
+    <div className={`rounded-xl border transition-all ${method.enabled ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100'}`}>
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3 flex-1">
           <PaymentMethodIcon id={method.id} type={method.type} />
-          <span className={`text-sm font-medium ${method.enabled ? 'text-emerald-900' : 'text-slate-700'}`}>{method.name}</span>
+          <span className={`text-sm font-medium ${method.enabled ? 'text-slate-900' : 'text-slate-500'}`}>{method.name}</span>
         </div>
         <label className={`relative inline-flex items-center flex-shrink-0 ${qrisReady ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
           <input
