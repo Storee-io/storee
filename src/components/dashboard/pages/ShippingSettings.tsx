@@ -485,35 +485,6 @@ export default function ShippingSettings() {
       {/* ── Courier Delivery tab ── */}
       {shippingTab === 'courier' && (
         <>
-          {/* Free Shipping Threshold */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center">
-                <Tag className="w-4 h-4 text-emerald-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900">Free Shipping Threshold</h3>
-                <p className="text-xs text-slate-400">Orders above this amount qualify for free shipping</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-slate-600">{currencySymbol}</span>
-              <input
-                type="number"
-                value={freeThreshold}
-                onChange={e => setFreeThreshold(e.target.value)}
-                placeholder="e.g. 300000"
-                className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-              />
-            </div>
-            {freeThreshold && (
-              <p className="text-xs text-emerald-600 mt-2 flex items-center gap-1">
-                <Info className="w-3.5 h-3.5" />
-                Free shipping on orders above {fmtPrice(Number(freeThreshold))}
-              </p>
-            )}
-          </div>
-
           {/* 3PL Courier Providers */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-6">
             <div className="flex items-center gap-3">
