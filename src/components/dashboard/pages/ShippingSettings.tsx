@@ -536,7 +536,9 @@ export default function ShippingSettings() {
       {shippingTab === 'manual' && (
         <>
           {/* Seller Delivery */}
-          {sellerCourier && <SellerCourierCard {...cardProps(sellerCourier)} />}
+          <div>
+            {sellerCourier && <SellerCourierCard {...cardProps(sellerCourier)} />}
+          </div>
 
           {/* Pick Up */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200">
