@@ -234,6 +234,56 @@ export default function PaymentSettings() {
       return;
     }
 
+    // Validation: Online Payment - when enabled, must have provider, channels, and credentials
+    if (autoPayment.enabled) {
+      // Check if provider is selected
+      if (!autoPayment.provider) {
+        toast.error('Select a payment provider (Xendit, Midtrans, or Stripe) to enable online payment');
+        return;
+      }
+
+      // Check if at least one payment channel is selected
+      const selectedChannels = Object.entries(autoPayment.channels || {}).filter(([, enabled]) => enabled);
+      if (selectedChannels.length === 0) {
+        toast.error('Select at least one payment channel to enable online payment');
+        return;
+      }
+
+      // Check provider-specific credentials
+      if (autoPayment.provider === 'xendit') {
+        if (!autoPayment.xendit?.apiKey?.trim()) {
+          toast.error('Fill in the Xendit API Key before enabling online payment');
+          return;
+        }
+        if (!autoPayment.xendit?.webhookToken?.trim()) {
+          toast.error('Fill in the Xendit Webhook Verification Token before enabling online payment');
+          return;
+        }
+      } else if (autoPayment.provider === 'midtrans') {
+        if (!autoPayment.midtrans?.serverKey?.trim()) {
+          toast.error('Fill in the Midtrans Server Key before enabling online payment');
+          return;
+        }
+        if (!autoPayment.midtrans?.clientKey?.trim()) {
+          toast.error('Fill in the Midtrans Client Key before enabling online payment');
+          return;
+        }
+      } else if (autoPayment.provider === 'stripe') {
+        if (!autoPayment.stripe?.publishableKey?.trim()) {
+          toast.error('Fill in the Stripe Publishable Key before enabling online payment');
+          return;
+        }
+        if (!autoPayment.stripe?.secretKey?.trim()) {
+          toast.error('Fill in the Stripe Secret Key before enabling online payment');
+          return;
+        }
+        if (!autoPayment.stripe?.webhookSecret?.trim()) {
+          toast.error('Fill in the Stripe Webhook Secret before enabling online payment');
+          return;
+        }
+      }
+    }
+
     setSaving(true);
     try {
       const newPaymentSettings = {
