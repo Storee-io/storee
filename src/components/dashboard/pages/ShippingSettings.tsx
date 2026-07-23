@@ -487,54 +487,71 @@ export default function ShippingSettings() {
         <>
           {/* 3PL Courier Providers */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200 space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
-                <Truck className="w-4 h-4 text-slate-600" />
+
+            {/* Toggle */}
+            <div className="flex items-center justify-between pb-5 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-slate-50 rounded-xl flex items-center justify-center">
+                  <Truck className="w-4 h-4 text-slate-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Enable Courier Delivery</p>
+                  <p className="text-xs text-slate-400">Integrate with 3PL logistics providers</p>
+                </div>
               </div>
+              <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                <input type="checkbox" className="sr-only peer" />
+                <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-emerald-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" />
+              </label>
+            </div>
+
+            {/* Disabled State */}
+            <div className="text-center py-8">
+              <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <Truck className="w-6 h-6 text-slate-300" />
+              </div>
+              <p className="text-sm font-semibold text-slate-500 mb-1">Courier delivery not active</p>
+              <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                Enable the toggle above, then select a provider to configure your courier integration.
+              </p>
+            </div>
+
+            {/* Enabled Content (hidden by default) */}
+            <div className="hidden">
+              {/* Provider selector */}
               <div>
-                <h3 className="font-bold text-slate-900">Courier Services</h3>
-                <p className="text-xs text-slate-400">Integration with 3PL logistics providers</p>
-              </div>
-            </div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">1. Select Provider</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Biteship */}
+                  <button className="relative flex flex-col items-start gap-2 p-3.5 rounded-xl border-2 border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white text-left transition-all">
+                    <div className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center p-1.5 overflow-hidden">
+                      <Truck className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <span className="text-sm font-bold text-slate-800">Biteship</span>
+                    <span className="text-[10px] text-slate-500 leading-tight">Multiple couriers</span>
+                  </button>
 
-            {/* Biteship Provider */}
-            <div className="border-t border-slate-100 pt-6">
-              <div className="flex items-center justify-between pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
-                    <Truck className="w-4 h-4 text-blue-600" />
-                  </div>
+                  {/* KiriminAja */}
+                  <button className="relative flex flex-col items-start gap-2 p-3.5 rounded-xl border-2 border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white text-left transition-all">
+                    <div className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center p-1.5 overflow-hidden">
+                      <Truck className="w-4 h-4 text-green-600" />
+                    </div>
+                    <span className="text-sm font-bold text-slate-800">KiriminAja</span>
+                    <span className="text-[10px] text-slate-500 leading-tight">Premium partner</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Provider Configuration */}
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">2. API Configuration</p>
+                <div className="space-y-3">
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">Biteship</p>
-                    <p className="text-xs text-slate-400">Multiple couriers integrated</p>
+                    <label className="text-xs font-medium text-slate-600 mb-2 block">API Key</label>
+                    <input type="password" placeholder="Enter your API key" className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-100" />
                   </div>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                  <input type="checkbox" className="sr-only peer" disabled />
-                  <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-emerald-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" />
-                </label>
               </div>
-              <input type="text" placeholder="Enter Biteship API Key" className="w-full mt-3 px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100" />
-            </div>
-
-            {/* KiriminAja Provider */}
-            <div className="border-t border-slate-100 pt-6">
-              <div className="flex items-center justify-between pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center">
-                    <Truck className="w-4 h-4 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-800">KiriminAja</p>
-                    <p className="text-xs text-slate-400">Premium logistics partner</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                  <input type="checkbox" className="sr-only peer" disabled />
-                  <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-emerald-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" />
-                </label>
-              </div>
-              <input type="text" placeholder="Enter KiriminAja API Key" className="w-full mt-3 px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-green-400 focus:ring-1 focus:ring-green-100" />
             </div>
           </div>
         </>
