@@ -536,18 +536,7 @@ export default function ShippingSettings() {
       {shippingTab === 'manual' && (
         <>
           {/* Seller Delivery */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-8 h-8 bg-orange-50 rounded-xl flex items-center justify-center">
-                <Bike className="w-4 h-4 text-orange-500" />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900">Seller Delivery</h3>
-                <p className="text-xs text-slate-400">Deliver yourself — distance-based pricing</p>
-              </div>
-            </div>
-            {sellerCourier && <SellerCourierCard {...cardProps(sellerCourier)} />}
-          </div>
+          {sellerCourier && <SellerCourierCard {...cardProps(sellerCourier)} />}
 
           {/* Pick Up */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200">
