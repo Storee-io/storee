@@ -604,7 +604,7 @@ export default function PaymentSettings() {
                       return (
                         <div
                           key={c.id}
-                          className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${on ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50/50'}`}
+                          className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${on ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100'}`}
                         >
                           <div className="flex items-center gap-3">
                             <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${on ? 'bg-emerald-100' : 'bg-slate-100'}`}>
