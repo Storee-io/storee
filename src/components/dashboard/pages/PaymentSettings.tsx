@@ -323,7 +323,7 @@ export default function PaymentSettings() {
   const codMethod = methods.find(m => m.id === 'cod');
 
   const tabs: { id: Tab; label: string; icon: React.ElementType; desc: string }[] = [
-    { id: 'auto',   label: 'Auto Payment',   icon: Zap,        desc: 'Payment gateway API integration'   },
+    { id: 'auto',   label: 'Online Payment',   icon: Zap,        desc: 'Payment gateway API integration'   },
     { id: 'manual', label: 'Manual Payment', icon: CreditCard, desc: 'Bank transfer, QRIS, Cash, e-wallet' },
   ];
 
@@ -557,7 +557,7 @@ export default function PaymentSettings() {
                 <Zap className="w-4 h-4 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm font-bold text-slate-900">Enable Auto Payment</p>
+                <p className="text-sm font-bold text-slate-900">Enable Online Payment</p>
                 <p className="text-xs text-slate-400">Payment confirmation processed automatically via API gateway</p>
               </div>
             </div>
@@ -577,7 +577,7 @@ export default function PaymentSettings() {
               <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
                 <Zap className="w-6 h-6 text-slate-300" />
               </div>
-              <p className="text-sm font-semibold text-slate-500 mb-1">Auto payment not active</p>
+              <p className="text-sm font-semibold text-slate-500 mb-1">Online payment not active</p>
               <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
                 Enable the toggle above, then select a provider to configure your payment gateway.
               </p>
