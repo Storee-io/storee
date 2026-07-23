@@ -106,7 +106,7 @@ export function getDefaultShippingMethods(currencyCode?: string): ShippingMethod
     { id: 'sicepat',        name: preset.economy.name,  price: Math.round(preset.economy.price * 0.8), estimatedDays: '2–3 days', enabled: false, icon: '🚀' },
     { id: 'gosend',         name: preset.sameDay.name,  price: preset.sameDay.price,  estimatedDays: 'Today',    enabled: false, icon: '🛵' },
     { id: 'free',           name: 'Free Shipping',      price: 0,                     estimatedDays: '3–5 days', enabled: false, icon: '🎁' },
-    { id: 'seller-courier', name: 'Seller Delivery',    price: 0,                     estimatedDays: 'Today',    enabled: false, icon: '🏍️', useDistancePricing: true, ratePerKm: preset.ratePerKm, minFee: preset.minFee, maxKm: 15 },
+    { id: 'seller-courier', name: 'Seller Delivery',    price: 0,                     estimatedDays: 'Today',    enabled: false, icon: '🛵', useDistancePricing: true, ratePerKm: preset.ratePerKm, minFee: preset.minFee, maxKm: 15 },
     { id: 'pickup',         name: 'In-Store Pick Up',   price: 0,                     estimatedDays: '-',        enabled: false, icon: '🏪', isPickup: true, pickupAddress: '' },
   ];
 }
