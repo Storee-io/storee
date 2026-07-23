@@ -324,7 +324,7 @@ export default function PaymentSettings() {
 
   const tabs: { id: Tab; label: string; icon: React.ElementType; desc: string }[] = [
     { id: 'auto',   label: 'Auto Payment',   icon: Zap,        desc: 'Payment gateway API integration'   },
-    { id: 'manual', label: 'Manual Payment', icon: CreditCard, desc: 'Bank transfer, QRIS, COD, e-wallet' },
+    { id: 'manual', label: 'Manual Payment', icon: CreditCard, desc: 'Bank transfer, QRIS, Cash, e-wallet' },
   ];
 
   return (
