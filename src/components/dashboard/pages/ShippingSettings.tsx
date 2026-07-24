@@ -95,7 +95,7 @@ function CourierCategory({ label, couriers, selected, onToggle }: { label: strin
               onClick={() => onToggle(name)}
               className={`group relative flex flex-col items-center gap-2 p-2 rounded-lg border transition-all duration-200 ${
                 isSelected
-                  ? `border-emerald-400 bg-emerald-50 ring-1 ${style.ring}`
+                  ? 'border-emerald-400 bg-emerald-50'
                   : 'border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50'
               }`}
             >
