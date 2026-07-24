@@ -494,8 +494,20 @@ export default function ShippingSettings() {
       setSelectedProvider(cd.provider ?? null);
       setCourierApiKey(cd.apiKey ?? '');
       setSelectedCouriers(new Set(cd.selectedCouriers ?? []));
+    } else if (!activeStore?.id) {
+      // Fallback: if activeStore not yet loaded, load from localStorage
+      try {
+        const stored = JSON.parse(localStorage.getItem('storee_active_store') || '{}');
+        const lcd = stored.shippingSettings?.courierDelivery;
+        if (lcd) {
+          setCourierEnabled(lcd.enabled ?? false);
+          setSelectedProvider(lcd.provider ?? null);
+          setCourierApiKey(lcd.apiKey ?? '');
+          setSelectedCouriers(new Set(lcd.selectedCouriers ?? []));
+        }
+      } catch { /* skip */ }
     }
-  }, [activeStore?.id]);
+  }, [activeStore?.id, activeStore?.shippingSettings?.courierDelivery]);
 
   const updateMethod = (id: string, patch: Partial<ShippingMethod>) =>
     setMethods(prev => prev.map(m => m.id === id ? { ...m, ...patch } : m));
