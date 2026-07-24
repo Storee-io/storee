@@ -498,7 +498,7 @@ export default function ShippingSettings() {
         methods,
         freeShippingThreshold: freeThreshold ? Number(freeThreshold) : undefined,
       };
-      updateActiveStore({ shippingSettings: newShippingSettings });
+      await updateActiveStore({ shippingSettings: newShippingSettings });
 
       // Store is already live — push the updated settings to the published
       // site too, otherwise checkout keeps showing stale shipping methods

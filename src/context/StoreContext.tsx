@@ -234,7 +234,7 @@ interface StoreContextType {
   activeStore: Store | null;
   setActiveStore: (store: Store) => void;
   addStore: (store: Store) => Promise<void>;
-  updateActiveStore: (patch: Partial<Store>) => void;
+  updateActiveStore: (patch: Partial<Store>) => Promise<void>;
   deleteStore: (storeId: string) => Promise<void>;
   generatedStore: Store | null;
   setGeneratedStore: (store: Store | null) => void;
@@ -744,33 +744,47 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
     }
   }, [userId]);
 
-  const updateActiveStore = useCallback((patch: Partial<Store>) => {
+  const updateActiveStore = useCallback(async (patch: Partial<Store>) => {
     lastLocalEditAt.current = Date.now();
-    setActiveStoreState(prev => {
-      if (!prev) return prev;
-      const updated = { ...prev, ...patch };
-      // Persist to localStorage immediately (for all users as fallback)
-      try {
-        localStorage.setItem(`storee_store_${updated.id}`, JSON.stringify(updated));
-      } catch { /* quota */ }
-      // Persist asynchronously to Supabase for logged-in users, or to the
-      // guest_stores table (keyed by guestId) for guests — otherwise edits
-      // made after store creation only live in localStorage and vanish if
-      // it's cleared or the store is opened from another device/browser.
+    const updated = await new Promise<Store>((resolve, reject) => {
+      setActiveStoreState(prev => {
+        if (!prev) {
+          reject(new Error('No active store'));
+          return prev;
+        }
+        const merged = { ...prev, ...patch };
+        // Persist to localStorage immediately (for all users as fallback)
+        try {
+          localStorage.setItem(`storee_store_${merged.id}`, JSON.stringify(merged));
+        } catch { /* quota */ }
+        resolve(merged);
+        return merged;
+      });
+    });
+
+    // Persist asynchronously to Supabase for logged-in users, or to the
+    // guest_stores table (keyed by guestId) for guests — otherwise edits
+    // made after store creation only live in localStorage and vanish if
+    // it's cleared or the store is opened from another device/browser.
+    try {
       if (userId) {
-        upsertStore(updated, userId).catch(console.error);
+        await upsertStore(updated, userId);
       } else {
         const guestId = getOrCreateGuestId();
-        fetch('/api/save-guest-store', {
+        const response = await fetch('/api/save-guest-store', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ store: updated, guestId }),
-        }).catch(err => console.warn('[StoreContext] Failed to save guest store update:', err));
+        });
+        if (!response.ok) throw new Error(`Guest store save failed: ${response.statusText}`);
       }
-      // Save to ACTIVE_STORE_KEY for persistence across page reloads
-      saveActiveStore(updated);
-      return updated;
-    });
+    } catch (err) {
+      console.error('[StoreContext] Failed to save store to database:', err);
+      throw err;
+    }
+
+    // Save to ACTIVE_STORE_KEY for persistence across page reloads
+    saveActiveStore(updated);
     setStores(prev => prev.map(s =>
       s.id === activeStore?.id ? { ...s, ...patch } : s
     ));

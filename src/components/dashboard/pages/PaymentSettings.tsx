@@ -292,7 +292,7 @@ export default function PaymentSettings() {
         paymentNote: paymentNote || undefined,
         autoPayment,
       };
-      updateActiveStore({ paymentSettings: newPaymentSettings });
+      await updateActiveStore({ paymentSettings: newPaymentSettings });
 
       // Store is already live — push the updated settings to the published
       // site too, otherwise checkout keeps showing stale payment methods
