@@ -28,12 +28,14 @@ const METHOD_ICONS: Record<string, { Icon: React.ElementType; bg: string; color:
 };
 
 // ── Courier logos (Google favicon service — always resolves, never broken) ────
-// Courier list & categories per KiriminAja API docs: https://developer.kiriminaja.com/docs/others/courier-list
+// KiriminAja list/categories: https://developer.kiriminaja.com/docs/others/courier-list
+// Biteship list/categories: https://biteship.com/en/docs/api/couriers/overview
 
 const COURIER_DOMAINS: Record<string, string> = {
   'GoSend': 'gojek.com',
   'Grab Express': 'grab.com',
   'Borzo': 'borzodelivery.com',
+  'LalaMove': 'lalamove.com',
   'JNE Express': 'jne.co.id',
   'J&T Express': 'jtexpress.com',
   'SiCepat Express': 'sicepat.com',
@@ -47,8 +49,12 @@ const COURIER_DOMAINS: Record<string, string> = {
   'RPX Logistics': 'rpx.co.id',
   'NCS Courier': 'ncskurir.com',
   'SAP Courier': 'sap-express.id',
+  'JDL Express': 'jdlexpress.co.id',
+  'Wahana': 'wahana.com',
+  'Rara Delivery': 'raranow.id',
   'J&T Cargo': 'jtexpress.com',
   'Sentral Cargo': 'sentralcargo.co.id',
+  'Deliveree': 'deliveree.com',
 };
 
 const COURIER_LOGO_OVERRIDES: Record<string, string> = {
@@ -63,6 +69,20 @@ function courierLogoUrl(name: string): string {
   const domain = COURIER_DOMAINS[name];
   return `https://www.google.com/s2/favicons?sz=128&domain=${domain}`;
 }
+
+// Per-provider partner lists, grouped into the same 3 categories.
+const PROVIDER_COURIERS: Record<'biteship' | 'kiriminaja', { label: string; couriers: string[] }[]> = {
+  biteship: [
+    { label: 'Instant & Same Day', couriers: ['GoSend', 'Grab Express', 'Borzo', 'LalaMove'] },
+    { label: 'Regular', couriers: ['JNE Express', 'J&T Express', 'SiCepat Express', 'AnterAja', 'ID Express', 'Ninja Xpress', 'Lion Parcel', 'Pos Indonesia', 'Tiki', 'Paxel', 'RPX Logistics', 'JDL Express', 'Wahana', 'SAP Courier', 'Rara Delivery'] },
+    { label: 'Cargo', couriers: ['Deliveree', 'Sentral Cargo'] },
+  ],
+  kiriminaja: [
+    { label: 'Instant & Same Day', couriers: ['GoSend', 'Grab Express', 'Borzo'] },
+    { label: 'Regular', couriers: ['JNE Express', 'J&T Express', 'SiCepat Express', 'AnterAja', 'ID Express', 'Ninja Xpress', 'Lion Parcel', 'Pos Indonesia', 'Tiki', 'Paxel', 'RPX Logistics', 'NCS Courier', 'SAP Courier'] },
+    { label: 'Cargo', couriers: ['J&T Cargo', 'Sentral Cargo'] },
+  ],
+};
 
 const CATEGORY_STYLES: Record<string, { icon: React.ElementType; color: string; bg: string; ring: string }> = {
   'Instant & Same Day': { icon: Zap,     color: 'text-amber-600',   bg: 'bg-amber-50',   ring: 'ring-amber-400'   },
@@ -659,28 +679,15 @@ export default function ShippingSettings() {
                   <div>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">3. Select Partners</p>
                     <div className="space-y-3">
-                      {(selectedProvider === 'biteship' || selectedProvider === 'kiriminaja') && (
-                        <>
-                          <CourierCategory
-                            label="Instant & Same Day"
-                            couriers={['GoSend', 'Grab Express', 'Borzo']}
-                            selected={selectedCouriers}
-                            onToggle={toggleCourier}
-                          />
-                          <CourierCategory
-                            label="Regular"
-                            couriers={['JNE Express', 'J&T Express', 'SiCepat Express', 'AnterAja', 'ID Express', 'Ninja Xpress', 'Lion Parcel', 'Pos Indonesia', 'Tiki', 'Paxel', 'RPX Logistics', 'NCS Courier', 'SAP Courier']}
-                            selected={selectedCouriers}
-                            onToggle={toggleCourier}
-                          />
-                          <CourierCategory
-                            label="Cargo"
-                            couriers={['J&T Cargo', 'Sentral Cargo']}
-                            selected={selectedCouriers}
-                            onToggle={toggleCourier}
-                          />
-                        </>
-                      )}
+                      {selectedProvider && PROVIDER_COURIERS[selectedProvider].map(category => (
+                        <CourierCategory
+                          key={category.label}
+                          label={category.label}
+                          couriers={category.couriers}
+                          selected={selectedCouriers}
+                          onToggle={toggleCourier}
+                        />
+                      ))}
                     </div>
                   </div>
                 </>
