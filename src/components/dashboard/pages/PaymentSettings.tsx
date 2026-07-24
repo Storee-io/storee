@@ -643,7 +643,7 @@ export default function PaymentSettings() {
                     <button
                       key={p.id}
                       onClick={() => selectProvider(p.id)}
-                      className={`relative flex flex-col items-start gap-2 p-3.5 rounded-xl border-2 text-left transition-all ${
+                      className={`relative flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl border-2 text-center transition-all ${
                         autoPayment.provider === p.id ? p.color : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
                       }`}
                     >

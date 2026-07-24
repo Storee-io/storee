@@ -526,20 +526,20 @@ export default function ShippingSettings() {
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">1. Select Provider</p>
                 <div className="grid grid-cols-2 gap-3">
                   {/* Biteship */}
-                  <button onClick={() => setSelectedProvider('biteship')} className={`relative flex flex-col items-start gap-2 p-3.5 rounded-xl border-2 text-left transition-all ${selectedProvider === 'biteship' ? 'border-blue-400 bg-blue-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'}`}>
+                  <button onClick={() => setSelectedProvider('biteship')} className={`relative flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl border-2 text-center transition-all ${selectedProvider === 'biteship' ? 'border-blue-400 bg-blue-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'}`}>
                     {selectedProvider === 'biteship' && <span className="absolute top-2 right-2 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center"><Check className="w-2.5 h-2.5 text-white" /></span>}
-                    <div className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center p-1.5 overflow-hidden">
-                      <img src="https://media.licdn.com/dms/image/v2/C560BAQHeuvN6upCB4A/company-logo_200_200/company-logo_200_200/0/1644632189280?e=2147483647&v=beta&t=-gle6i7ZksVClmCf0ldKxGrIOXrYSZ0EkO0Sqapnraw" alt="Biteship" className="w-full h-full object-contain" />
+                    <div className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center overflow-hidden">
+                      <img src="https://media.licdn.com/dms/image/v2/C560BAQHeuvN6upCB4A/company-logo_200_200/company-logo_200_200/0/1644632189280?e=2147483647&v=beta&t=-gle6i7ZksVClmCf0ldKxGrIOXrYSZ0EkO0Sqapnraw" alt="Biteship" className="w-full h-full object-cover" />
                     </div>
                     <span className="text-sm font-bold text-slate-800">Biteship</span>
                     <span className="text-[10px] text-slate-500 leading-tight">Multiple couriers (J&T, JNE, SiCepat, GoSend, etc.)</span>
                   </button>
 
                   {/* KiriminAja */}
-                  <button onClick={() => setSelectedProvider('kiriminaja')} className={`relative flex flex-col items-start gap-2 p-3.5 rounded-xl border-2 text-left transition-all ${selectedProvider === 'kiriminaja' ? 'border-green-400 bg-green-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'}`}>
+                  <button onClick={() => setSelectedProvider('kiriminaja')} className={`relative flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl border-2 text-center transition-all ${selectedProvider === 'kiriminaja' ? 'border-green-400 bg-green-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'}`}>
                     {selectedProvider === 'kiriminaja' && <span className="absolute top-2 right-2 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center"><Check className="w-2.5 h-2.5 text-white" /></span>}
-                    <div className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center p-1.5 overflow-hidden">
-                      <img src="https://play-lh.googleusercontent.com/j6JSQtNI6mW67g5HMcyQdW8I7ZLUWZrtElY9vfqkiYpTygK8QJwtTyCBeYcBu0evsqlUuDljtZzgDcITA-IH0A=w240-h480-rw" alt="KiriminAja" className="w-full h-full object-contain" />
+                    <div className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center overflow-hidden">
+                      <img src="https://play-lh.googleusercontent.com/j6JSQtNI6mW67g5HMcyQdW8I7ZLUWZrtElY9vfqkiYpTygK8QJwtTyCBeYcBu0evsqlUuDljtZzgDcITA-IH0A=w240-h480-rw" alt="KiriminAja" className="w-full h-full object-cover" />
                     </div>
                     <span className="text-sm font-bold text-slate-800">KiriminAja</span>
                     <span className="text-[10px] text-slate-500 leading-tight">Premium logistics partner</span>
@@ -562,32 +562,91 @@ export default function ShippingSettings() {
 
                   {/* Shipping Methods */}
                   <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">3. Shipping Methods</p>
-                    <div className="space-y-2.5">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">3. Logistics Partners</p>
+                    <div className="space-y-4">
                       {selectedProvider === 'biteship' && (
                         <>
-                          {['J&T Express', 'JNE Regular', 'JNE YES', 'SiCepat', 'GoSend'].map(method => (
-                            <div key={method} className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100">
-                              <div className="flex items-center gap-3">
-                                <input type="checkbox" className="w-4 h-4 accent-emerald-500 rounded" />
-                                <span className="text-sm text-slate-800">{method}</span>
-                              </div>
-                              <span className="text-xs text-slate-400">1-3 days</span>
+                          {/* Instant & Same Day */}
+                          <div>
+                            <p className="text-xs font-semibold text-slate-600 mb-2.5">Instant & Same Day</p>
+                            <div className="space-y-2">
+                              {['GoSend', 'Grab Express', 'SiCepat', 'J&T Express', 'JNE Express'].map(courier => (
+                                <div key={courier} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100">
+                                  <input type="checkbox" className="w-4 h-4 accent-emerald-500 rounded" />
+                                  <span className="text-sm text-slate-800">{courier}</span>
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          </div>
+
+                          {/* Regular */}
+                          <div>
+                            <p className="text-xs font-semibold text-slate-600 mb-2.5">Regular (1-3 days)</p>
+                            <div className="space-y-2">
+                              {['J&T', 'JNE', 'Shopee Xpress', 'Lazada Logistics', 'Anteraja'].map(courier => (
+                                <div key={courier} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100">
+                                  <input type="checkbox" className="w-4 h-4 accent-emerald-500 rounded" />
+                                  <span className="text-sm text-slate-800">{courier}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Cargo */}
+                          <div>
+                            <p className="text-xs font-semibold text-slate-600 mb-2.5">Cargo</p>
+                            <div className="space-y-2">
+                              {['Pos Indonesia', 'Tiki'].map(courier => (
+                                <div key={courier} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100">
+                                  <input type="checkbox" className="w-4 h-4 accent-emerald-500 rounded" />
+                                  <span className="text-sm text-slate-800">{courier}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </>
                       )}
+
                       {selectedProvider === 'kiriminaja' && (
                         <>
-                          {['KiriminAja Regular', 'KiriminAja Express'].map(method => (
-                            <div key={method} className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100">
-                              <div className="flex items-center gap-3">
-                                <input type="checkbox" className="w-4 h-4 accent-emerald-500 rounded" />
-                                <span className="text-sm text-slate-800">{method}</span>
-                              </div>
-                              <span className="text-xs text-slate-400">{method.includes('Express') ? 'Same day' : '1-2 days'}</span>
+                          {/* Instant & Same Day */}
+                          <div>
+                            <p className="text-xs font-semibold text-slate-600 mb-2.5">Instant & Same Day</p>
+                            <div className="space-y-2">
+                              {['GoSend', 'Grab Express', 'SiCepat', 'J&T Express', 'JNE Express'].map(courier => (
+                                <div key={courier} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100">
+                                  <input type="checkbox" className="w-4 h-4 accent-emerald-500 rounded" />
+                                  <span className="text-sm text-slate-800">{courier}</span>
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          </div>
+
+                          {/* Regular */}
+                          <div>
+                            <p className="text-xs font-semibold text-slate-600 mb-2.5">Regular (1-3 days)</p>
+                            <div className="space-y-2">
+                              {['J&T', 'JNE', 'Shopee Xpress', 'Lazada Logistics', 'Anteraja'].map(courier => (
+                                <div key={courier} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100">
+                                  <input type="checkbox" className="w-4 h-4 accent-emerald-500 rounded" />
+                                  <span className="text-sm text-slate-800">{courier}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Cargo */}
+                          <div>
+                            <p className="text-xs font-semibold text-slate-600 mb-2.5">Cargo</p>
+                            <div className="space-y-2">
+                              {['Pos Indonesia'].map(courier => (
+                                <div key={courier} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100">
+                                  <input type="checkbox" className="w-4 h-4 accent-emerald-500 rounded" />
+                                  <span className="text-sm text-slate-800">{courier}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </>
                       )}
                     </div>
