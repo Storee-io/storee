@@ -502,6 +502,9 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
   useEffect(() => {
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
+        if (session) {
+          supabase.auth.setSession(session);
+        }
         if (session?.user) {
           loadStores(session.user.id);
         } else {
@@ -516,6 +519,9 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
     let subscription: { unsubscribe: () => void } | null = null;
     try {
       const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session) {
+          supabase.auth.setSession(session);
+        }
         if (session?.user) {
           loadStores(session.user.id);
         } else {
