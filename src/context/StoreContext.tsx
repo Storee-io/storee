@@ -772,7 +772,19 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
       const isAuthenticated = session?.user?.id && session.user.id === userId;
 
       if (isAuthenticated && userId) {
-        await upsertStore(updated, userId);
+        try {
+          await upsertStore(updated, userId);
+        } catch (err) {
+          // RLS rejection or auth error — fallback to guest endpoint for resilience
+          console.warn('[StoreContext] Authenticated save failed, falling back to guest:', err);
+          const guestId = getOrCreateGuestId();
+          const response = await fetch('/api/save-guest-store', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ store: updated, guestId }),
+          });
+          if (!response.ok) throw new Error(`Guest store save failed: ${response.statusText}`);
+        }
       } else {
         // Guest user or session mismatch — save to guest table
         const guestId = getOrCreateGuestId();
