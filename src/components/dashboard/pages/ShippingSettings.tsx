@@ -64,17 +64,54 @@ function courierLogoUrl(name: string): string {
   return `https://www.google.com/s2/favicons?sz=128&domain=${domain}`;
 }
 
-function CourierGrid({ couriers }: { couriers: string[] }) {
+const CATEGORY_STYLES: Record<string, { icon: React.ElementType; color: string; bg: string; ring: string }> = {
+  'Instant & Same Day': { icon: Zap,     color: 'text-amber-600',   bg: 'bg-amber-50',   ring: 'ring-amber-400'   },
+  'Regular':            { icon: Truck,   color: 'text-blue-600',    bg: 'bg-blue-50',    ring: 'ring-blue-400'    },
+  'Cargo':              { icon: Package, color: 'text-purple-600',  bg: 'bg-purple-50',  ring: 'ring-purple-400'  },
+};
+
+function CourierCategory({ label, couriers, selected, onToggle }: { label: string; couriers: string[]; selected: Set<string>; onToggle: (name: string) => void }) {
+  const style = CATEGORY_STYLES[label];
+  const Icon = style.icon;
+  const activeCount = couriers.filter(c => selected.has(c)).length;
   return (
-    <div className="grid grid-cols-4 gap-2.5">
-      {couriers.map(name => (
-        <button key={name} className="group relative flex flex-col items-center gap-2 p-2 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all duration-200">
-          <div className="w-10 h-10 flex items-center justify-center rounded-md bg-white border border-slate-100 overflow-hidden group-hover:border-emerald-200">
-            <img src={courierLogoUrl(name)} alt={name} className={`w-full h-full object-contain ${COURIER_LOGO_FULL_BLEED.has(name) ? 'p-0' : 'p-1.5'}`} />
-          </div>
-          <span className="text-xs font-medium text-slate-700 text-center leading-tight">{name}</span>
-        </button>
-      ))}
+    <div className={`rounded-xl border border-slate-200 overflow-hidden`}>
+      <div className={`flex items-center justify-between gap-2 px-3.5 py-2.5 ${style.bg} border-b border-slate-200`}>
+        <div className="flex items-center gap-2">
+          <Icon className={`w-3.5 h-3.5 ${style.color}`} />
+          <span className={`text-xs font-bold ${style.color} uppercase tracking-wide`}>{label}</span>
+        </div>
+        {activeCount > 0 && (
+          <span className={`text-[10px] font-semibold ${style.color} bg-white px-2 py-0.5 rounded-full`}>{activeCount} active</span>
+        )}
+      </div>
+      <div className="grid grid-cols-4 gap-2.5 p-3">
+        {couriers.map(name => {
+          const isSelected = selected.has(name);
+          return (
+            <button
+              key={name}
+              type="button"
+              onClick={() => onToggle(name)}
+              className={`group relative flex flex-col items-center gap-2 p-2 rounded-lg border transition-all duration-200 ${
+                isSelected
+                  ? `border-emerald-400 bg-emerald-50 ring-1 ${style.ring}`
+                  : 'border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50'
+              }`}
+            >
+              {isSelected && (
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm">
+                  <Check className="w-2.5 h-2.5 text-white" />
+                </span>
+              )}
+              <div className="w-10 h-10 flex items-center justify-center rounded-md bg-white border border-slate-100 overflow-hidden">
+                <img src={courierLogoUrl(name)} alt={name} className={`w-full h-full object-contain ${COURIER_LOGO_FULL_BLEED.has(name) ? 'p-0' : 'p-1.5'}`} />
+              </div>
+              <span className="text-xs font-medium text-slate-700 text-center leading-tight">{name}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -480,6 +517,14 @@ export default function ShippingSettings() {
   const [shippingTab, setShippingTab] = useState<'courier' | 'manual'>('courier');
   const [courierEnabled, setCourierEnabled] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<'biteship' | 'kiriminaja' | null>(null);
+  const [selectedCouriers, setSelectedCouriers] = useState<Set<string>>(new Set());
+  const toggleCourier = (name: string) => {
+    setSelectedCouriers(prev => {
+      const next = new Set(prev);
+      next.has(name) ? next.delete(name) : next.add(name);
+      return next;
+    });
+  };
 
   const currencySymbol = activeStore?.currency?.symbol ?? 'Rp';
   const fmtPrice       = makePriceFmt(activeStore?.currency?.code ?? 'IDR');
@@ -618,18 +663,24 @@ export default function ShippingSettings() {
                     <div className="space-y-3">
                       {(selectedProvider === 'biteship' || selectedProvider === 'kiriminaja') && (
                         <>
-                          <div>
-                            <p className="text-xs font-medium text-slate-600 mb-2.5">Instant & Same Day</p>
-                            <CourierGrid couriers={['GoSend', 'Grab Express', 'Borzo']} />
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-slate-600 mb-2.5">Regular</p>
-                            <CourierGrid couriers={['JNE Express', 'J&T Express', 'SiCepat Express', 'AnterAja', 'ID Express', 'Ninja Xpress', 'Lion Parcel', 'Pos Indonesia', 'Tiki', 'Paxel', 'RPX Logistics', 'NCS Courier', 'SAP Courier']} />
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-slate-600 mb-2.5">Cargo</p>
-                            <CourierGrid couriers={['J&T Cargo', 'Sentral Cargo']} />
-                          </div>
+                          <CourierCategory
+                            label="Instant & Same Day"
+                            couriers={['GoSend', 'Grab Express', 'Borzo']}
+                            selected={selectedCouriers}
+                            onToggle={toggleCourier}
+                          />
+                          <CourierCategory
+                            label="Regular"
+                            couriers={['JNE Express', 'J&T Express', 'SiCepat Express', 'AnterAja', 'ID Express', 'Ninja Xpress', 'Lion Parcel', 'Pos Indonesia', 'Tiki', 'Paxel', 'RPX Logistics', 'NCS Courier', 'SAP Courier']}
+                            selected={selectedCouriers}
+                            onToggle={toggleCourier}
+                          />
+                          <CourierCategory
+                            label="Cargo"
+                            couriers={['J&T Cargo', 'Sentral Cargo']}
+                            selected={selectedCouriers}
+                            onToggle={toggleCourier}
+                          />
                         </>
                       )}
                     </div>
