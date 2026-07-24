@@ -767,9 +767,14 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
     // made after store creation only live in localStorage and vanish if
     // it's cleared or the store is opened from another device/browser.
     try {
-      if (userId) {
+      // Validate current session before deciding whether to use authenticated or guest save
+      const { data: { session } } = await supabase.auth.getSession();
+      const isAuthenticated = session?.user?.id && session.user.id === userId;
+
+      if (isAuthenticated && userId) {
         await upsertStore(updated, userId);
       } else {
+        // Guest user or session mismatch — save to guest table
         const guestId = getOrCreateGuestId();
         const response = await fetch('/api/save-guest-store', {
           method: 'POST',

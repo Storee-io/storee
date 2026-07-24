@@ -169,7 +169,9 @@ export async function upsertStore(store: Store, userId: string): Promise<void> {
 
   // Ensure client has current session before persisting (RLS requires authenticated user)
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('Not authenticated');
+  if (!session || session.user.id !== userId) {
+    throw new Error('Not authenticated or userId mismatch');
+  }
 
   const { error } = await supabase
     .from('stores')
