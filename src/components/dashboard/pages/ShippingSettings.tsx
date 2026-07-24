@@ -579,10 +579,10 @@ export default function ShippingSettings() {
   };
 
   const [shippingTab, setShippingTab] = useState<'courier' | 'manual'>('courier');
-  const [courierEnabled, setCourierEnabled] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<'biteship' | 'kiriminaja' | null>(null);
-  const [courierApiKey, setCourierApiKey] = useState('');
-  const [selectedCouriers, setSelectedCouriers] = useState<Set<string>>(new Set());
+  const [courierEnabled, setCourierEnabled] = useState(() => activeStore?.shippingSettings?.courierDelivery?.enabled ?? false);
+  const [selectedProvider, setSelectedProvider] = useState<'biteship' | 'kiriminaja' | null>(() => activeStore?.shippingSettings?.courierDelivery?.provider ?? null);
+  const [courierApiKey, setCourierApiKey] = useState(() => activeStore?.shippingSettings?.courierDelivery?.apiKey ?? '');
+  const [selectedCouriers, setSelectedCouriers] = useState<Set<string>>(() => new Set(activeStore?.shippingSettings?.courierDelivery?.selectedCouriers ?? []));
   const toggleCourier = (name: string) => {
     setSelectedCouriers(prev => {
       const next = new Set(prev);
