@@ -519,7 +519,7 @@ export default function ShippingSettings() {
               </div>
             ) : (
               /* Enabled Content */
-              <div>
+              <>
               {/* Provider selector */}
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">1. Select Provider</p>
@@ -555,7 +555,7 @@ export default function ShippingSettings() {
                 </div>
               </div>
               </div>
-              </div>
+              </>
             )}
           </div>
         </>
