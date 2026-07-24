@@ -11,13 +11,15 @@ export async function POST(req: NextRequest) {
 
     const db = createServerClient();
 
-    // Save to guest_stores table with guest_id (store data for unauthenticated users)
+    // Save to guest_stores table (store data for unauthenticated users)
+    // Guest stores expire after 30 days of inactivity
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     const { error } = await db.from('guest_stores').upsert({
       id: store.id,
       guest_id: guestId,
-      name: store.name,
-      data: store,
+      store_data: store,
       created_at: new Date().toISOString(),
+      expires_at: expiresAt,
     });
 
     if (error) {
