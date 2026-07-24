@@ -166,11 +166,16 @@ export async function touchStoreLastUsed(storeId: string): Promise<void> {
 
 export async function upsertStore(store: Store, userId: string): Promise<void> {
   const row = storeToRow(store, userId);
+
+  // Ensure client has current session before persisting (RLS requires authenticated user)
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not authenticated');
+
   const { error } = await supabase
     .from('stores')
     .upsert(row, { onConflict: 'id' });
 
-  if (error) console.warn('[supabase] upsertStore:', error.message);
+  if (error) throw new Error(`upsertStore failed: ${error.message}`);
 }
 
 export async function deleteStoreById(storeId: string): Promise<void> {
