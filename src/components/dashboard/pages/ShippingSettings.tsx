@@ -28,20 +28,27 @@ const METHOD_ICONS: Record<string, { Icon: React.ElementType; bg: string; color:
 };
 
 // ── Courier logos (Google favicon service — always resolves, never broken) ────
+// Courier list & categories per KiriminAja API docs: https://developer.kiriminaja.com/docs/others/courier-list
 
 const COURIER_DOMAINS: Record<string, string> = {
   'GoSend': 'gojek.com',
   'Grab Express': 'grab.com',
-  'SiCepat': 'sicepat.com',
-  'J&T Express': 'jtexpress.com',
-  'J&T': 'jtexpress.com',
+  'Borzo': 'borzodelivery.com',
   'JNE Express': 'jne.co.id',
-  'JNE': 'jne.co.id',
-  'Shopee Xpress': 'shopee.co.id',
-  'Lazada Logistics': 'lazada.co.id',
-  'Anteraja': 'anteraja.id',
+  'J&T Express': 'jtexpress.com',
+  'SiCepat Express': 'sicepat.com',
+  'AnterAja': 'anteraja.id',
+  'ID Express': 'idexpress.com',
+  'Ninja Xpress': 'ninjaxpress.co',
+  'Lion Parcel': 'lionparcel.com',
   'Pos Indonesia': 'www.posindonesia.co.id',
   'Tiki': 'tiki.id',
+  'Paxel': 'paxel.co',
+  'RPX Logistics': 'rpx.co.id',
+  'NCS Courier': 'ncskurir.com',
+  'SAP Courier': 'sap-express.id',
+  'J&T Cargo': 'jtexpress.com',
+  'Sentral Cargo': 'sentralcargo.co.id',
 };
 
 const COURIER_LOGO_OVERRIDES: Record<string, string> = {
@@ -606,36 +613,19 @@ export default function ShippingSettings() {
                   <div>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">3. Select Partners</p>
                     <div className="space-y-3">
-                      {selectedProvider === 'biteship' && (
+                      {(selectedProvider === 'biteship' || selectedProvider === 'kiriminaja') && (
                         <>
                           <div>
                             <p className="text-xs font-medium text-slate-600 mb-2.5">Instant & Same Day</p>
-                            <CourierGrid couriers={['GoSend', 'Grab Express', 'SiCepat', 'J&T Express', 'JNE Express']} />
+                            <CourierGrid couriers={['GoSend', 'Grab Express', 'Borzo']} />
                           </div>
                           <div>
-                            <p className="text-xs font-medium text-slate-600 mb-2.5">Regular (1-3 days)</p>
-                            <CourierGrid couriers={['J&T', 'JNE', 'Shopee Xpress', 'Lazada Logistics', 'Anteraja']} />
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-slate-600 mb-2.5">Cargo</p>
-                            <CourierGrid couriers={['Pos Indonesia', 'Tiki']} />
-                          </div>
-                        </>
-                      )}
-
-                      {selectedProvider === 'kiriminaja' && (
-                        <>
-                          <div>
-                            <p className="text-xs font-medium text-slate-600 mb-2.5">Instant & Same Day</p>
-                            <CourierGrid couriers={['GoSend', 'Grab Express', 'SiCepat', 'J&T Express', 'JNE Express']} />
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-slate-600 mb-2.5">Regular (1-3 days)</p>
-                            <CourierGrid couriers={['J&T', 'JNE', 'Shopee Xpress', 'Lazada Logistics', 'Anteraja']} />
+                            <p className="text-xs font-medium text-slate-600 mb-2.5">Regular</p>
+                            <CourierGrid couriers={['JNE Express', 'J&T Express', 'SiCepat Express', 'AnterAja', 'ID Express', 'Ninja Xpress', 'Lion Parcel', 'Pos Indonesia', 'Tiki', 'Paxel', 'RPX Logistics', 'NCS Courier', 'SAP Courier']} />
                           </div>
                           <div>
                             <p className="text-xs font-medium text-slate-600 mb-2.5">Cargo</p>
-                            <CourierGrid couriers={['Pos Indonesia']} />
+                            <CourierGrid couriers={['J&T Cargo', 'Sentral Cargo']} />
                           </div>
                         </>
                       )}
