@@ -27,6 +27,48 @@ const METHOD_ICONS: Record<string, { Icon: React.ElementType; bg: string; color:
   'pickup':         { Icon: Store,   bg: 'bg-purple-50',   color: 'text-purple-600' },
 };
 
+// ── Courier logos (Google favicon service — always resolves, never broken) ────
+
+const COURIER_DOMAINS: Record<string, string> = {
+  'GoSend': 'gojek.com',
+  'Grab Express': 'grab.com',
+  'SiCepat': 'sicepat.com',
+  'J&T Express': 'jtexpress.com',
+  'J&T': 'jtexpress.com',
+  'JNE Express': 'jne.co.id',
+  'JNE': 'jne.co.id',
+  'Shopee Xpress': 'shopee.co.id',
+  'Lazada Logistics': 'lazada.co.id',
+  'Anteraja': 'anteraja.id',
+  'Pos Indonesia': 'www.posindonesia.co.id',
+  'Tiki': 'tiki.id',
+};
+
+const COURIER_LOGO_OVERRIDES: Record<string, string> = {
+  'Pos Indonesia': 'https://commons.wikimedia.org/wiki/Special:FilePath/POSIND_2023_(with_wordmark).svg',
+};
+
+function courierLogoUrl(name: string): string {
+  if (COURIER_LOGO_OVERRIDES[name]) return COURIER_LOGO_OVERRIDES[name];
+  const domain = COURIER_DOMAINS[name];
+  return `https://www.google.com/s2/favicons?sz=128&domain=${domain}`;
+}
+
+function CourierGrid({ couriers }: { couriers: string[] }) {
+  return (
+    <div className="grid grid-cols-4 gap-2.5">
+      {couriers.map(name => (
+        <button key={name} className="group relative flex flex-col items-center gap-2 p-2 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all duration-200">
+          <div className="w-10 h-10 flex items-center justify-center rounded-md bg-white border border-slate-100 overflow-hidden group-hover:border-emerald-200">
+            <img src={courierLogoUrl(name)} alt={name} className="w-full h-full object-contain p-1.5" />
+          </div>
+          <span className="text-xs font-medium text-slate-700 text-center leading-tight">{name}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function MethodIcon({ id }: { id: string }) {
   const { Icon, bg, color } = METHOD_ICONS[id] ?? { Icon: Package, bg: 'bg-slate-100', color: 'text-slate-500' };
   return (
@@ -566,127 +608,34 @@ export default function ShippingSettings() {
                     <div className="space-y-3">
                       {selectedProvider === 'biteship' && (
                         <>
-                          {/* Instant & Same Day */}
                           <div>
                             <p className="text-xs font-medium text-slate-600 mb-2.5">Instant & Same Day</p>
-                            <div className="grid grid-cols-4 gap-2.5">
-                              {[
-                                { name: 'GoSend', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ed/GoSend_Logo.png/200px-GoSend_Logo.png' },
-                                { name: 'Grab Express', img: 'https://upload.wikimedia.org/wikipedia/commons/0/04/Grab_%28application%29_2023.svg' },
-                                { name: 'SiCepat', img: 'https://upload.wikimedia.org/wikipedia/commons/5/59/Sicepat_logo.png' },
-                                { name: 'J&T Express', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/JT_Express_International_Inc._logo.png/200px-JT_Express_International_Inc._logo.png' },
-                                { name: 'JNE Express', img: 'https://upload.wikimedia.org/wikipedia/id/a/ab/Logo_JNE.png' },
-                              ].map(courier => (
-                                <button key={courier.name} className="group relative flex flex-col items-center gap-2 p-2 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all duration-200">
-                                  <div className="w-10 h-10 flex items-center justify-center rounded-md bg-white border border-slate-100 overflow-hidden group-hover:border-emerald-200">
-                                    <img src={courier.img} alt={courier.name} className="w-full h-full object-contain p-1" />
-                                  </div>
-                                  <span className="text-xs font-medium text-slate-700 text-center leading-tight">{courier.name}</span>
-                                </button>
-                              ))}
-                            </div>
+                            <CourierGrid couriers={['GoSend', 'Grab Express', 'SiCepat', 'J&T Express', 'JNE Express']} />
                           </div>
-
-                          {/* Regular */}
                           <div>
                             <p className="text-xs font-medium text-slate-600 mb-2.5">Regular (1-3 days)</p>
-                            <div className="grid grid-cols-4 gap-2.5">
-                              {[
-                                { name: 'J&T', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/JT_Express_International_Inc._logo.png/200px-JT_Express_International_Inc._logo.png' },
-                                { name: 'JNE', img: 'https://upload.wikimedia.org/wikipedia/id/a/ab/Logo_JNE.png' },
-                                { name: 'Shopee Xpress', img: 'https://upload.wikimedia.org/wikipedia/commons/0/0e/Shopee.svg' },
-                                { name: 'Lazada Logistics', img: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Lazada_logo.svg' },
-                                { name: 'Anteraja', img: 'https://www.anteraja.id/img/anteraja-logo.png' },
-                              ].map(courier => (
-                                <button key={courier.name} className="group relative flex flex-col items-center gap-2 p-2 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all duration-200">
-                                  <div className="w-10 h-10 flex items-center justify-center rounded-md bg-white border border-slate-100 overflow-hidden group-hover:border-emerald-200">
-                                    <img src={courier.img} alt={courier.name} className="w-full h-full object-contain p-1" />
-                                  </div>
-                                  <span className="text-xs font-medium text-slate-700 text-center leading-tight">{courier.name}</span>
-                                </button>
-                              ))}
-                            </div>
+                            <CourierGrid couriers={['J&T', 'JNE', 'Shopee Xpress', 'Lazada Logistics', 'Anteraja']} />
                           </div>
-
-                          {/* Cargo */}
                           <div>
                             <p className="text-xs font-medium text-slate-600 mb-2.5">Cargo</p>
-                            <div className="grid grid-cols-4 gap-2.5">
-                              {[
-                                { name: 'Pos Indonesia', img: 'https://upload.wikimedia.org/wikipedia/commons/0/0a/Logo_Pos_Indonesia.png' },
-                                { name: 'Tiki', img: 'https://upload.wikimedia.org/wikipedia/commons/d/d1/Tiki_id_logo.png' },
-                              ].map(courier => (
-                                <button key={courier.name} className="group relative flex flex-col items-center gap-2 p-2 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all duration-200">
-                                  <div className="w-10 h-10 flex items-center justify-center rounded-md bg-white border border-slate-100 overflow-hidden group-hover:border-emerald-200">
-                                    <img src={courier.img} alt={courier.name} className="w-full h-full object-contain p-1" />
-                                  </div>
-                                  <span className="text-xs font-medium text-slate-700 text-center leading-tight">{courier.name}</span>
-                                </button>
-                              ))}
-                            </div>
+                            <CourierGrid couriers={['Pos Indonesia', 'Tiki']} />
                           </div>
                         </>
                       )}
 
                       {selectedProvider === 'kiriminaja' && (
                         <>
-                          {/* Instant & Same Day */}
                           <div>
                             <p className="text-xs font-medium text-slate-600 mb-2.5">Instant & Same Day</p>
-                            <div className="grid grid-cols-4 gap-2.5">
-                              {[
-                                { name: 'GoSend', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ed/GoSend_Logo.png/200px-GoSend_Logo.png' },
-                                { name: 'Grab Express', img: 'https://upload.wikimedia.org/wikipedia/commons/0/04/Grab_%28application%29_2023.svg' },
-                                { name: 'SiCepat', img: 'https://upload.wikimedia.org/wikipedia/commons/5/59/Sicepat_logo.png' },
-                                { name: 'J&T Express', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/JT_Express_International_Inc._logo.png/200px-JT_Express_International_Inc._logo.png' },
-                                { name: 'JNE Express', img: 'https://upload.wikimedia.org/wikipedia/id/a/ab/Logo_JNE.png' },
-                              ].map(courier => (
-                                <button key={courier.name} className="group relative flex flex-col items-center gap-2 p-2 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all duration-200">
-                                  <div className="w-10 h-10 flex items-center justify-center rounded-md bg-white border border-slate-100 overflow-hidden group-hover:border-emerald-200">
-                                    <img src={courier.img} alt={courier.name} className="w-full h-full object-contain p-1" />
-                                  </div>
-                                  <span className="text-xs font-medium text-slate-700 text-center leading-tight">{courier.name}</span>
-                                </button>
-                              ))}
-                            </div>
+                            <CourierGrid couriers={['GoSend', 'Grab Express', 'SiCepat', 'J&T Express', 'JNE Express']} />
                           </div>
-
-                          {/* Regular */}
                           <div>
                             <p className="text-xs font-medium text-slate-600 mb-2.5">Regular (1-3 days)</p>
-                            <div className="grid grid-cols-4 gap-2.5">
-                              {[
-                                { name: 'J&T', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/JT_Express_International_Inc._logo.png/200px-JT_Express_International_Inc._logo.png' },
-                                { name: 'JNE', img: 'https://upload.wikimedia.org/wikipedia/id/a/ab/Logo_JNE.png' },
-                                { name: 'Shopee Xpress', img: 'https://upload.wikimedia.org/wikipedia/commons/0/0e/Shopee.svg' },
-                                { name: 'Lazada Logistics', img: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Lazada_logo.svg' },
-                                { name: 'Anteraja', img: 'https://www.anteraja.id/img/anteraja-logo.png' },
-                              ].map(courier => (
-                                <button key={courier.name} className="group relative flex flex-col items-center gap-2 p-2 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all duration-200">
-                                  <div className="w-10 h-10 flex items-center justify-center rounded-md bg-white border border-slate-100 overflow-hidden group-hover:border-emerald-200">
-                                    <img src={courier.img} alt={courier.name} className="w-full h-full object-contain p-1" />
-                                  </div>
-                                  <span className="text-xs font-medium text-slate-700 text-center leading-tight">{courier.name}</span>
-                                </button>
-                              ))}
-                            </div>
+                            <CourierGrid couriers={['J&T', 'JNE', 'Shopee Xpress', 'Lazada Logistics', 'Anteraja']} />
                           </div>
-
-                          {/* Cargo */}
                           <div>
                             <p className="text-xs font-medium text-slate-600 mb-2.5">Cargo</p>
-                            <div className="grid grid-cols-4 gap-2.5">
-                              {[
-                                { name: 'Pos Indonesia', img: 'https://upload.wikimedia.org/wikipedia/commons/0/0a/Logo_Pos_Indonesia.png' },
-                              ].map(courier => (
-                                <button key={courier.name} className="group relative flex flex-col items-center gap-2 p-2 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all duration-200">
-                                  <div className="w-10 h-10 flex items-center justify-center rounded-md bg-white border border-slate-100 overflow-hidden group-hover:border-emerald-200">
-                                    <img src={courier.img} alt={courier.name} className="w-full h-full object-contain p-1" />
-                                  </div>
-                                  <span className="text-xs font-medium text-slate-700 text-center leading-tight">{courier.name}</span>
-                                </button>
-                              ))}
-                            </div>
+                            <CourierGrid couriers={['Pos Indonesia']} />
                           </div>
                         </>
                       )}
