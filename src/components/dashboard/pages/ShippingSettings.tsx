@@ -529,7 +529,7 @@ export default function ShippingSettings() {
                   <button onClick={() => setSelectedProvider('biteship')} className={`relative flex flex-col items-start gap-2 p-3.5 rounded-xl border-2 text-left transition-all ${selectedProvider === 'biteship' ? 'border-blue-400 bg-blue-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'}`}>
                     {selectedProvider === 'biteship' && <span className="absolute top-2 right-2 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center"><Check className="w-2.5 h-2.5 text-white" /></span>}
                     <div className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center p-1.5 overflow-hidden">
-                      <img src="/logos/biteship.svg" alt="Biteship" className="w-full h-full object-contain" />
+                      <img src="https://media.licdn.com/dms/image/v2/C560BAQHeuvN6upCB4A/company-logo_200_200/company-logo_200_200/0/1644632189280?e=2147483647&v=beta&t=-gle6i7ZksVClmCf0ldKxGrIOXrYSZ0EkO0Sqapnraw" alt="Biteship" className="w-full h-full object-contain" />
                     </div>
                     <span className="text-sm font-bold text-slate-800">Biteship</span>
                     <span className="text-[10px] text-slate-500 leading-tight">Multiple couriers (J&T, JNE, SiCepat, GoSend, etc.)</span>
@@ -539,7 +539,7 @@ export default function ShippingSettings() {
                   <button onClick={() => setSelectedProvider('kiriminaja')} className={`relative flex flex-col items-start gap-2 p-3.5 rounded-xl border-2 text-left transition-all ${selectedProvider === 'kiriminaja' ? 'border-green-400 bg-green-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'}`}>
                     {selectedProvider === 'kiriminaja' && <span className="absolute top-2 right-2 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center"><Check className="w-2.5 h-2.5 text-white" /></span>}
                     <div className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center p-1.5 overflow-hidden">
-                      <img src="/logos/kiriminaja.svg" alt="KiriminAja" className="w-full h-full object-contain" />
+                      <img src="https://play-lh.googleusercontent.com/j6JSQtNI6mW67g5HMcyQdW8I7ZLUWZrtElY9vfqkiYpTygK8QJwtTyCBeYcBu0evsqlUuDljtZzgDcITA-IH0A=w240-h480-rw" alt="KiriminAja" className="w-full h-full object-contain" />
                     </div>
                     <span className="text-sm font-bold text-slate-800">KiriminAja</span>
                     <span className="text-[10px] text-slate-500 leading-tight">Premium logistics partner</span>
