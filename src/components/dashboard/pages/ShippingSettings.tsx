@@ -4,7 +4,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { toast } from 'sonner';
 import {
   Truck, Check, Info, MapPin, Navigation, ExternalLink,
-  Package, Zap, Bike, Gift, Store, Tag, Motorbike,
+  Package, Zap, Bike, Gift, Store, Tag, Motorbike, Loader2,
 } from 'lucide-react';
 import { useStore } from '../../../context/StoreContext';
 import { getDefaultShippingMethods } from '../../../context/StoreContext';
@@ -481,6 +481,7 @@ export default function ShippingSettings() {
     String(activeStore?.shippingSettings?.freeShippingThreshold ?? '')
   );
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setMethods(mergeWithDefaults(activeStore?.shippingSettings?.methods ?? [], activeStore?.currency?.code ?? 'IDR'));
@@ -490,7 +491,8 @@ export default function ShippingSettings() {
   const updateMethod = (id: string, patch: Partial<ShippingMethod>) =>
     setMethods(prev => prev.map(m => m.id === id ? { ...m, ...patch } : m));
 
-  const save = () => {
+  const save = async () => {
+    setSaving(true);
     try {
       const newShippingSettings = {
         methods,
@@ -535,12 +537,15 @@ export default function ShippingSettings() {
         }).catch(err => console.error('[sync] shipping sync failed:', err));
       }
 
+      await new Promise(resolve => setTimeout(resolve, 500));
       toast.success('Shipping settings saved');
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (error) {
       console.error('Save error:', error);
       toast.error('Failed to save shipping settings');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -579,9 +584,16 @@ export default function ShippingSettings() {
         </div>
         <button
           onClick={save}
-          className="flex items-center gap-2 px-5 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity"
+          disabled={saving}
+          className="flex items-center gap-2 px-5 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          {saved ? <><Check className="w-4 h-4" />Saved!</> : 'Save Changes'}
+          {saving ? (
+            <><Loader2 className="w-4 h-4 animate-spin" />Saving...</>
+          ) : saved ? (
+            <><Check className="w-4 h-4" />Saved!</>
+          ) : (
+            'Save Changes'
+          )}
         </button>
       </div>
 
