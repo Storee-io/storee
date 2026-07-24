@@ -426,6 +426,7 @@ export default function ShippingSettings() {
   };
 
   const [shippingTab, setShippingTab] = useState<'courier' | 'manual'>('courier');
+  const [courierEnabled, setCourierEnabled] = useState(false);
 
   const currencySymbol = activeStore?.currency?.symbol ?? 'Rp';
   const fmtPrice       = makePriceFmt(activeStore?.currency?.code ?? 'IDR');
@@ -500,24 +501,25 @@ export default function ShippingSettings() {
                 </div>
               </div>
               <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                <input type="checkbox" className="sr-only peer" />
+                <input type="checkbox" checked={courierEnabled} onChange={e => setCourierEnabled(e.target.checked)} className="sr-only peer" />
                 <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-emerald-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" />
               </label>
             </div>
 
-            {/* Disabled State */}
-            <div className="text-center py-8">
-              <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                <Truck className="w-6 h-6 text-slate-300" />
+            {!courierEnabled ? (
+              /* Disabled State */
+              <div className="text-center py-8">
+                <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <Truck className="w-6 h-6 text-slate-300" />
+                </div>
+                <p className="text-sm font-semibold text-slate-500 mb-1">Courier delivery not active</p>
+                <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                  Enable the toggle above, then select a provider to configure your courier integration.
+                </p>
               </div>
-              <p className="text-sm font-semibold text-slate-500 mb-1">Courier delivery not active</p>
-              <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
-                Enable the toggle above, then select a provider to configure your courier integration.
-              </p>
-            </div>
-
-            {/* Enabled Content (hidden by default) */}
-            <div className="hidden">
+            ) : (
+              /* Enabled Content */
+              <div>
               {/* Provider selector */}
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">1. Select Provider</p>
@@ -552,7 +554,9 @@ export default function ShippingSettings() {
                   </div>
                 </div>
               </div>
-            </div>
+              </div>
+              </div>
+            )}
           </div>
         </>
       )}
