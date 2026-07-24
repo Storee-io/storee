@@ -11,25 +11,13 @@ export async function POST(req: NextRequest) {
 
     const db = createServerClient();
 
-    // Save to published_stores table with guest_id
-    const { error } = await db.from('published_stores').upsert({
+    // Save to guest_stores table with guest_id (store data for unauthenticated users)
+    const { error } = await db.from('guest_stores').upsert({
       id: store.id,
-      subdomain: store.domain.replace('.storee.io', ''),
-      name: store.name,
-      primary_color: store.primaryColor,
-      category: store.category,
-      template_id: store.template?.id || null,
-      design: store.design || null,
-      currency: store.currency || null,
-      language: store.language || null,
-      font: store.font || null,
-      mood: store.mood || null,
-      audience: store.audience || null,
-      shipping_settings: store.shippingSettings || null,
-      payment_settings: store.paymentSettings || null,
-      custom_domain: store.customDomain || null,
-      published_domain: store.publishedDomain || null,
       guest_id: guestId,
+      name: store.name,
+      data: store,
+      created_at: new Date().toISOString(),
     });
 
     if (error) {
