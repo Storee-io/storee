@@ -554,7 +554,6 @@ export default function ShippingSettings() {
                   </div>
                 </div>
               </div>
-              </div>
               </>
             )}
           </div>
