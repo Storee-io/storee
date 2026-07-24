@@ -81,9 +81,7 @@ function CourierCategory({ label, couriers, selected, onToggle }: { label: strin
           <Icon className={`w-3.5 h-3.5 ${style.color}`} />
           <span className={`text-xs font-bold ${style.color} uppercase tracking-wide`}>{label}</span>
         </div>
-        {activeCount > 0 && (
-          <span className={`text-[10px] font-semibold ${style.color} bg-white px-2 py-0.5 rounded-full`}>{activeCount} active</span>
-        )}
+        <span className={`text-[10px] font-semibold ${style.color} bg-white px-2 py-0.5 rounded-full ${activeCount > 0 ? '' : 'invisible'}`}>{activeCount} active</span>
       </div>
       <div className="grid grid-cols-4 gap-2.5 p-3">
         {couriers.map(name => {
