@@ -64,6 +64,12 @@ const COURIER_LOGO_OVERRIDES: Record<string, string> = {
 // Favicons that are already full-bleed solid-color squares (no built-in whitespace) — skip the extra inner padding so they don't look inset next to logos that do have built-in whitespace.
 const COURIER_LOGO_FULL_BLEED = new Set(['Grab Express', 'J&T Express', 'J&T Cargo']);
 
+// Couriers with no reliably-hosted logo image — render a monogram badge instead of a broken/generic favicon.
+const COURIER_MONOGRAMS: Record<string, { letters: string; bg: string; color: string }> = {
+  'JDL Express':   { letters: 'JX', bg: 'bg-blue-600',  color: 'text-white' },
+  'Rara Delivery': { letters: 'R',  bg: 'bg-pink-600',  color: 'text-white' },
+};
+
 function courierLogoUrl(name: string): string {
   if (COURIER_LOGO_OVERRIDES[name]) return COURIER_LOGO_OVERRIDES[name];
   const domain = COURIER_DOMAINS[name];
@@ -123,7 +129,13 @@ function CourierCategory({ label, couriers, selected, onToggle }: { label: strin
                 </span>
               )}
               <div className="w-10 h-10 flex items-center justify-center rounded-md bg-white border border-slate-100 overflow-hidden">
-                <img src={courierLogoUrl(name)} alt={name} className={`w-full h-full object-contain ${COURIER_LOGO_FULL_BLEED.has(name) ? 'p-0' : 'p-1.5'}`} />
+                {COURIER_MONOGRAMS[name] ? (
+                  <div className={`w-full h-full flex items-center justify-center ${COURIER_MONOGRAMS[name].bg}`}>
+                    <span className={`text-xs font-bold ${COURIER_MONOGRAMS[name].color}`}>{COURIER_MONOGRAMS[name].letters}</span>
+                  </div>
+                ) : (
+                  <img src={courierLogoUrl(name)} alt={name} className={`w-full h-full object-contain ${COURIER_LOGO_FULL_BLEED.has(name) ? 'p-0' : 'p-1.5'}`} />
+                )}
               </div>
               <span className="text-xs font-medium text-slate-700 text-center leading-tight">{name}</span>
             </button>
