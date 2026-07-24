@@ -696,9 +696,25 @@ export function StoreProvider({ children, initialActiveStore }: { children: Reac
     const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
     const resolvedUserId = session?.user?.id ?? userId;
 
-    if (resolvedUserId) {
+    if (resolvedUserId && session?.user?.id === resolvedUserId) {
       if (!userId) setUserId(resolvedUserId); // sync state if it lagged
-      await upsertStore(store, resolvedUserId);
+      try {
+        await upsertStore(store, resolvedUserId);
+      } catch (err) {
+        // RLS rejection or auth error - fallback to guest endpoint
+        console.warn('[StoreContext] Authenticated store save failed, falling back to guest:', err);
+        const guestId = getOrCreateGuestId();
+        try {
+          await fetch('/api/save-guest-store', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ store, guestId }),
+          });
+        } catch (guestErr) {
+          console.warn('[StoreContext] Failed to save guest store to Supabase:', guestErr);
+          // Don't block - localStorage fallback is already saved
+        }
+      }
     } else {
       // Guest user - save to Supabase with guest_id
       const guestId = getOrCreateGuestId();
