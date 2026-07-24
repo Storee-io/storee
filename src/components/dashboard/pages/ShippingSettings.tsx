@@ -486,6 +486,15 @@ export default function ShippingSettings() {
   useEffect(() => {
     setMethods(mergeWithDefaults(activeStore?.shippingSettings?.methods ?? [], activeStore?.currency?.code ?? 'IDR'));
     setFreeThreshold(String(activeStore?.shippingSettings?.freeShippingThreshold ?? ''));
+
+    // Load courier delivery settings
+    const cd = activeStore?.shippingSettings?.courierDelivery;
+    if (cd) {
+      setCourierEnabled(cd.enabled ?? false);
+      setSelectedProvider(cd.provider ?? null);
+      setCourierApiKey(cd.apiKey ?? '');
+      setSelectedCouriers(new Set(cd.selectedCouriers ?? []));
+    }
   }, [activeStore?.id]);
 
   const updateMethod = (id: string, patch: Partial<ShippingMethod>) =>
@@ -497,6 +506,14 @@ export default function ShippingSettings() {
       const newShippingSettings = {
         methods,
         freeShippingThreshold: freeThreshold ? Number(freeThreshold) : undefined,
+        courierDelivery: courierEnabled ? {
+          enabled: true,
+          provider: selectedProvider,
+          apiKey: courierApiKey,
+          selectedCouriers: Array.from(selectedCouriers),
+        } : {
+          enabled: false,
+        },
       };
       await updateActiveStore({ shippingSettings: newShippingSettings });
 
@@ -552,6 +569,7 @@ export default function ShippingSettings() {
   const [shippingTab, setShippingTab] = useState<'courier' | 'manual'>('courier');
   const [courierEnabled, setCourierEnabled] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<'biteship' | 'kiriminaja' | null>(null);
+  const [courierApiKey, setCourierApiKey] = useState('');
   const [selectedCouriers, setSelectedCouriers] = useState<Set<string>>(new Set());
   const toggleCourier = (name: string) => {
     setSelectedCouriers(prev => {
@@ -694,7 +712,7 @@ export default function ShippingSettings() {
                     <div className="space-y-3">
                       <div>
                         <label className="text-xs font-medium text-slate-600 mb-2 block">API Key</label>
-                        <input type="password" placeholder="Enter your API key" className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-100" />
+                        <input type="password" placeholder="Enter your API key" value={courierApiKey} onChange={e => setCourierApiKey(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-100" />
                       </div>
                     </div>
                   </div>
