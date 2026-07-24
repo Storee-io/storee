@@ -560,47 +560,68 @@ export default function ShippingSettings() {
                     </div>
                   </div>
 
-                  {/* Shipping Methods */}
+                  {/* Logistics Partners */}
                   <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">3. Logistics Partners</p>
-                    <div className="space-y-4">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">3. Select Partners</p>
+                    <div className="space-y-3">
                       {selectedProvider === 'biteship' && (
                         <>
                           {/* Instant & Same Day */}
                           <div>
-                            <p className="text-xs font-semibold text-slate-600 mb-2.5">Instant & Same Day</p>
-                            <div className="space-y-2">
-                              {['GoSend', 'Grab Express', 'SiCepat', 'J&T Express', 'JNE Express'].map(courier => (
-                                <div key={courier} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100">
-                                  <input type="checkbox" className="w-4 h-4 accent-emerald-500 rounded" />
-                                  <span className="text-sm text-slate-800">{courier}</span>
-                                </div>
+                            <p className="text-xs font-medium text-slate-600 mb-2.5">Instant & Same Day</p>
+                            <div className="grid grid-cols-4 gap-2.5">
+                              {[
+                                { name: 'GoSend', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ed/GoSend_Logo.png/200px-GoSend_Logo.png' },
+                                { name: 'Grab Express', img: 'https://upload.wikimedia.org/wikipedia/commons/0/04/Grab_%28application%29_2023.svg' },
+                                { name: 'SiCepat', img: 'https://upload.wikimedia.org/wikipedia/commons/5/59/Sicepat_logo.png' },
+                                { name: 'J&T Express', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/JT_Express_International_Inc._logo.png/200px-JT_Express_International_Inc._logo.png' },
+                                { name: 'JNE Express', img: 'https://upload.wikimedia.org/wikipedia/id/a/ab/Logo_JNE.png' },
+                              ].map(courier => (
+                                <button key={courier.name} className="group relative flex flex-col items-center gap-2 p-2 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all duration-200">
+                                  <div className="w-10 h-10 flex items-center justify-center rounded-md bg-white border border-slate-100 overflow-hidden group-hover:border-emerald-200">
+                                    <img src={courier.img} alt={courier.name} className="w-full h-full object-contain p-1" />
+                                  </div>
+                                  <span className="text-xs font-medium text-slate-700 text-center leading-tight">{courier.name}</span>
+                                </button>
                               ))}
                             </div>
                           </div>
 
                           {/* Regular */}
                           <div>
-                            <p className="text-xs font-semibold text-slate-600 mb-2.5">Regular (1-3 days)</p>
-                            <div className="space-y-2">
-                              {['J&T', 'JNE', 'Shopee Xpress', 'Lazada Logistics', 'Anteraja'].map(courier => (
-                                <div key={courier} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100">
-                                  <input type="checkbox" className="w-4 h-4 accent-emerald-500 rounded" />
-                                  <span className="text-sm text-slate-800">{courier}</span>
-                                </div>
+                            <p className="text-xs font-medium text-slate-600 mb-2.5">Regular (1-3 days)</p>
+                            <div className="grid grid-cols-4 gap-2.5">
+                              {[
+                                { name: 'J&T', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/JT_Express_International_Inc._logo.png/200px-JT_Express_International_Inc._logo.png' },
+                                { name: 'JNE', img: 'https://upload.wikimedia.org/wikipedia/id/a/ab/Logo_JNE.png' },
+                                { name: 'Shopee Xpress', img: 'https://upload.wikimedia.org/wikipedia/commons/0/0e/Shopee.svg' },
+                                { name: 'Lazada Logistics', img: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Lazada_logo.svg' },
+                                { name: 'Anteraja', img: 'https://www.anteraja.id/img/anteraja-logo.png' },
+                              ].map(courier => (
+                                <button key={courier.name} className="group relative flex flex-col items-center gap-2 p-2 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all duration-200">
+                                  <div className="w-10 h-10 flex items-center justify-center rounded-md bg-white border border-slate-100 overflow-hidden group-hover:border-emerald-200">
+                                    <img src={courier.img} alt={courier.name} className="w-full h-full object-contain p-1" />
+                                  </div>
+                                  <span className="text-xs font-medium text-slate-700 text-center leading-tight">{courier.name}</span>
+                                </button>
                               ))}
                             </div>
                           </div>
 
                           {/* Cargo */}
                           <div>
-                            <p className="text-xs font-semibold text-slate-600 mb-2.5">Cargo</p>
-                            <div className="space-y-2">
-                              {['Pos Indonesia', 'Tiki'].map(courier => (
-                                <div key={courier} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100">
-                                  <input type="checkbox" className="w-4 h-4 accent-emerald-500 rounded" />
-                                  <span className="text-sm text-slate-800">{courier}</span>
-                                </div>
+                            <p className="text-xs font-medium text-slate-600 mb-2.5">Cargo</p>
+                            <div className="grid grid-cols-4 gap-2.5">
+                              {[
+                                { name: 'Pos Indonesia', img: 'https://upload.wikimedia.org/wikipedia/commons/0/0a/Logo_Pos_Indonesia.png' },
+                                { name: 'Tiki', img: 'https://upload.wikimedia.org/wikipedia/commons/d/d1/Tiki_id_logo.png' },
+                              ].map(courier => (
+                                <button key={courier.name} className="group relative flex flex-col items-center gap-2 p-2 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all duration-200">
+                                  <div className="w-10 h-10 flex items-center justify-center rounded-md bg-white border border-slate-100 overflow-hidden group-hover:border-emerald-200">
+                                    <img src={courier.img} alt={courier.name} className="w-full h-full object-contain p-1" />
+                                  </div>
+                                  <span className="text-xs font-medium text-slate-700 text-center leading-tight">{courier.name}</span>
+                                </button>
                               ))}
                             </div>
                           </div>
@@ -611,39 +632,59 @@ export default function ShippingSettings() {
                         <>
                           {/* Instant & Same Day */}
                           <div>
-                            <p className="text-xs font-semibold text-slate-600 mb-2.5">Instant & Same Day</p>
-                            <div className="space-y-2">
-                              {['GoSend', 'Grab Express', 'SiCepat', 'J&T Express', 'JNE Express'].map(courier => (
-                                <div key={courier} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100">
-                                  <input type="checkbox" className="w-4 h-4 accent-emerald-500 rounded" />
-                                  <span className="text-sm text-slate-800">{courier}</span>
-                                </div>
+                            <p className="text-xs font-medium text-slate-600 mb-2.5">Instant & Same Day</p>
+                            <div className="grid grid-cols-4 gap-2.5">
+                              {[
+                                { name: 'GoSend', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ed/GoSend_Logo.png/200px-GoSend_Logo.png' },
+                                { name: 'Grab Express', img: 'https://upload.wikimedia.org/wikipedia/commons/0/04/Grab_%28application%29_2023.svg' },
+                                { name: 'SiCepat', img: 'https://upload.wikimedia.org/wikipedia/commons/5/59/Sicepat_logo.png' },
+                                { name: 'J&T Express', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/JT_Express_International_Inc._logo.png/200px-JT_Express_International_Inc._logo.png' },
+                                { name: 'JNE Express', img: 'https://upload.wikimedia.org/wikipedia/id/a/ab/Logo_JNE.png' },
+                              ].map(courier => (
+                                <button key={courier.name} className="group relative flex flex-col items-center gap-2 p-2 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all duration-200">
+                                  <div className="w-10 h-10 flex items-center justify-center rounded-md bg-white border border-slate-100 overflow-hidden group-hover:border-emerald-200">
+                                    <img src={courier.img} alt={courier.name} className="w-full h-full object-contain p-1" />
+                                  </div>
+                                  <span className="text-xs font-medium text-slate-700 text-center leading-tight">{courier.name}</span>
+                                </button>
                               ))}
                             </div>
                           </div>
 
                           {/* Regular */}
                           <div>
-                            <p className="text-xs font-semibold text-slate-600 mb-2.5">Regular (1-3 days)</p>
-                            <div className="space-y-2">
-                              {['J&T', 'JNE', 'Shopee Xpress', 'Lazada Logistics', 'Anteraja'].map(courier => (
-                                <div key={courier} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100">
-                                  <input type="checkbox" className="w-4 h-4 accent-emerald-500 rounded" />
-                                  <span className="text-sm text-slate-800">{courier}</span>
-                                </div>
+                            <p className="text-xs font-medium text-slate-600 mb-2.5">Regular (1-3 days)</p>
+                            <div className="grid grid-cols-4 gap-2.5">
+                              {[
+                                { name: 'J&T', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/JT_Express_International_Inc._logo.png/200px-JT_Express_International_Inc._logo.png' },
+                                { name: 'JNE', img: 'https://upload.wikimedia.org/wikipedia/id/a/ab/Logo_JNE.png' },
+                                { name: 'Shopee Xpress', img: 'https://upload.wikimedia.org/wikipedia/commons/0/0e/Shopee.svg' },
+                                { name: 'Lazada Logistics', img: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Lazada_logo.svg' },
+                                { name: 'Anteraja', img: 'https://www.anteraja.id/img/anteraja-logo.png' },
+                              ].map(courier => (
+                                <button key={courier.name} className="group relative flex flex-col items-center gap-2 p-2 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all duration-200">
+                                  <div className="w-10 h-10 flex items-center justify-center rounded-md bg-white border border-slate-100 overflow-hidden group-hover:border-emerald-200">
+                                    <img src={courier.img} alt={courier.name} className="w-full h-full object-contain p-1" />
+                                  </div>
+                                  <span className="text-xs font-medium text-slate-700 text-center leading-tight">{courier.name}</span>
+                                </button>
                               ))}
                             </div>
                           </div>
 
                           {/* Cargo */}
                           <div>
-                            <p className="text-xs font-semibold text-slate-600 mb-2.5">Cargo</p>
-                            <div className="space-y-2">
-                              {['Pos Indonesia'].map(courier => (
-                                <div key={courier} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100">
-                                  <input type="checkbox" className="w-4 h-4 accent-emerald-500 rounded" />
-                                  <span className="text-sm text-slate-800">{courier}</span>
-                                </div>
+                            <p className="text-xs font-medium text-slate-600 mb-2.5">Cargo</p>
+                            <div className="grid grid-cols-4 gap-2.5">
+                              {[
+                                { name: 'Pos Indonesia', img: 'https://upload.wikimedia.org/wikipedia/commons/0/0a/Logo_Pos_Indonesia.png' },
+                              ].map(courier => (
+                                <button key={courier.name} className="group relative flex flex-col items-center gap-2 p-2 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all duration-200">
+                                  <div className="w-10 h-10 flex items-center justify-center rounded-md bg-white border border-slate-100 overflow-hidden group-hover:border-emerald-200">
+                                    <img src={courier.img} alt={courier.name} className="w-full h-full object-contain p-1" />
+                                  </div>
+                                  <span className="text-xs font-medium text-slate-700 text-center leading-tight">{courier.name}</span>
+                                </button>
                               ))}
                             </div>
                           </div>
