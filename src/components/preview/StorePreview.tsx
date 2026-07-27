@@ -2846,10 +2846,13 @@ interface AutoPaymentResult {
 const LEGACY_FLAT_COURIER_IDS = new Set(['jne-reg', 'jne-yes', 'jnt-reg', 'sicepat', 'gosend', 'free']);
 
 // Helper: Get all shipping options (manual methods + courier options if enabled)
-function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, currencyCode: string): ShippingMethod[] {
+function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, currencyCode: string, cartWeight: number = 0): ShippingMethod[] {
   const enabledMethods = (shippingSettings?.methods ?? getDefaultShippingMethods(currencyCode))
     .filter(m => m.enabled && !LEGACY_FLAT_COURIER_IDS.has(m.id));
   const courierMethods: ShippingMethod[] = [];
+
+  // Weight surcharge: Rp200/gram for orders > 5kg
+  const weightSurcharge = cartWeight > 5 ? Math.round((cartWeight - 5) * 200) : 0;
 
   if (shippingSettings?.courierDelivery?.enabled && shippingSettings?.courierDelivery?.selectedCouriers?.length) {
     // Selected couriers are stored as display names (e.g. "GoSend", "JNE Express")
@@ -2870,10 +2873,11 @@ function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, c
     shippingSettings.courierDelivery.selectedCouriers.forEach(courierName => {
       const isInstant = INSTANT_COURIERS.has(courierName);
       const isCargo = CARGO_COURIERS.has(courierName);
+      const basePrice = isCargo ? cargoPrice : isInstant ? instantPrice : regularPrice;
       courierMethods.push({
         id: `courier-${courierName.toLowerCase().replace(/\s+/g, '-')}`,
         name: `${courierName} via ${providerLabel}`,
-        price: isCargo ? cargoPrice : isInstant ? instantPrice : regularPrice,
+        price: basePrice + weightSurcharge,
         estimatedDays: isInstant ? '1–3 hours' : isCargo ? '3–7 days' : '1–3 days',
         enabled: true,
         icon: isInstant ? '🛵' : '📦',
