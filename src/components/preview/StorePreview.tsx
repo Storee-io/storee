@@ -2853,30 +2853,59 @@ async function fetchLiveShippingRates(
 ): Promise<Record<string, number>> {
   try {
     if (provider === 'biteship' && apiKey) {
-      const response = await fetch('https://api.biteship.com/v1/rates', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      try {
+        const requestBody = {
           origin_postal_code: '12345',
           destination_postal_code: destination,
-          weight: Math.round(weight),
-          courier_code: couriers.length > 0 ? couriers.join(',') : 'all',
-        }),
-      });
-      if (!response.ok) {
-        console.warn('[checkout] Biteship API error:', response.status);
+          weight: Math.round(weight), // weight in grams
+          couriers: couriers.length > 0 ? couriers : [],
+        };
+        console.log('[checkout] Biteship request:', requestBody);
+
+        const response = await fetch('https://api.biteship.com/v1/rates', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        const responseText = await response.text();
+        console.log('[checkout] Biteship response status:', response.status, 'body:', responseText.substring(0, 200));
+
+        if (!response.ok) {
+          console.warn('[checkout] Biteship API error:', response.status, responseText.substring(0, 200));
+          return {};
+        }
+
+        const data = JSON.parse(responseText);
+        const rates: Record<string, number> = {};
+
+        // Handle Biteship response format
+        if (data.pricing) {
+          data.pricing.forEach((p: any) => {
+            if (p.courier_name && p.price) {
+              rates[p.courier_name] = p.price;
+              rates[p.courier_name.toLowerCase()] = p.price;
+            }
+          });
+        } else if (data.couriers) {
+          data.couriers.forEach((c: any) => {
+            if (c.courier_name && c.pricing?.[0]?.price) {
+              rates[c.courier_name] = c.pricing[0].price;
+              rates[c.courier_name.toLowerCase()] = c.pricing[0].price;
+            }
+          });
+        }
+
+        console.log('[checkout] Biteship rates:', rates);
+        return rates;
+      } catch (err) {
+        console.error('[checkout] Biteship parse error:', err);
         return {};
       }
-      const data = await response.json();
-      const rates: Record<string, number> = {};
-      (data.pricing || []).forEach((p: any) => {
-        if (p.courier_name && p.price) {
-          rates[p.courier_name] = p.price;
-          rates[p.courier_name.toLowerCase()] = p.price;
-        }
-      });
-      console.log('[checkout] Biteship rates:', rates);
-      return rates;
     } else if (provider === 'kiriminaja' && apiKey) {
       const response = await fetch('https://api.kiriminaja.com/v2/prices/search', {
         method: 'POST',
