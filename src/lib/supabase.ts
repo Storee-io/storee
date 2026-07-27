@@ -209,6 +209,8 @@ export interface Product {
   priceHtml?: string;
   stock?: number;
   sku?: string;
+  weight?: number;
+  weightUnit?: 'g' | 'kg' | 'oz' | 'lb';
   createdAt: string;
   updatedAt: string;
 }
