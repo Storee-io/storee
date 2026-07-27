@@ -1,11 +1,36 @@
-<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="50" cy="50" r="45" fill="#F0F9F4"/>
-  <g transform="translate(25, 30)">
-    <rect x="0" y="15" width="50" height="25" rx="3" fill="#16A34A" opacity="0.8"/>
-    <rect x="5" y="12" width="40" height="8" rx="2" fill="#16A34A"/>
-    <circle cx="10" cy="48" r="4" fill="#16A34A"/>
-    <circle cx="40" cy="48" r="4" fill="#16A34A"/>
-    <line x1="5" y1="44" x2="40" y2="44" stroke="#16A34A" stroke-width="1.5"/>
-    <path d="M 20 20 L 25 15 L 30 20" stroke="#16A34A" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9D4EDD;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7B2CBF;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3A86FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0062CC;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Purple Arrow pointing up-right -->
+  <g>
+    <!-- Main arrow shaft -->
+    <path d="M 60 140 L 140 60 L 120 60 C 120 40 100 20 80 20 C 60 20 50 35 50 50 L 70 50 Z"
+          fill="url(#purpleGrad)" stroke="none" stroke-linejoin="round"/>
+
+    <!-- Arrow head curve -->
+    <path d="M 140 60 L 155 45 Q 160 50 155 60 Z"
+          fill="url(#purpleGrad)" stroke="none"/>
+
+    <!-- Curved left side of arrow for elegant shape -->
+    <path d="M 60 140 Q 45 125 50 100 L 70 90 Q 65 110 65 130 Z"
+          fill="url(#purpleGrad)" stroke="none" opacity="0.9"/>
+  </g>
+
+  <!-- Blue Teardrop at bottom -->
+  <g>
+    <path d="M 100 180 Q 75 165 72 140 Q 70 120 75 105 Q 85 95 100 95 Q 115 95 125 105 Q 130 120 128 140 Q 125 165 100 180 Z"
+          fill="url(#blueGrad)" stroke="none" stroke-linejoin="round"/>
+
+    <!-- Highlight for depth -->
+    <ellipse cx="95" cy="125" rx="8" ry="12" fill="white" opacity="0.2"/>
   </g>
 </svg>
