@@ -2823,26 +2823,23 @@ function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, c
   const courierMethods: ShippingMethod[] = [];
 
   if (shippingSettings?.courierDelivery?.enabled && shippingSettings?.courierDelivery?.selectedCouriers?.length) {
-    const courierMapping: Record<string, { name: string; icon: string; estimatedDays: string }> = {
-      gojek: { name: 'GoJek', icon: '🛵', estimatedDays: '1–2 hours' },
-      jne: { name: 'JNE', icon: '📦', estimatedDays: '1–3 days' },
-      jnt: { name: 'J&T', icon: '📦', estimatedDays: '1–3 days' },
-      sicepat: { name: 'SiCepat', icon: '📦', estimatedDays: '1–2 days' },
-      gosend: { name: 'GoSend', icon: '🛵', estimatedDays: '2–4 hours' },
-    };
+    // Selected couriers are stored as display names (e.g. "GoSend", "JNE Express")
+    // — see PROVIDER_COURIERS in ShippingSettings.tsx. Instant/same-day couriers
+    // get a bike icon + short ETA; everything else (regular/cargo) gets a package
+    // icon + a generic multi-day ETA since exact rates/times come from the 3PL API.
+    const INSTANT_COURIERS = new Set(['GoSend', 'Grab Express', 'Borzo', 'LalaMove']);
+    const providerLabel = shippingSettings.courierDelivery.provider === 'kiriminaja' ? 'KiriminAja' : 'Biteship';
 
-    shippingSettings.courierDelivery.selectedCouriers.forEach(courier => {
-      const courierInfo = courierMapping[courier];
-      if (courierInfo) {
-        courierMethods.push({
-          id: `courier-${courier}`,
-          name: `${courierInfo.name} via ${shippingSettings.courierDelivery?.provider === 'biteship' ? 'Biteship' : 'KiriminAja'}`,
-          price: 0,
-          estimatedDays: courierInfo.estimatedDays,
-          enabled: true,
-          icon: courierInfo.icon,
-        });
-      }
+    shippingSettings.courierDelivery.selectedCouriers.forEach(courierName => {
+      const isInstant = INSTANT_COURIERS.has(courierName);
+      courierMethods.push({
+        id: `courier-${courierName.toLowerCase().replace(/\s+/g, '-')}`,
+        name: `${courierName} via ${providerLabel}`,
+        price: 0,
+        estimatedDays: isInstant ? '1–3 hours' : '1–3 days',
+        enabled: true,
+        icon: isInstant ? '🛵' : '📦',
+      });
     });
   }
 
