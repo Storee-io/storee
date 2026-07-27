@@ -11082,8 +11082,8 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
   const storeName = store.name;
   const currencyCode = store.currency?.code ?? 'USD';
   const fmtPrice = makePriceFmt(currencyCode);
-  const shippingSettings = liveStore.shippingSettings;
-  const paymentSettings = liveStore.paymentSettings;
+  const shippingSettings = store.shippingSettings;
+  const paymentSettings = store.paymentSettings;
 
   // Compute feature flags from advancedOptions
   const advFeatures = store.advancedOptions?.features;
