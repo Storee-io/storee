@@ -527,7 +527,9 @@ export default function ShippingSettings() {
           enabled: false,
         },
       };
+      console.log('[ShippingSettings] Saving:', { courierEnabled, selectedCouriers: Array.from(selectedCouriers), newShippingSettings });
       await updateActiveStore({ shippingSettings: newShippingSettings });
+      console.log('[ShippingSettings] Saved successfully');
 
       // Store is already live — push the updated settings to the published
       // site too, otherwise checkout keeps showing stale shipping methods
