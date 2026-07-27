@@ -116,21 +116,6 @@ export default function PreviewShell({ store, from = null }: Props) {
     ? { ...store, ...activeStore }
     : store;
 
-  // Debug: log shipping settings to verify courierDelivery is loaded
-  useEffect(() => {
-    console.log('[PreviewShell] Store data:', {
-      storeId: store.id,
-      activeStoreId: activeStore?.id,
-      liveStoreId: liveStore.id,
-      storeMethods: store.shippingSettings?.methods?.length,
-      activeStoreMethods: activeStore?.shippingSettings?.methods?.length,
-      liveStoreMethods: liveStore.shippingSettings?.methods?.length,
-      storeCourier: store.shippingSettings?.courierDelivery?.enabled,
-      activeStoreCourier: activeStore?.shippingSettings?.courierDelivery?.enabled,
-      liveStoreCourier: liveStore.shippingSettings?.courierDelivery?.enabled,
-    });
-  }, [store.id, activeStore?.id]);
-
   const backLabel = getBackLabel(from);
   const backHref = from ?? '/';
 
