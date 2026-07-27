@@ -129,6 +129,8 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
   const [badge, setBadge] = useState(product.badge ?? '');
   const [selectedCollection, setSelectedCollection] = useState(product.collectionId ?? '');
   const [showCollectionModal, setShowCollectionModal] = useState(false);
+  const [weight, setWeight] = useState(String(product.weight ?? 1));
+  const [weightUnit, setWeightUnit] = useState(product.weightUnit ?? 'kg');
 
   const level = stockLevel(product.stock);
   const { dot, label: stockLabel, badge: stockBadge } = STOCK_CONFIG[level];
@@ -142,6 +144,8 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
       category: category.trim() || product.category,
       badge: badge.trim() || undefined,
       collectionId: selectedCollection || undefined,
+      weight: Math.max(0.1, Number(weight) || 1),
+      weightUnit: weightUnit as 'g' | 'kg' | 'oz' | 'lb',
       status,
     };
   }
@@ -276,6 +280,33 @@ function ProductDetail({ product, fmtPrice, onBack, onSave }: ProductDetailProps
                     min="0"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-colors"
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Weight</label>
+                  <input
+                    type="number"
+                    value={weight}
+                    onChange={e => setWeight(e.target.value)}
+                    min="0.1"
+                    step="0.1"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Unit</label>
+                  <select
+                    value={weightUnit}
+                    onChange={e => setWeightUnit(e.target.value as any)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-colors"
+                  >
+                    <option value="g">g</option>
+                    <option value="kg">kg</option>
+                    <option value="oz">oz</option>
+                    <option value="lb">lb</option>
+                  </select>
                 </div>
               </div>
 
