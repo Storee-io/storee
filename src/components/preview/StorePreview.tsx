@@ -3235,7 +3235,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     })();
 
     return () => controller.abort();
-  }, [cart, shippingSettings, form.postal, cartWeight];
+  }, [cart, shippingSettings, form.postal, cartWeight]);
+
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
