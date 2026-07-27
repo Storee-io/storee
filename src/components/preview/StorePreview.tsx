@@ -2853,33 +2853,53 @@ async function fetchLiveShippingRates(
 ): Promise<Record<string, number>> {
   try {
     if (provider === 'biteship' && apiKey) {
-      const response = await fetch('https://api.biteship.com/v1/rates/couriers', {
+      const response = await fetch('https://api.biteship.com/v1/rates', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          origin_postal_code: '12345',
           destination_postal_code: destination,
-          weight,
-          couriers: couriers.length > 0 ? couriers : undefined,
+          weight: Math.round(weight),
+          courier_code: couriers.length > 0 ? couriers.join(',') : 'all',
         }),
       });
-      if (!response.ok) return {};
+      if (!response.ok) {
+        console.warn('[checkout] Biteship API error:', response.status);
+        return {};
+      }
       const data = await response.json();
       const rates: Record<string, number> = {};
-      (data.couriers || []).forEach((c: any) => {
-        if (c.pricing?.[0]?.price) rates[c.courier_name] = c.pricing[0].price;
+      (data.pricing || []).forEach((p: any) => {
+        if (p.courier_name && p.price) {
+          rates[p.courier_name] = p.price;
+          rates[p.courier_name.toLowerCase()] = p.price;
+        }
       });
+      console.log('[checkout] Biteship rates:', rates);
       return rates;
     } else if (provider === 'kiriminaja' && apiKey) {
-      const response = await fetch('https://api.kiriminaja.com/v2/price', {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${apiKey}` },
+      const response = await fetch('https://api.kiriminaja.com/v2/prices/search', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          origin: '12345',
+          destination,
+          weight,
+        }),
       });
-      if (!response.ok) return {};
+      if (!response.ok) {
+        console.warn('[checkout] KiriminAja API error:', response.status);
+        return {};
+      }
       const data = await response.json();
       const rates: Record<string, number> = {};
-      (data.rates || []).forEach((r: any) => {
-        if (r.price) rates[r.courier_name] = r.price;
+      (data.prices || []).forEach((p: any) => {
+        if (p.name && p.price) {
+          rates[p.name] = p.price;
+          rates[p.name.toLowerCase()] = p.price;
+        }
       });
+      console.log('[checkout] KiriminAja rates:', rates);
       return rates;
     }
   } catch (err) {
@@ -3743,10 +3763,15 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             <div className="p-4 space-y-2">
               {shippingMethods.map(method => {
                 const isFreeByThreshold = freeThreshold && subtotal >= freeThreshold;
-                const liveRate = liveRates[method.name];
+                // Try to match live rate with different naming conventions
+                const liveRate = liveRates[method.name] ??
+                                liveRates[method.name.toLowerCase()] ??
+                                liveRates[method.name.replace(/\s+/g, '')] ??
+                                liveRates[method.name.replace(/\s+/g, '').toLowerCase()];
                 const methodPrice = liveRate ?? method.price;
                 const cost = isFreeByThreshold ? 0 : methodPrice;
                 const isSelected = selectedShippingId === method.id;
+                const hasLiveRate = !!liveRate && liveRate > 0;
                 return (
                   <label
                     key={method.id}
@@ -3763,7 +3788,10 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                     <div className="flex items-center gap-3.5 flex-1 min-w-0">
                       <BrandLogo id={method.id} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{method.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold" style={{ color: t.textPrimary }}>{method.name}</p>
+                          {hasLiveRate && <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: alpha(t.primary, 0.1), color: t.primary }}>Live</span>}
+                        </div>
                         <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Est. arrival: {method.estimatedDays}</p>
                       </div>
                     </div>
