@@ -3213,22 +3213,29 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
 
   // Fetch live shipping rates when cart or shipping settings change
   useEffect(() => {
-    if (!shippingSettings?.courierDelivery?.enabled || !shippingSettings?.courierDelivery?.apiKey || !form.postal) return;
+    if (!shippingSettings?.courierDelivery?.enabled || !shippingSettings?.courierDelivery?.apiKey) return;
 
     const controller = new AbortController();
     (async () => {
+      // Use actual postal code or default for testing
+      const postalCode = form.postal || '12345';
+      console.log('[checkout] Fetching live rates for postal:', postalCode, 'weight:', cartWeight, 'kg');
+
       const rates = await fetchLiveShippingRates(
         shippingSettings.courierDelivery!.provider as 'biteship' | 'kiriminaja',
         shippingSettings.courierDelivery!.apiKey,
-        form.postal,
+        postalCode,
         Math.round(cartWeight * 1000), // convert to grams
         shippingSettings.courierDelivery!.selectedCouriers || []
       );
-      if (!controller.signal.aborted) setLiveRates(rates);
+      if (!controller.signal.aborted) {
+        console.log('[checkout] Live rates fetched:', rates);
+        setLiveRates(rates);
+      }
     })();
 
     return () => controller.abort();
-  }, [cart, shippingSettings, form.postal]);
+  }, [cart, shippingSettings, form.postal, cartWeight];
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
