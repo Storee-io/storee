@@ -2843,6 +2843,51 @@ interface AutoPaymentResult {
 // in checkout even if an older store still has them enabled:true in storage.
 const LEGACY_FLAT_COURIER_IDS = new Set(['jne-reg', 'jne-yes', 'jnt-reg', 'sicepat', 'gosend', 'free']);
 
+// Fetch live rates from 3PL API (Biteship or KiriminAja)
+async function fetchLiveShippingRates(
+  provider: 'biteship' | 'kiriminaja',
+  apiKey: string,
+  destination: string,
+  weight: number,
+  couriers: string[]
+): Promise<Record<string, number>> {
+  try {
+    if (provider === 'biteship' && apiKey) {
+      const response = await fetch('https://api.biteship.com/v1/rates/couriers', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          destination_postal_code: destination,
+          weight,
+          couriers: couriers.length > 0 ? couriers : undefined,
+        }),
+      });
+      if (!response.ok) return {};
+      const data = await response.json();
+      const rates: Record<string, number> = {};
+      (data.couriers || []).forEach((c: any) => {
+        if (c.pricing?.[0]?.price) rates[c.courier_name] = c.pricing[0].price;
+      });
+      return rates;
+    } else if (provider === 'kiriminaja' && apiKey) {
+      const response = await fetch('https://api.kiriminaja.com/v2/price', {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+      });
+      if (!response.ok) return {};
+      const data = await response.json();
+      const rates: Record<string, number> = {};
+      (data.rates || []).forEach((r: any) => {
+        if (r.price) rates[r.courier_name] = r.price;
+      });
+      return rates;
+    }
+  } catch (err) {
+    console.warn('[checkout] live rates error:', err);
+  }
+  return {};
+}
+
 // Helper: Get all shipping options (manual methods + courier options if enabled)
 function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, currencyCode: string, cartWeight: number = 0): ShippingMethod[] {
   const enabledMethods = (shippingSettings?.methods ?? getDefaultShippingMethods(currencyCode))
@@ -3140,9 +3185,30 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [selectedPayId, setSelectedPayId] = useState(paymentMethods[0]?.id ?? '');
   useEffect(() => { if (!selectedPayId && paymentMethods.length) setSelectedPayId(paymentMethods[0].id); }, []);
 
-  const shippingMethods = getAllShippingOptions(shippingSettings, store?.currency?.code ?? 'USD');
+  const cartWeight = calculateCartWeight(cart);
+  const shippingMethods = useMemo(() => getAllShippingOptions(shippingSettings, store?.currency?.code ?? 'USD', cartWeight), [shippingSettings, store?.currency?.code, cartWeight]);
   const [selectedShippingId, setSelectedShippingId] = useState(shippingMethods[0]?.id ?? '');
+  const [liveRates, setLiveRates] = useState<Record<string, number>>({});
   const [expandedPaymentCategories, setExpandedPaymentCategories] = useState<Set<string>>(getDefaultExpandedPaymentCategories());
+
+  // Fetch live shipping rates when cart or shipping settings change
+  useEffect(() => {
+    if (!shippingSettings?.courierDelivery?.enabled || !shippingSettings?.courierDelivery?.apiKey || !form.postal) return;
+
+    const controller = new AbortController();
+    (async () => {
+      const rates = await fetchLiveShippingRates(
+        shippingSettings.courierDelivery!.provider as 'biteship' | 'kiriminaja',
+        shippingSettings.courierDelivery!.apiKey,
+        form.postal,
+        Math.round(cartWeight * 1000), // convert to grams
+        shippingSettings.courierDelivery!.selectedCouriers || []
+      );
+      if (!controller.signal.aborted) setLiveRates(rates);
+    })();
+
+    return () => controller.abort();
+  }, [cart, shippingSettings, form.postal]);
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
@@ -3170,7 +3236,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const selectedShipping = shippingMethods.find(m => m.id === selectedShippingId) ?? shippingMethods[0];
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
   const freeThreshold = shippingSettings?.freeShippingThreshold;
-  const shippingCost = (freeThreshold && subtotal >= freeThreshold) ? 0 : (selectedShipping?.price ?? getDefaultShippingCost(store?.currency?.code ?? 'USD'));
+  const liveRate = selectedShipping ? liveRates[selectedShipping.name] : undefined;
+  const shippingCost = (freeThreshold && subtotal >= freeThreshold) ? 0 : ((liveRate ?? selectedShipping?.price) ?? getDefaultShippingCost(store?.currency?.code ?? 'USD'));
   const discount = promoApplied ? Math.round(subtotal * 0.1) : 0;
   const total = subtotal + shippingCost - discount;
   const isMobile = device === 'mobile';
@@ -3676,7 +3743,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             <div className="p-4 space-y-2">
               {shippingMethods.map(method => {
                 const isFreeByThreshold = freeThreshold && subtotal >= freeThreshold;
-                const cost = isFreeByThreshold ? 0 : method.price;
+                const liveRate = liveRates[method.name];
+                const methodPrice = liveRate ?? method.price;
+                const cost = isFreeByThreshold ? 0 : methodPrice;
                 const isSelected = selectedShippingId === method.id;
                 return (
                   <label
