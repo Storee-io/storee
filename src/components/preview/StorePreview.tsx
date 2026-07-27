@@ -65,6 +65,28 @@ function execCommandCopy(text: string) {
   } catch { /* silent */ }
 }
 
+// Convert weight to kg (standard unit for shipping calculations)
+function toKilogram(weight: number, unit: 'g' | 'kg' | 'oz' | 'lb' = 'kg'): number {
+  switch (unit) {
+    case 'g': return weight / 1000;
+    case 'kg': return weight;
+    case 'oz': return weight * 0.0283495;
+    case 'lb': return weight * 0.453592;
+    default: return weight;
+  }
+}
+
+// Calculate total cart weight in kg
+function calculateCartWeight(cart: CartItem[], store?: Store): number {
+  if (!cart.length || !store?.design?.products) return 0;
+  return cart.reduce((total, item) => {
+    const product = store.design.products.find(p => p.id === item.id);
+    if (!product) return total;
+    const itemWeight = toKilogram(product.weight || 1, (product.weightUnit as any) || 'kg');
+    return total + itemWeight * item.quantity;
+  }, 0);
+}
+
 export type DeviceMode = 'desktop' | 'tablet' | 'mobile';
 
 // ── Store feature flags & UI translations ─────────────────────────────────────
