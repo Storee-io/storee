@@ -491,7 +491,7 @@ export default function ShippingSettings() {
     const cd = activeStore?.shippingSettings?.courierDelivery;
     if (cd) {
       setCourierEnabled(cd.enabled ?? false);
-      setSelectedProvider(cd.provider ?? null);
+      setSelectedProvider(cd.provider ?? undefined);
       setCourierApiKey(cd.apiKey ?? '');
       setSelectedCouriers(new Set(cd.selectedCouriers ?? []));
     } else if (!activeStore?.id) {
@@ -580,7 +580,7 @@ export default function ShippingSettings() {
 
   const [shippingTab, setShippingTab] = useState<'courier' | 'manual'>('courier');
   const [courierEnabled, setCourierEnabled] = useState(() => activeStore?.shippingSettings?.courierDelivery?.enabled ?? false);
-  const [selectedProvider, setSelectedProvider] = useState<'biteship' | 'kiriminaja' | null>(() => activeStore?.shippingSettings?.courierDelivery?.provider ?? null);
+  const [selectedProvider, setSelectedProvider] = useState<'biteship' | 'kiriminaja' | undefined>(() => activeStore?.shippingSettings?.courierDelivery?.provider ?? undefined);
   const [courierApiKey, setCourierApiKey] = useState(() => activeStore?.shippingSettings?.courierDelivery?.apiKey ?? '');
   const [selectedCouriers, setSelectedCouriers] = useState<Set<string>>(() => new Set(activeStore?.shippingSettings?.courierDelivery?.selectedCouriers ?? []));
   const toggleCourier = (name: string) => {

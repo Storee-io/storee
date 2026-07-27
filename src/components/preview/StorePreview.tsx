@@ -77,13 +77,11 @@ function toKilogram(weight: number, unit: 'g' | 'kg' | 'oz' | 'lb' = 'kg'): numb
 }
 
 // Calculate total cart weight in kg
-function calculateCartWeight(cart: CartItem[], store?: Store): number {
-  if (!cart.length || !store?.design?.products) return 0;
+function calculateCartWeight(cart: CartItem[]): number {
+  if (!cart.length) return 0;
   return cart.reduce((total, item) => {
-    const product = store.design.products.find(p => p.id === item.id);
-    if (!product) return total;
-    const itemWeight = toKilogram(product.weight || 1, (product.weightUnit as any) || 'kg');
-    return total + itemWeight * item.quantity;
+    const itemWeight = toKilogram(item.product.weight || 1, (item.product.weightUnit as any) || 'kg');
+    return total + itemWeight * item.qty;
   }, 0);
 }
 

@@ -16,6 +16,8 @@ export interface DashboardProduct {
   sales: number;
   status: 'Active' | 'Draft';
   collectionId?: string;
+  weight?: number;
+  weightUnit?: 'g' | 'kg' | 'oz' | 'lb';
 }
 
 export interface DashboardOrder {

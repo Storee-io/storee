@@ -23,6 +23,8 @@ export interface RichProduct {
   descriptionHtml?: string;
   badgeHtml?: string;
   priceHtml?: string;
+  weight?: number;
+  weightUnit?: 'g' | 'kg' | 'oz' | 'lb';
 }
 
 // ── Design Tokens — Claude-as-Designer (v2: raw CSS values) ─────────────────
