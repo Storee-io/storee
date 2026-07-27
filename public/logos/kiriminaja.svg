@@ -1,36 +1,64 @@
-<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#9D4EDD;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#7B2CBF;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#A855F7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7E22CE;stop-opacity:1" />
     </linearGradient>
     <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#3A86FF;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#0062CC;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#2563EB;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E40AF;stop-opacity:1" />
     </linearGradient>
   </defs>
 
-  <!-- Purple Arrow pointing up-right -->
-  <g>
-    <!-- Main arrow shaft -->
-    <path d="M 60 140 L 140 60 L 120 60 C 120 40 100 20 80 20 C 60 20 50 35 50 50 L 70 50 Z"
-          fill="url(#purpleGrad)" stroke="none" stroke-linejoin="round"/>
+  <!-- Purple Arrow/Pointer - main shape -->
+  <path d="M 180 40
+           Q 200 35 210 50
+           Q 220 70 180 120
+           L 160 140
+           L 140 120
+           Q 170 80 175 60
+           Q 180 45 180 40
+           Z"
+        fill="url(#purpleGrad)" stroke="none" stroke-linejoin="round" stroke-linecap="round"/>
 
-    <!-- Arrow head curve -->
-    <path d="M 140 60 L 155 45 Q 160 50 155 60 Z"
-          fill="url(#purpleGrad)" stroke="none"/>
+  <!-- Purple Arrow - curved body -->
+  <path d="M 180 40
+           Q 150 30 110 50
+           Q 70 75 60 120
+           Q 55 145 70 160
+           Q 95 150 140 120
+           L 160 140
+           Q 140 160 100 175
+           Q 70 190 50 170
+           Q 30 145 40 110
+           Q 50 70 100 40
+           Q 140 20 180 40
+           Z"
+        fill="url(#purpleGrad)" stroke="none" stroke-linejoin="round"/>
 
-    <!-- Curved left side of arrow for elegant shape -->
-    <path d="M 60 140 Q 45 125 50 100 L 70 90 Q 65 110 65 130 Z"
-          fill="url(#purpleGrad)" stroke="none" opacity="0.9"/>
-  </g>
+  <!-- Notch/chevron cutout in middle for visual interest -->
+  <path d="M 130 110 L 150 130 L 130 150 Z"
+        fill="white" stroke="none"/>
 
-  <!-- Blue Teardrop at bottom -->
-  <g>
-    <path d="M 100 180 Q 75 165 72 140 Q 70 120 75 105 Q 85 95 100 95 Q 115 95 125 105 Q 130 120 128 140 Q 125 165 100 180 Z"
-          fill="url(#blueGrad)" stroke="none" stroke-linejoin="round"/>
+  <!-- Blue Teardrop - rounded shape at bottom -->
+  <path d="M 120 160
+           Q 85 155 70 180
+           Q 60 200 70 220
+           Q 90 235 120 230
+           Q 150 225 160 200
+           Q 170 175 155 160
+           Q 140 150 120 160
+           Z"
+        fill="url(#blueGrad)" stroke="none" stroke-linejoin="round" stroke-linecap="round"/>
 
-    <!-- Highlight for depth -->
-    <ellipse cx="95" cy="125" rx="8" ry="12" fill="white" opacity="0.2"/>
-  </g>
+  <!-- Additional curve for teardrop shape -->
+  <path d="M 120 160
+           Q 100 165 95 185
+           Q 92 205 105 220
+           Q 125 235 140 225
+           Q 155 215 160 195
+           Q 165 170 150 160
+           Q 135 150 120 160
+           Z"
+        fill="url(#blueGrad)" stroke="none" stroke-linejoin="round" stroke-linecap="round"/>
 </svg>

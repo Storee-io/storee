@@ -708,7 +708,7 @@ export default function ShippingSettings() {
                   <button onClick={() => setSelectedProvider('kiriminaja')} className={`relative flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl border-2 text-center transition-all ${selectedProvider === 'kiriminaja' ? 'border-green-400 bg-green-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'}`}>
                     {selectedProvider === 'kiriminaja' && <span className="absolute top-2 right-2 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center"><Check className="w-2.5 h-2.5 text-white" /></span>}
                     <div className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center overflow-hidden">
-                      <img src="/logos/kiriminaja.svg" alt="KiriminAja" className="w-full h-full object-cover" />
+                      <img src="/logos/kiriminaja.png" alt="KiriminAja" className="w-full h-full object-cover" />
                     </div>
                     <span className="text-sm font-bold text-slate-800">KiriminAja</span>
                     <span className="text-[10px] text-slate-500 leading-tight">Premium logistics partner</span>
