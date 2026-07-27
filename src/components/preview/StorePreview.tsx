@@ -2817,9 +2817,16 @@ interface AutoPaymentResult {
   sandbox?: boolean;
 }
 
+// Legacy flat courier IDs (jne-reg, jne-yes, ...) predate the Courier Delivery
+// (3PL) tab and Seller Delivery / Pick Up cards — the dashboard's Manual
+// Delivery tab no longer exposes toggles for them, so they must never appear
+// in checkout even if an older store still has them enabled:true in storage.
+const LEGACY_FLAT_COURIER_IDS = new Set(['jne-reg', 'jne-yes', 'jnt-reg', 'sicepat', 'gosend', 'free']);
+
 // Helper: Get all shipping options (manual methods + courier options if enabled)
 function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, currencyCode: string): ShippingMethod[] {
-  const enabledMethods = (shippingSettings?.methods ?? getDefaultShippingMethods(currencyCode)).filter(m => m.enabled);
+  const enabledMethods = (shippingSettings?.methods ?? getDefaultShippingMethods(currencyCode))
+    .filter(m => m.enabled && !LEGACY_FLAT_COURIER_IDS.has(m.id));
   const courierMethods: ShippingMethod[] = [];
 
   if (shippingSettings?.courierDelivery?.enabled && shippingSettings?.courierDelivery?.selectedCouriers?.length) {
@@ -2827,16 +2834,25 @@ function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, c
     // — see PROVIDER_COURIERS in ShippingSettings.tsx. Instant/same-day couriers
     // get a bike icon + short ETA; everything else (regular/cargo) gets a package
     // icon + a generic multi-day ETA since exact rates/times come from the 3PL API.
+    // Cost is an estimate seeded from the same regional presets used for manual
+    // methods — real per-order rates require a live Biteship/KiriminAja rate-check
+    // call (destination + weight), not yet wired up.
     const INSTANT_COURIERS = new Set(['GoSend', 'Grab Express', 'Borzo', 'LalaMove']);
+    const CARGO_COURIERS = new Set(['Deliveree', 'Sentral Cargo', 'J&T Cargo']);
     const providerLabel = shippingSettings.courierDelivery.provider === 'kiriminaja' ? 'KiriminAja' : 'Biteship';
+    const presetDefaults = getDefaultShippingMethods(currencyCode);
+    const instantPrice = presetDefaults.find(m => m.id === 'gosend')?.price ?? getDefaultShippingCost(currencyCode);
+    const regularPrice = presetDefaults.find(m => m.id === 'jne-reg')?.price ?? getDefaultShippingCost(currencyCode);
+    const cargoPrice = (presetDefaults.find(m => m.id === 'jnt-reg')?.price ?? getDefaultShippingCost(currencyCode)) * 3;
 
     shippingSettings.courierDelivery.selectedCouriers.forEach(courierName => {
       const isInstant = INSTANT_COURIERS.has(courierName);
+      const isCargo = CARGO_COURIERS.has(courierName);
       courierMethods.push({
         id: `courier-${courierName.toLowerCase().replace(/\s+/g, '-')}`,
         name: `${courierName} via ${providerLabel}`,
-        price: 0,
-        estimatedDays: isInstant ? '1–3 hours' : '1–3 days',
+        price: isCargo ? cargoPrice : isInstant ? instantPrice : regularPrice,
+        estimatedDays: isInstant ? '1–3 hours' : isCargo ? '3–7 days' : '1–3 days',
         enabled: true,
         icon: isInstant ? '🛵' : '📦',
       });
