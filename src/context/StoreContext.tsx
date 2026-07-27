@@ -56,6 +56,7 @@ export interface CourierDeliveryConfig {
   provider?: 'biteship' | 'kiriminaja';
   apiKey?: string;
   selectedCouriers?: string[];
+  originPostalCode?: string;
 }
 
 export interface ShippingSettings {

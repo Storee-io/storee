@@ -2850,6 +2850,7 @@ async function fetchLiveShippingRates(
   destination: string,
   weight: number,
   couriers: string[],
+  originPostalCode?: string,
   cartItems?: CartItem[]
 ): Promise<Record<string, number>> {
   try {
@@ -2868,7 +2869,7 @@ async function fetchLiveShippingRates(
         }));
 
         const requestBody = {
-          origin_postal_code: 51212, // Default seller location
+          origin_postal_code: parseInt(originPostalCode || '51212') || 51212,
           destination_postal_code: destination,
           couriers: couriers.join(','),
           items: items.length > 0 ? items : [
@@ -3278,6 +3279,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         postalCode,
         Math.round(cartWeight * 1000), // convert to grams
         shippingSettings.courierDelivery!.selectedCouriers || [],
+        shippingSettings.courierDelivery!.originPostalCode,
         cart
       );
       if (!controller.signal.aborted) {
