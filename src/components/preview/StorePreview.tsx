@@ -2849,20 +2849,35 @@ async function fetchLiveShippingRates(
   apiKey: string,
   destination: string,
   weight: number,
-  couriers: string[]
+  couriers: string[],
+  cartItems?: CartItem[]
 ): Promise<Record<string, number>> {
   try {
     if (provider === 'biteship' && apiKey) {
       try {
-        const requestBody = {
-          origin_postal_code: '12345',
-          destination_postal_code: destination,
-          weight: Math.round(weight), // weight in grams
-          couriers: couriers.length > 0 ? couriers : [],
-        };
-        console.log('[checkout] Biteship request:', requestBody);
+        // Build items array from cart
+        const items = (cartItems || []).map(item => ({
+          name: item.product.name,
+          description: item.product.name,
+          value: Math.round(item.product.price),
+          length: 10,
+          width: 10,
+          height: 10,
+          weight: Math.round((item.product.weight || 1) * 1000), // convert to grams
+          quantity: item.qty,
+        }));
 
-        const response = await fetch('https://api.biteship.com/v1/rates', {
+        const requestBody = {
+          origin_postal_code: 51212, // Default seller location
+          destination_postal_code: destination,
+          couriers: couriers.join(','),
+          items: items.length > 0 ? items : [
+            { name: 'Item', description: 'Item', value: 100000, length: 10, width: 10, height: 10, weight: Math.round(weight), quantity: 1 }
+          ],
+        };
+        console.log('[checkout] Biteship request body:', JSON.stringify(requestBody, null, 2));
+
+        const response = await fetch('https://api.biteship.com/v1/rates/couriers', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -2873,34 +2888,41 @@ async function fetchLiveShippingRates(
         });
 
         const responseText = await response.text();
-        console.log('[checkout] Biteship response status:', response.status, 'body:', responseText.substring(0, 200));
+        console.log('[checkout] Biteship response status:', response.status, 'body:', responseText.substring(0, 300));
 
         if (!response.ok) {
-          console.warn('[checkout] Biteship API error:', response.status, responseText.substring(0, 200));
+          console.warn('[checkout] Biteship API error:', response.status, responseText.substring(0, 300));
           return {};
         }
 
         const data = JSON.parse(responseText);
         const rates: Record<string, number> = {};
 
-        // Handle Biteship response format
-        if (data.pricing) {
+        // Handle Biteship response format - /v1/rates/couriers endpoint returns data.pricing
+        if (data.data?.pricing) {
+          data.data.pricing.forEach((p: any) => {
+            if (p.courier_name && p.price) {
+              rates[p.courier_name] = p.price;
+              rates[p.courier_name.toLowerCase()] = p.price;
+              // Also support courier_code as key
+              if (p.courier_code) {
+                rates[p.courier_code] = p.price;
+              }
+            }
+          });
+        } else if (data.pricing) {
           data.pricing.forEach((p: any) => {
             if (p.courier_name && p.price) {
               rates[p.courier_name] = p.price;
               rates[p.courier_name.toLowerCase()] = p.price;
-            }
-          });
-        } else if (data.couriers) {
-          data.couriers.forEach((c: any) => {
-            if (c.courier_name && c.pricing?.[0]?.price) {
-              rates[c.courier_name] = c.pricing[0].price;
-              rates[c.courier_name.toLowerCase()] = c.pricing[0].price;
+              if (p.courier_code) {
+                rates[p.courier_code] = p.price;
+              }
             }
           });
         }
 
-        console.log('[checkout] Biteship rates:', rates);
+        console.log('[checkout] Biteship rates retrieved:', rates);
         return rates;
       } catch (err) {
         console.error('[checkout] Biteship parse error:', err);
@@ -3255,7 +3277,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         shippingSettings.courierDelivery!.apiKey,
         postalCode,
         Math.round(cartWeight * 1000), // convert to grams
-        shippingSettings.courierDelivery!.selectedCouriers || []
+        shippingSettings.courierDelivery!.selectedCouriers || [],
+        cart
       );
       if (!controller.signal.aborted) {
         console.log('[checkout] Live rates fetched:', rates);
