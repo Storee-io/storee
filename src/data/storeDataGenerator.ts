@@ -242,6 +242,8 @@ export function generateStoreData(store: Store): StoreData {
       stock: STOCK_POOL[i % STOCK_POOL.length],
       sales: Math.max(1, Math.round(orderCount * SALES_SHARE[i % 4])),
       status: 'Active' as const,
+      weight: (p as { weight?: number }).weight ?? 1,
+      weightUnit: ((p as { weightUnit?: string }).weightUnit ?? 'kg') as 'g' | 'kg' | 'oz' | 'lb',
     };
   });
 

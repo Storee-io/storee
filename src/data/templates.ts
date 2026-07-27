@@ -19,6 +19,8 @@ export interface Product {
   image: string;
   category: string;
   badge?: string;
+  weight?: number;
+  weightUnit?: 'g' | 'kg' | 'oz' | 'lb';
 }
 
 export const templates: Template[] = [
