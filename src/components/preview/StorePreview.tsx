@@ -2817,6 +2817,40 @@ interface AutoPaymentResult {
   sandbox?: boolean;
 }
 
+// Helper: Get all shipping options (manual methods + courier options if enabled)
+function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, currencyCode: string): ShippingMethod[] {
+  const enabledMethods = (shippingSettings?.methods ?? getDefaultShippingMethods(currencyCode)).filter(m => m.enabled);
+  const courierMethods: ShippingMethod[] = [];
+
+  if (shippingSettings?.courierDelivery?.enabled && shippingSettings?.courierDelivery?.selectedCouriers?.length) {
+    const courierMapping: Record<string, { name: string; icon: string; estimatedDays: string }> = {
+      gojek: { name: 'GoJek', icon: '🛵', estimatedDays: '1–2 hours' },
+      jne: { name: 'JNE', icon: '📦', estimatedDays: '1–3 days' },
+      jnt: { name: 'J&T', icon: '📦', estimatedDays: '1–3 days' },
+      sicepat: { name: 'SiCepat', icon: '📦', estimatedDays: '1–2 days' },
+      gosend: { name: 'GoSend', icon: '🛵', estimatedDays: '2–4 hours' },
+    };
+
+    shippingSettings.courierDelivery.selectedCouriers.forEach(courier => {
+      const courierInfo = courierMapping[courier];
+      if (courierInfo) {
+        courierMethods.push({
+          id: `courier-${courier}`,
+          name: `${courierInfo.name} via ${shippingSettings.courierDelivery?.provider === 'biteship' ? 'Biteship' : 'KiriminAja'}`,
+          price: 0,
+          estimatedDays: courierInfo.estimatedDays,
+          enabled: true,
+          icon: courierInfo.icon,
+        });
+      }
+    });
+  }
+
+  return enabledMethods.length > 0 || courierMethods.length > 0
+    ? [...enabledMethods, ...courierMethods]
+    : [{ id: 'flat', name: 'Standard Shipping', price: getDefaultShippingCost(currencyCode), estimatedDays: '2–3 days', enabled: true, icon: '📦' }];
+}
+
 function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOrder, fmtPrice, shippingSettings, paymentSettings, layoutStyle, editMode, onFieldChange, store, branding, placingOrder, buyerUser, previousPage }: {
   cart: CartItem[]; primaryColor: string; storeName: string; device: DeviceMode; fmtPrice: (n: number) => string;
   shippingSettings?: ShippingSettings; paymentSettings?: PaymentSettings; layoutStyle?: string; store?: Store; previousPage?: StorePage | null;
@@ -3069,10 +3103,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [selectedPayId, setSelectedPayId] = useState(paymentMethods[0]?.id ?? '');
   useEffect(() => { if (!selectedPayId && paymentMethods.length) setSelectedPayId(paymentMethods[0].id); }, []);
 
-  const enabledShippingMethods = (shippingSettings?.methods ?? getDefaultShippingMethods(store?.currency?.code ?? 'USD')).filter(m => m.enabled);
-  const shippingMethods: ShippingMethod[] = enabledShippingMethods.length > 0 ? enabledShippingMethods : [
-    { id: 'flat', name: 'Standard Shipping', price: getDefaultShippingCost(store?.currency?.code ?? 'USD'), estimatedDays: '2–3 days', enabled: true, icon: '📦' }
-  ];
+  const shippingMethods = getAllShippingOptions(shippingSettings, store?.currency?.code ?? 'USD');
   const [selectedShippingId, setSelectedShippingId] = useState(shippingMethods[0]?.id ?? '');
   const [expandedPaymentCategories, setExpandedPaymentCategories] = useState<Set<string>>(getDefaultExpandedPaymentCategories());
   const [promoCode, setPromoCode] = useState('');
@@ -11063,13 +11094,14 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
   };
 
   // Resolve shipping cost for SuccessPage total
-  const enabledShipping = (shippingSettings?.methods ?? getDefaultShippingMethods(currencyCode)).filter(m => m.enabled);
-  const resolvedShipping = enabledShipping.find(m => m.id === selectedShippingId) ?? enabledShipping[0];
+  const allShippingOptions = getAllShippingOptions(shippingSettings, currencyCode);
+  const resolvedShipping = allShippingOptions.find(m => m.id === selectedShippingId) ?? allShippingOptions[0];
   const freeThreshold = shippingSettings?.freeShippingThreshold;
   const shippingCost = (freeThreshold && cartTotal >= freeThreshold) ? 0 : (resolvedShipping?.price ?? getDefaultShippingCost(currencyCode));
 
   const saveOrder = async (paymentId: string, shippingId: string, customer: { name: string; email: string; whatsapp: string; address: string; city: string; province: string; postal: string }) => {
-    const selectedShipping = (shippingSettings?.methods ?? getDefaultShippingMethods(currencyCode)).find(m => m.id === shippingId);
+    const allShipping = getAllShippingOptions(shippingSettings, currencyCode);
+    const selectedShipping = allShipping.find(m => m.id === shippingId);
     const paymentMethod = (store.paymentSettings?.methods ?? DEFAULT_PAYMENT_METHODS).find(m => m.id === paymentId);
     const freeThresholdSave = shippingSettings?.freeShippingThreshold;
     const savedShippingCost = (freeThresholdSave && cartTotal >= freeThresholdSave) ? 0 : (selectedShipping?.price ?? getDefaultShippingCost(currencyCode));
@@ -11259,7 +11291,8 @@ function StorePreview({ store, device, editMode, previewShell, onFieldChange, on
       setSelectedShippingId(sid);
       await saveOrder(pid, sid, customer);
       if (pid.startsWith('auto-')) {
-        const selectedShipping = (shippingSettings?.methods ?? getDefaultShippingMethods(currencyCode)).find(m => m.id === sid);
+        const allShip = getAllShippingOptions(shippingSettings, currencyCode);
+        const selectedShipping = allShip.find(m => m.id === sid);
         const freeThresholdNow = shippingSettings?.freeShippingThreshold;
         const shipCost = (freeThresholdNow && cartTotal >= freeThresholdNow) ? 0 : (selectedShipping?.price ?? getDefaultShippingCost(currencyCode));
         await createAutoPayment(pid, cartTotal + shipCost, { name: customer.name, email: customer.email });

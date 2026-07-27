@@ -51,9 +51,17 @@ export interface ShippingMethod {
   pickupLng?: number;
 }
 
+export interface CourierDeliveryConfig {
+  enabled: boolean;
+  provider?: 'biteship' | 'kiriminaja';
+  apiKey?: string;
+  selectedCouriers?: string[];
+}
+
 export interface ShippingSettings {
   methods: ShippingMethod[];
   freeShippingThreshold?: number;
+  courierDelivery?: CourierDeliveryConfig;
 }
 
 // Per-currency shipping presets: [standard, express, economy, sameDay] as
