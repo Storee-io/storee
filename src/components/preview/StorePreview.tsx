@@ -3018,6 +3018,8 @@ function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, c
     if (method.useDistancePricing && method.minFee && method.ratePerKm) {
       let distance = 0;
 
+      console.log('[getAllShippingOptions] Seller Delivery - postalCode:', postalCode, 'originPostalCode:', originPostalCode);
+
       if (postalCode && originPostalCode) {
         // Try to calculate actual distance from coordinates
         const originCoords = getCoordinatesForPostalCode(originPostalCode);
