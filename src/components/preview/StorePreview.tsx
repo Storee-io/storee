@@ -3023,12 +3023,16 @@ function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, c
         const originCoords = getCoordinatesForPostalCode(originPostalCode);
         const destCoords = getCoordinatesForPostalCode(postalCode);
 
+        console.log('[Seller Delivery] origin:', originPostalCode, originCoords, 'dest:', postalCode, destCoords);
+
         if (originCoords && destCoords) {
           // Calculate actual distance using Haversine formula
           distance = calculateDistance(originCoords.lat, originCoords.lng, destCoords.lat, destCoords.lng);
+          console.log('[Seller Delivery] calculated distance:', distance, 'km');
         } else {
           // Fallback to 5km if postal codes not found in database
           distance = 5;
+          console.log('[Seller Delivery] postal codes not in database, using fallback 5km');
         }
       }
 
