@@ -3347,6 +3347,29 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const originLng = shippingSettings?.courierDelivery?.originLng;
   const originCoords = (originLat != null && originLng != null) ? { lat: originLat, lng: originLng } : null;
   const [lastPickedCoords, setLastPickedCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  // The location picker gives us exact coords, but a restored saved profile
+  // (or a manually-typed postal code) only carries the postal/address text —
+  // geocode it once so distance-based pricing stays accurate even without a
+  // fresh map pick.
+  useEffect(() => {
+    if (!form.postal || lastPickedCoords) return;
+    const query = [form.postal, form.city, 'Indonesia'].filter(Boolean).join(', ');
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
+        const data = await res.json();
+        if (!cancelled && data?.[0]) {
+          setLastPickedCoords({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
+        }
+      } catch {
+        // Geocoding failed — distance calc falls back to the 5km estimate.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [form.postal, form.city]);
+
   const shippingMethods = useMemo(
     () => getAllShippingOptions(shippingSettings, store?.currency?.code ?? 'USD', cartWeight, form.postal, originPostalCode, lastPickedCoords, originCoords),
     [shippingSettings, store?.currency?.code, cartWeight, form.postal, originPostalCode, lastPickedCoords, originLat, originLng]
