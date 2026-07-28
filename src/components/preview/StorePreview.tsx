@@ -1732,7 +1732,14 @@ const parseDisplayName = (displayName: string, postcode?: string): PickedLocatio
     const city      = parts[postalIdx - cityOffset] ?? '';
     const streetEnd = postalIdx - cityOffset;
     const district  = parts[streetEnd - 1] ?? '';
-    const address   = parts.slice(0, streetEnd - 2).join(', '); // exclude kelurahan/suburb and district
+    // Normally there's a separate kelurahan/suburb part right before the district
+    // that we exclude (streetEnd - 2). But some areas (e.g. Kebon Jeruk in Jakarta)
+    // have the same name for kelurahan and kecamatan, so Nominatim's display_name
+    // omits the extra level — streetEnd - 2 would then land at/before 0 and silently
+    // swallow the actual street text (e.g. "RW 11"). Fall back to streetEnd - 1 (only
+    // excluding the district) whenever there isn't room for a separate suburb level.
+    const addressSliceEnd = (streetEnd - 2) > 0 ? streetEnd - 2 : Math.max(0, streetEnd - 1);
+    const address   = parts.slice(0, addressSliceEnd).join(', '); // exclude kelurahan/suburb and district
     // Use full displayName without any deduplication or filtering
     const display = displayName;
     const postal    = (postcode ?? parts[postalIdx] ?? '').replace(/\D/g, '').slice(0, 5);
