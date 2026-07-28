@@ -2962,8 +2962,18 @@ async function fetchLiveShippingRates(
 
 // Helper: Get all shipping options (manual methods + courier options if enabled)
 function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, currencyCode: string, cartWeight: number = 0): ShippingMethod[] {
-  const enabledMethods = (shippingSettings?.methods ?? getDefaultShippingMethods(currencyCode))
+  let enabledMethods = (shippingSettings?.methods ?? getDefaultShippingMethods(currencyCode))
     .filter(m => m.enabled && !LEGACY_FLAT_COURIER_IDS.has(m.id));
+
+  // Apply calculated prices for manual shipping methods
+  enabledMethods = enabledMethods.map(method => {
+    // For Seller Delivery with distance-based pricing, use minFee as default
+    if (method.useDistancePricing && method.minFee) {
+      return { ...method, price: method.minFee };
+    }
+    return method;
+  });
+
   const courierMethods: ShippingMethod[] = [];
 
   // Weight surcharge: Rp200/gram for orders > 5kg
