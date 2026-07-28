@@ -3329,7 +3329,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
   const freeThreshold = shippingSettings?.freeShippingThreshold;
   const liveRate = selectedShipping ? liveRates[selectedShipping.name] : undefined;
-  const shippingCost = (freeThreshold && subtotal >= freeThreshold) ? 0 : ((liveRate ?? selectedShipping?.price) ?? getDefaultShippingCost(store?.currency?.code ?? 'USD'));
+  const shippingCost = !form.postal || (freeThreshold && subtotal >= freeThreshold) ? 0 : ((liveRate ?? selectedShipping?.price) ?? getDefaultShippingCost(store?.currency?.code ?? 'USD'));
   const discount = promoApplied ? Math.round(subtotal * 0.1) : 0;
   const total = subtotal + shippingCost - discount;
   const isMobile = device === 'mobile';
