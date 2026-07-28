@@ -2635,10 +2635,10 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
   );
 
   const levelLabel: Record<PostalLevel, string> = {
-    province: translations.chooseProvince || 'Pilih Provinsi',
-    regency: translations.chooseRegency || 'Pilih Kota / Kabupaten',
-    district: translations.chooseDistrict || 'Pilih Kecamatan',
-    village: translations.chooseVillage || 'Pilih Kelurahan',
+    province: 'Choose Province',
+    regency: 'Choose City / Regency',
+    district: 'Choose District',
+    village: 'Choose Village',
   };
 
   const SkeletonList = () => (
@@ -2670,7 +2670,7 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
                 </button>
               )}
               <span style={{ fontSize: '15px', fontWeight: 700, color: t.textPrimary }}>
-                {isSearchMode ? (translations.searchResults || 'Hasil Pencarian') : levelLabel[level]}
+                {isSearchMode ? 'Search Results' : levelLabel[level]}
               </span>
             </div>
             <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted, padding: 0, fontSize: '20px', lineHeight: 1 }}>✕</button>
@@ -2731,7 +2731,7 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
               ref={searchInputRef}
               autoFocus
               type="text"
-              placeholder={translations.searchPostal || 'Cari kelurahan, kecamatan, kota, atau kode pos…'}
+              placeholder="Search village, district, city, or postal code…"
               value={query}
               onChange={e => handleQueryChange(e.target.value)}
               style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: '13px', color: t.textPrimary }}
@@ -2750,13 +2750,13 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
           {isSearchMode ? (
             <>
               {searched && searchNav.length === 0 && searchVillages.length === 0 && !searching && (
-                <div style={{ padding: '32px 16px', textAlign: 'center', color: t.textMuted, fontSize: '13px' }}>Tidak ada hasil</div>
+                <div style={{ padding: '32px 16px', textAlign: 'center', color: t.textMuted, fontSize: '13px' }}>No results found</div>
               )}
               {searchNav.length > 0 && (
                 <>
-                  <div style={{ padding: '8px 16px 4px', fontSize: '10px', fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Wilayah</div>
+                  <div style={{ padding: '8px 16px 4px', fontSize: '10px', fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Area</div>
                   {searchNav.map((w, i) => {
-                    const typeLabel = w.type === 'province' ? 'Provinsi' : w.type === 'regency' ? 'Kota/Kabupaten' : 'Kecamatan';
+                    const typeLabel = w.type === 'province' ? 'Province' : w.type === 'regency' ? 'City/Regency' : 'District';
                     const sub = w.type === 'regency' ? w.province : w.type === 'district' ? `${w.province} › ${w.regency}` : undefined;
                     return (
                       <button key={w.id} type="button" onClick={() => handleSearchNavClick(w)}
@@ -2776,7 +2776,7 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
               )}
               {searchVillages.length > 0 && (
                 <>
-                  <div style={{ padding: '8px 16px 4px', fontSize: '10px', fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', borderTop: searchNav.length > 0 ? `1px solid ${alpha(t.divider, 0.15)}` : 'none', marginTop: searchNav.length > 0 ? '4px' : 0 }}>Kelurahan &amp; Kode Pos</div>
+                  <div style={{ padding: '8px 16px 4px', fontSize: '10px', fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', borderTop: searchNav.length > 0 ? `1px solid ${alpha(t.divider, 0.15)}` : 'none', marginTop: searchNav.length > 0 ? '4px' : 0 }}>Village &amp; Postal Code</div>
                   {searchVillages.map((r, i) => (
                     <button key={i} type="button" onClick={() => onSelect({ code: r.code ?? 0, village: r.village, district: r.district, regency: r.regency, province: r.province, wilayahCode: r.wilayahCode })}
                       style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.12)}` : 'none', cursor: 'pointer', padding: '11px 16px', display: 'block' }}
