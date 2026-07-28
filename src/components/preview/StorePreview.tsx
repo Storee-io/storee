@@ -2961,15 +2961,19 @@ async function fetchLiveShippingRates(
 }
 
 // Helper: Get all shipping options (manual methods + courier options if enabled)
-function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, currencyCode: string, cartWeight: number = 0): ShippingMethod[] {
+function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, currencyCode: string, cartWeight: number = 0, postalCode?: string): ShippingMethod[] {
   let enabledMethods = (shippingSettings?.methods ?? getDefaultShippingMethods(currencyCode))
     .filter(m => m.enabled && !LEGACY_FLAT_COURIER_IDS.has(m.id));
 
   // Apply calculated prices for manual shipping methods
   enabledMethods = enabledMethods.map(method => {
-    // For Seller Delivery with distance-based pricing, use minFee as default
-    if (method.useDistancePricing && method.minFee) {
-      return { ...method, price: method.minFee };
+    // For Seller Delivery with distance-based pricing
+    if (method.useDistancePricing && method.minFee && method.ratePerKm) {
+      // If postal code provided, calculate based on assumed 5km distance
+      // Otherwise, use minFee as default
+      const distance = postalCode ? 5 : 0;
+      const calculatedPrice = method.minFee + (distance * method.ratePerKm);
+      return { ...method, price: calculatedPrice };
     }
     return method;
   });
@@ -3268,7 +3272,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   useEffect(() => { if (!selectedPayId && paymentMethods.length) setSelectedPayId(paymentMethods[0].id); }, []);
 
   const cartWeight = calculateCartWeight(cart);
-  const shippingMethods = useMemo(() => getAllShippingOptions(shippingSettings, store?.currency?.code ?? 'USD', cartWeight), [shippingSettings, store?.currency?.code, cartWeight]);
+  const shippingMethods = useMemo(() => getAllShippingOptions(shippingSettings, store?.currency?.code ?? 'USD', cartWeight, form.postal), [shippingSettings, store?.currency?.code, cartWeight, form.postal]);
   const [selectedShippingId, setSelectedShippingId] = useState(shippingMethods[0]?.id ?? '');
   const [liveRates, setLiveRates] = useState<Record<string, number>>({});
   const [expandedPaymentCategories, setExpandedPaymentCategories] = useState<Set<string>>(getDefaultExpandedPaymentCategories());
