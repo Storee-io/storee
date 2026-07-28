@@ -3853,7 +3853,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       {touched.address && validate('address', form.address) && <p style={errStyle}>{validate('address', form.address)}</p>}
                     </div>
                     <AnimatePresence>
-                      {form.address.trim() && (
+                      {(form.address.trim() || lastPickedLoc) && (
                         <motion.div
                           key="postal-field"
                           className="col-span-2"
