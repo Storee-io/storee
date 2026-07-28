@@ -526,6 +526,7 @@ export default function ShippingSettings() {
           originPostalCode: originPostalCode || undefined,
         } : {
           enabled: false,
+          originPostalCode: originPostalCode || undefined,
         },
       };
       await updateActiveStore({ shippingSettings: newShippingSettings });
@@ -629,6 +630,24 @@ export default function ShippingSettings() {
         </button>
       </div>
 
+      {/* Store Origin Address — used for both Courier (3PL) and Manual (distance-based) shipping */}
+      <div className="bg-white rounded-2xl p-6 border border-slate-200">
+        <label className="text-xs font-medium text-slate-600 mb-2 block">Store Origin Postal Code</label>
+        <div className="flex gap-2">
+          <div className="flex-1 flex items-center gap-2 px-3 py-2.5 border border-slate-200 rounded-lg bg-slate-50">
+            <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            <input
+              type="text"
+              placeholder="Enter postal code (e.g., 51212)"
+              value={originPostalCode}
+              onChange={e => setOriginPostalCode(e.target.value)}
+              className="flex-1 bg-transparent text-sm outline-none"
+            />
+          </div>
+        </div>
+        <p className="text-xs text-slate-400 mt-1.5">This will be used as the origin address for all shipping cost calculations, both 3PL courier and manual/distance-based delivery</p>
+      </div>
+
       {/* Category tabs */}
       <div className="grid grid-cols-2 gap-3">
         {tabs.map(t => {
@@ -692,24 +711,6 @@ export default function ShippingSettings() {
             ) : (
               /* Enabled Content */
               <>
-              {/* Store Origin Address */}
-              <div>
-                <label className="text-xs font-medium text-slate-600 mb-2 block">Store Origin Postal Code</label>
-                <div className="flex gap-2">
-                  <div className="flex-1 flex items-center gap-2 px-3 py-2.5 border border-slate-200 rounded-lg bg-slate-50">
-                    <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                    <input
-                      type="text"
-                      placeholder="Enter postal code (e.g., 51212)"
-                      value={originPostalCode}
-                      onChange={e => setOriginPostalCode(e.target.value)}
-                      className="flex-1 bg-transparent text-sm outline-none"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-slate-400 mt-1.5">This will be used as the origin address for all shipping cost calculations</p>
-              </div>
-
               {/* Provider selector */}
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">1. Select Provider</p>
