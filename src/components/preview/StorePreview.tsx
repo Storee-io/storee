@@ -3824,16 +3824,29 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             </div>
           </div>
 
-          {/* Shipping Method */}
-          <div className="shadow-sm overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
-            <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
-              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
-                <Truck className="w-3.5 h-3.5" style={{ color: t.primary }} />
+          {/* Shipping Method — only show after postal code is filled */}
+          {!form.postal ? (
+            <div className="shadow-sm overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
+              <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
+                  <Truck className="w-3.5 h-3.5" style={{ color: t.primary }} />
+                </div>
+                <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Shipping Method</h3>
               </div>
-              <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Shipping Method</h3>
+              <div className="p-4">
+                <p className="text-sm" style={{ color: t.textMuted }}>Fill in your postal code above to see available shipping options</p>
+              </div>
             </div>
-            <div className="p-4 space-y-2">
-              {shippingMethods.map(method => {
+          ) : (
+            <div className="shadow-sm overflow-hidden" style={{ background: t.surfaceBg, border: `1px solid ${t.surfaceBorder}`, borderRadius: t.surfaceRadius }}>
+              <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${t.divider}` }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: alpha(t.primary, 0.1) }}>
+                  <Truck className="w-3.5 h-3.5" style={{ color: t.primary }} />
+                </div>
+                <h3 className="text-sm font-bold" style={{ color: t.textPrimary }}>Shipping Method</h3>
+              </div>
+              <div className="p-4 space-y-2">
+                {shippingMethods.map(method => {
                 const isFreeByThreshold = freeThreshold && subtotal >= freeThreshold;
                 // Try to match live rate with different naming conventions
                 const liveRate = liveRates[method.name] ??
@@ -3878,13 +3891,14 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                   </label>
                 );
               })}
-              {freeThreshold && subtotal < freeThreshold && (
-                <div className="mt-1 px-3.5 py-2.5 rounded-xl text-xs" style={{ background: alpha(t.primary, 0.05), color: t.textSecondary }}>
-                  Add {fmtPrice(freeThreshold - subtotal)} more for free shipping!
-                </div>
-              )}
+                {freeThreshold && subtotal < freeThreshold && (
+                  <div className="mt-1 px-3.5 py-2.5 rounded-xl text-xs" style={{ background: alpha(t.primary, 0.05), color: t.textSecondary }}>
+                    Add {fmtPrice(freeThreshold - subtotal)} more for free shipping!
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Payment method — shared render helpers keep the collapsible category
               header and the selectable option row visually identical across every
