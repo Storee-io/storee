@@ -3018,23 +3018,17 @@ function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, c
     if (method.useDistancePricing && method.minFee && method.ratePerKm) {
       let distance = 0;
 
-      console.log('[getAllShippingOptions] Seller Delivery - postalCode:', postalCode, 'originPostalCode:', originPostalCode);
-
       if (postalCode && originPostalCode) {
         // Try to calculate actual distance from coordinates
         const originCoords = getCoordinatesForPostalCode(originPostalCode);
         const destCoords = getCoordinatesForPostalCode(postalCode);
 
-        console.log('[Seller Delivery] origin:', originPostalCode, originCoords, 'dest:', postalCode, destCoords);
-
         if (originCoords && destCoords) {
           // Calculate actual distance using Haversine formula
           distance = calculateDistance(originCoords.lat, originCoords.lng, destCoords.lat, destCoords.lng);
-          console.log('[Seller Delivery] calculated distance:', distance, 'km');
         } else {
           // Fallback to 5km if postal codes not found in database
           distance = 5;
-          console.log('[Seller Delivery] postal codes not in database, using fallback 5km');
         }
       }
 
@@ -3339,7 +3333,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
 
   const cartWeight = calculateCartWeight(cart);
   const originPostalCode = shippingSettings?.courierDelivery?.originPostalCode;
-  console.log('[CheckoutPage] shippingSettings:', shippingSettings, 'originPostalCode:', originPostalCode);
   const shippingMethods = useMemo(() => getAllShippingOptions(shippingSettings, store?.currency?.code ?? 'USD', cartWeight, form.postal, originPostalCode), [shippingSettings, store?.currency?.code, cartWeight, form.postal, originPostalCode]);
   const [selectedShippingId, setSelectedShippingId] = useState(shippingMethods[0]?.id ?? '');
   const [liveRates, setLiveRates] = useState<Record<string, number>>({});
