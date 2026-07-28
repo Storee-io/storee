@@ -3338,7 +3338,8 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   useEffect(() => { if (!selectedPayId && paymentMethods.length) setSelectedPayId(paymentMethods[0].id); }, []);
 
   const cartWeight = calculateCartWeight(cart);
-  const shippingMethods = useMemo(() => getAllShippingOptions(shippingSettings, store?.currency?.code ?? 'USD', cartWeight, form.postal, shippingSettings?.courierDelivery?.originPostalCode), [shippingSettings, store?.currency?.code, cartWeight, form.postal]);
+  const originPostalCode = shippingSettings?.courierDelivery?.originPostalCode;
+  const shippingMethods = useMemo(() => getAllShippingOptions(shippingSettings, store?.currency?.code ?? 'USD', cartWeight, form.postal, originPostalCode), [shippingSettings, store?.currency?.code, cartWeight, form.postal, originPostalCode]);
   const [selectedShippingId, setSelectedShippingId] = useState(shippingMethods[0]?.id ?? '');
   const [liveRates, setLiveRates] = useState<Record<string, number>>({});
   const [expandedPaymentCategories, setExpandedPaymentCategories] = useState<Set<string>>(getDefaultExpandedPaymentCategories());
