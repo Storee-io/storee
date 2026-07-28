@@ -3008,7 +3008,15 @@ function getCoordinatesForPostalCode(postalCode?: string): { lat: number; lng: n
 }
 
 // Helper: Get all shipping options (manual methods + courier options if enabled)
-function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, currencyCode: string, cartWeight: number = 0, postalCode?: string, originPostalCode?: string): ShippingMethod[] {
+function getAllShippingOptions(
+  shippingSettings: ShippingSettings | undefined,
+  currencyCode: string,
+  cartWeight: number = 0,
+  postalCode?: string,
+  originPostalCode?: string,
+  destCoords?: { lat: number; lng: number } | null,
+  originCoordsOverride?: { lat: number; lng: number } | null,
+): ShippingMethod[] {
   let enabledMethods = (shippingSettings?.methods ?? getDefaultShippingMethods(currencyCode))
     .filter(m => m.enabled && !LEGACY_FLAT_COURIER_IDS.has(m.id));
 
@@ -3018,16 +3026,18 @@ function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, c
     if (method.useDistancePricing && method.minFee && method.ratePerKm) {
       let distance = 0;
 
-      if (postalCode && originPostalCode) {
-        // Try to calculate actual distance from coordinates
-        const originCoords = getCoordinatesForPostalCode(originPostalCode);
-        const destCoords = getCoordinatesForPostalCode(postalCode);
+      if (postalCode || destCoords) {
+        // Prefer real coordinates (geocoded origin + GPS/map-picked destination)
+        // over the small hardcoded postal-code lookup — the lookup only covers
+        // a handful of major cities, so relying on it alone made the price look
+        // "static" for most addresses since they'd all hit the same 5km fallback.
+        const originCoords = originCoordsOverride ?? getCoordinatesForPostalCode(originPostalCode);
+        const resolvedDestCoords = destCoords ?? getCoordinatesForPostalCode(postalCode);
 
-        if (originCoords && destCoords) {
-          // Calculate actual distance using Haversine formula
-          distance = calculateDistance(originCoords.lat, originCoords.lng, destCoords.lat, destCoords.lng);
+        if (originCoords && resolvedDestCoords) {
+          distance = calculateDistance(originCoords.lat, originCoords.lng, resolvedDestCoords.lat, resolvedDestCoords.lng);
         } else {
-          // Fallback to 5km if postal codes not found in database
+          // Fallback to 5km if we truly have no coordinates for either end
           distance = 5;
         }
       }
@@ -3333,7 +3343,14 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
 
   const cartWeight = calculateCartWeight(cart);
   const originPostalCode = shippingSettings?.courierDelivery?.originPostalCode;
-  const shippingMethods = useMemo(() => getAllShippingOptions(shippingSettings, store?.currency?.code ?? 'USD', cartWeight, form.postal, originPostalCode), [shippingSettings, store?.currency?.code, cartWeight, form.postal, originPostalCode]);
+  const originLat = shippingSettings?.courierDelivery?.originLat;
+  const originLng = shippingSettings?.courierDelivery?.originLng;
+  const originCoords = (originLat != null && originLng != null) ? { lat: originLat, lng: originLng } : null;
+  const [lastPickedCoords, setLastPickedCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const shippingMethods = useMemo(
+    () => getAllShippingOptions(shippingSettings, store?.currency?.code ?? 'USD', cartWeight, form.postal, originPostalCode, lastPickedCoords, originCoords),
+    [shippingSettings, store?.currency?.code, cartWeight, form.postal, originPostalCode, lastPickedCoords, originLat, originLng]
+  );
   const [selectedShippingId, setSelectedShippingId] = useState(shippingMethods[0]?.id ?? '');
   const [liveRates, setLiveRates] = useState<Record<string, number>>({});
   const [expandedPaymentCategories, setExpandedPaymentCategories] = useState<Set<string>>(getDefaultExpandedPaymentCategories());
@@ -3371,7 +3388,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [showPostalPicker, setShowPostalPicker] = useState(false);
   const [pendingGps, setPendingGps] = useState<{ lat: number; lng: number } | null>(null);
-  const [lastPickedCoords, setLastPickedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [lastPickedLoc, setLastPickedLoc] = useState<PickedLocation | null>(null);
   const [lastViewedCoords, setLastViewedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [addrSugg, setAddrSugg] = useState<any[]>([]);

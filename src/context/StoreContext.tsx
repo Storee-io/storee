@@ -57,6 +57,8 @@ export interface CourierDeliveryConfig {
   apiKey?: string;
   selectedCouriers?: string[];
   originPostalCode?: string;
+  originLat?: number;  // geocoded from originPostalCode, used for accurate distance-based pricing
+  originLng?: number;
 }
 
 export interface ShippingSettings {

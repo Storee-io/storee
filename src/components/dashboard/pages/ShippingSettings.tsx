@@ -515,6 +515,28 @@ export default function ShippingSettings() {
   const save = async () => {
     setSaving(true);
     try {
+      // Geocode the origin postal code into lat/lng so checkout can compute
+      // real distance-based pricing (Seller Delivery) instead of a flat
+      // fallback. Only re-geocode when the postal code actually changed.
+      let originLat = activeStore?.shippingSettings?.courierDelivery?.originLat;
+      let originLng = activeStore?.shippingSettings?.courierDelivery?.originLng;
+      const prevPostal = activeStore?.shippingSettings?.courierDelivery?.originPostalCode;
+      if (originPostalCode && originPostalCode !== prevPostal) {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(originPostalCode + ', Indonesia')}&limit=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
+          const data = await res.json();
+          if (data?.[0]) {
+            originLat = parseFloat(data[0].lat);
+            originLng = parseFloat(data[0].lon);
+          }
+        } catch {
+          // Geocoding failed — checkout will fall back to a flat distance estimate.
+        }
+      } else if (!originPostalCode) {
+        originLat = undefined;
+        originLng = undefined;
+      }
+
       const newShippingSettings = {
         methods,
         freeShippingThreshold: freeThreshold ? Number(freeThreshold) : undefined,
@@ -524,9 +546,13 @@ export default function ShippingSettings() {
           apiKey: courierApiKey,
           selectedCouriers: Array.from(selectedCouriers),
           originPostalCode: originPostalCode || undefined,
+          originLat,
+          originLng,
         } : {
           enabled: false,
           originPostalCode: originPostalCode || undefined,
+          originLat,
+          originLng,
         },
       };
       await updateActiveStore({ shippingSettings: newShippingSettings });
