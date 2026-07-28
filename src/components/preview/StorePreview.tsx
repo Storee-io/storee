@@ -2960,8 +2960,55 @@ async function fetchLiveShippingRates(
   return {};
 }
 
+// Postal code to coordinate mapping (major cities in Indonesia)
+const POSTAL_COORDINATES: Record<string, { lat: number; lng: number; city: string }> = {
+  // Jakarta
+  '10000': { lat: -6.2088, lng: 106.8456, city: 'Jakarta Pusat' },
+  '12000': { lat: -6.2962, lng: 106.8000, city: 'Jakarta Selatan' },
+  '12190': { lat: -6.3106, lng: 106.7979, city: 'Jakarta Selatan' },
+  '12345': { lat: -6.3106, lng: 106.7979, city: 'Jakarta Selatan' },
+  // Bandung
+  '40000': { lat: -6.9175, lng: 107.6141, city: 'Bandung' },
+  '51212': { lat: -6.9175, lng: 107.6141, city: 'Bandung' },
+  // Surabaya
+  '60000': { lat: -7.2575, lng: 112.7521, city: 'Surabaya' },
+  // Medan
+  '20000': { lat: 3.5952, lng: 98.6722, city: 'Medan' },
+  // Semarang
+  '50000': { lat: -6.9667, lng: 110.4167, city: 'Semarang' },
+  // Yogyakarta
+  '55000': { lat: -7.7956, lng: 110.3695, city: 'Yogyakarta' },
+  // Makassar
+  '90000': { lat: -5.3520, lng: 119.4432, city: 'Makassar' },
+  // Palembang
+  '30000': { lat: -3.0731, lng: 104.7519, city: 'Palembang' },
+  // Depok
+  '16518': { lat: -6.3915, lng: 106.8296, city: 'Depok' },
+  // Tangerang
+  '15000': { lat: -6.1783, lng: 106.6319, city: 'Tangerang' },
+};
+
+// Helper: Calculate distance between two coordinates using Haversine formula (km)
+function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLng = (lng2 - lng1) * (Math.PI / 180);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c);
+}
+
+// Helper: Get coordinates for postal code (or null if not found)
+function getCoordinatesForPostalCode(postalCode?: string): { lat: number; lng: number } | null {
+  if (!postalCode) return null;
+  const coords = POSTAL_COORDINATES[postalCode];
+  return coords ? { lat: coords.lat, lng: coords.lng } : null;
+}
+
 // Helper: Get all shipping options (manual methods + courier options if enabled)
-function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, currencyCode: string, cartWeight: number = 0, postalCode?: string): ShippingMethod[] {
+function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, currencyCode: string, cartWeight: number = 0, postalCode?: string, originPostalCode?: string): ShippingMethod[] {
   let enabledMethods = (shippingSettings?.methods ?? getDefaultShippingMethods(currencyCode))
     .filter(m => m.enabled && !LEGACY_FLAT_COURIER_IDS.has(m.id));
 
@@ -2969,9 +3016,22 @@ function getAllShippingOptions(shippingSettings: ShippingSettings | undefined, c
   enabledMethods = enabledMethods.map(method => {
     // For Seller Delivery with distance-based pricing
     if (method.useDistancePricing && method.minFee && method.ratePerKm) {
-      // If postal code provided, calculate based on assumed 5km distance
-      // Otherwise, use minFee as default
-      const distance = postalCode ? 5 : 0;
+      let distance = 0;
+
+      if (postalCode && originPostalCode) {
+        // Try to calculate actual distance from coordinates
+        const originCoords = getCoordinatesForPostalCode(originPostalCode);
+        const destCoords = getCoordinatesForPostalCode(postalCode);
+
+        if (originCoords && destCoords) {
+          // Calculate actual distance using Haversine formula
+          distance = calculateDistance(originCoords.lat, originCoords.lng, destCoords.lat, destCoords.lng);
+        } else {
+          // Fallback to 5km if postal codes not found in database
+          distance = 5;
+        }
+      }
+
       const calculatedPrice = method.minFee + (distance * method.ratePerKm);
       return { ...method, price: calculatedPrice };
     }
@@ -3272,7 +3332,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   useEffect(() => { if (!selectedPayId && paymentMethods.length) setSelectedPayId(paymentMethods[0].id); }, []);
 
   const cartWeight = calculateCartWeight(cart);
-  const shippingMethods = useMemo(() => getAllShippingOptions(shippingSettings, store?.currency?.code ?? 'USD', cartWeight, form.postal), [shippingSettings, store?.currency?.code, cartWeight, form.postal]);
+  const shippingMethods = useMemo(() => getAllShippingOptions(shippingSettings, store?.currency?.code ?? 'USD', cartWeight, form.postal, shippingSettings?.courierDelivery?.originPostalCode), [shippingSettings, store?.currency?.code, cartWeight, form.postal]);
   const [selectedShippingId, setSelectedShippingId] = useState(shippingMethods[0]?.id ?? '');
   const [liveRates, setLiveRates] = useState<Record<string, number>>({});
   const [expandedPaymentCategories, setExpandedPaymentCategories] = useState<Set<string>>(getDefaultExpandedPaymentCategories());
