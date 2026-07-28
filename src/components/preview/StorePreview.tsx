@@ -4128,7 +4128,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             <div className="flex justify-between text-xs"><span style={{ color: t.textSecondary }}>Subtotal</span><span style={{ color: t.textPrimary }}>{fmtPrice(subtotal)}</span></div>
             <div className="flex justify-between text-xs">
               <span style={{ color: t.textSecondary }}>Shipping</span>
-              <span>{shippingCost === 0 ? <span className="font-semibold" style={{ color: t.successText }}>FREE</span> : <span style={{ color: t.textPrimary }}>{fmtPrice(shippingCost)}</span>}</span>
+              <span>{!form.postal ? '-' : shippingCost === 0 ? <span className="font-semibold" style={{ color: t.successText }}>FREE</span> : <span style={{ color: t.textPrimary }}>{fmtPrice(shippingCost)}</span>}</span>
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-xs font-medium" style={{ color: t.successText }}>
