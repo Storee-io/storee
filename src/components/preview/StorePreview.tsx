@@ -1756,8 +1756,8 @@ const parseDisplayName = (displayName: string, postcode?: string, knownSuburb?: 
   const parts = displayName.split(',').map(p => p.trim()).filter(Boolean);
   const postalIdx = parts.findIndex(p => /^\d{4,6}$/.test(p));
   if (postalIdx >= 3) {
-    // Only use parts up to and including the first postal code + country
-    const cleanedParts = parts.slice(0, postalIdx + 2); // Keep up to postal code + 1 more part (usually country)
+    // Only use parts up to and including the first postal code (stop before any extra parts)
+    const cleanedParts = parts.slice(0, postalIdx + 1); // Keep only up to postal code
     const hasSupra = NOMINATIM_SUPRA.has(cleanedParts[postalIdx - 1]);
     const province  = normalizeProvince(cleanedParts[postalIdx - (hasSupra ? 2 : 1)] ?? '');
     let cityOffset  = hasSupra ? 3 : 2;
