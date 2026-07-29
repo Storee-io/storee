@@ -1741,11 +1741,7 @@ const abbreviateDisplayName = (displayName: string): string => {
     .replace(/\bKabupaten\s+/g, 'Kab. ')
     .replace(/\bKota\s+/g, 'Kota ')
     .replace(/\bKecamatan\s+/g, 'Kec. ')
-    .replace(/\bKelurahan\s+/g, 'Kel. ')
-    // Also handle standalone "Kelurahan" label (appears in some Nominatim responses as a category label)
-    .replace(/,\s*Kelurahan\s*,/g, ',')
-    .replace(/,\s*Kelurahan\s*$/g, '')
-    .replace(/^\s*Kelurahan\s*,/g, '');
+    .replace(/\bKelurahan\s+/g, 'Kel. ');
 };
 
 // Parse Nominatim display_name into structured location fields
