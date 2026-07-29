@@ -1733,6 +1733,8 @@ const abbreviateRegion = (name: string): string => {
 const abbreviateDisplayName = (displayName: string): string => {
   if (!displayName) return displayName;
   return displayName
+    // Remove trailing country name (Indonesia) after postal code
+    .replace(/,\s*Indonesia\s*$/i, '')
     // Full territory replacements
     .replace('Daerah Khusus Ibukota Jakarta', 'DKI Jakarta')
     .replace('Daerah Istimewa Yogyakarta', 'DI Yogyakarta')
