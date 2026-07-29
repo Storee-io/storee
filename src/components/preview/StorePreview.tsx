@@ -3521,6 +3521,24 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         const data: any[] = await res.json();
         setAddrSugg(data);
         setShowAddrSugg(data.length > 0);
+
+        // Enrich results that lack postcode via reverse-geocode (Nominatim /search omits
+        // postcode + street details; /reverse includes them). Do this in background so
+        // display appears immediately, updates as enrichment completes.
+        data.forEach((result, idx) => {
+          if (!result.address?.postcode && result.lat && result.lon) {
+            // Stagger reverse-geocode requests to respect rate limit (1 req/sec)
+            setTimeout(async () => {
+              try {
+                const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${result.lat}&lon=${result.lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
+                const revData = await revRes.json();
+                if (revData && !revData.error) {
+                  setAddrSugg(prev => prev.map((r, i) => i === idx ? revData : r));
+                }
+              } catch { /* ignore enrichment failure, keep original */ }
+            }, idx * 1000);
+          }
+        });
       } catch { setAddrSugg([]); }
     }, 450);
   };
