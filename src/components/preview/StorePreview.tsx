@@ -1720,8 +1720,8 @@ const abbreviateRegion = (name: string): string => {
   if (!name) return name;
   // Special cases for special territories
   if (name === 'Daerah Khusus Ibukota Jakarta') return 'DKI Jakarta';
-  if (name === 'Daerah Istimewa Yogyakarta') return 'DIY Yogyakarta';
-  if (name === 'Daerah Istimewa Aceh') return 'DIY Aceh';
+  if (name === 'Daerah Istimewa Yogyakarta') return 'DI Yogyakarta';
+  if (name === 'Daerah Istimewa Aceh') return 'Aceh';
   // Generic prefixes
   return name.replace(/^Kabupaten\s+/, 'Kab. ')
     .replace(/^Kota\s+/, 'Kota ')
@@ -1735,8 +1735,8 @@ const abbreviateDisplayName = (displayName: string): string => {
   return displayName
     // Full territory replacements
     .replace('Daerah Khusus Ibukota Jakarta', 'DKI Jakarta')
-    .replace('Daerah Istimewa Yogyakarta', 'DIY Yogyakarta')
-    .replace('Daerah Istimewa Aceh', 'DIY Aceh')
+    .replace('Daerah Istimewa Yogyakarta', 'DI Yogyakarta')
+    .replace('Daerah Istimewa Aceh', 'Aceh')
     // Generic prefix replacements (word-boundary to avoid replacing in middle of words)
     .replace(/\bKabupaten\s+/g, 'Kab. ')
     .replace(/\bKota\s+/g, 'Kota ')
