@@ -1960,11 +1960,21 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       setSearchResults(allResults);
 
       // Search with variants (jalan, RT, RW, nomor, gedung, etc) to find addresses within the searched area
+      // Use staggered delays to avoid rate limiting (Nominatim: 1 req/sec)
       const variants = ['jalan', 'jl.', 'rt', 'rw', 'nomor', 'no.', 'gedung', 'blok', 'rumah'];
-      const variantSearches = variants.map(variant =>
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(variant + ' ' + q)}&limit=10&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } })
-          .then(r => r.json())
-          .catch(() => [])
+      const variantSearches = variants.map((variant, idx) =>
+        new Promise<any[]>(resolve => {
+          setTimeout(async () => {
+            try {
+              const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(variant + ' ' + q)}&limit=10&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
+              if (!res.ok) { resolve([]); return; }
+              const results = await res.json();
+              resolve(Array.isArray(results) ? results : []);
+            } catch {
+              resolve([]);
+            }
+          }, idx * 1200); // 1.2 sec delay per request to respect rate limits
+        })
       );
 
       try {
@@ -3576,11 +3586,21 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         setShowAddrSugg(allSugg.length > 0);
 
         // Search with variants (jalan, RT, RW, nomor, gedung, etc) to find addresses within the searched area
+        // Use staggered delays to avoid rate limiting (Nominatim: 1 req/sec)
         const variants = ['jalan', 'jl.', 'rt', 'rw', 'nomor', 'no.', 'gedung', 'blok', 'rumah'];
-        const variantSearches = variants.map(variant =>
-          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(variant + ' ' + val)}&limit=10&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } })
-            .then(r => r.json())
-            .catch(() => [])
+        const variantSearches = variants.map((variant, idx) =>
+          new Promise<any[]>(resolve => {
+            setTimeout(async () => {
+              try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(variant + ' ' + val)}&limit=10&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
+                if (!res.ok) { resolve([]); return; }
+                const results = await res.json();
+                resolve(Array.isArray(results) ? results : []);
+              } catch {
+                resolve([]);
+              }
+            }, idx * 1200); // 1.2 sec delay per request to respect rate limits
+          })
         );
 
         try {
