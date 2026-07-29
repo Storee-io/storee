@@ -1716,7 +1716,12 @@ async function matchWilayah(fields: { province?: string; city?: string; district
 
 // Parse Nominatim display_name into structured location fields
 // Structure: ..., [Kecamatan], [Kabupaten], [Provinsi], [Supra?], [PostalCode], [Indonesia]
-const parseDisplayName = (displayName: string, postcode?: string): PickedLocation => {
+// `knownSuburb` is Nominatim's structured village/suburb/neighbourhood field (when available) —
+// used to precisely strip that one part out of `address` instead of guessing by position, since
+// some areas (e.g. Kebon Jeruk in Jakarta) have the same name for kelurahan and kecamatan and
+// display_name then omits the extra level, which broke a fixed-offset guess and swallowed real
+// street text (e.g. "RW 11").
+const parseDisplayName = (displayName: string, postcode?: string, knownSuburb?: string): PickedLocation => {
   const parts = displayName.split(',').map(p => p.trim()).filter(Boolean);
   const postalIdx = parts.findIndex(p => /^\d{4,6}$/.test(p));
   if (postalIdx >= 3) {
@@ -1732,14 +1737,15 @@ const parseDisplayName = (displayName: string, postcode?: string): PickedLocatio
     const city      = parts[postalIdx - cityOffset] ?? '';
     const streetEnd = postalIdx - cityOffset;
     const district  = parts[streetEnd - 1] ?? '';
-    // Normally there's a separate kelurahan/suburb part right before the district
-    // that we exclude (streetEnd - 2). But some areas (e.g. Kebon Jeruk in Jakarta)
-    // have the same name for kelurahan and kecamatan, so Nominatim's display_name
-    // omits the extra level — streetEnd - 2 would then land at/before 0 and silently
-    // swallow the actual street text (e.g. "RW 11"). Fall back to streetEnd - 1 (only
-    // excluding the district) whenever there isn't room for a separate suburb level.
-    const addressSliceEnd = (streetEnd - 2) > 0 ? streetEnd - 2 : Math.max(0, streetEnd - 1);
-    const address   = parts.slice(0, addressSliceEnd).join(', '); // exclude kelurahan/suburb and district
+    // Everything before the district is address text by default. If the structured
+    // suburb/village name shows up as the part right before the district, drop just
+    // that one part — it's the kelurahan, not street detail.
+    let addressParts = parts.slice(0, Math.max(0, streetEnd - 1));
+    const suburbNorm = (knownSuburb ?? '').trim().toLowerCase();
+    if (suburbNorm && addressParts.length > 0 && addressParts[addressParts.length - 1].trim().toLowerCase() === suburbNorm) {
+      addressParts = addressParts.slice(0, -1);
+    }
+    const address = addressParts.join(', ');
     // Use full displayName without any deduplication or filtering
     const display = displayName;
     const postal    = (postcode ?? parts[postalIdx] ?? '').replace(/\D/g, '').slice(0, 5);
@@ -1775,11 +1781,12 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
       const data = await res.json();
       const postcode = (data.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
-      const parsed = parseDisplayName(data.display_name ?? '', postcode);
+      const addr = data.address || {};
+      const suburbCandidate = addr.village || addr.neighbourhood || addr.hamlet || addr.locality || addr.suburb || '';
+      const parsed = parseDisplayName(data.display_name ?? '', postcode, suburbCandidate);
 
       // Get Nominatim data first
-      const addr = data.address || {};
-      let village = addr.village || addr.neighbourhood || addr.hamlet || addr.locality || addr.suburb || parsed.suburb || '';
+      let village = suburbCandidate || parsed.suburb || '';
       let district = addr.district || parsed.district || '';
       let city = addr.city || addr.county || parsed.city || '';
       let province = normalizeProvince(addr.state || parsed.province || '');
@@ -1899,12 +1906,13 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
 
   const selectResult = async (r: any) => {
     const postcode = (r.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
-    const parsed = parseDisplayName(r.display_name, postcode);
+    const suburbCandidate = r.address?.village ?? r.address?.neighbourhood ?? r.address?.hamlet ?? r.address?.locality ?? r.address?.suburb ?? '';
+    const parsed = parseDisplayName(r.display_name, postcode, suburbCandidate);
 
     // Use Nominatim's structured address fields (not text-parsed display_name) for the
     // village, same as the address-suggestion path — display_name parsing intentionally
     // skips suburb/village since its position in the string is unreliable.
-    let village = r.address?.village ?? r.address?.neighbourhood ?? r.address?.hamlet ?? r.address?.locality ?? r.address?.suburb ?? '';
+    let village = suburbCandidate;
     let district = r.address?.district ?? parsed.district ?? '';
     let city = r.address?.city ?? r.address?.county ?? parsed.city ?? '';
     let province = parsed.province ?? '';
@@ -3537,13 +3545,14 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             type="button"
             onMouseDown={async (e) => {
               e.preventDefault();
-              const parsed = parseDisplayName(s.display_name);
+              const suburbCandidate = s.address?.village ?? s.address?.neighbourhood ?? s.address?.hamlet ?? s.address?.locality ?? s.address?.suburb ?? '';
+              const parsed = parseDisplayName(s.display_name, undefined, suburbCandidate);
               const postcode = (s.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
               const normalizedProv = normalizeProvince(s.address?.state ?? parsed.province ?? '');
               const matchedProv = INDONESIAN_PROVINCES.find(p => p === normalizedProv) ?? INDONESIAN_PROVINCES.find(p => p.toLowerCase().includes((s.address?.state ?? parsed.province ?? '').toLowerCase())) ?? '';
 
               // Get initial values from Nominatim
-              let village = s.address?.village ?? s.address?.neighbourhood ?? s.address?.hamlet ?? s.address?.locality ?? s.address?.suburb ?? '';
+              let village = suburbCandidate;
               let district = s.address?.district ?? parsed.district ?? '';
               let city = s.address?.city ?? s.address?.county ?? parsed.city ?? '';
               let province = matchedProv || normalizeProvince(s.address?.state ?? parsed.province ?? '');
