@@ -1782,7 +1782,7 @@ const parseDisplayName = (displayName: string, postcode?: string, knownSuburb?: 
     // Don't parse suburb from display_name - use Nominatim structured fields instead
     return { address, city: abbreviateRegion(city), postal, province: abbreviateRegion(province), display, suburb: '', district: abbreviateRegion(district) };
   }
-  return { address: displayName, city: '', postal: postcode ?? '', province: '', display: displayName, suburb: '', district: '' };
+  return { address: displayName, city: '', postal: postcode ?? '', province: '', display: abbreviateDisplayName(displayName), suburb: '', district: '' };
 };
 
 function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }: {
