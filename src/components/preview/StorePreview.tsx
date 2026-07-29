@@ -1961,22 +1961,6 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
         if (!Array.isArray(data)) { setSearchResults([]); return; }
         setSearchResults(data);
 
-        // Enrich results that lack postcode via reverse-geocode
-        data.forEach((result, idx) => {
-          if (!result.address?.postcode && result.lat && result.lon) {
-            const timer = setTimeout(async () => {
-              try {
-                const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${result.lat}&lon=${result.lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
-                const revData = await revRes.json();
-                if (revData && !revData.error) {
-                  setSearchResults(prev => prev.map((r, i) => i === idx ? revData : r));
-                }
-              } catch { /* ignore enrichment failure */ }
-            }, idx * 1000);
-            enrichTimers.current.push(timer);
-          }
-        });
-
         // Search with variants sequentially to find street addresses within areas
         // Even if initial search empty, always try variants for promising queries (2+ chars, no coords)
         if (q.trim().length >= 2 && !/[\d\,\-]/.test(q.slice(0, 5))) {
@@ -3589,25 +3573,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         let allSugg = [...data];
         setAddrSugg(allSugg);
         setShowAddrSugg(allSugg.length > 0);
-
-        // Enrich results that lack postcode via reverse-geocode (Nominatim /search omits
-        // postcode + street details; /reverse includes them). Do this in background so
-        // display appears immediately, updates as enrichment completes.
-        data.forEach((result, idx) => {
-          if (!result.address?.postcode && result.lat && result.lon) {
-            // Stagger reverse-geocode requests to respect rate limit (1 req/sec)
-            const timer = setTimeout(async () => {
-              try {
-                const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${result.lat}&lon=${result.lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
-                const revData = await revRes.json();
-                if (revData && !revData.error) {
-                  setAddrSugg(prev => prev.map((r, i) => i === idx ? revData : r));
-                }
-              } catch { /* ignore enrichment failure, keep original */ }
-            }, idx * 1000);
-            addrEnrichTimers.current.push(timer);
-          }
-        });
 
         // Search with variants sequentially to find street addresses within areas
         // Even if initial search empty, always try variants for promising queries (2+ chars, no coords)
