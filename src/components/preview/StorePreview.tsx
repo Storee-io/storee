@@ -1951,7 +1951,23 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     if (!q.trim()) { setSearchResults([]); return; }
     searchTimer.current = setTimeout(async () => {
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
-      setSearchResults(await res.json());
+      const data = await res.json();
+      setSearchResults(data);
+
+      // Enrich results that lack postcode via reverse-geocode (same as Full Address suggestions)
+      data.forEach((result, idx) => {
+        if (!result.address?.postcode && result.lat && result.lon) {
+          setTimeout(async () => {
+            try {
+              const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${result.lat}&lon=${result.lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
+              const revData = await revRes.json();
+              if (revData && !revData.error) {
+                setSearchResults(prev => prev.map((r, i) => i === idx ? revData : r));
+              }
+            } catch { /* ignore enrichment failure */ }
+          }, idx * 1000);
+        }
+      });
     }, 400);
   };
 
