@@ -1714,6 +1714,21 @@ async function matchWilayah(fields: { province?: string; city?: string; district
   }
 }
 
+// Abbreviate district/city/province names for compact display (e.g. "Kabupaten" → "Kab.",
+// "Daerah Khusus Ibukota Jakarta" → "DKI Jakarta")
+const abbreviateRegion = (name: string): string => {
+  if (!name) return name;
+  // Special cases for special territories
+  if (name === 'Daerah Khusus Ibukota Jakarta') return 'DKI Jakarta';
+  if (name === 'Daerah Istimewa Yogyakarta') return 'DIY Yogyakarta';
+  if (name === 'Daerah Istimewa Aceh') return 'DI Aceh';
+  // Generic prefixes
+  return name.replace(/^Kabupaten\s+/, 'Kab. ')
+    .replace(/^Kota\s+/, 'Kota ')
+    .replace(/^Kecamatan\s+/, 'Kec. ')
+    .replace(/^Kelurahan\s+/, 'Kel. ');
+};
+
 // Parse Nominatim display_name into structured location fields
 // Structure: ..., [Kecamatan], [Kabupaten], [Provinsi], [Supra?], [PostalCode], [Indonesia]
 // `knownSuburb` is Nominatim's structured village/suburb/neighbourhood field (when available) —
@@ -1750,7 +1765,7 @@ const parseDisplayName = (displayName: string, postcode?: string, knownSuburb?: 
     const display = displayName;
     const postal    = (postcode ?? parts[postalIdx] ?? '').replace(/\D/g, '').slice(0, 5);
     // Don't parse suburb from display_name - use Nominatim structured fields instead
-    return { address, city, postal, province, display, suburb: '', district };
+    return { address, city: abbreviateRegion(city), postal, province: abbreviateRegion(province), display, suburb: '', district: abbreviateRegion(district) };
   }
   return { address: displayName, city: '', postal: postcode ?? '', province: '', display: displayName, suburb: '', district: '' };
 };
@@ -1810,10 +1825,15 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       const match = await matchWilayah({ province, city, district, village, postal });
       if (match) {
         village = match.village;
-        district = match.district;
-        city = match.regency;
-        province = match.province;
+        district = abbreviateRegion(match.district);
+        city = abbreviateRegion(match.regency);
+        province = abbreviateRegion(match.province);
         postal = match.postal;
+      } else {
+        // Also abbreviate if no match found
+        city = abbreviateRegion(city);
+        district = abbreviateRegion(district);
+        province = abbreviateRegion(province);
       }
 
       setLoc({
@@ -1946,10 +1966,15 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     const match = await matchWilayah({ province, city, district, village, postal });
     if (match) {
       village = match.village;
-      district = match.district;
-      city = match.regency;
-      province = match.province;
+      district = abbreviateRegion(match.district);
+      city = abbreviateRegion(match.regency);
+      province = abbreviateRegion(match.province);
       postal = match.postal;
+    } else {
+      // Also abbreviate if no match found
+      city = abbreviateRegion(city);
+      district = abbreviateRegion(district);
+      province = abbreviateRegion(province);
     }
 
     setLoc({ ...parsed, address: streetAddress, suburb: village, district, city, province, postal, districtCode: match?.code ? match.code.slice(0, 6) : undefined });
@@ -3598,10 +3623,15 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               const match = await matchWilayah({ province, city, district, village, postal });
               if (match) {
                 village = match.village;
-                district = match.district;
-                city = match.regency;
-                province = match.province;
+                district = abbreviateRegion(match.district);
+                city = abbreviateRegion(match.regency);
+                province = abbreviateRegion(match.province);
                 postal = match.postal;
+              } else {
+                // Also abbreviate if no match found
+                city = abbreviateRegion(city);
+                district = abbreviateRegion(district);
+                province = abbreviateRegion(province);
               }
 
               setForm(f => ({
