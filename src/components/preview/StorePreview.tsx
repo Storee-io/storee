@@ -1721,12 +1721,27 @@ const abbreviateRegion = (name: string): string => {
   // Special cases for special territories
   if (name === 'Daerah Khusus Ibukota Jakarta') return 'DKI Jakarta';
   if (name === 'Daerah Istimewa Yogyakarta') return 'DIY Yogyakarta';
-  if (name === 'Daerah Istimewa Aceh') return 'DI Aceh';
+  if (name === 'Daerah Istimewa Aceh') return 'DIY Aceh';
   // Generic prefixes
   return name.replace(/^Kabupaten\s+/, 'Kab. ')
     .replace(/^Kota\s+/, 'Kota ')
     .replace(/^Kecamatan\s+/, 'Kec. ')
     .replace(/^Kelurahan\s+/, 'Kel. ');
+};
+
+// Apply abbreviations to entire display_name string (used in search results and selected address)
+const abbreviateDisplayName = (displayName: string): string => {
+  if (!displayName) return displayName;
+  return displayName
+    // Full territory replacements
+    .replace('Daerah Khusus Ibukota Jakarta', 'DKI Jakarta')
+    .replace('Daerah Istimewa Yogyakarta', 'DIY Yogyakarta')
+    .replace('Daerah Istimewa Aceh', 'DIY Aceh')
+    // Generic prefix replacements (word-boundary to avoid replacing in middle of words)
+    .replace(/\bKabupaten\s+/g, 'Kab. ')
+    .replace(/\bKota\s+/g, 'Kota ')
+    .replace(/\bKecamatan\s+/g, 'Kec. ')
+    .replace(/\bKelurahan\s+/g, 'Kel. ');
 };
 
 // Parse Nominatim display_name into structured location fields
@@ -1761,8 +1776,8 @@ const parseDisplayName = (displayName: string, postcode?: string, knownSuburb?: 
       addressParts = addressParts.slice(0, -1);
     }
     const address = addressParts.join(', ');
-    // Use full displayName without any deduplication or filtering
-    const display = displayName;
+    // Apply abbreviation to display_name for compact rendering in UI
+    const display = abbreviateDisplayName(displayName);
     const postal    = (postcode ?? parts[postalIdx] ?? '').replace(/\D/g, '').slice(0, 5);
     // Don't parse suburb from display_name - use Nominatim structured fields instead
     return { address, city: abbreviateRegion(city), postal, province: abbreviateRegion(province), display, suburb: '', district: abbreviateRegion(district) };
@@ -1841,7 +1856,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
         city,
         postal,
         province,
-        display: data.display_name || '',
+        display: abbreviateDisplayName(data.display_name || ''),
         suburb: village,
         district,
         districtCode: match?.code ? match.code.slice(0, 6) : '',
@@ -3649,7 +3664,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 city,
                 postal,
                 province,
-                display: s.display_name,
+                display: abbreviateDisplayName(s.display_name),
                 suburb: village,
                 district,
               });
