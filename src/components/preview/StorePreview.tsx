@@ -1956,48 +1956,12 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   };
 
   const selectResult = async (r: any) => {
-    const postcode = (r.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
-    const suburbCandidate = r.address?.village ?? r.address?.neighbourhood ?? r.address?.hamlet ?? r.address?.locality ?? r.address?.suburb ?? '';
-    const parsed = parseDisplayName(r.display_name, postcode, suburbCandidate);
-
-    // Extract house-level details (house number, building/complex name) from Nominatim
-    // and prepend them to the street address for a complete address.
-    const houseNumber = r.address?.house_number || '';
-    const buildingName = r.address?.building || r.address?.house_name || '';
-    let streetAddress = parsed.address || '';
-    if (houseNumber || buildingName) {
-      const houseParts = [houseNumber, buildingName].filter(Boolean);
-      const houseDetail = houseParts.join(', ');
-      streetAddress = streetAddress ? `${houseDetail}, ${streetAddress}` : houseDetail;
-    }
-
-    // Use Nominatim's structured address fields (not text-parsed display_name) for the
-    // village, same as the address-suggestion path — display_name parsing intentionally
-    // skips suburb/village since its position in the string is unreliable.
-    let village = suburbCandidate;
-    let district = r.address?.district ?? parsed.district ?? '';
-    let city = r.address?.city ?? r.address?.county ?? parsed.city ?? '';
-    let province = parsed.province ?? '';
-    let postal = postcode || parsed.postal || '';
-
-    // Match against wilayah-full.json hierarchically, including village — this is the
-    // discriminator that picks the correct village within a district (regency+district
-    // alone can match the wrong village when a district has several).
-    const match = await matchWilayah({ province, city, district, village, postal });
-    if (match) {
-      village = match.village;
-      district = abbreviateRegion(match.district);
-      city = abbreviateRegion(match.regency);
-      province = abbreviateRegion(match.province);
-      postal = match.postal;
-    } else {
-      // Also abbreviate if no match found
-      city = abbreviateRegion(city);
-      district = abbreviateRegion(district);
-      province = abbreviateRegion(province);
-    }
-
-    setLoc({ ...parsed, address: streetAddress, suburb: village, district, city, province, postal, districtCode: match?.code ? match.code.slice(0, 6) : undefined });
+    // Nominatim's text-search endpoint (`/search`) frequently omits postcode and other
+    // administrative details for named places (it returns the raw indexed record, without
+    // the polygon lookups that `/reverse` always performs). Reverse-geocode the picked
+    // coordinates instead of trusting the search result's own (often incomplete) address
+    // fields, so the selected address is as complete as the map-drag flow.
+    await reverseGeocode(parseFloat(r.lat), parseFloat(r.lon));
     skipNextGeocode.current = true;
     panTo(parseFloat(r.lat), parseFloat(r.lon), 16);
     setSearchResults([]);
@@ -3612,14 +3576,27 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             type="button"
             onMouseDown={async (e) => {
               e.preventDefault();
-              const suburbCandidate = s.address?.village ?? s.address?.neighbourhood ?? s.address?.hamlet ?? s.address?.locality ?? s.address?.suburb ?? '';
-              const parsed = parseDisplayName(s.display_name, undefined, suburbCandidate);
-              const postcode = (s.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
+              // Nominatim's text-search endpoint (`/search`, used for these suggestions) frequently
+              // omits postcode and other administrative details for named places — it returns the raw
+              // indexed record without the polygon lookups that `/reverse` always performs. When that
+              // happens, reverse-geocode the suggestion's own coordinates to get a complete address,
+              // same as the map-drag flow does.
+              let sData = s;
+              if (!s.address?.postcode && s.lat && s.lon) {
+                try {
+                  const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${s.lat}&lon=${s.lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
+                  const revData = await revRes.json();
+                  if (revData && !revData.error) sData = revData;
+                } catch { /* fall back to original search result */ }
+              }
+              const suburbCandidate = sData.address?.village ?? sData.address?.neighbourhood ?? sData.address?.hamlet ?? sData.address?.locality ?? sData.address?.suburb ?? '';
+              const parsed = parseDisplayName(sData.display_name, undefined, suburbCandidate);
+              const postcode = (sData.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
 
               // Extract house-level details (house number, building/complex name) from Nominatim
               // and prepend them to the street address for a complete address.
-              const houseNumber = s.address?.house_number || '';
-              const buildingName = s.address?.building || s.address?.house_name || '';
+              const houseNumber = sData.address?.house_number || '';
+              const buildingName = sData.address?.building || sData.address?.house_name || '';
               let streetAddress = parsed.address || '';
               if (houseNumber || buildingName) {
                 const houseParts = [houseNumber, buildingName].filter(Boolean);
@@ -3627,14 +3604,14 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 streetAddress = streetAddress ? `${houseDetail}, ${streetAddress}` : houseDetail;
               }
 
-              const normalizedProv = normalizeProvince(s.address?.state ?? parsed.province ?? '');
-              const matchedProv = INDONESIAN_PROVINCES.find(p => p === normalizedProv) ?? INDONESIAN_PROVINCES.find(p => p.toLowerCase().includes((s.address?.state ?? parsed.province ?? '').toLowerCase())) ?? '';
+              const normalizedProv = normalizeProvince(sData.address?.state ?? parsed.province ?? '');
+              const matchedProv = INDONESIAN_PROVINCES.find(p => p === normalizedProv) ?? INDONESIAN_PROVINCES.find(p => p.toLowerCase().includes((sData.address?.state ?? parsed.province ?? '').toLowerCase())) ?? '';
 
               // Get initial values from Nominatim
               let village = suburbCandidate;
-              let district = s.address?.district ?? parsed.district ?? '';
-              let city = s.address?.city ?? s.address?.county ?? parsed.city ?? '';
-              let province = matchedProv || normalizeProvince(s.address?.state ?? parsed.province ?? '');
+              let district = sData.address?.district ?? parsed.district ?? '';
+              let city = sData.address?.city ?? sData.address?.county ?? parsed.city ?? '';
+              let province = matchedProv || normalizeProvince(sData.address?.state ?? parsed.province ?? '');
               let postal = postcode || parsed.postal || '';
 
               // Match against wilayah-full.json hierarchically — admin levels (province/
@@ -3669,11 +3646,11 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 city,
                 postal,
                 province,
-                display: abbreviateDisplayName(s.display_name),
+                display: abbreviateDisplayName(sData.display_name),
                 suburb: village,
                 district,
               });
-              setLastPickedCoords({ lat: parseFloat(s.lat), lng: parseFloat(s.lon) });
+              setLastPickedCoords({ lat: parseFloat(sData.lat), lng: parseFloat(sData.lon) });
               setAddrSugg([]);
               setShowAddrSugg(false);
             }}
