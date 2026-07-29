@@ -1978,10 +1978,10 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
         });
 
         // Search with variants sequentially to find street addresses within areas
-        // Only if we got results, and only for promising queries (2+ chars, no coords)
-        if (data.length > 0 && q.trim().length >= 2 && !/[\d\,\-]/.test(q.slice(0, 5))) {
+        // Even if initial search empty, always try variants for promising queries (2+ chars, no coords)
+        if (q.trim().length >= 2 && !/[\d\,\-]/.test(q.slice(0, 5))) {
           const variants = ['jalan', 'jl.', 'rt', 'rw', 'nomor', 'no.', 'gedung', 'blok', 'rumah'];
-          let variantDelay = data.length * 1000 + 1500; // Start after enrichment completes
+          let variantDelay = data.length * 1000 + 1500; // Start after enrichment (or immediately if no results)
 
           for (let i = 0; i < variants.length; i++) {
             const variant = variants[i];
@@ -3610,10 +3610,10 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         });
 
         // Search with variants sequentially to find street addresses within areas
-        // Only if we got results, and only for promising queries (2+ chars, no coords)
-        if (data.length > 0 && val.trim().length >= 2 && !/[\d\,\-]/.test(val.slice(0, 5))) {
+        // Even if initial search empty, always try variants for promising queries (2+ chars, no coords)
+        if (val.trim().length >= 2 && !/[\d\,\-]/.test(val.slice(0, 5))) {
           const variants = ['jalan', 'jl.', 'rt', 'rw', 'nomor', 'no.', 'gedung', 'blok', 'rumah'];
-          let variantDelay = data.length * 1000 + 1500; // Start after enrichment completes
+          let variantDelay = data.length * 1000 + 1500; // Start after enrichment (or immediately if no results)
 
           for (let i = 0; i < variants.length; i++) {
             const variant = variants[i];
