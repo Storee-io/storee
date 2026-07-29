@@ -1785,6 +1785,17 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       const suburbCandidate = addr.village || addr.neighbourhood || addr.hamlet || addr.locality || addr.suburb || '';
       const parsed = parseDisplayName(data.display_name ?? '', postcode, suburbCandidate);
 
+      // Extract house-level details (house number, building/complex name) from Nominatim
+      // and prepend them to the street address for a complete address.
+      const houseNumber = addr.house_number || '';
+      const buildingName = addr.building || addr.house_name || '';
+      let streetAddress = parsed.address || '';
+      if (houseNumber || buildingName) {
+        const houseParts = [houseNumber, buildingName].filter(Boolean);
+        const houseDetail = houseParts.join(', ');
+        streetAddress = streetAddress ? `${houseDetail}, ${streetAddress}` : houseDetail;
+      }
+
       // Get Nominatim data first
       let village = suburbCandidate || parsed.suburb || '';
       let district = addr.district || parsed.district || '';
@@ -1806,7 +1817,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       }
 
       setLoc({
-        address: parsed.address,
+        address: streetAddress,
         city,
         postal,
         province,
@@ -1909,6 +1920,17 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     const suburbCandidate = r.address?.village ?? r.address?.neighbourhood ?? r.address?.hamlet ?? r.address?.locality ?? r.address?.suburb ?? '';
     const parsed = parseDisplayName(r.display_name, postcode, suburbCandidate);
 
+    // Extract house-level details (house number, building/complex name) from Nominatim
+    // and prepend them to the street address for a complete address.
+    const houseNumber = r.address?.house_number || '';
+    const buildingName = r.address?.building || r.address?.house_name || '';
+    let streetAddress = parsed.address || '';
+    if (houseNumber || buildingName) {
+      const houseParts = [houseNumber, buildingName].filter(Boolean);
+      const houseDetail = houseParts.join(', ');
+      streetAddress = streetAddress ? `${houseDetail}, ${streetAddress}` : houseDetail;
+    }
+
     // Use Nominatim's structured address fields (not text-parsed display_name) for the
     // village, same as the address-suggestion path — display_name parsing intentionally
     // skips suburb/village since its position in the string is unreliable.
@@ -1930,7 +1952,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       postal = match.postal;
     }
 
-    setLoc({ ...parsed, suburb: village, district, city, province, postal, districtCode: match?.code ? match.code.slice(0, 6) : undefined });
+    setLoc({ ...parsed, address: streetAddress, suburb: village, district, city, province, postal, districtCode: match?.code ? match.code.slice(0, 6) : undefined });
     skipNextGeocode.current = true;
     panTo(parseFloat(r.lat), parseFloat(r.lon), 16);
     setSearchResults([]);
@@ -3548,6 +3570,18 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
               const suburbCandidate = s.address?.village ?? s.address?.neighbourhood ?? s.address?.hamlet ?? s.address?.locality ?? s.address?.suburb ?? '';
               const parsed = parseDisplayName(s.display_name, undefined, suburbCandidate);
               const postcode = (s.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
+
+              // Extract house-level details (house number, building/complex name) from Nominatim
+              // and prepend them to the street address for a complete address.
+              const houseNumber = s.address?.house_number || '';
+              const buildingName = s.address?.building || s.address?.house_name || '';
+              let streetAddress = parsed.address || '';
+              if (houseNumber || buildingName) {
+                const houseParts = [houseNumber, buildingName].filter(Boolean);
+                const houseDetail = houseParts.join(', ');
+                streetAddress = streetAddress ? `${houseDetail}, ${streetAddress}` : houseDetail;
+              }
+
               const normalizedProv = normalizeProvince(s.address?.state ?? parsed.province ?? '');
               const matchedProv = INDONESIAN_PROVINCES.find(p => p === normalizedProv) ?? INDONESIAN_PROVINCES.find(p => p.toLowerCase().includes((s.address?.state ?? parsed.province ?? '').toLowerCase())) ?? '';
 
@@ -3572,7 +3606,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
 
               setForm(f => ({
                 ...f,
-                address: parsed.address || f.address,
+                address: streetAddress || f.address,
                 village: village || f.village,
                 district: district || f.district,
                 postal: postal || f.postal,
