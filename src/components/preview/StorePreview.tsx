@@ -3608,6 +3608,39 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             addrEnrichTimers.current.push(timer);
           }
         });
+
+        // Search with variants sequentially to find street addresses within areas
+        // Only if we got results, and only for promising queries (2+ chars, no coords)
+        if (data.length > 0 && val.trim().length >= 2 && !/[\d\,\-]/.test(val.slice(0, 5))) {
+          const variants = ['jalan', 'jl.', 'rt', 'rw', 'nomor', 'no.', 'gedung', 'blok', 'rumah'];
+          let variantDelay = data.length * 1000 + 1500; // Start after enrichment completes
+
+          for (let i = 0; i < variants.length; i++) {
+            const variant = variants[i];
+            const timer = setTimeout(async () => {
+              try {
+                const vRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(variant + ' ' + val)}&limit=10&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
+                if (!vRes.ok) return;
+                const vData = await vRes.json();
+                if (!Array.isArray(vData)) return;
+
+                // Merge new results, dedup by display_name
+                setAddrSugg(prev => {
+                  const seen = new Set(prev.map((r: any) => r.display_name));
+                  const merged = [...prev];
+                  for (const result of vData) {
+                    if (!seen.has(result.display_name)) {
+                      merged.push(result);
+                      seen.add(result.display_name);
+                    }
+                  }
+                  return merged.slice(0, 20);
+                });
+              } catch { /* ignore variant search failure */ }
+            }, variantDelay + i * 1200);
+            addrEnrichTimers.current.push(timer);
+          }
+        }
       } catch { setAddrSugg([]); }
     }, 450);
   };
