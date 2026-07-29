@@ -2010,7 +2010,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
           }
         }
       } catch (error) {
-        console.error('Search error:', error);
+        // Silently handle fetch errors - network issues are expected
         setSearchResults([]);
       }
     }, 400);
