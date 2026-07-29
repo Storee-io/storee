@@ -1752,33 +1752,36 @@ const abbreviateDisplayName = (displayName: string): string => {
 // display_name then omits the extra level, which broke a fixed-offset guess and swallowed real
 // street text (e.g. "RW 11").
 const parseDisplayName = (displayName: string, postcode?: string, knownSuburb?: string): PickedLocation => {
+  // Truncate at the first postal code to avoid duplicates from malformed Nominatim responses
   const parts = displayName.split(',').map(p => p.trim()).filter(Boolean);
   const postalIdx = parts.findIndex(p => /^\d{4,6}$/.test(p));
   if (postalIdx >= 3) {
-    const hasSupra = NOMINATIM_SUPRA.has(parts[postalIdx - 1]);
-    const province  = normalizeProvince(parts[postalIdx - (hasSupra ? 2 : 1)] ?? '');
+    // Only use parts up to and including the first postal code + country
+    const cleanedParts = parts.slice(0, postalIdx + 2); // Keep up to postal code + 1 more part (usually country)
+    const hasSupra = NOMINATIM_SUPRA.has(cleanedParts[postalIdx - 1]);
+    const province  = normalizeProvince(cleanedParts[postalIdx - (hasSupra ? 2 : 1)] ?? '');
     let cityOffset  = hasSupra ? 3 : 2;
     // Nominatim sometimes inserts a wrong extra level before the province (e.g. "Depok" before
     // "Daerah Istimewa Yogyakarta"). Detect by checking if the candidate city is a known
     // false-positive for a given province and shift one level deeper if so.
-    const cityCandidate = parts[postalIdx - cityOffset] ?? '';
+    const cityCandidate = cleanedParts[postalIdx - cityOffset] ?? '';
     const falseExtra    = cityCandidate === 'Depok' && province.includes('Yogyakarta') ? cityCandidate : null;
     if (falseExtra) cityOffset += 1;
-    const city      = parts[postalIdx - cityOffset] ?? '';
+    const city      = cleanedParts[postalIdx - cityOffset] ?? '';
     const streetEnd = postalIdx - cityOffset;
-    const district  = parts[streetEnd - 1] ?? '';
+    const district  = cleanedParts[streetEnd - 1] ?? '';
     // Everything before the district is address text by default. If the structured
     // suburb/village name shows up as the part right before the district, drop just
     // that one part — it's the kelurahan, not street detail.
-    let addressParts = parts.slice(0, Math.max(0, streetEnd - 1));
+    let addressParts = cleanedParts.slice(0, Math.max(0, streetEnd - 1));
     const suburbNorm = (knownSuburb ?? '').trim().toLowerCase();
     if (suburbNorm && addressParts.length > 0 && addressParts[addressParts.length - 1].trim().toLowerCase() === suburbNorm) {
       addressParts = addressParts.slice(0, -1);
     }
     const address = addressParts.join(', ');
-    // Apply abbreviation to display_name for compact rendering in UI
-    const display = abbreviateDisplayName(displayName);
-    const postal    = (postcode ?? parts[postalIdx] ?? '').replace(/\D/g, '').slice(0, 5);
+    // Apply abbreviation to cleaned display_name for compact rendering in UI
+    const display = abbreviateDisplayName(cleanedParts.join(', '));
+    const postal    = (postcode ?? cleanedParts[postalIdx] ?? '').replace(/\D/g, '').slice(0, 5);
     // Don't parse suburb from display_name - use Nominatim structured fields instead
     return { address, city: abbreviateRegion(city), postal, province: abbreviateRegion(province), display, suburb: '', district: abbreviateRegion(district) };
   }
