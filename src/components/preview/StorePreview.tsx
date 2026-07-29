@@ -1956,7 +1956,34 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     searchTimer.current = setTimeout(async () => {
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
       const data = await res.json();
-      setSearchResults(data);
+      let allResults = [...data];
+      setSearchResults(allResults);
+
+      // Search with variants (jalan, RT, RW, nomor, gedung, etc) to find addresses within the searched area
+      const variants = ['jalan', 'jl.', 'rt', 'rw', 'nomor', 'no.', 'gedung', 'blok', 'rumah'];
+      const variantSearches = variants.map(variant =>
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(variant + ' ' + q)}&limit=10&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } })
+          .then(r => r.json())
+          .catch(() => [])
+      );
+
+      try {
+        const variantResults = await Promise.all(variantSearches);
+        // Flatten and deduplicate by display_name
+        const seen = new Set(data.map(r => r.display_name));
+        variantResults.forEach(results => {
+          results.forEach((r: any) => {
+            if (!seen.has(r.display_name)) {
+              allResults.push(r);
+              seen.add(r.display_name);
+            }
+          });
+        });
+        // Update with combined results (keep limit reasonable)
+        setSearchResults(allResults.slice(0, 20));
+      } catch {
+        // If variant search fails, stick with main results
+      }
 
       // Enrich results that lack postcode via reverse-geocode (same as Full Address suggestions)
       data.forEach((result, idx) => {
@@ -3544,8 +3571,35 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
         const data: any[] = await res.json();
-        setAddrSugg(data);
-        setShowAddrSugg(data.length > 0);
+        let allSugg = [...data];
+        setAddrSugg(allSugg);
+        setShowAddrSugg(allSugg.length > 0);
+
+        // Search with variants (jalan, RT, RW, nomor, gedung, etc) to find addresses within the searched area
+        const variants = ['jalan', 'jl.', 'rt', 'rw', 'nomor', 'no.', 'gedung', 'blok', 'rumah'];
+        const variantSearches = variants.map(variant =>
+          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(variant + ' ' + val)}&limit=10&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } })
+            .then(r => r.json())
+            .catch(() => [])
+        );
+
+        try {
+          const variantResults = await Promise.all(variantSearches);
+          // Flatten and deduplicate by display_name
+          const seen = new Set(data.map((r: any) => r.display_name));
+          variantResults.forEach(results => {
+            results.forEach((r: any) => {
+              if (!seen.has(r.display_name)) {
+                allSugg.push(r);
+                seen.add(r.display_name);
+              }
+            });
+          });
+          // Update with combined results (keep limit reasonable)
+          setAddrSugg(allSugg.slice(0, 20));
+        } catch {
+          // If variant search fails, stick with main results
+        }
 
         // Enrich results that lack postcode via reverse-geocode (Nominatim /search omits
         // postcode + street details; /reverse includes them). Do this in background so
