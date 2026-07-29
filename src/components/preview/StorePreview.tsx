@@ -1954,62 +1954,32 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     enrichTimers.current = [];
     if (!q.trim()) { setSearchResults([]); return; }
     searchTimer.current = setTimeout(async () => {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
-      const data = await res.json();
-      let allResults = [...data];
-      setSearchResults(allResults);
-
-      // Search with variants (jalan, RT, RW, nomor, gedung, etc) to find addresses within the searched area
-      // Use staggered delays to avoid rate limiting (Nominatim: 1 req/sec)
-      const variants = ['jalan', 'jl.', 'rt', 'rw', 'nomor', 'no.', 'gedung', 'blok', 'rumah'];
-      const variantSearches = variants.map((variant, idx) =>
-        new Promise<any[]>(resolve => {
-          setTimeout(async () => {
-            try {
-              const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(variant + ' ' + q)}&limit=10&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
-              if (!res.ok) { resolve([]); return; }
-              const results = await res.json();
-              resolve(Array.isArray(results) ? results : []);
-            } catch {
-              resolve([]);
-            }
-          }, idx * 1200); // 1.2 sec delay per request to respect rate limits
-        })
-      );
-
       try {
-        const variantResults = await Promise.all(variantSearches);
-        // Flatten and deduplicate by display_name
-        const seen = new Set(data.map(r => r.display_name));
-        variantResults.forEach(results => {
-          results.forEach((r: any) => {
-            if (!seen.has(r.display_name)) {
-              allResults.push(r);
-              seen.add(r.display_name);
-            }
-          });
-        });
-        // Update with combined results (keep limit reasonable)
-        setSearchResults(allResults.slice(0, 20));
-      } catch {
-        // If variant search fails, stick with main results
-      }
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
+        if (!res.ok) { setSearchResults([]); return; }
+        const data = await res.json();
+        if (!Array.isArray(data)) { setSearchResults([]); return; }
+        setSearchResults(data);
 
-      // Enrich results that lack postcode via reverse-geocode (same as Full Address suggestions)
-      data.forEach((result, idx) => {
-        if (!result.address?.postcode && result.lat && result.lon) {
-          const timer = setTimeout(async () => {
-            try {
-              const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${result.lat}&lon=${result.lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
-              const revData = await revRes.json();
-              if (revData && !revData.error) {
-                setSearchResults(prev => prev.map((r, i) => i === idx ? revData : r));
-              }
-            } catch { /* ignore enrichment failure */ }
-          }, idx * 1000);
-          enrichTimers.current.push(timer);
-        }
-      });
+        // Enrich results that lack postcode via reverse-geocode
+        data.forEach((result, idx) => {
+          if (!result.address?.postcode && result.lat && result.lon) {
+            const timer = setTimeout(async () => {
+              try {
+                const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${result.lat}&lon=${result.lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
+                const revData = await revRes.json();
+                if (revData && !revData.error) {
+                  setSearchResults(prev => prev.map((r, i) => i === idx ? revData : r));
+                }
+              } catch { /* ignore enrichment failure */ }
+            }, idx * 1000);
+            enrichTimers.current.push(timer);
+          }
+        });
+      } catch (error) {
+        console.error('Search error:', error);
+        setSearchResults([]);
+      }
     }, 400);
   };
 
@@ -3580,46 +3550,12 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
     addrTimer.current = setTimeout(async () => {
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
+        if (!res.ok) { setAddrSugg([]); setShowAddrSugg(false); return; }
         const data: any[] = await res.json();
+        if (!Array.isArray(data)) { setAddrSugg([]); setShowAddrSugg(false); return; }
         let allSugg = [...data];
         setAddrSugg(allSugg);
         setShowAddrSugg(allSugg.length > 0);
-
-        // Search with variants (jalan, RT, RW, nomor, gedung, etc) to find addresses within the searched area
-        // Use staggered delays to avoid rate limiting (Nominatim: 1 req/sec)
-        const variants = ['jalan', 'jl.', 'rt', 'rw', 'nomor', 'no.', 'gedung', 'blok', 'rumah'];
-        const variantSearches = variants.map((variant, idx) =>
-          new Promise<any[]>(resolve => {
-            setTimeout(async () => {
-              try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(variant + ' ' + val)}&limit=10&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
-                if (!res.ok) { resolve([]); return; }
-                const results = await res.json();
-                resolve(Array.isArray(results) ? results : []);
-              } catch {
-                resolve([]);
-              }
-            }, idx * 1200); // 1.2 sec delay per request to respect rate limits
-          })
-        );
-
-        try {
-          const variantResults = await Promise.all(variantSearches);
-          // Flatten and deduplicate by display_name
-          const seen = new Set(data.map((r: any) => r.display_name));
-          variantResults.forEach(results => {
-            results.forEach((r: any) => {
-              if (!seen.has(r.display_name)) {
-                allSugg.push(r);
-                seen.add(r.display_name);
-              }
-            });
-          });
-          // Update with combined results (keep limit reasonable)
-          setAddrSugg(allSugg.slice(0, 20));
-        } catch {
-          // If variant search fails, stick with main results
-        }
 
         // Enrich results that lack postcode via reverse-geocode (Nominatim /search omits
         // postcode + street details; /reverse includes them). Do this in background so
