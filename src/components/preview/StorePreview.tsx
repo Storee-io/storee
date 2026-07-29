@@ -2001,12 +2001,55 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   };
 
   const selectResult = async (r: any) => {
-    // Nominatim's text-search endpoint (`/search`) frequently omits postcode and other
-    // administrative details for named places (it returns the raw indexed record, without
-    // the polygon lookups that `/reverse` always performs). Reverse-geocode the picked
-    // coordinates instead of trusting the search result's own (often incomplete) address
-    // fields, so the selected address is as complete as the map-drag flow.
-    await reverseGeocode(parseFloat(r.lat), parseFloat(r.lon));
+    // Use the clicked search result directly to avoid reverse-geocoding bias.
+    // Reverse geocoding returns the "closest named place" to coords, which may differ
+    // from the area the user searched for (e.g., searching "Vila Rizki Ilhami" but
+    // reverse geocoding returning "Mina" as the nearest named place). Parse the clicked
+    // result's display_name instead.
+    const postcode = (r.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
+    const addr = r.address || {};
+    const suburbCandidate = addr.village || addr.neighbourhood || addr.hamlet || addr.locality || addr.suburb || '';
+    const parsed = parseDisplayName(r.display_name ?? '', postcode, suburbCandidate);
+
+    const houseNumber = addr.house_number || '';
+    const buildingName = addr.building || addr.house_name || '';
+    let streetAddress = parsed.address || '';
+    if (houseNumber || buildingName) {
+      const houseParts = [houseNumber, buildingName].filter(Boolean);
+      const houseDetail = houseParts.join(', ');
+      streetAddress = streetAddress ? `${houseDetail}, ${streetAddress}` : houseDetail;
+    }
+
+    let village = suburbCandidate || parsed.suburb || '';
+    let district = addr.district || parsed.district || '';
+    let city = addr.city || addr.county || parsed.city || '';
+    let province = normalizeProvince(addr.state || parsed.province || '');
+    let postal = postcode || parsed.postal || '';
+
+    const match = await matchWilayah({ province, city, district, village, postal });
+    if (match) {
+      village = match.village;
+      district = abbreviateRegion(match.district);
+      city = abbreviateRegion(match.regency);
+      province = abbreviateRegion(match.province);
+      postal = match.postal;
+    } else {
+      city = abbreviateRegion(city);
+      district = abbreviateRegion(district);
+      province = abbreviateRegion(province);
+    }
+
+    setLoc({
+      address: streetAddress,
+      city,
+      postal,
+      province,
+      display: abbreviateDisplayName(r.display_name || ''),
+      suburb: village,
+      district,
+      districtCode: match?.code ? match.code.slice(0, 6) : '',
+    });
+
     skipNextGeocode.current = true;
     panTo(parseFloat(r.lat), parseFloat(r.lon), 16);
     setSearchResults([]);
