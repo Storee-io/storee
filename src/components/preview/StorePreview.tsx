@@ -3704,19 +3704,10 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
             type="button"
             onMouseDown={async (e) => {
               e.preventDefault();
-              // Nominatim's text-search endpoint (`/search`, used for these suggestions) frequently
-              // omits postcode and other administrative details for named places — it returns the raw
-              // indexed record without the polygon lookups that `/reverse` always performs. When that
-              // happens, reverse-geocode the suggestion's own coordinates to get a complete address,
-              // same as the map-drag flow does.
-              let sData = s;
-              if (!s.address?.postcode && s.lat && s.lon) {
-                try {
-                  const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${s.lat}&lon=${s.lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
-                  const revData = await revRes.json();
-                  if (revData && !revData.error) sData = revData;
-                } catch { /* fall back to original search result */ }
-              }
+              // Use the clicked suggestion directly without reverse geocoding.
+              // Reverse geocoding returns the "closest named place" which may differ
+              // from what the user searched for (e.g., "Vila Rizki Ilhami" → reverse → "Mina").
+              const sData = s;
               const suburbCandidate = sData.address?.village ?? sData.address?.neighbourhood ?? sData.address?.hamlet ?? sData.address?.locality ?? sData.address?.suburb ?? '';
               const parsed = parseDisplayName(sData.display_name, undefined, suburbCandidate);
               const postcode = (sData.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
