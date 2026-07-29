@@ -1807,6 +1807,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   const [geocoding, setGeocoding] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const geocodeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const enrichTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const currentCoordsRef = useRef<{ lat: number; lng: number }>(initialCoords ?? { lat: -6.2, lng: 106.8 });
   const skipNextGeocode = useRef(!!initialLoc);
 
@@ -1948,6 +1949,9 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   const handleSearch = (q: string) => {
     setSearchQuery(q);
     clearTimeout(searchTimer.current);
+    // Clear all pending enrich timeouts from previous searches to avoid race conditions
+    enrichTimers.current.forEach(t => clearTimeout(t));
+    enrichTimers.current = [];
     if (!q.trim()) { setSearchResults([]); return; }
     searchTimer.current = setTimeout(async () => {
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
@@ -1957,7 +1961,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       // Enrich results that lack postcode via reverse-geocode (same as Full Address suggestions)
       data.forEach((result, idx) => {
         if (!result.address?.postcode && result.lat && result.lon) {
-          setTimeout(async () => {
+          const timer = setTimeout(async () => {
             try {
               const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${result.lat}&lon=${result.lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
               const revData = await revRes.json();
@@ -1966,6 +1970,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
               }
             } catch { /* ignore enrichment failure */ }
           }, idx * 1000);
+          enrichTimers.current.push(timer);
         }
       });
     }, 400);
@@ -3480,6 +3485,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [addrSuggRect, setAddrSuggRect] = useState<{ top: number; left: number; width: number } | null>(null);
   const [addrPortalTarget, setAddrPortalTarget] = useState<Element | null>(null);
   const addrTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const addrEnrichTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const addrTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Auto-resize address textarea: min ~2 lines, grows to fit content beyond that
@@ -3510,6 +3516,9 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const handleAddressInput = (val: string) => {
     setForm(f => ({ ...f, address: val }));
     if (addrTimer.current) clearTimeout(addrTimer.current);
+    // Clear all pending enrich timeouts from previous searches to avoid race conditions
+    addrEnrichTimers.current.forEach(t => clearTimeout(t));
+    addrEnrichTimers.current = [];
     if (!val.trim() || val.length < 4) { setAddrSugg([]); setShowAddrSugg(false); return; }
     if (addrTextareaRef.current) {
       // Find first scrollable ancestor to portal into
@@ -3544,7 +3553,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
         data.forEach((result, idx) => {
           if (!result.address?.postcode && result.lat && result.lon) {
             // Stagger reverse-geocode requests to respect rate limit (1 req/sec)
-            setTimeout(async () => {
+            const timer = setTimeout(async () => {
               try {
                 const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${result.lat}&lon=${result.lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
                 const revData = await revRes.json();
@@ -3553,6 +3562,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                 }
               } catch { /* ignore enrichment failure, keep original */ }
             }, idx * 1000);
+            addrEnrichTimers.current.push(timer);
           }
         });
       } catch { setAddrSugg([]); }
