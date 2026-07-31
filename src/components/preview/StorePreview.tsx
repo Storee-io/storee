@@ -1790,6 +1790,86 @@ const parseDisplayName = (displayName: string, postcode?: string, knownSuburb?: 
   return { address: displayName, city: '', postal: postcode ?? '', province: '', display: abbreviateDisplayName(displayName), suburb: '', district: '' };
 };
 
+// Score a search result for relevance ranking
+// Prioritizes: exact matches > administrative areas > street-level results
+const scoreSearchResult = (result: any, query: string): number => {
+  const displayName = (result.display_name ?? '').toLowerCase();
+  const queryLower = query.toLowerCase().trim();
+  let score = 0;
+
+  // Exact match at start (highest priority)
+  if (displayName.startsWith(queryLower)) score += 1000;
+  // Exact word match anywhere
+  else if (displayName.split(',')[0].toLowerCase().trim() === queryLower) score += 900;
+  // Query appears in first part (street/area name)
+  else if (displayName.split(',')[0].toLowerCase().includes(queryLower)) score += 800;
+  // Query appears anywhere
+  else if (displayName.includes(queryLower)) score += 500;
+
+  // Boost administrative areas (city, regency, province level)
+  const osmType = result.osm_type ?? '';
+  const osmClass = result.class ?? '';
+  if (osmType === 'relation' && (osmClass === 'boundary' || osmClass === 'administrative')) score += 300;
+  // Slightly boost locality/suburb over street-level
+  else if (osmClass === 'place' || osmClass === 'boundary') score += 100;
+  // Street results are lower priority but still included
+  else if (osmClass === 'highway' || osmClass === 'building') score += 50;
+
+  return score;
+};
+
+// Unified Nominatim search with parallel variant searches + relevance scoring
+async function performNominatimSearch(query: string, limit: number = 20): Promise<any[]> {
+  if (!query.trim()) return [];
+
+  const variants = ['jalan', 'jl.', 'rt', 'rw', 'nomor', 'no.', 'gedung', 'blok', 'rumah'];
+  const headers = { 'Accept-Language': 'id,en' };
+
+  try {
+    // Main search + all variant searches in parallel
+    const searchPromises = [
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1&countrycodes=id`, { headers }),
+      ...(query.trim().length >= 2 && !/[\d\,\-]/.test(query.slice(0, 5))
+        ? variants.map(variant =>
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(variant + ' ' + query)}&limit=10&addressdetails=1&countrycodes=id`, { headers })
+          )
+        : [])
+    ];
+
+    const responses = await Promise.all(searchPromises);
+    const allResults: any[] = [];
+    const seen = new Set<string>();
+
+    // Process all responses in order (main first, then variants)
+    for (const res of responses) {
+      if (!res.ok) continue;
+      try {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          for (const result of data) {
+            // Deduplicate by display_name
+            if (!seen.has(result.display_name)) {
+              allResults.push(result);
+              seen.add(result.display_name);
+            }
+          }
+        }
+      } catch {
+        // Ignore parse errors for individual searches
+      }
+    }
+
+    // Score and sort by relevance (highest first)
+    const scored = allResults.map(r => ({ ...r, _score: scoreSearchResult(r, query) }));
+    scored.sort((a, b) => b._score - a._score);
+
+    // Return top results, remove score from output
+    return scored.slice(0, limit).map(({ _score, ...r }) => r);
+  } catch (error) {
+    return [];
+  }
+}
+
 function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }: {
   t: CommerceTheme;
   onChoose: (loc: PickedLocation, coords: { lat: number; lng: number }) => void;
@@ -1807,7 +1887,6 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   const [geocoding, setGeocoding] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const geocodeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const enrichTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const currentCoordsRef = useRef<{ lat: number; lng: number }>(initialCoords ?? { lat: -6.2, lng: 106.8 });
   const skipNextGeocode = useRef(!!initialLoc);
 
@@ -1949,54 +2028,10 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   const handleSearch = (q: string) => {
     setSearchQuery(q);
     clearTimeout(searchTimer.current);
-    // Clear all pending enrich timeouts from previous searches to avoid race conditions
-    enrichTimers.current.forEach(t => clearTimeout(t));
-    enrichTimers.current = [];
     if (!q.trim()) { setSearchResults([]); return; }
     searchTimer.current = setTimeout(async () => {
-      try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
-        if (!res.ok) { setSearchResults([]); return; }
-        const data = await res.json();
-        if (!Array.isArray(data)) { setSearchResults([]); return; }
-        setSearchResults(data);
-
-        // Search with variants sequentially to find street addresses within areas
-        // Even if initial search empty, always try variants for promising queries (2+ chars, no coords)
-        if (q.trim().length >= 2 && !/[\d\,\-]/.test(q.slice(0, 5))) {
-          const variants = ['jalan', 'jl.', 'rt', 'rw', 'nomor', 'no.', 'gedung', 'blok', 'rumah'];
-          let variantDelay = 400; // Start immediately after main search, don't wait for enrichment
-
-          for (let i = 0; i < variants.length; i++) {
-            const variant = variants[i];
-            const timer = setTimeout(async () => {
-              try {
-                const vRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(variant + ' ' + q)}&limit=10&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
-                if (!vRes.ok) return;
-                const vData = await vRes.json();
-                if (!Array.isArray(vData)) return;
-
-                // Merge new results, dedup by display_name
-                setSearchResults(prev => {
-                  const seen = new Set(prev.map((r: any) => r.display_name));
-                  const merged = [...prev];
-                  for (const result of vData) {
-                    if (!seen.has(result.display_name)) {
-                      merged.push(result);
-                      seen.add(result.display_name);
-                    }
-                  }
-                  return merged.slice(0, 20);
-                });
-              } catch { /* ignore variant search failure */ }
-            }, variantDelay + i * 1200);
-            enrichTimers.current.push(timer);
-          }
-        }
-      } catch (error) {
-        // Silently handle fetch errors - network issues are expected
-        setSearchResults([]);
-      }
+      const results = await performNominatimSearch(q, 20);
+      setSearchResults(results);
     }, 400);
   };
 
@@ -3552,7 +3587,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const [addrSuggRect, setAddrSuggRect] = useState<{ top: number; left: number; width: number } | null>(null);
   const [addrPortalTarget, setAddrPortalTarget] = useState<Element | null>(null);
   const addrTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const addrEnrichTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const addrTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Auto-resize address textarea: min ~2 lines, grows to fit content beyond that
@@ -3583,9 +3617,6 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
   const handleAddressInput = (val: string) => {
     setForm(f => ({ ...f, address: val }));
     if (addrTimer.current) clearTimeout(addrTimer.current);
-    // Clear all pending enrich timeouts from previous searches to avoid race conditions
-    addrEnrichTimers.current.forEach(t => clearTimeout(t));
-    addrEnrichTimers.current = [];
     if (!val.trim() || val.length < 4) { setAddrSugg([]); setShowAddrSugg(false); return; }
     if (addrTextareaRef.current) {
       // Find first scrollable ancestor to portal into
@@ -3608,49 +3639,10 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
       });
     }
     addrTimer.current = setTimeout(async () => {
-      try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
-        if (!res.ok) { setAddrSugg([]); setShowAddrSugg(false); return; }
-        const data: any[] = await res.json();
-        if (!Array.isArray(data)) { setAddrSugg([]); setShowAddrSugg(false); return; }
-        let allSugg = [...data];
-        setAddrSugg(allSugg);
-        setShowAddrSugg(allSugg.length > 0);
-
-        // Search with variants sequentially to find street addresses within areas
-        // Even if initial search empty, always try variants for promising queries (2+ chars, no coords)
-        if (val.trim().length >= 2 && !/[\d\,\-]/.test(val.slice(0, 5))) {
-          const variants = ['jalan', 'jl.', 'rt', 'rw', 'nomor', 'no.', 'gedung', 'blok', 'rumah'];
-          let variantDelay = 400; // Start immediately after main search, don't wait for enrichment
-
-          for (let i = 0; i < variants.length; i++) {
-            const variant = variants[i];
-            const timer = setTimeout(async () => {
-              try {
-                const vRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(variant + ' ' + val)}&limit=10&addressdetails=1&countrycodes=id`, { headers: { 'Accept-Language': 'id,en' } });
-                if (!vRes.ok) return;
-                const vData = await vRes.json();
-                if (!Array.isArray(vData)) return;
-
-                // Merge new results, dedup by display_name
-                setAddrSugg(prev => {
-                  const seen = new Set(prev.map((r: any) => r.display_name));
-                  const merged = [...prev];
-                  for (const result of vData) {
-                    if (!seen.has(result.display_name)) {
-                      merged.push(result);
-                      seen.add(result.display_name);
-                    }
-                  }
-                  return merged.slice(0, 20);
-                });
-              } catch { /* ignore variant search failure */ }
-            }, variantDelay + i * 1200);
-            addrEnrichTimers.current.push(timer);
-          }
-        }
-      } catch { setAddrSugg([]); }
-    }, 450);
+      const results = await performNominatimSearch(val, 20);
+      setAddrSugg(results);
+      setShowAddrSugg(results.length > 0);
+    }, 400);
   };
 
   const handleLocationChosen = (loc: PickedLocation, coords: { lat: number; lng: number }) => {
