@@ -1835,8 +1835,8 @@ async function performNominatimSearch(query: string, limit: number = 20): Promis
     return cached.results.slice(0, limit);
   }
 
-  // Limited variants for street address searches (reduced from 9 to 2 to prevent rate limiting)
-  const variants = ['jalan', 'no.'];
+  // Limited variants optimized for Indonesia addresses (jalan = street, rw = rukun warga)
+  const variants = ['jalan', 'rw'];
   const headers = { 'Accept-Language': 'id,en' };
 
   try {
