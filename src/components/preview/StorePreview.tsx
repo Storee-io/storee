@@ -16,7 +16,7 @@ import { ShoppingCart, Heart, Star, Search, ArrowRight, Menu, ArrowLeft, Check, 
   GraduationCap, Bell, ClipboardList, Utensils, RefreshCw, HelpCircle, AlertCircle,
   Settings, Hammer, ShieldCheck, Music2, Brain, Handshake, BookOpen, Layers, Wand2, Crown,
   Wheat, Droplets, Wind, Thermometer, Camera, Video, Image, FileText, PenTool, Scissors,
-  Brush, Paintbrush, Feather, Compass, Navigation, Map, Globe2, Trees, Mountain, Waves,
+  Brush, Paintbrush, Feather, Compass, Navigation, Globe2, Trees, Mountain, Waves,
   Anchor, Ship, Bus, Bike, Headphones, Mic, Radio, Tv, Watch, Ruler, Calculator, Briefcase,
   Building, Store as StoreIcon, ShoppingBag, CreditCard, Banknote, Coins, Timer, QrCode, Wallet, Loader2,
 } from 'lucide-react';
@@ -171,7 +171,7 @@ const EMOJI_ICON_MAP: Record<string, LucideComp> = {
   // People & Social
   '👤': User,    '👥': Users,    '🤝': Handshake, '👍': ThumbsUp,
   // Navigation & Location
-  '🌍': Globe,   '🌎': Globe,    '🌏': Globe2,   '📍': MapPin,   '🗺️': Map,
+  '🌍': Globe,   '🌎': Globe,    '🌏': Globe2,   '📍': MapPin,
   '🧭': Compass,
   // Home & Life
   '🏠': Home,    '🏡': Home,     '🏗️': Building, '🏪': StoreIcon,
@@ -1818,20 +1818,35 @@ const scoreSearchResult = (result: any, query: string): number => {
   return score;
 };
 
-// Unified Nominatim search with parallel variant searches + relevance scoring
+// Request cache for Nominatim searches (1 minute TTL)
+const searchCache = new Map<string, { results: any[]; timestamp: number }>();
+const CACHE_TTL = 60 * 1000; // 1 minute
+
+// Unified Nominatim search with parallel variant searches + relevance scoring + caching
 async function performNominatimSearch(query: string, limit: number = 20): Promise<any[]> {
   if (!query.trim()) return [];
+
+  // Check cache first
+  const cacheKey = query.toLowerCase().trim();
+  const cached = searchCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.results.slice(0, limit);
+  }
 
   const variants = ['jalan', 'jl.', 'rt', 'rw', 'nomor', 'no.', 'gedung', 'blok', 'rumah'];
   const headers = { 'Accept-Language': 'id,en' };
 
   try {
+    // CORS proxy to bypass browser restrictions in preview
+    const corsProxy = 'https://api.allorigins.win/raw?url=';
+    const baseUrl = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=id`;
+
     // Main search + all variant searches in parallel
     const searchPromises = [
-      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1&countrycodes=id`, { headers }),
+      fetch(corsProxy + encodeURIComponent(`${baseUrl}&q=${encodeURIComponent(query)}&limit=5`), { headers }),
       ...(query.trim().length >= 2 && !/[\d\,\-]/.test(query.slice(0, 5))
         ? variants.map(variant =>
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(variant + ' ' + query)}&limit=10&addressdetails=1&countrycodes=id`, { headers })
+            fetch(corsProxy + encodeURIComponent(`${baseUrl}&q=${encodeURIComponent(variant + ' ' + query)}&limit=10`), { headers })
           )
         : [])
     ];
@@ -1863,8 +1878,11 @@ async function performNominatimSearch(query: string, limit: number = 20): Promis
     const scored = allResults.map(r => ({ ...r, _score: scoreSearchResult(r, query) }));
     scored.sort((a, b) => b._score - a._score);
 
-    // Return top results, remove score from output
-    return scored.slice(0, limit).map(({ _score, ...r }) => r);
+    // Remove score from output and cache results
+    const results = scored.map(({ _score, ...r }) => r);
+    searchCache.set(cacheKey, { results, timestamp: Date.now() });
+
+    return results.slice(0, limit);
   } catch (error) {
     return [];
   }
