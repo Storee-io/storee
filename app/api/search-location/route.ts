@@ -42,9 +42,9 @@ export async function GET(request: NextRequest) {
       // Rate limited (429) - retry with exponential backoff
       if (attempt < 2) {
         const retryAfter = lastResponse.headers.get('Retry-After');
-        const delayMs = retryAfter
-          ? parseInt(retryAfter) * 1000
-          : Math.pow(2, attempt + 1) * 1000; // 2s, 4s backoff
+        const retryAfterMs = retryAfter ? parseInt(retryAfter) * 1000 : 0;
+        // Use exponential backoff (2s, 4s) if Retry-After is missing or <= 0
+        const delayMs = retryAfterMs > 0 ? retryAfterMs : Math.pow(2, attempt + 2) * 1000;
 
         console.log(`⏳ Rate limited (429), retrying after ${delayMs}ms (attempt ${attempt + 1}/3)`);
         await new Promise(resolve => setTimeout(resolve, delayMs));
