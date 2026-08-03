@@ -1839,17 +1839,16 @@ async function performNominatimSearch(query: string, limit: number = 20): Promis
   const headers = { 'Accept-Language': 'id,en' };
 
   try {
-    // CORS proxy to bypass browser restrictions in preview
-    const corsProxy = 'https://api.allorigins.win/raw?url=';
-    const baseUrl = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=id`;
+    // Use backend API route to avoid CORS issues and rate limiting
+    const apiRoute = '/api/search-location';
 
     console.log('🌐 making', query.trim().length >= 2 ? variants.length + 1 : 1, 'fetch requests');
     // Main search + all variant searches in parallel
     const searchPromises = [
-      fetch(corsProxy + encodeURIComponent(`${baseUrl}&q=${encodeURIComponent(query)}&limit=5`), { headers }),
+      fetch(`${apiRoute}?q=${encodeURIComponent(query)}&limit=5`),
       ...(query.trim().length >= 2 && !/[\d\,\-]/.test(query.slice(0, 5))
         ? variants.map(variant =>
-            fetch(corsProxy + encodeURIComponent(`${baseUrl}&q=${encodeURIComponent(variant + ' ' + query)}&limit=10`), { headers })
+            fetch(`${apiRoute}?q=${encodeURIComponent(variant + ' ' + query)}&limit=10`)
           )
         : [])
     ];
