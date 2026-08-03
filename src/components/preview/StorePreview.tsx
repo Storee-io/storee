@@ -1824,12 +1824,14 @@ const CACHE_TTL = 60 * 1000; // 1 minute
 
 // Unified Nominatim search with parallel variant searches + relevance scoring + caching
 async function performNominatimSearch(query: string, limit: number = 20): Promise<any[]> {
+  console.log('🔎 performNominatimSearch called with:', query);
   if (!query.trim()) return [];
 
   // Check cache first
   const cacheKey = query.toLowerCase().trim();
   const cached = searchCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    console.log('✅ cache hit, returning', cached.results.length, 'results');
     return cached.results.slice(0, limit);
   }
 
@@ -1841,6 +1843,7 @@ async function performNominatimSearch(query: string, limit: number = 20): Promis
     const corsProxy = 'https://api.allorigins.win/raw?url=';
     const baseUrl = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=id`;
 
+    console.log('🌐 making', query.trim().length >= 2 ? variants.length + 1 : 1, 'fetch requests');
     // Main search + all variant searches in parallel
     const searchPromises = [
       fetch(corsProxy + encodeURIComponent(`${baseUrl}&q=${encodeURIComponent(query)}&limit=5`), { headers }),
@@ -1852,6 +1855,7 @@ async function performNominatimSearch(query: string, limit: number = 20): Promis
     ];
 
     const responses = await Promise.all(searchPromises);
+    console.log('📬 got', responses.length, 'responses');
     const allResults: any[] = [];
     const seen = new Set<string>();
 
@@ -1875,15 +1879,18 @@ async function performNominatimSearch(query: string, limit: number = 20): Promis
     }
 
     // Score and sort by relevance (highest first)
+    console.log('🔨 allResults:', allResults.length);
     const scored = allResults.map(r => ({ ...r, _score: scoreSearchResult(r, query) }));
     scored.sort((a, b) => b._score - a._score);
 
     // Remove score from output and cache results
     const results = scored.map(({ _score, ...r }) => r);
     searchCache.set(cacheKey, { results, timestamp: Date.now() });
+    console.log('💾 cached and returning', results.slice(0, limit).length, 'results');
 
     return results.slice(0, limit);
   } catch (error) {
+    console.error('❌ performNominatimSearch error:', error);
     return [];
   }
 }
@@ -2044,11 +2051,18 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   }, [mapReady, panTo]);
 
   const handleSearch = (q: string) => {
+    console.log('🔍 handleSearch triggered:', q);
     setSearchQuery(q);
     clearTimeout(searchTimer.current);
-    if (!q.trim()) { setSearchResults([]); return; }
+    if (!q.trim()) {
+      console.log('❌ empty query, clearing results');
+      setSearchResults([]);
+      return;
+    }
     searchTimer.current = setTimeout(async () => {
+      console.log('⏱️ timer fired, calling performNominatimSearch');
       const results = await performNominatimSearch(q, 20);
+      console.log('📍 performNominatimSearch returned:', results?.length || 0, 'results');
       setSearchResults(results);
     }, 400);
   };
