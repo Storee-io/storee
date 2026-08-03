@@ -2037,6 +2037,9 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     // Has saved coords but no address yet — geocode immediately
     if (initialCoords && !initialLoc) {
       reverseGeocode(initialCoords.lat, initialCoords.lng);
+    } else if (!initialLoc && !initialCoords) {
+      // No saved location or coords — geocode default Jakarta coordinates
+      reverseGeocode(currentCoordsRef.current.lat, currentCoordsRef.current.lng);
     }
     if (centeredRef.current) return;
     // No saved coords — request GPS (map already starts at default Jakarta view)
