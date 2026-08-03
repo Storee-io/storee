@@ -1854,22 +1854,30 @@ async function performNominatimSearch(query: string, limit: number = 20): Promis
         : [])
     ];
 
-    const responses = await Promise.all(searchPromises);
+    const responses = await Promise.allSettled(searchPromises);
     console.log('📬 got', responses.length, 'responses');
     const allResults: any[] = [];
     const seen = new Set<string>();
 
     // Process all responses in order (main first, then variants)
-    for (const res of responses) {
-      if (!res.ok) continue;
+    for (const result of responses) {
+      if (result.status !== 'fulfilled') {
+        console.log('⚠️ fetch failed:', result.reason);
+        continue;
+      }
+      const res = result.value;
+      if (!res.ok) {
+        console.log('⚠️ response not ok:', res.status);
+        continue;
+      }
       try {
         const data = await res.json();
         if (Array.isArray(data)) {
-          for (const result of data) {
+          for (const location of data) {
             // Deduplicate by display_name
-            if (!seen.has(result.display_name)) {
-              allResults.push(result);
-              seen.add(result.display_name);
+            if (!seen.has(location.display_name)) {
+              allResults.push(location);
+              seen.add(location.display_name);
             }
           }
         }
