@@ -1835,17 +1835,23 @@ async function performNominatimSearch(query: string, limit: number = 20): Promis
     return cached.results.slice(0, limit);
   }
 
-  const variants: string[] = []; // Disabled variants to prevent rate limiting
+  // Limited variants for street address searches (reduced from 9 to 2 to prevent rate limiting)
+  const variants = ['jalan', 'no.'];
   const headers = { 'Accept-Language': 'id,en' };
 
   try {
     // Use backend API route to avoid CORS issues and rate limiting
     const apiRoute = '/api/search-location';
 
-    console.log('🌐 making', 1, 'fetch request (variants disabled)');
-    // Main search only (variants disabled to prevent Nominatim rate limiting)
+    console.log('🌐 making', query.trim().length >= 2 ? variants.length + 1 : 1, 'fetch requests (limited variants)');
+    // Main search + 2 important variants for street address searches
     const searchPromises = [
-      fetch(`${apiRoute}?q=${encodeURIComponent(query)}&limit=20`)
+      fetch(`${apiRoute}?q=${encodeURIComponent(query)}&limit=10`),
+      ...(query.trim().length >= 2 && !/[\d\,\-]/.test(query.slice(0, 5))
+        ? variants.map(variant =>
+            fetch(`${apiRoute}?q=${encodeURIComponent(variant + ' ' + query)}&limit=10`)
+          )
+        : [])
     ];
 
     const responses = await Promise.allSettled(searchPromises);
