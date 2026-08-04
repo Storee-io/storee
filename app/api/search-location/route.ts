@@ -32,9 +32,7 @@ export async function GET(request: NextRequest) {
       limit: String(Math.min(parseInt(limit), 10)), // MapBox max 10 per request
       language: 'id,en',
       // Proximity bias to Tangerang/Jakarta area (central Indonesia hub)
-      proximity: '106.62,-6.17', // Tangerang coordinates for Indonesia location bias
-      // Include places, addresses, and points of interest for better coverage
-      types: 'place,address,poi'
+      proximity: '106.62,-6.17' // Tangerang coordinates for Indonesia location bias
     });
 
     const fullUrl = `${url}?${params}`;
