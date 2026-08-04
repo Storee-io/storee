@@ -1969,12 +1969,16 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
         province = abbreviateRegion(province);
       }
 
+      // Create display: full readable address (street + city + postal)
+      const displayParts = [streetAddress, city, postal].filter(Boolean);
+      const displayAddress = displayParts.join(', ');
+
       setLoc({
-        address: streetAddress,
+        address: streetAddress, // Saved to backend: street/house only
         city,
         postal,
         province,
-        display: abbreviateDisplayName(data.display_name || ''),
+        display: displayAddress, // Shown in UI: full address (street, city, postal)
         suburb: village,
         district,
         districtCode: match?.code ? match.code.slice(0, 6) : '',
@@ -2117,12 +2121,16 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       province = abbreviateRegion(province);
     }
 
+    // Create display: full readable address (street + city + postal)
+    const displayParts = [streetAddress, city, postal].filter(Boolean);
+    const displayAddress = displayParts.join(', ');
+
     setLoc({
-      address: streetAddress,
+      address: streetAddress, // Saved to backend: street/house only
       city,
       postal,
       province,
-      display: abbreviateDisplayName(r.display_name || ''),
+      display: displayAddress, // Shown in UI: full address (street, city, postal)
       suburb: village,
       district,
       districtCode: match?.code ? match.code.slice(0, 6) : '',
