@@ -1969,9 +1969,10 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
         province = abbreviateRegion(province);
       }
 
-      // Create display: full readable address (street + city + postal)
-      const displayParts = [streetAddress, city, postal].filter(Boolean);
-      const displayAddress = displayParts.join(', ');
+      // Create display: full readable address with administrative details on separate line
+      const displayLine1 = streetAddress;
+      const displayLine2 = [village, district, city, postal].filter(Boolean).join(', ');
+      const displayAddress = displayLine2 ? `${displayLine1}\n${displayLine2}` : displayLine1;
 
       setLoc({
         address: streetAddress, // Saved to backend: street/house only
@@ -2121,9 +2122,10 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       province = abbreviateRegion(province);
     }
 
-    // Create display: full readable address (street + city + postal)
-    const displayParts = [streetAddress, city, postal].filter(Boolean);
-    const displayAddress = displayParts.join(', ');
+    // Create display: full readable address with administrative details on separate line
+    const displayLine1 = streetAddress;
+    const displayLine2 = [village, district, city, postal].filter(Boolean).join(', ');
+    const displayAddress = displayLine2 ? `${displayLine1}\n${displayLine2}` : displayLine1;
 
     setLoc({
       address: streetAddress, // Saved to backend: street/house only
