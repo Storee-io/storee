@@ -3700,9 +3700,11 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
 
   const handleLocationChosen = (loc: PickedLocation, coords: { lat: number; lng: number }) => {
     const updateForm = (finalLoc: PickedLocation) => {
+      // Use display (full address) for form.address field, but still store individual fields
+      const fullAddress = finalLoc.display || finalLoc.address || f.address;
       setForm(f => ({
         ...f,
-        address: finalLoc.address || f.address,
+        address: fullAddress,
         village: finalLoc.suburb || f.village,
         district: finalLoc.district || f.district,
         city: finalLoc.city || f.city,
