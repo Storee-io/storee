@@ -1969,11 +1969,8 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
         province = abbreviateRegion(province);
       }
 
-      // Create display: full readable address with administrative details on separate line
-      const displayLine1 = streetAddress;
-      const displayLine2 = [village, district, city, postal].filter(Boolean).join(', ');
-      // Join with newline, filtering out empty lines to avoid leading/trailing newlines
-      const displayAddress = [displayLine1, displayLine2].filter(Boolean).join('\n');
+      // Create display: full readable address as single line
+      const displayAddress = [streetAddress, village, district, city, postal].filter(Boolean).join(', ');
 
       setLoc({
         address: streetAddress, // Saved to backend: street/house only
@@ -2123,11 +2120,8 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       province = abbreviateRegion(province);
     }
 
-    // Create display: full readable address with administrative details on separate line
-    const displayLine1 = streetAddress;
-    const displayLine2 = [village, district, city, postal].filter(Boolean).join(', ');
-    // Join with newline, filtering out empty lines to avoid leading/trailing newlines
-    const displayAddress = [displayLine1, displayLine2].filter(Boolean).join('\n');
+    // Create display: full readable address as single line
+    const displayAddress = [streetAddress, village, district, city, postal].filter(Boolean).join(', ');
 
     setLoc({
       address: streetAddress, // Saved to backend: street/house only
@@ -2225,7 +2219,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
                   </div>
                 ) : loc.display ? (
                   <>
-                    <p style={{ fontSize: '13px', color: geocoding ? t.textMuted : t.textPrimary, lineHeight: 1.5, transition: 'color 0.2s', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{loc.display}</p>
+                    <p style={{ fontSize: '13px', color: geocoding ? t.textMuted : t.textPrimary, lineHeight: 1.5, transition: 'color 0.2s', margin: 0 }}>{loc.display}</p>
                     <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
                       {loc.city && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.city}</span>}
                       {loc.postal && <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: t.surfaceBg, color: t.textSecondary, border: `1px solid ${t.divider}` }}>{loc.postal}</span>}
