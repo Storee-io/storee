@@ -1972,7 +1972,8 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       // Create display: full readable address with administrative details on separate line
       const displayLine1 = streetAddress;
       const displayLine2 = [village, district, city, postal].filter(Boolean).join(', ');
-      const displayAddress = displayLine2 ? `${displayLine1}\n${displayLine2}` : displayLine1;
+      // Join with newline, filtering out empty lines to avoid leading/trailing newlines
+      const displayAddress = [displayLine1, displayLine2].filter(Boolean).join('\n');
 
       setLoc({
         address: streetAddress, // Saved to backend: street/house only
@@ -2125,7 +2126,8 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     // Create display: full readable address with administrative details on separate line
     const displayLine1 = streetAddress;
     const displayLine2 = [village, district, city, postal].filter(Boolean).join(', ');
-    const displayAddress = displayLine2 ? `${displayLine1}\n${displayLine2}` : displayLine1;
+    // Join with newline, filtering out empty lines to avoid leading/trailing newlines
+    const displayAddress = [displayLine1, displayLine2].filter(Boolean).join('\n');
 
     setLoc({
       address: streetAddress, // Saved to backend: street/house only
