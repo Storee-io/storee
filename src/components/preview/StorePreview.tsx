@@ -1941,7 +1941,12 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       if (houseNumber || buildingName) {
         const houseParts = [houseNumber, buildingName].filter(Boolean);
         const houseDetail = houseParts.join(', ');
-        streetAddress = streetAddress ? `${houseDetail}, ${streetAddress}` : houseDetail;
+        // Avoid duplicate house number: if streetAddress starts with same number, don't prepend
+        if (streetAddress && !streetAddress.startsWith(houseNumber)) {
+          streetAddress = streetAddress ? `${houseDetail}, ${streetAddress}` : houseDetail;
+        } else if (!streetAddress) {
+          streetAddress = houseDetail;
+        }
       }
 
       // Get Nominatim data first
@@ -2098,7 +2103,12 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     if (houseNumber || buildingName) {
       const houseParts = [houseNumber, buildingName].filter(Boolean);
       const houseDetail = houseParts.join(', ');
-      streetAddress = streetAddress ? `${houseDetail}, ${streetAddress}` : houseDetail;
+      // Avoid duplicate house number: if streetAddress starts with same number, don't prepend
+      if (streetAddress && !streetAddress.startsWith(houseNumber)) {
+        streetAddress = streetAddress ? `${houseDetail}, ${streetAddress}` : houseDetail;
+      } else if (!streetAddress) {
+        streetAddress = houseDetail;
+      }
     }
 
     let village = suburbCandidate || parsed.suburb || '';
