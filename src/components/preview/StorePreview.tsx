@@ -1822,7 +1822,7 @@ const scoreSearchResult = (result: any, query: string): number => {
 const searchCache = new Map<string, { results: any[]; timestamp: number }>();
 const CACHE_TTL = 60 * 1000; // 1 minute
 
-// Unified Nominatim search with smart sequential queries + early exit
+// Unified Nominatim search with parallel queries + smart result processing
 async function performNominatimSearch(query: string, limit: number = 20): Promise<any[]> {
   console.log('🔎 performNominatimSearch called with:', query);
   if (!query.trim()) return [];
@@ -1839,7 +1839,7 @@ async function performNominatimSearch(query: string, limit: number = 20): Promis
     // Use backend API route to avoid CORS issues and rate limiting
     const apiRoute = '/api/search-location';
 
-    // Street-level search queries - sequential with early exit
+    // Street-level search queries - parallel for speed
     const queries = [
       query,                    // Main query
       `Jalan ${query}`,         // Street variant
@@ -1847,21 +1847,20 @@ async function performNominatimSearch(query: string, limit: number = 20): Promis
       `Blok ${query}`           // Block variant
     ];
 
+    console.log('🌐 making', queries.length, 'parallel search requests');
+    const responses = await Promise.allSettled(
+      queries.map(q => fetch(`${apiRoute}?q=${encodeURIComponent(q)}&limit=${limit}`).then(res => res.ok ? res.json() : []))
+    );
+
+    // Collect all results with deduplication
     const allResults: any[] = [];
     const seenDisplayNames = new Set<string>();
-    let queriesExecuted = 0;
 
-    // Sequential queries with early exit when limit reached
-    for (const q of queries) {
-      try {
-        const res = await fetch(`${apiRoute}?q=${encodeURIComponent(q)}&limit=${limit}`);
-        if (!res.ok) continue;
-
-        const results = await res.json();
-        queriesExecuted++;
-        console.log(`📍 query[${queriesExecuted}] "${q}": ${Array.isArray(results) ? results.length : 0} results`);
-
+    responses.forEach((response, idx) => {
+      if (response.status === 'fulfilled') {
+        const results = response.value;
         if (Array.isArray(results)) {
+          console.log(`📍 query[${idx}] "${queries[idx]}": ${results.length} results`);
           results.forEach(r => {
             if (!seenDisplayNames.has(r.display_name)) {
               seenDisplayNames.add(r.display_name);
@@ -1869,19 +1868,13 @@ async function performNominatimSearch(query: string, limit: number = 20): Promis
             }
           });
         }
-
-        // Early exit: if we have enough results, stop searching
-        if (allResults.length >= limit) {
-          console.log(`✅ reached limit (${allResults.length}/${limit}), stopping further queries`);
-          break;
-        }
-      } catch (error) {
-        console.warn(`⚠️ query failed: ${q}`, error);
+      } else {
+        console.warn(`⚠️ query[${idx}] failed:`, queries[idx]);
       }
-    }
+    });
 
     // Score and sort by relevance (highest first)
-    console.log('🔨 total unique results:', allResults.length, `(executed ${queriesExecuted}/${queries.length} queries)`);
+    console.log('🔨 total unique results:', allResults.length);
     const scored = allResults.map(r => ({ ...r, _score: scoreSearchResult(r, query) }));
     scored.sort((a, b) => b._score - a._score);
 
@@ -2070,7 +2063,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       const results = await performNominatimSearch(q, 20);
       console.log('📍 performNominatimSearch returned:', results?.length || 0, 'results');
       setSearchResults(results);
-    }, 400);
+    }, 250); // Reduced from 400ms for snappier UX
   };
 
   const selectResult = async (r: any) => {
