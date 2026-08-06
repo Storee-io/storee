@@ -2087,26 +2087,46 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       }
     }
     if (centeredRef.current) return;
-    // No saved coords — request GPS with Monas fallback
+
+    // Request GPS with auto-pan on success
+    // This runs even if location already centered, allowing auto-pan when user enables GPS later
+    let gpsRequested = false;
+    const gpsTimeout = setTimeout(() => {
+      if (!gpsRequested) {
+        console.log('⏱️ GPS timeout, using fallback location');
+        if (!centeredRef.current) {
+          centeredRef.current = true;
+          const fallbackCoords = getLastCachedLocation() || MONAS_COORDS;
+          panTo(fallbackCoords.lat, fallbackCoords.lng, 14);
+          setLocating(false);
+        }
+      }
+    }, 8000); // Timeout before fallback
+
     navigator.geolocation?.getCurrentPosition(
       pos => {
-        if (centeredRef.current) return;
-        centeredRef.current = true;
+        clearTimeout(gpsTimeout);
+        gpsRequested = true;
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         cacheLocation(coords);
+        console.log('✅ GPS acquired, auto-panning:', coords);
         panTo(coords.lat, coords.lng, 16);
+        if (!centeredRef.current) centeredRef.current = true;
         setLocating(false);
       },
       () => {
+        clearTimeout(gpsTimeout);
+        gpsRequested = true;
         // GPS denied/unavailable — fallback to cached or Monas
-        if (centeredRef.current) return;
-        centeredRef.current = true;
-        const fallbackCoords = getLastCachedLocation() || MONAS_COORDS;
-        console.log('⚠️ GPS unavailable, using fallback:', fallbackCoords);
-        panTo(fallbackCoords.lat, fallbackCoords.lng, 14);
+        if (!centeredRef.current) {
+          centeredRef.current = true;
+          const fallbackCoords = getLastCachedLocation() || MONAS_COORDS;
+          console.log('⚠️ GPS denied, using fallback:', fallbackCoords);
+          panTo(fallbackCoords.lat, fallbackCoords.lng, 14);
+        }
         setLocating(false);
       },
-      { timeout: 10000 }
+      { timeout: 7000 }
     );
   }, [mapReady, panTo, reverseGeocode]);
 
