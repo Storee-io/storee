@@ -4130,7 +4130,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                                     <span style={{ width: '1px', alignSelf: 'stretch', background: alpha(t.textMuted, 0.3), flexShrink: 0 }} />
                                     <span style={{ color: t.textPrimary }}>{form.village}</span>
                                   </div>
-                                  <div style={{ fontSize: '13px', color: t.textMuted, lineHeight: 1.3 }}>
+                                  <div style={{ fontSize: '12px', color: t.textMuted, lineHeight: 1.3 }}>
                                     {[form.district, shortRegency(form.city), form.province].filter(Boolean).join(', ')}
                                   </div>
                                 </>
