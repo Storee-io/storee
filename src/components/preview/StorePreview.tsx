@@ -1822,7 +1822,7 @@ const scoreSearchResult = (result: any, query: string): number => {
 const searchCache = new Map<string, { results: any[]; timestamp: number }>();
 const CACHE_TTL = 60 * 1000; // 1 minute
 
-// Unified Nominatim search with multi-priority variants + relevance scoring + caching
+// Unified Nominatim search with street-level variants + relevance scoring + caching
 async function performNominatimSearch(query: string, limit: number = 20): Promise<any[]> {
   console.log('🔎 performNominatimSearch called with:', query);
   if (!query.trim()) return [];
@@ -1839,76 +1839,47 @@ async function performNominatimSearch(query: string, limit: number = 20): Promis
     // Use backend API route to avoid CORS issues and rate limiting
     const apiRoute = '/api/search-location';
 
-    // Priority-based search queries
+    // Street-level search queries for diverse location results
     const queries = [
-      // Priority 1: Generic location
-      { q: query, priority: 1, label: 'generic' },
-      // Priority 2: Place types (POI)
-      { q: `Stasiun ${query}`, priority: 2, label: 'station' },
-      { q: `Terminal ${query}`, priority: 2, label: 'terminal' },
-      { q: `Perumahan ${query}`, priority: 2, label: 'residential' },
-      { q: `Rumah Sakit ${query}`, priority: 2, label: 'hospital' },
-      // Priority 3: Streets
-      { q: `Jalan ${query}`, priority: 3, label: 'street' }
+      query,                    // Main query
+      `Jalan ${query}`,         // Street variant
+      `Gang ${query}`,          // Alley variant
+      `Blok ${query}`           // Block variant
     ];
 
     console.log('🌐 making', queries.length, 'search requests in parallel');
     const responses = await Promise.allSettled(
-      queries.map(({ q }) => fetch(`${apiRoute}?q=${encodeURIComponent(q)}&limit=${limit}`).then(res => res.ok ? res.json() : []))
+      queries.map(q => fetch(`${apiRoute}?q=${encodeURIComponent(q)}&limit=${limit}`).then(res => res.ok ? res.json() : []))
     );
 
-    // Collect all results with priority metadata
-    const resultsByPriority: { [key: number]: any[] } = { 1: [], 2: [], 3: [] };
+    // Collect all results with deduplication
+    const allResults: any[] = [];
     const seenDisplayNames = new Set<string>();
 
     responses.forEach((response, idx) => {
       if (response.status === 'fulfilled') {
         const results = response.value;
-        const { priority, label } = queries[idx];
         if (Array.isArray(results)) {
-          console.log(`📍 [P${priority}] "${label}": ${results.length} results`);
+          console.log(`📍 query[${idx}] "${queries[idx]}": ${results.length} results`);
           results.forEach(r => {
             if (!seenDisplayNames.has(r.display_name)) {
               seenDisplayNames.add(r.display_name);
-              resultsByPriority[priority].push(r);
+              allResults.push(r);
             }
           });
         }
       } else {
-        console.warn(`⚠️ query[${idx}] failed:`, queries[idx].label);
+        console.warn(`⚠️ query[${idx}] failed:`, queries[idx]);
       }
     });
 
-    // Combine results: interleave P2 > P1 & P3
-    // P2 (POIs) ranked first, then mix P1 & P3
-    const allResults: any[] = [];
-
-    // Add all P2 results (place types) first with boost
-    resultsByPriority[2].forEach(r => {
-      allResults.push({ ...r, _sourcePriority: 2 });
-    });
-
-    // Then add P1 & P3 mixed by relevance score
-    const p1p3 = [
-      ...resultsByPriority[1].map(r => ({ ...r, _sourcePriority: 1 })),
-      ...resultsByPriority[3].map(r => ({ ...r, _sourcePriority: 3 }))
-    ];
-
-    // Score and sort P1 & P3 by relevance
-    const scored = p1p3.map(r => ({ ...r, _score: scoreSearchResult(r, query) }));
+    // Score and sort by relevance (highest first)
+    console.log('🔨 total unique results:', allResults.length);
+    const scored = allResults.map(r => ({ ...r, _score: scoreSearchResult(r, query) }));
     scored.sort((a, b) => b._score - a._score);
-    allResults.push(...scored);
 
-    // Final scoring considering source priority
-    const finalScored = allResults.map((r, idx) => {
-      const baseSc = scoreSearchResult(r, query);
-      const priorityBoost = r._sourcePriority === 2 ? 500 : 0;
-      return { ...r, _score: baseSc + priorityBoost + (1000 - idx * 5) };
-    });
-    finalScored.sort((a, b) => b._score - a._score);
-
-    // Remove internal fields and cache results
-    const results = finalScored.map(({ _score, _sourcePriority, ...r }) => r);
+    // Remove score from output and cache results
+    const results = scored.map(({ _score, ...r }) => r);
     searchCache.set(cacheKey, { results, timestamp: Date.now() });
     console.log('💾 cached and returning', results.slice(0, limit).length, 'results');
 
