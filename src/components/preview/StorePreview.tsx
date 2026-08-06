@@ -1839,19 +1839,41 @@ async function performNominatimSearch(query: string, limit: number = 20): Promis
     // Use backend API route to avoid CORS issues and rate limiting
     const apiRoute = '/api/search-location';
 
-    console.log('🌐 making main search request');
-    const res = await fetch(`${apiRoute}?q=${encodeURIComponent(query)}&limit=${limit}`);
+    // Parallel search requests: main query + variant with "Jalan" prefix for street-level results
+    const queries = [
+      query,
+      `Jalan ${query}` // variant to find street-level addresses
+    ];
 
-    if (!res.ok) {
-      console.log('⚠️ search response not ok:', res.status);
-      return [];
-    }
+    console.log('🌐 making', queries.length, 'search requests in parallel');
+    const responses = await Promise.allSettled(
+      queries.map(q => fetch(`${apiRoute}?q=${encodeURIComponent(q)}&limit=${limit}`).then(res => res.ok ? res.json() : []))
+    );
 
-    const allResults = await res.json();
+    // Collect all results from all queries
+    const allResults: any[] = [];
+    const seenDisplayNames = new Set<string>();
+
+    responses.forEach((response, idx) => {
+      if (response.status === 'fulfilled') {
+        const results = response.value;
+        if (Array.isArray(results)) {
+          console.log(`📍 query[${idx}] "${queries[idx]}": ${results.length} results`);
+          results.forEach(r => {
+            if (!seenDisplayNames.has(r.display_name)) {
+              seenDisplayNames.add(r.display_name);
+              allResults.push(r);
+            }
+          });
+        }
+      } else {
+        console.warn(`⚠️ query[${idx}] failed:`, response.reason);
+      }
+    });
 
     // Score and sort by relevance (highest first)
-    console.log('🔨 allResults:', Array.isArray(allResults) ? allResults.length : 0);
-    const scored = (Array.isArray(allResults) ? allResults : []).map(r => ({ ...r, _score: scoreSearchResult(r, query) }));
+    console.log('🔨 total unique results:', allResults.length);
+    const scored = allResults.map(r => ({ ...r, _score: scoreSearchResult(r, query) }));
     scored.sort((a, b) => b._score - a._score);
 
     // Remove score from output and cache results
