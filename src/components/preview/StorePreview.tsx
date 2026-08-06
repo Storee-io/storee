@@ -1926,7 +1926,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   const reverseGeocode = useCallback(async (lat: number, lon: number) => {
     setGeocoding(true);
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`, { headers: { 'Accept-Language': 'id,en' } });
+      const res = await fetch(`/api/reverse-location?lat=${lat}&lon=${lon}`);
       const data = await res.json();
       const postcode = (data.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
       const addr = data.address || {};
