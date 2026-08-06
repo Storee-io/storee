@@ -1818,9 +1818,9 @@ const scoreSearchResult = (result: any, query: string): number => {
   return score;
 };
 
-// Default Monas location (fallback when GPS unavailable)
-const MONAS_COORDS = { lat: -6.1753, lng: 106.8249 };
-const MONAS_NAME = 'Monumen Nasional, Jakarta, Indonesia';
+// Default Monas location (fallback when GPS unavailable) - geocoded coordinates
+const MONAS_COORDS = { lat: -6.1754024, lng: 106.8271692 };
+const MONAS_NAME = 'Monumen Nasional, Jalan Medan Merdeka Utara, RW 02, Gambir, Jakarta Pusat, Daerah Khusus Ibukota Jakarta, 10110, Indonesia';
 const LOCATION_CACHE_KEY = 'last_location_coords';
 const LOCATION_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
