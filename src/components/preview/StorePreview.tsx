@@ -1835,60 +1835,23 @@ async function performNominatimSearch(query: string, limit: number = 20): Promis
     return cached.results.slice(0, limit);
   }
 
-  // Limited variants optimized for Indonesia addresses (jalan = street, rw = rukun warga)
-  const variants = ['jalan', 'rw'];
-  const headers = { 'Accept-Language': 'id,en' };
-
   try {
     // Use backend API route to avoid CORS issues and rate limiting
     const apiRoute = '/api/search-location';
 
-    console.log('🌐 making', query.trim().length >= 2 ? variants.length + 1 : 1, 'fetch requests (limited variants)');
-    // Main search + 2 important variants for street address searches
-    const searchPromises = [
-      fetch(`${apiRoute}?q=${encodeURIComponent(query)}&limit=10`),
-      ...(query.trim().length >= 2 && !/[\d\,\-]/.test(query.slice(0, 5))
-        ? variants.map(variant =>
-            fetch(`${apiRoute}?q=${encodeURIComponent(variant + ' ' + query)}&limit=10`)
-          )
-        : [])
-    ];
+    console.log('🌐 making main search request');
+    const res = await fetch(`${apiRoute}?q=${encodeURIComponent(query)}&limit=${limit}`);
 
-    const responses = await Promise.allSettled(searchPromises);
-    console.log('📬 got', responses.length, 'responses');
-    const allResults: any[] = [];
-    const seen = new Set<string>();
-
-    // Process all responses in order (main first, then variants)
-    for (const result of responses) {
-      if (result.status !== 'fulfilled') {
-        console.log('⚠️ fetch failed:', result.reason);
-        continue;
-      }
-      const res = result.value;
-      if (!res.ok) {
-        console.log('⚠️ response not ok:', res.status);
-        continue;
-      }
-      try {
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          for (const location of data) {
-            // Deduplicate by display_name
-            if (!seen.has(location.display_name)) {
-              allResults.push(location);
-              seen.add(location.display_name);
-            }
-          }
-        }
-      } catch {
-        // Ignore parse errors for individual searches
-      }
+    if (!res.ok) {
+      console.log('⚠️ search response not ok:', res.status);
+      return [];
     }
 
+    const allResults = await res.json();
+
     // Score and sort by relevance (highest first)
-    console.log('🔨 allResults:', allResults.length);
-    const scored = allResults.map(r => ({ ...r, _score: scoreSearchResult(r, query) }));
+    console.log('🔨 allResults:', Array.isArray(allResults) ? allResults.length : 0);
+    const scored = (Array.isArray(allResults) ? allResults : []).map(r => ({ ...r, _score: scoreSearchResult(r, query) }));
     scored.sort((a, b) => b._score - a._score);
 
     // Remove score from output and cache results
