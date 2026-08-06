@@ -2097,19 +2097,14 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     const suburbCandidate = addr.village || addr.neighbourhood || addr.hamlet || addr.locality || addr.suburb || '';
     const parsed = parseDisplayName(r.display_name ?? '', postcode, suburbCandidate);
 
-    const houseNumber = addr.house_number || '';
-    const buildingName = addr.building || addr.house_name || '';
-    let streetAddress = parsed.address || '';
-    if (houseNumber || buildingName) {
-      const houseParts = [houseNumber, buildingName].filter(Boolean);
-      const houseDetail = houseParts.join(', ');
-      // Avoid duplicate house number: if streetAddress starts with same number, don't prepend
-      if (streetAddress && !streetAddress.startsWith(houseNumber)) {
-        streetAddress = streetAddress ? `${houseDetail}, ${streetAddress}` : houseDetail;
-      } else if (!streetAddress) {
-        streetAddress = houseDetail;
-      }
-    }
+    // Extract street-level address from display_name up to (but not including) village/district level
+    // to avoid duplication from structured fields (houseNumber, building already in display_name)
+    const displayParts = (r.display_name ?? '').split(',').map(p => p.trim()).filter(Boolean);
+    const villageLower = (suburbCandidate ?? '').toLowerCase();
+    // Find where village starts in display_name and take only street parts before it
+    const villageIdx = displayParts.findIndex(p => p.toLowerCase() === villageLower);
+    const streetParts = villageIdx > 0 ? displayParts.slice(0, villageIdx) : displayParts.slice(0, Math.max(1, displayParts.length - 4));
+    const streetAddress = streetParts.join(', ') || parsed.address || '';
 
     let village = suburbCandidate || parsed.suburb || '';
     let district = addr.district || parsed.district || '';
