@@ -1818,6 +1818,38 @@ const scoreSearchResult = (result: any, query: string): number => {
   return score;
 };
 
+// Default Monas location (fallback when GPS unavailable)
+const MONAS_COORDS = { lat: -6.1753, lng: 106.8249 };
+const MONAS_NAME = 'Monumen Nasional, Jakarta, Indonesia';
+const LOCATION_CACHE_KEY = 'last_location_coords';
+const LOCATION_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+// Utility: Cache & retrieve last known location
+const getLastCachedLocation = (): { lat: number; lng: number } | null => {
+  try {
+    const cached = localStorage.getItem(LOCATION_CACHE_KEY);
+    if (cached) {
+      const data = JSON.parse(cached);
+      if (Date.now() - data.timestamp < LOCATION_CACHE_TTL) {
+        console.log('📍 Using cached location:', data.coords);
+        return data.coords;
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ Failed to read location cache:', error);
+  }
+  return null;
+};
+
+const cacheLocation = (coords: { lat: number; lng: number }) => {
+  try {
+    localStorage.setItem(LOCATION_CACHE_KEY, JSON.stringify({ coords, timestamp: Date.now() }));
+    console.log('💾 Cached location:', coords);
+  } catch (error) {
+    console.warn('⚠️ Failed to cache location:', error);
+  }
+};
+
 // Request cache for Nominatim searches (1 minute TTL)
 const searchCache = new Map<string, { results: any[]; timestamp: number }>();
 const CACHE_TTL = 60 * 1000; // 1 minute
@@ -1907,7 +1939,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   const [geocoding, setGeocoding] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const geocodeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const currentCoordsRef = useRef<{ lat: number; lng: number }>(initialCoords ?? { lat: -6.2, lng: 106.8 });
+  const currentCoordsRef = useRef<{ lat: number; lng: number }>(initialCoords ?? getLastCachedLocation() ?? MONAS_COORDS);
   const skipNextGeocode = useRef(!!initialLoc);
 
   const reverseGeocode = useCallback(async (lat: number, lon: number) => {
@@ -1980,11 +2012,21 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   const goToGPS = useCallback(() => {
     setLocating(true);
     navigator.geolocation?.getCurrentPosition(
-      pos => { panTo(pos.coords.latitude, pos.coords.longitude, 17); setLocating(false); },
-      () => setLocating(false),
+      pos => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        cacheLocation(coords);
+        panTo(coords.lat, coords.lng, 17);
+        setLocating(false);
+      },
+      () => {
+        console.log('⚠️ GPS permission denied or unavailable, using Monas fallback');
+        panTo(MONAS_COORDS.lat, MONAS_COORDS.lng, 16);
+        reverseGeocode(MONAS_COORDS.lat, MONAS_COORDS.lng);
+        setLocating(false);
+      },
       { timeout: 10000 }
     );
-  }, [panTo]);
+  }, [panTo, reverseGeocode]);
 
   // Load Leaflet and init map
   useEffect(() => {
@@ -2002,8 +2044,10 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       }
       if (!mapDivRef.current || leafletMap.current) return;
       const L = (window as any).L;
-      const startView: [number, number] = initialCoords ? [initialCoords.lat, initialCoords.lng] : [-6.2, 106.8];
-      const startZoom = initialCoords ? 16 : 12;
+      // Use initialCoords > cached location > Monas as fallback
+      const fallbackCoords = getLastCachedLocation() || MONAS_COORDS;
+      const startView: [number, number] = initialCoords ? [initialCoords.lat, initialCoords.lng] : [fallbackCoords.lat, fallbackCoords.lng];
+      const startZoom = initialCoords ? 16 : 14;
       const map = L.map(mapDivRef.current, { zoomControl: true }).setView(startView, startZoom);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
       leafletMap.current = map;
@@ -2024,7 +2068,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     };
   }, [reverseGeocode]);
 
-  // Center map on open — use saved coords instantly, otherwise request GPS
+  // Center map on open — use saved coords > cached location > GPS > Monas fallback
   const centeredRef = useRef(!!initialCoords);
   useEffect(() => {
     if (!mapReady) return;
@@ -2032,22 +2076,39 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     if (initialCoords && !initialLoc) {
       reverseGeocode(initialCoords.lat, initialCoords.lng);
     } else if (!initialLoc && !initialCoords) {
-      // No saved location or coords — geocode default Jakarta coordinates
-      reverseGeocode(currentCoordsRef.current.lat, currentCoordsRef.current.lng);
+      // Try cached location first, otherwise use Monas
+      const cachedCoords = getLastCachedLocation();
+      if (cachedCoords) {
+        console.log('📍 Using cached location for initial geocode');
+        reverseGeocode(cachedCoords.lat, cachedCoords.lng);
+      } else {
+        console.log('📍 Using Monas as default location');
+        reverseGeocode(MONAS_COORDS.lat, MONAS_COORDS.lng);
+      }
     }
     if (centeredRef.current) return;
-    // No saved coords — request GPS (map already starts at default Jakarta view)
+    // No saved coords — request GPS with Monas fallback
     navigator.geolocation?.getCurrentPosition(
       pos => {
         if (centeredRef.current) return;
         centeredRef.current = true;
-        panTo(pos.coords.latitude, pos.coords.longitude, 16);
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        cacheLocation(coords);
+        panTo(coords.lat, coords.lng, 16);
         setLocating(false);
       },
-      () => setLocating(false),
+      () => {
+        // GPS denied/unavailable — fallback to cached or Monas
+        if (centeredRef.current) return;
+        centeredRef.current = true;
+        const fallbackCoords = getLastCachedLocation() || MONAS_COORDS;
+        console.log('⚠️ GPS unavailable, using fallback:', fallbackCoords);
+        panTo(fallbackCoords.lat, fallbackCoords.lng, 14);
+        setLocating(false);
+      },
       { timeout: 10000 }
     );
-  }, [mapReady, panTo]);
+  }, [mapReady, panTo, reverseGeocode]);
 
   const handleSearch = (q: string) => {
     console.log('🔍 handleSearch triggered:', q);
