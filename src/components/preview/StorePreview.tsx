@@ -4047,10 +4047,10 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                           onMouseLeave={e => e.currentTarget.style.background = alpha(t.primary, 0.05)}
                         >
                           {/* Card: map + info + change + remove in one row */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px' }}>
                             {/* Map thumbnail */}
                             {lastPickedCoords && (
-                              <div style={{ width: '48px', height: '48px', flexShrink: 0, background: `url('https://tile.openstreetmap.org/15/${Math.floor((lastPickedCoords.lng + 180) / 360 * Math.pow(2, 15))}/${Math.floor((1 - Math.log(Math.tan(lastPickedCoords.lat * Math.PI / 180) + 1 / Math.cos(lastPickedCoords.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 15))}.png') center/cover`, borderRadius: '6px', position: 'relative', border: `1px solid ${alpha(t.divider, 0.25)}` }}>
+                              <div style={{ width: '56px', height: '56px', flexShrink: 0, background: `url('https://tile.openstreetmap.org/15/${Math.floor((lastPickedCoords.lng + 180) / 360 * Math.pow(2, 15))}/${Math.floor((1 - Math.log(Math.tan(lastPickedCoords.lat * Math.PI / 180) + 1 / Math.cos(lastPickedCoords.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 15))}.png') center/cover`, borderRadius: '8px', position: 'relative', border: `1px solid ${alpha(t.divider, 0.25)}` }}>
                                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '12px', lineHeight: 1 }}>📍</div>
                               </div>
                             )}
@@ -4091,7 +4091,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                       <textarea
                         ref={addrTextareaRef}
                         className="w-full px-4 py-2.5 text-sm resize-none"
-                        style={{ ...inpStyle, outline: 'none', minHeight: '62px', boxSizing: 'border-box', overflow: 'hidden' }}
+                        style={{ ...inpStyle, outline: 'none', minHeight: '84px', boxSizing: 'border-box', overflow: 'hidden' }}
                         rows={2}
                         value={form.address}
                         onChange={e => handleAddressInput(e.target.value)}
@@ -4114,7 +4114,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
                         >
                           <label style={lblStyle}>{uiT.postalLabel || 'Postal Code or Village'}</label>
                           <div
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s', minHeight: (form.postal || form.village || form.district || form.city) ? '68px' : '42px', boxSizing: 'border-box', paddingLeft: '16px', paddingRight: '12px', paddingTop: (form.postal || form.village || form.district || form.city) ? '12px' : '0px', paddingBottom: (form.postal || form.village || form.district || form.city) ? '12px' : '0px', borderRadius: t.inputRadius, border: `1.5px solid ${alpha(t.divider, 0.4)}`, background: alpha(t.primary, 0.04) }}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s', minHeight: (form.postal || form.village || form.district || form.city) ? '56px' : '42px', boxSizing: 'border-box', paddingLeft: '16px', paddingRight: '12px', paddingTop: (form.postal || form.village || form.district || form.city) ? '10px' : '0px', paddingBottom: (form.postal || form.village || form.district || form.city) ? '10px' : '0px', borderRadius: t.inputRadius, border: `1.5px solid ${alpha(t.divider, 0.4)}`, background: alpha(t.primary, 0.04) }}
                             onClick={() => setShowPostalPicker(true)}
                             onMouseEnter={e => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.background = alpha(lighten(t.pageBg, 0.3), 0.5); }}
                             onMouseLeave={e => { e.currentTarget.style.borderColor = alpha(t.divider, 0.4); e.currentTarget.style.background = alpha(t.primary, 0.04); }}
