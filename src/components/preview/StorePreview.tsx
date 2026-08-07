@@ -2226,7 +2226,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
 
         {/* ── Search results (shown on top when results exist) ── */}
         {searchResults.length > 0 && (
-          <div style={{ overflowY: 'auto', flex: 1 }}>
+          <div style={{ overflowY: 'auto', maxHeight: '400px' }}>
             {searchResults.map((r, i) => (
               <div key={i} onClick={() => selectResult(r)}
                 style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 16px', cursor: 'pointer', borderBottom: `1px solid ${t.divider}`, color: t.textPrimary, fontSize: '13px', lineHeight: 1.5, transition: 'background 0.15s' }}
