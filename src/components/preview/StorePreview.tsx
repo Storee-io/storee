@@ -2694,6 +2694,7 @@ const shortRegency = (name: string) => {
   if (name === 'Kota Administrasi Jakarta Pusat') return 'Kota Jakarta Pusat';
   return name
     .replace(/^Kota\s+Administrasi\s+/i, 'Kota ')  // Remove "Administrasi" from Kota Administrasi
+    .replace(/^Kabupaten\s+Administrasi\s+/i, 'Kab. ')  // Remove "Administrasi" from Kabupaten Administrasi
     .replace(/^Kabupaten\s+/i, 'Kab. ')
     .replace(/^Kota\s+/i, 'Kota ');
 };
