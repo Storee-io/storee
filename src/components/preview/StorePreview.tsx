@@ -2190,8 +2190,8 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     } else {
       // No match found: fall back to parseDisplayName's extracted hierarchy (which has
       // special logic to handle false-extra levels like "Depok" before the province)
-      // instead of partially parsed Nominatim fields
-      village = parsed.suburb;
+      // instead of partially parsed Nominatim fields. Keep village from Nominatim.
+      // village is already set from suburbCandidate above
       district = abbreviateRegion(parsed.district);
       city = abbreviateRegion(parsed.city);
       province = abbreviateRegion(parsed.province);
