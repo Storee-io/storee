@@ -2687,7 +2687,16 @@ const WILAYAH_ABBR = new Set(['DKI', 'DI', 'DIY', 'NTB', 'NTT', 'RI', 'SD', 'SMP
 const toTitleCase = (s: string) =>
   s.split(' ').map(w => WILAYAH_ABBR.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
-const shortRegency = (name: string) => name.replace(/^Kabupaten\s+/i, 'Kab. ');
+// Apply same abbreviation as abbreviateRegion for consistency in postal code picker
+const shortRegency = (name: string) => {
+  if (!name) return name;
+  // Match abbreviateRegion logic
+  if (name === 'Kota Administrasi Jakarta Pusat') return 'Kota Jakarta Pusat';
+  return name
+    .replace(/^Kota\s+Administrasi\s+/i, 'Kota ')  // Remove "Administrasi" from Kota Administrasi
+    .replace(/^Kabupaten\s+/i, 'Kab. ')
+    .replace(/^Kota\s+/i, 'Kota ');
+};
 
 function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', initialSelection }: {
   t: CommerceTheme;
