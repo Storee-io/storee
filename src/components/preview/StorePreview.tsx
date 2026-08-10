@@ -1719,11 +1719,14 @@ async function matchWilayah(fields: { province?: string; city?: string; district
 const abbreviateRegion = (name: string): string => {
   if (!name) return name;
   // Special cases for special territories
-  if (name === 'Daerah Khusus Ibukota Jakarta') return 'DKI Jakarta';
-  if (name === 'Daerah Istimewa Yogyakarta') return 'DI Yogyakarta';
+  if (name === 'Daerah Khusus Ibukota Jakarta') return 'Kota Jakarta Pusat';
+  if (name === 'Kota Administrasi Jakarta Pusat') return 'Kota Jakarta Pusat';
+  if (name === 'Daerah Istimewa Yogyakarta') return 'Yogyakarta';
   if (name === 'Daerah Istimewa Aceh') return 'Aceh';
-  // Generic prefixes
-  return name.replace(/^Kabupaten\s+/, 'Kab. ')
+  // Generic prefixes: Kabupaten → Kab., Kota stays as-is
+  return name
+    .replace(/^Kota\s+Administrasi\s+/, 'Kota ') // Remove "Administrasi" from Kota Administrasi
+    .replace(/^Kabupaten\s+/, 'Kab. ')
     .replace(/^Kota\s+/, 'Kota ')
     .replace(/^Kecamatan\s+/, 'Kec. ')
     .replace(/^Kelurahan\s+/, 'Kel. ');
@@ -1735,11 +1738,15 @@ const abbreviateDisplayName = (displayName: string): string => {
   return displayName
     // Remove trailing country name (Indonesia) after postal code
     .replace(/,\s*Indonesia\s*$/i, '')
-    // Full territory replacements
-    .replace('Daerah Khusus Ibukota Jakarta', 'DKI Jakarta')
-    .replace('Daerah Istimewa Yogyakarta', 'DI Yogyakarta')
-    .replace('Daerah Istimewa Aceh', 'Aceh')
+    // Full territory replacements - standardized format
+    .replace(/Daerah\s+Khusus\s+Ibukota\s+Jakarta/g, 'Kota Jakarta Pusat')
+    .replace(/Kota\s+Administrasi\s+Jakarta\s+Pusat/g, 'Kota Jakarta Pusat')
+    .replace(/Daerah\s+Istimewa\s+Yogyakarta/g, 'Yogyakarta')
+    .replace(/Daerah\s+Istimewa\s+Aceh/g, 'Aceh')
+    // Remove "Administrasi" from Kota Administrasi
+    .replace(/\bKota\s+Administrasi\s+/g, 'Kota ')
     // Generic prefix replacements (word-boundary to avoid replacing in middle of words)
+    // Kabupaten → Kab., Kota stays as-is
     .replace(/\bKabupaten\s+/g, 'Kab. ')
     .replace(/\bKota\s+/g, 'Kota ')
     .replace(/\bKecamatan\s+/g, 'Kec. ')
