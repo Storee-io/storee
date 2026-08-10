@@ -3057,7 +3057,10 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
                   <div style={{ padding: '8px 16px 4px', fontSize: '10px', fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Area</div>
                   {searchNav.map((w, i) => {
                     const typeLabel = w.type === 'province' ? 'Province' : w.type === 'regency' ? 'City/Regency' : 'District';
-                    const sub = w.type === 'regency' ? w.province : w.type === 'district' ? `${w.province} › ${w.regency}` : undefined;
+                    const abbreviatedName = w.type === 'regency' ? shortRegency(w.name) : w.name;
+                    const abbreviatedProvince = w.province ? shortRegency(w.province) : w.province;
+                    const abbreviatedRegency = w.regency ? shortRegency(w.regency) : w.regency;
+                    const sub = w.type === 'regency' ? abbreviatedProvince : w.type === 'district' ? `${abbreviatedProvince} › ${abbreviatedRegency}` : undefined;
                     return (
                       <button key={w.id} type="button" onClick={() => handleSearchNavClick(w)}
                         style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: i > 0 ? `1px solid ${alpha(t.divider, 0.12)}` : 'none', cursor: 'pointer', padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}
@@ -3065,7 +3068,7 @@ function PostalCodePickerModal({ t, uiT, onSelect, onClose, initialQuery = '', i
                         onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                       >
                         <div>
-                          <div style={{ fontSize: '14px', fontWeight: 500, color: t.textPrimary }}>{w.name}</div>
+                          <div style={{ fontSize: '14px', fontWeight: 500, color: t.textPrimary }}>{abbreviatedName}</div>
                           <div style={{ fontSize: '11px', color: t.textMuted, marginTop: '1px' }}>{sub ? `${typeLabel} · ${sub}` : typeLabel}</div>
                         </div>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.textMuted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
