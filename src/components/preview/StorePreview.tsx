@@ -2188,9 +2188,14 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       province = abbreviateRegion(match.province);
       postal = match.postal;
     } else {
-      city = abbreviateRegion(city);
-      district = abbreviateRegion(district);
-      province = abbreviateRegion(province);
+      // No match found: fall back to parseDisplayName's extracted hierarchy (which has
+      // special logic to handle false-extra levels like "Depok" before the province)
+      // instead of partially parsed Nominatim fields
+      village = parsed.suburb;
+      district = abbreviateRegion(parsed.district);
+      city = abbreviateRegion(parsed.city);
+      province = abbreviateRegion(parsed.province);
+      postal = parsed.postal;
     }
 
     // Create display: full readable address as single line
