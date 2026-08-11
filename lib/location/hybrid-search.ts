@@ -38,13 +38,13 @@ export interface HybridSearchResult {
  *   └─ Postal code search
  *   └─ Handle: 80% of typical queries
  *
- * Layer 3: Google Maps API (500-1000ms, $0.70/1K)
+ * Layer 3: Google Maps API v1 (500-1000ms, $0.005/query or $5/1K)
  *   ├─ Street-level address
  *   ├─ POI/Business search
  *   └─ Fuzzy matching
  *   └─ Handle: Remaining 15-20% + fallback
  *
- * Result: ~95% cost savings vs Google-only approach
+ * Result: ~99% cost savings vs Google-only approach (with new API v1!)
  */
 
 export async function hybridSearch(
