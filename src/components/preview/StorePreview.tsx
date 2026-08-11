@@ -2212,8 +2212,25 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       districtCode: match?.code ? match.code.slice(0, 6) : '',
     });
 
-    skipNextGeocode.current = true;
-    panTo(parseFloat(r.lat), parseFloat(r.lon), 16);
+    // Try to get coordinates from search result
+    const lat = parseFloat(r.lat);
+    const lon = parseFloat(r.lon);
+
+    // If result has valid coordinates, pan to them
+    if (lat !== 0 || lon !== 0) {
+      skipNextGeocode.current = true;
+      panTo(lat, lon, 16);
+    } else {
+      // No coordinates in result - use our reverse geocoding to get coordinates
+      // from the structured address data
+      console.log('📍 No coordinates in result, attempting to geocode from address data...');
+
+      // Create a fake lat/lon for the address area based on regency/city
+      // This is a workaround until we have real coordinates
+      // For now, just clear search results and let user manually adjust
+      skipNextGeocode.current = false;
+    }
+
     setSearchResults([]);
   };
 

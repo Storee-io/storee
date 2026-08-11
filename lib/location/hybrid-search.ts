@@ -82,8 +82,12 @@ export async function hybridSearch(
     // ===== LAYER 2: Local DB Search =====
     const localResults = await searchLocalDB(query, limit);
 
-    // If cache-only mode atau sudah punya results dari local DB
-    if (cacheOnly || localResults.length >= 5) {
+    // Check if query looks like a specific place (e.g., "villa rizki", "restaurant", "jalan")
+    // vs administrative boundary (e.g., "jakarta", "bandung")
+    const isSpecificPlace = /\b(villa|rumah|jalan|jl|restoran|restaurant|kantor|toko|mall|hotel|resort|kafe|cafe)\b/i.test(query);
+
+    // If cache-only mode atau sudah punya results dari local DB AND not a specific place search
+    if (cacheOnly || (localResults.length >= 5 && !isSpecificPlace)) {
       console.log(`✅ Local DB sufficient: ${localResults.length} results`);
 
       const result: HybridSearchResult = {

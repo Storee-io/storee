@@ -37,11 +37,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Format untuk kompatibilitas dengan UI lama (Nominatim format)
+    // PENTING: Return coordinates sebagai string agar kompatibel dengan frontend yang menggunakan parseFloat()
     const formatted = result.results.map(r => ({
       address: formatAddress(r),
       display_name: formatDisplayName(r),
-      lat: r.lat || '0',
-      lon: r.lng || '0',
+      lat: r.lat ? String(r.lat) : r.lat || '0',  // Use actual coords if available, else placeholder
+      lon: r.lng ? String(r.lng) : r.lng || '0',  // Google API uses lng, convert to string
       address_components: {
         province: r.province,
         regency: r.regency,

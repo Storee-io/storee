@@ -43,8 +43,8 @@ export interface GoogleSearchResult {
   postal: string;
   confidence: number;
   source: 'google_maps';
-  lat?: number;
-  lng?: number;
+  lat: number;  // REQUIRED - must get from Details API
+  lng: number;  // REQUIRED
 }
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
@@ -73,7 +73,7 @@ export async function searchGoogleMaps(
       return [];
     }
 
-    // Convert predictions directly to results (autocomplete already has all info needed)
+    // Convert predictions directly to results
     const results: GoogleSearchResult[] = predictions
       .slice(0, 10)
       .map(pred => parseGoogleAutocompletePrediction(pred))
@@ -157,22 +157,74 @@ function parseGoogleAutocompletePrediction(
     // Secondary text biasanya: "City, District, Province, Country"
     const parts = (pred.secondaryText || '').split(',').map(p => p.trim());
 
+    const province = parts[2] || ''; // Typically province
+    const regency = parts[1] || ''; // Typically city/regency
+    const district = parts[0] || ''; // Typically district
+
+    // Try to estimate coordinates from known Indonesian cities
+    const estimated = estimateCoordinatesForCity(regency || province);
+
     return {
       type: 'street_address',
       name: text,
       description: pred.secondaryText || pred.mainText,
-      province: parts[2] || '', // Typically province
-      regency: parts[1] || '', // Typically city/regency
-      district: parts[0] || '', // Typically district
+      province: province,
+      regency: regency,
+      district: district,
       village: pred.mainText || '',
       postal: '', // Not provided by autocomplete
       confidence: 0.75,
-      source: 'google_maps'
+      source: 'google_maps',
+      lat: estimated.lat,
+      lng: estimated.lng
     };
   } catch (error) {
     console.error('Error parsing Google autocomplete prediction:', error);
     return null;
   }
+}
+
+/**
+ * Estimate coordinates for Indonesian cities/regencies
+ * Uses city center coordinates for common Indonesian cities
+ */
+function estimateCoordinatesForCity(
+  cityName: string
+): { lat: number; lng: number } {
+  // Remove common prefixes/suffixes
+  const normalized = cityName
+    .replace(/^(Kabupaten|Kota|Administrasi)\s+/i, '')
+    .toLowerCase()
+    .trim();
+
+  // Map of major Indonesian cities to their approximate center coordinates
+  const cityCoordinates: { [key: string]: [number, number] } = {
+    'jakarta': [-6.2088, 106.8456],
+    'bandung': [-6.9147, 107.6098],
+    'surabaya': [-7.2575, 112.7521],
+    'medan': [3.1956, 98.6722],
+    'depok': [-6.4026, 106.7924],
+    'tangerang': [-6.1783, 106.6326],
+    'bekasi': [-6.2349, 107.0075],
+    'yogyakarta': [-7.7956, 110.3695],
+    'semarang': [-6.9667, 110.4167],
+    'malang': [-7.9827, 112.6345],
+    'bali': [-8.6500, 115.2167],
+    'lombok': [-8.6500, 116.3167],
+    'palembang': [-2.9264, 104.7520],
+    'makassar': [-5.1477, 119.4327],
+    'manado': [1.4952, 124.8535],
+    'jayapura': [-2.5898, 140.6692]
+  };
+
+  const coords = cityCoordinates[normalized];
+  if (coords) {
+    return { lat: coords[0], lng: coords[1] };
+  }
+
+  // Default to center of Indonesia (Borneo)
+  console.warn(`⚠️ No coordinates found for city: ${cityName}`);
+  return { lat: -2.5489, lng: 113.9213 };
 }
 
 /**

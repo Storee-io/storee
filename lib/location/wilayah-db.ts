@@ -20,6 +20,8 @@ export interface LocalSearchResult {
   postal: string;
   confidence: number; // 0.6-1.0 (60-100%)
   source: 'local_db';
+  lat?: number; // Estimated from city center if available
+  lng?: number; // Estimated from city center if available
 }
 
 // In-memory cache untuk wilayah data
@@ -221,7 +223,16 @@ export async function searchLocalDB(
     }
   }
 
-  return results.slice(0, limit);
+  // Add coordinates to all results based on city/regency
+  const resultsWithCoords = results.slice(0, limit).map(result => {
+    const coords = estimateCoordinatesForCity(result.regency);
+    return {
+      ...result,
+      ...(coords && { lat: coords.lat, lng: coords.lng })
+    };
+  });
+
+  return resultsWithCoords;
 }
 
 /**
@@ -236,6 +247,45 @@ function normalizeText(text: string): string {
     .replace(/^(kabupaten|kota|administrasi)\s+/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/**
+ * Estimate coordinates for Indonesian cities/regencies
+ * Uses city center coordinates for common Indonesian cities
+ */
+function estimateCoordinatesForCity(cityName: string): { lat: number; lng: number } | null {
+  // Remove common prefixes/suffixes
+  const normalized = cityName
+    .replace(/^(Kabupaten|Kota|Administrasi)\s+/i, '')
+    .toLowerCase()
+    .trim();
+
+  // Map of major Indonesian cities to their approximate center coordinates
+  const cityCoordinates: { [key: string]: [number, number] } = {
+    'jakarta': [-6.2088, 106.8456],
+    'bandung': [-6.9147, 107.6098],
+    'surabaya': [-7.2575, 112.7521],
+    'medan': [3.1956, 98.6722],
+    'depok': [-6.4026, 106.7924],
+    'tangerang': [-6.1783, 106.6326],
+    'bekasi': [-6.2349, 107.0075],
+    'yogyakarta': [-7.7956, 110.3695],
+    'semarang': [-6.9667, 110.4167],
+    'malang': [-7.9827, 112.6345],
+    'bali': [-8.6500, 115.2167],
+    'lombok': [-8.6500, 116.3167],
+    'palembang': [-2.9264, 104.7520],
+    'makassar': [-5.1477, 119.4327],
+    'manado': [1.4952, 124.8535],
+    'jayapura': [-2.5898, 140.6692]
+  };
+
+  const coords = cityCoordinates[normalized];
+  if (coords) {
+    return { lat: coords[0], lng: coords[1] };
+  }
+
+  return null; // No coordinates found
 }
 
 /**
