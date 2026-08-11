@@ -280,9 +280,17 @@ function estimateCoordinatesForCity(cityName: string): { lat: number; lng: numbe
     'jayapura': [-2.5898, 140.6692]
   };
 
-  const coords = cityCoordinates[normalized];
+  // Try exact match first
+  let coords = cityCoordinates[normalized];
   if (coords) {
     return { lat: coords[0], lng: coords[1] };
+  }
+
+  // Try partial match - check if normalized text starts with or contains any known city
+  for (const [city, coord] of Object.entries(cityCoordinates)) {
+    if (normalized.startsWith(city) || normalized.includes(` ${city}`) || normalized.includes(`${city} `)) {
+      return { lat: coord[0], lng: coord[1] };
+    }
   }
 
   return null; // No coordinates found
