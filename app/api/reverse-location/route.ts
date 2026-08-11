@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
-const CONFIDENCE_THRESHOLD = 0.5; // Minimum confidence score for Nominatim result
+const CONFIDENCE_THRESHOLD = 0.40; // Minimum confidence score for Nominatim result (40% = fair address)
 
 /**
  * Hybrid reverse geocoding API
@@ -132,25 +132,238 @@ async function reverseGeocodeGoogle(lat: string, lon: string) {
 
 /**
  * Calculate confidence score for Nominatim result
- * High confidence = detailed address with street/building info
- * Low confidence = generic administrative boundary
+ * Scoring system (0.0 - 1.0):
+ *   0.9-1.0: Excellent - street address with number + street name + area details
+ *   0.7-0.9: Good - complete district/village info with some specificity
+ *   0.5-0.7: Fair - administrative boundaries present but generic
+ *   0.3-0.5: Poor - incomplete or very generic
+ *   0.0-0.3: Very Poor - placeholder or unusable
  */
 function calculateConfidence(result: any): number {
   const addr = result.address || {};
   const displayName = (result.display_name || '').toLowerCase();
+  const osm_type = result.osm_type || ''; // node, way, relation from Nominatim
+  const type = result.type || ''; // amenity, building, highway, etc
 
-  let confidence = 0.5; // Base confidence
+  let score = 0;
+  const weights = {
+    // Street-level components (highest priority)
+    house_number: { points: 0.25, weight: 2 },
+    building_name: { points: 0.2, weight: 1.8 },
+    road: { points: 0.22, weight: 1.9 },
+    street: { points: 0.20, weight: 1.8 },
 
-  // Boost for street-level details
-  if (addr.house_number) confidence += 0.2; // Has street number
-  if (addr.road || addr.street) confidence += 0.15; // Has street name
-  if (addr.city_block) confidence += 0.1; // Has block/RW info
+    // Block/area components (Indonesia-specific)
+    city_block: { points: 0.18, weight: 1.5 }, // RW/block info
+    suburb: { points: 0.15, weight: 1.2 },
+    neighbourhood: { points: 0.12, weight: 1.0 },
 
-  // Reduce for generic results
-  if (displayName.includes('unnamed') || displayName.includes('unknown')) confidence -= 0.2;
-  if (!addr.village && !addr.city) confidence -= 0.1; // No city/village info
+    // Administrative components
+    village: { points: 0.16, weight: 1.3 },
+    hamlet: { points: 0.14, weight: 1.1 },
+    district: { points: 0.12, weight: 1.0 },
+    city: { points: 0.1, weight: 0.8 },
+    county: { points: 0.08, weight: 0.6 },
+    state: { points: 0.06, weight: 0.4 },
 
-  return Math.min(1, Math.max(0, confidence));
+    // Postal/location info
+    postcode: { points: 0.05, weight: 0.5 }
+  };
+
+  // ===== SCORING LOGIC =====
+
+  // 1. Base score from hierarchical address completeness
+  const addressFields = Object.keys(weights);
+  let fieldsPresent = 0;
+  let fieldScore = 0;
+
+  for (const field of addressFields) {
+    if (addr[field]) {
+      fieldsPresent++;
+      fieldScore += weights[field as keyof typeof weights].points;
+    }
+  }
+
+  // Calculate address completeness
+  const addressCompleteness = Math.min(fieldScore, 1.0);
+
+  // 1. Base score from hierarchical address completeness
+  // Emphasis on having administrative hierarchy (village/district/city at minimum)
+  const hasMinimalHierarchy = !!(addr.city || addr.district || addr.village);
+  const baseFactor = hasMinimalHierarchy ? 0.70 : 0.50; // If has minimal hierarchy, boost base score
+
+  score += addressCompleteness * baseFactor; // Address completeness = primary score
+
+  // 2. Type quality scoring (based on OSM classification)
+  const typeScore = getTypeQuality(osm_type, type);
+  score += typeScore * 0.12; // Type quality = 12% of score
+
+  // 3. Detail level scoring (specific address vs generic)
+  const detailScore = getDetailScore(addr);
+  score += detailScore * 0.12; // Detail level = 12% of score
+
+  // 4. Generic content detection (reduce score for placeholder addresses)
+  const genericityPenalty = detectGenericity(displayName, addr);
+  score -= genericityPenalty; // Apply penalty
+
+  // 5. Completeness bonus (reward addresses with many fields)
+  if (fieldsPresent >= 6) score += 0.12; // Excellent completeness
+  else if (fieldsPresent >= 5) score += 0.08; // Very good
+  else if (fieldsPresent >= 4) score += 0.06; // Good completeness
+  else if (fieldsPresent >= 3) score += 0.04; // Fair
+
+  // 6. Structure quality (hierarchical depth)
+  const hierarchyScore = getHierarchyScore(addr);
+  score += hierarchyScore * 0.06; // Hierarchy = 6% of score
+
+  // ===== RESULT =====
+  return Math.min(1.0, Math.max(0.0, score));
+}
+
+/**
+ * Score based on OSM type and feature type
+ * Street addresses and buildings are most reliable
+ */
+function getTypeQuality(osm_type: string, type: string): number {
+  const typeStr = `${osm_type}:${type}`.toLowerCase();
+
+  // Excellent types - very specific locations
+  if (typeStr.includes('building') || typeStr.includes('house') || typeStr.includes('shop')) {
+    return 0.95;
+  }
+  if (typeStr.includes('way:highway') || typeStr.includes('street') || typeStr.includes('road')) {
+    return 0.90;
+  }
+
+  // Good types - specific areas/amenities
+  if (
+    typeStr.includes('amenity') ||
+    typeStr.includes('place:neighbourhood') ||
+    typeStr.includes('place:suburb')
+  ) {
+    return 0.80;
+  }
+
+  // Fair types - administrative divisions
+  if (
+    typeStr.includes('place:village') ||
+    typeStr.includes('place:hamlet') ||
+    typeStr.includes('place:town')
+  ) {
+    return 0.70;
+  }
+
+  // Generic types
+  if (typeStr.includes('place:county') || typeStr.includes('administrative')) {
+    return 0.50;
+  }
+
+  // Unknown or very generic
+  return 0.40;
+}
+
+/**
+ * Score detail level - prefer specific street-level over generic boundaries
+ */
+function getDetailScore(addr: any): number {
+  let score = 0;
+
+  // Highest priority: street-level detail
+  if (addr.house_number) score += 0.35;
+  if (addr.road || addr.street) score += 0.30;
+  if (addr.building_name) score += 0.25;
+
+  // Medium priority: area-level detail (Indonesia-specific)
+  if (addr.city_block || addr.neighbourhood) score += 0.20; // RW info
+  if (addr.suburb) score += 0.15;
+
+  // Lower priority: administrative detail
+  if (addr.village || addr.hamlet) score += 0.10;
+  if (addr.district) score += 0.08;
+
+  // Lowest priority: high-level administrative
+  if (addr.postcode) score += 0.05;
+  if (addr.city) score += 0.03;
+
+  return Math.min(1.0, score);
+}
+
+/**
+ * Detect generic/placeholder addresses that should trigger Google fallback
+ * Returns penalty score (0.0 - 1.0) to subtract from confidence
+ */
+function detectGenericity(displayName: string, addr: any): number {
+  const dn = displayName.toLowerCase();
+  let penalty = 0;
+
+  // Red flags: generic keywords
+  const genericKeywords = [
+    'unnamed',
+    'unknown',
+    'road',
+    'street',
+    'no name',
+    'no description',
+    'temporary',
+    'placeholder',
+    'null'
+  ];
+
+  for (const keyword of genericKeywords) {
+    if (dn.includes(keyword)) {
+      penalty += 0.15;
+    }
+  }
+
+  // Yellow flags: missing street/building but has general area
+  if (!addr.house_number && !addr.road && !addr.building_name) {
+    if (addr.village || addr.city) {
+      penalty += 0.05; // Slight penalty for area-only results
+    } else {
+      penalty += 0.20; // Major penalty if only country/state level
+    }
+  }
+
+  // Red flag: only country/state level (extremely generic)
+  if (!addr.village && !addr.city && !addr.district) {
+    penalty += 0.25;
+  }
+
+  // Yellow flag: duplicate names (e.g. "Jakarta, Jakarta")
+  const nameParts = displayName.split(',').map(p => p.trim().toLowerCase());
+  if (nameParts.length > 1) {
+    const uniqueParts = new Set(nameParts);
+    if (uniqueParts.size < nameParts.length * 0.8) {
+      penalty += 0.10; // Redundant/duplicate info
+    }
+  }
+
+  return Math.min(0.5, penalty); // Cap penalty at 0.5
+}
+
+/**
+ * Score hierarchical completeness
+ * Good hierarchy = country → state → city → district → village → street
+ */
+function getHierarchyScore(addr: any): number {
+  let hierarchyLevel = 0;
+
+  // Count hierarchical depth
+  if (addr.country) hierarchyLevel++;
+  if (addr.state || addr.province) hierarchyLevel++;
+  if (addr.city || addr.county) hierarchyLevel++;
+  if (addr.district) hierarchyLevel++;
+  if (addr.village || addr.hamlet || addr.neighbourhood) hierarchyLevel++;
+  if (addr.road || addr.street) hierarchyLevel++;
+  if (addr.house_number) hierarchyLevel++;
+
+  // Score based on depth
+  if (hierarchyLevel >= 6) return 0.95; // Excellent depth
+  if (hierarchyLevel >= 5) return 0.85; // Very good
+  if (hierarchyLevel >= 4) return 0.70; // Good
+  if (hierarchyLevel >= 3) return 0.50; // Fair
+  if (hierarchyLevel >= 2) return 0.30; // Poor
+  return 0.10; // Very poor
 }
 
 /**
