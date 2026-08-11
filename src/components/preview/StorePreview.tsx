@@ -1953,7 +1953,9 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     setGeocoding(true);
     try {
       const res = await fetch(`/api/reverse-location?lat=${lat}&lon=${lon}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       const data = await res.json();
+      console.log(`✅ Reverse geocode response for (${lat}, ${lon}):`, data);
       const postcode = (data.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
       const addr = data.address || {};
       const suburbCandidate = addr.village || addr.neighbourhood || addr.hamlet || addr.locality || addr.suburb || '';
@@ -2130,8 +2132,8 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
         cacheLocation(coords);
         console.log('✅ GPS acquired, auto-panning:', coords);
         panTo(coords.lat, coords.lng, 16);
+        reverseGeocode(coords.lat, coords.lng); // 🔧 Fix: fetch address for GPS coordinates
         if (!centeredRef.current) centeredRef.current = true;
-        setLocating(false);
       },
       () => {
         clearTimeout(gpsTimeout);
@@ -2142,8 +2144,8 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
           const fallbackCoords = getLastCachedLocation() || MONAS_COORDS;
           console.log('⚠️ GPS denied, using fallback:', fallbackCoords);
           panTo(fallbackCoords.lat, fallbackCoords.lng, 14);
+          reverseGeocode(fallbackCoords.lat, fallbackCoords.lng); // 🔧 Fix: fetch address for fallback coords
         }
-        setLocating(false);
       },
       { timeout: 7000 }
     );
