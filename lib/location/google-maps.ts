@@ -65,7 +65,7 @@ export async function searchGoogleMaps(
   }
 
   try {
-    // Use Autocomplete Sessions API (cheaper & more accurate)
+    // Use Autocomplete Sessions API (cheaper & already has structured format)
     const predictions = await getPlaceAutocompleteV1(query);
 
     if (!predictions.length) {
@@ -73,20 +73,11 @@ export async function searchGoogleMaps(
       return [];
     }
 
-    // Fetch details untuk top 5 predictions
-    const results: GoogleSearchResult[] = [];
-
-    for (const pred of predictions.slice(0, 5)) {
-      try {
-        const details = await getPlaceDetailsV1(pred.placeId);
-        const result = parseGooglePlaceDetailsV1(details, pred.mainText, pred.secondaryText);
-        if (result) {
-          results.push(result);
-        }
-      } catch (err) {
-        console.error(`Failed to fetch details for ${pred.placeId}:`, err);
-      }
-    }
+    // Convert predictions directly to results (autocomplete already has all info needed)
+    const results: GoogleSearchResult[] = predictions
+      .slice(0, 10)
+      .map(pred => parseGoogleAutocompletePrediction(pred))
+      .filter((r): r is GoogleSearchResult => r !== null);
 
     console.log(`✅ Google Maps returned ${results.length} results`);
     return results;
@@ -153,74 +144,33 @@ async function getPlaceAutocompleteV1(
 }
 
 /**
- * Get details dari Google Place menggunakan API v1
+ * Parse Google Autocomplete Prediction ke format lokal
+ * (Autocomplete sudah return semua info yang perlu - tidak perlu Details call)
  */
-async function getPlaceDetailsV1(placeId: string): Promise<GooglePlaceDetails> {
-  const headers = {
-    'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY!
-  };
-
-  const fields = [
-    'displayName',
-    'formattedAddress',
-    'location',
-    'addressComponent'
-  ].join(',');
-
-  try {
-    const response = await fetch(
-      `${GOOGLE_PLACES_API_V1}/${placeId}?fields=${fields}`,
-      { headers }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Google Place Details failed: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Google Place Details API error:', error);
-    throw error;
-  }
-}
-
-/**
- * Parse Google Place Details v1 ke format lokal
- */
-function parseGooglePlaceDetailsV1(
-  details: GooglePlaceDetails,
-  mainText: string,
-  secondaryText?: string
+function parseGoogleAutocompletePrediction(
+  pred: GooglePlacePrediction
 ): GoogleSearchResult | null {
   try {
-    const components = details.addressComponents || [];
+    const text = `${pred.mainText}${pred.secondaryText ? ', ' + pred.secondaryText : ''}`;
 
-    // Extract components dari address components
-    const province = findComponentV1(components, ['administrative_area_level_1']) || '';
-    const regency = findComponentV1(components, ['administrative_area_level_2']) || '';
-    const district = findComponentV1(components, ['administrative_area_level_3']) || '';
-    const postal = findComponentV1(components, ['postal_code']) || '';
-    const village =
-      findComponentV1(components, ['locality']) ||
-      findComponentV1(components, ['administrative_area_level_4']) ||
-      '';
+    // Parse address components dari mainText dan secondaryText
+    // Secondary text biasanya: "City, District, Province, Country"
+    const parts = (pred.secondaryText || '').split(',').map(p => p.trim());
 
     return {
       type: 'street_address',
-      name: details.displayName || details.formattedAddress || mainText,
-      description: secondaryText || mainText,
-      province,
-      regency,
-      district,
-      village,
-      postal,
+      name: text,
+      description: pred.secondaryText || pred.mainText,
+      province: parts[2] || '', // Typically province
+      regency: parts[1] || '', // Typically city/regency
+      district: parts[0] || '', // Typically district
+      village: pred.mainText || '',
+      postal: '', // Not provided by autocomplete
       confidence: 0.75,
-      source: 'google_maps',
-      lat: details.location?.latitude,
-      lng: details.location?.longitude
+      source: 'google_maps'
     };
   } catch (error) {
-    console.error('Error parsing Google place details:', error);
+    console.error('Error parsing Google autocomplete prediction:', error);
     return null;
   }
 }
@@ -239,15 +189,15 @@ function findComponentV1(
 }
 
 /**
- * Estimasi cost per query (Places API v1)
+ * Estimasi cost per query (Places API v1 - Autocomplete Only)
  * Autocomplete Session: $0.004 per session
- * Place Details: $0.001 per request
- * Total: ~$0.005 per full query (5x lebih murah dari legacy API!)
+ * Total: ~$0.004 per query (SUPER CHEAP!)
  *
- * Dengan session tokens, cost bisa turun 50% lebih lagi
+ * Note: Tidak ada Details API call - autocomplete sudah return structured format.
+ * Session tokens bisa turun 50% lebih lagi ($0.002/query)
  */
 export const GOOGLE_COST_ESTIMATE = {
   AUTOCOMPLETE_COST: 0.004, // per autocomplete session
-  DETAILS_COST: 0.001, // per place details
-  TOTAL_PER_QUERY: 0.005, // Roughly $5 per 1000 queries
+  DETAILS_COST: 0, // Not needed - autocomplete has all info
+  TOTAL_PER_QUERY: 0.004, // Roughly $4 per 1000 queries (SUPER CHEAP!)
 };
