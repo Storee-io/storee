@@ -1705,11 +1705,19 @@ async function matchWilayah(fields: { province?: string; city?: string; district
   if (![...params.keys()].length) return null;
 
   try {
-    const res = await fetch(`/api/postal/search?${params.toString()}`);
-    if (!res.ok) return null;
+    const url = `/api/postal/search?${params.toString()}`;
+    console.log(`🔍 matchWilayah request:`, { fields, url });
+    const res = await fetch(url);
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.warn(`⚠️ matchWilayah API error (${res.status}):`, errorText);
+      return null;
+    }
     const data = await res.json();
+    console.log(`✅ matchWilayah result:`, data.match);
     return data.match ?? null;
-  } catch {
+  } catch (error) {
+    console.error(`🔴 matchWilayah failed:`, error);
     return null;
   }
 }
@@ -1953,7 +1961,11 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     setGeocoding(true);
     try {
       const res = await fetch(`/api/reverse-location?lat=${lat}&lon=${lon}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error(`🔴 API error (${res.status}):`, errorText);
+        throw new Error(`HTTP ${res.status}: ${res.statusText}\n${errorText}`);
+      }
       const data = await res.json();
       console.log(`✅ Reverse geocode response for (${lat}, ${lon}):`, data);
       const postcode = (data.address?.postcode ?? '').replace(/\D/g, '').slice(0, 5);
