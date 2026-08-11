@@ -2006,7 +2006,20 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
         district,
         districtCode: match?.code ? match.code.slice(0, 6) : '',
       });
-    } catch { /* ignore */ }
+    } catch (error) {
+      console.error('🔴 Reverse geocoding failed:', error);
+      // Fallback: set minimal location so UI doesn't show "Location not detected"
+      setLoc({
+        address: '',
+        city: 'Location',
+        postal: '',
+        province: '',
+        display: 'Address lookup unavailable', // Prevents "Location not detected"
+        suburb: '',
+        district: '',
+        districtCode: '',
+      });
+    }
     finally { setGeocoding(false); setLocating(false); }
   }, []);
 
@@ -2023,13 +2036,12 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         cacheLocation(coords);
         panTo(coords.lat, coords.lng, 17);
-        setLocating(false);
+        reverseGeocode(coords.lat, coords.lng); // 🔧 Fix: fetch address for GPS coordinates
       },
       () => {
         console.log('⚠️ GPS permission denied or unavailable, using Monas fallback');
         panTo(MONAS_COORDS.lat, MONAS_COORDS.lng, 16);
         reverseGeocode(MONAS_COORDS.lat, MONAS_COORDS.lng);
-        setLocating(false);
       },
       { timeout: 10000 }
     );
