@@ -1,66 +1,122 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { hybridSearch, getCacheStats, clearCache } from '@/lib/location/hybrid-search';
+import { estimateMonthlyCost } from '@/lib/location/hybrid-search';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q');
-  const limit = searchParams.get('limit') || '20';
+  const limit = parseInt(searchParams.get('limit') || '20');
+  const includeGoogle = searchParams.get('google') !== 'false'; // Default: true
+  const cacheOnly = searchParams.get('cache') === 'true'; // Default: false
+  const debug = searchParams.get('debug') === 'true';
 
   if (!query || !query.trim()) {
     return NextResponse.json({ error: 'Query required' }, { status: 400 });
   }
 
   try {
-    const baseUrl = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=id`;
-    const url = `${baseUrl}&q=${encodeURIComponent(query)}&limit=${limit}`;
+    // Run hybrid search (3-layer approach)
+    const result = await hybridSearch(query, {
+      limit,
+      includeGoogle,
+      cacheOnly
+    });
 
-    // Retry logic with exponential backoff for rate limiting (429 errors)
-    let lastResponse;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      lastResponse = await fetch(url, {
-        headers: {
-          'Accept-Language': 'id,en',
-          'User-Agent': 'Storee-Location-Search/1.0'
-        }
+    if (debug) {
+      // Include statistics untuk debugging
+      return NextResponse.json({
+        success: true,
+        query: result.query,
+        results: result.results,
+        source: result.source,
+        stats: result.stats,
+        cacheStatus: getCacheStats()
       });
-
-      // Success - return immediately
-      if (lastResponse.ok) {
-        const data = await lastResponse.json();
-        return NextResponse.json(data);
-      }
-
-      // Not rate limited - return error
-      if (lastResponse.status !== 429) {
-        return NextResponse.json(
-          { error: `Nominatim returned ${lastResponse.status}` },
-          { status: lastResponse.status }
-        );
-      }
-
-      // Rate limited (429) - retry with exponential backoff
-      if (attempt < 2) {
-        const retryAfter = lastResponse.headers.get('Retry-After');
-        const retryAfterMs = retryAfter ? parseInt(retryAfter) * 1000 : 0;
-        // Use exponential backoff (4s, 8s) if Retry-After is missing or <= 0
-        const delayMs = retryAfterMs > 0 ? retryAfterMs : Math.pow(2, attempt + 2) * 1000;
-
-        console.log(`⏳ Rate limited (429), retrying after ${delayMs}ms (attempt ${attempt + 1}/3)`);
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-      }
     }
 
-    // All retries exhausted
-    return NextResponse.json(
-      { error: `Nominatim returned ${lastResponse?.status || 429}` },
-      { status: lastResponse?.status || 429 }
-    );
+    // Format untuk kompatibilitas dengan UI lama (Nominatim format)
+    const formatted = result.results.map(r => ({
+      address: formatAddress(r),
+      display_name: formatDisplayName(r),
+      lat: r.lat || '0',
+      lon: r.lng || '0',
+      address_components: {
+        province: r.province,
+        regency: r.regency,
+        district: r.district,
+        village: r.village,
+        postal: r.postal
+      },
+      metadata: {
+        confidence: r.confidence,
+        source: r.source,
+        type: r.type
+      }
+    }));
+
+    return NextResponse.json(formatted);
   } catch (error) {
-    console.error('Location search error:', error);
+    console.error('Hybrid location search error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Search failed' },
       { status: 500 }
     );
   }
+}
+
+/**
+ * Format address untuk display
+ */
+function formatAddress(result: any): string {
+  const parts = [];
+  if (result.village) parts.push(result.village);
+  if (result.district) parts.push(result.district);
+  if (result.regency) parts.push(result.regency);
+  if (result.postal) parts.push(result.postal);
+  return parts.join(', ');
+}
+
+/**
+ * Format display_name (Nominatim compatibility)
+ */
+function formatDisplayName(result: any): string {
+  const parts = [];
+  if (result.name && result.name !== result.village) parts.push(result.name);
+  if (result.village) parts.push(result.village);
+  if (result.district) parts.push(result.district);
+  if (result.regency) parts.push(result.regency);
+  if (result.province) parts.push(result.province);
+  if (result.postal) parts.push(result.postal);
+  return parts.join(', ');
+}
+
+/**
+ * Admin endpoint untuk cache management
+ */
+export async function POST(request: NextRequest) {
+  const { action } = await request.json();
+
+  // TODO: Add authentication check untuk admin only
+
+  if (action === 'clear-cache') {
+    await clearCache();
+    return NextResponse.json({ success: true, message: 'Cache cleared' });
+  }
+
+  if (action === 'cache-stats') {
+    return NextResponse.json(getCacheStats());
+  }
+
+  if (action === 'cost-estimate') {
+    const { queriesPerDay } = await request.json();
+    const estimate = estimateMonthlyCost(queriesPerDay);
+    return NextResponse.json(estimate);
+  }
+
+  return NextResponse.json(
+    { error: 'Unknown action' },
+    { status: 400 }
+  );
 }
