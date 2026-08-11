@@ -2,63 +2,59 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
+/**
+ * Reverse geocoding API
+ * Convert lat/lon coordinates to address
+ * Uses Nominatim (OpenStreetMap) for free reverse geocoding
+ */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const lat = searchParams.get('lat');
   const lon = searchParams.get('lon');
 
   if (!lat || !lon) {
-    return NextResponse.json({ error: 'Latitude and longitude required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'lat and lon parameters required' },
+      { status: 400 }
+    );
   }
 
   try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`;
-
-    // Retry logic with exponential backoff for rate limiting (429 errors)
-    let lastResponse;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      lastResponse = await fetch(url, {
+    // Use Nominatim reverse geocoding (free, no API key needed)
+    // Documentation: https://nominatim.org/release-docs/latest/api/Reverse/
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=id`,
+      {
         headers: {
-          'Accept-Language': 'id,en',
-          'User-Agent': 'Storee-Location-Reverse/1.0'
+          'User-Agent': 'Storee Location Service (https://storee.io)'
         }
-      });
-
-      // Success - return immediately
-      if (lastResponse.ok) {
-        const data = await lastResponse.json();
-        return NextResponse.json(data);
       }
+    );
 
-      // Not rate limited - return error
-      if (lastResponse.status !== 429) {
-        return NextResponse.json(
-          { error: `Nominatim returned ${lastResponse.status}` },
-          { status: lastResponse.status }
-        );
-      }
-
-      // Rate limited (429) - retry with exponential backoff
-      if (attempt < 2) {
-        const retryAfter = lastResponse.headers.get('Retry-After');
-        const retryAfterMs = retryAfter ? parseInt(retryAfter) * 1000 : 0;
-        // Use exponential backoff (4s, 8s) if Retry-After is missing or <= 0
-        const delayMs = retryAfterMs > 0 ? retryAfterMs : Math.pow(2, attempt + 2) * 1000;
-
-        console.log(`⏳ Rate limited (429), retrying after ${delayMs}ms (attempt ${attempt + 1}/3)`);
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-      }
+    if (!response.ok) {
+      console.error(`Nominatim error: ${response.status}`);
+      throw new Error(`Nominatim reverse geocoding failed: ${response.status}`);
     }
 
-    // All retries exhausted
-    return NextResponse.json(
-      { error: `Nominatim returned ${lastResponse?.status || 429}` },
-      { status: lastResponse?.status || 429 }
-    );
+    const data = await response.json();
+
+    // Transform Nominatim response to our format
+    return NextResponse.json({
+      lat: parseFloat(lat),
+      lon: parseFloat(lon),
+      display_name: data.display_name || '',
+      address: data.address || {}
+    });
   } catch (error) {
     console.error('Reverse geocoding error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Reverse geocoding failed' },
+      {
+        error: error instanceof Error ? error.message : 'Reverse geocoding failed',
+        lat: parseFloat(lat),
+        lon: parseFloat(lon),
+        display_name: '',
+        address: {}
+      },
       { status: 500 }
     );
   }
