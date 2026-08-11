@@ -67,6 +67,20 @@ export async function GET(request: NextRequest) {
     console.log(`📡 Nominatim insufficient, falling back to Google Geocoding API...`);
     const googleResult = await reverseGeocodeGoogle(lat, lon);
 
+    // If Google also has no results, fallback to Nominatim (better than 500 error)
+    if (!googleResult) {
+      console.log(`⚠️ Google returned no results, using Nominatim fallback (confidence: ${(confidence * 100).toFixed(1)}%)`);
+      return NextResponse.json({
+        lat: parseFloat(lat),
+        lon: parseFloat(lon),
+        display_name: nominatimResult.display_name || '',
+        address: nominatimResult.address || {},
+        source: 'nominatim_fallback',
+        confidence: confidence,
+        warning: 'Low confidence - Google returned no results'
+      });
+    }
+
     return NextResponse.json({
       lat: parseFloat(lat),
       lon: parseFloat(lon),
@@ -111,23 +125,32 @@ async function reverseGeocodeNominatim(lat: string, lon: string) {
 
 /**
  * Reverse geocode using Google Geocoding API (PAID - $5 per 1000 calls)
+ * Returns null if no results found (fallback to Nominatim)
  */
 async function reverseGeocodeGoogle(lat: string, lon: string) {
-  const response = await fetch(
-    `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${process.env.GOOGLE_MAPS_API_KEY}&language=id`
-  );
+  try {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${process.env.GOOGLE_MAPS_API_KEY}&language=id`
+    );
 
-  if (!response.ok) {
-    throw new Error(`Google Geocoding API failed: ${response.status}`);
+    if (!response.ok) {
+      console.warn(`⚠️ Google Geocoding API error: ${response.status}`);
+      return null; // Return null instead of throwing, will fallback to Nominatim
+    }
+
+    const data = await response.json();
+
+    if (data.results && data.results.length > 0) {
+      console.log(`✅ Google Geocoding found result`);
+      return data.results[0]; // Return best match
+    }
+
+    console.log(`⚠️ Google Geocoding returned no results for (${lat}, ${lon})`);
+    return null; // Return null instead of throwing, will fallback to Nominatim
+  } catch (error) {
+    console.error(`🔴 Google Geocoding API error:`, error);
+    return null; // Return null on any error, will fallback to Nominatim
   }
-
-  const data = await response.json();
-
-  if (data.results && data.results.length > 0) {
-    return data.results[0]; // Return best match
-  }
-
-  throw new Error('No results from Google Geocoding API');
 }
 
 /**
