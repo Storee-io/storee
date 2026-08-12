@@ -2193,7 +2193,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
 
     // Extract street-level address from display_name up to (but not including) village/district level
     // to avoid duplication from structured fields (houseNumber, building already in display_name)
-    const displayParts = (r.display_name ?? '').split(',').map(p => p.trim()).filter(Boolean);
+    const displayParts = (r.display_name ?? '').split(',').map((p: string) => p.trim()).filter(Boolean);
     const villageLower = (suburbCandidate ?? '').toLowerCase();
     // Find where village starts in display_name and take only street parts before it
     const villageIdx = displayParts.findIndex(p => p.toLowerCase() === villageLower);
