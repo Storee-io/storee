@@ -2238,25 +2238,31 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       districtCode: match?.code ? match.code.slice(0, 6) : '',
     });
 
-    // Try to get actual coordinates from backend API if placeId available
+    // Try to get actual coordinates from backend API if this is a Google result with placeId
     let actualCoords: { lat: number; lng: number } | null = null;
+    const isGoogleResult = r.source === 'google_maps' || r.metadata?.source === 'google_maps';
+    const hasPlaceId = r.placeId && typeof r.placeId === 'string' && r.placeId.trim().length > 0;
 
-    console.log('📍 selectResult - r.placeId:', r.placeId, 'r.source:', r.source || r.metadata?.source);
+    console.log('📍 selectResult - source:', r.source || r.metadata?.source, 'placeId:', r.placeId, 'isGoogle:', isGoogleResult, 'hasPlaceId:', hasPlaceId);
 
-    if (r.placeId) {
-      console.log('🔍 Fetching actual coordinates from backend for placeId:', r.placeId);
+    if (isGoogleResult && hasPlaceId) {
+      console.log('🔍 Fetching actual coordinates from backend for Google result, placeId:', r.placeId);
       try {
         const response = await fetch(`/api/place-details?placeId=${encodeURIComponent(r.placeId)}`);
         if (response.ok) {
           const data = await response.json();
           if (data.lat && data.lng) {
             actualCoords = { lat: data.lat, lng: data.lng };
-            console.log(`✅ Got actual coordinates: ${actualCoords.lat}, ${actualCoords.lng}`);
+            console.log(`✅ Got actual coordinates from Details API: ${actualCoords.lat}, ${actualCoords.lng}`);
           }
+        } else {
+          console.warn(`⚠️ Place Details API returned ${response.status}`);
         }
       } catch (error) {
         console.error('❌ Failed to fetch place details:', error);
       }
+    } else if (!isGoogleResult) {
+      console.log('ℹ️ Local database result - using estimated coordinates');
     }
 
     // Use actual coordinates if available, otherwise fallback to estimated
