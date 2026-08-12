@@ -2124,6 +2124,11 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   const centeredRef = useRef(!!initialCoords);
   useEffect(() => {
     if (!mapReady) return;
+    // Skip reverse geocoding if location is already populated (from cache or default)
+    if (loc && loc.display) {
+      console.log('📍 Location already populated, skipping reverse geocode');
+      return;
+    }
     // Has saved coords but no address yet — geocode immediately
     if (initialCoords && !initialLoc) {
       reverseGeocode(initialCoords.lat, initialCoords.lng);
