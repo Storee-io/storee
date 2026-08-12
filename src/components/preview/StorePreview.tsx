@@ -2241,6 +2241,8 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     // Try to get actual coordinates from backend API if placeId available
     let actualCoords: { lat: number; lng: number } | null = null;
 
+    console.log('📍 selectResult - r.placeId:', r.placeId, 'r.source:', r.source || r.metadata?.source);
+
     if (r.placeId) {
       console.log('🔍 Fetching actual coordinates from backend for placeId:', r.placeId);
       try {
