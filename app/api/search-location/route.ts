@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
       display_name: formatDisplayName(r),
       lat: r.lat ? String(r.lat) : r.lat || '0',  // Use actual coords if available, else placeholder
       lon: r.lng ? String(r.lng) : r.lng || '0',  // Google API uses lng, convert to string
+      placeId: (r as any).placeId,  // Include placeId for Google results (needed for Details API)
       address_components: {
         province: r.province,
         regency: r.regency,
