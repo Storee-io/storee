@@ -2270,29 +2270,37 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     }
 
     // Use actual coordinates if available
-    let lat: number | null = actualCoords?.lat || null;
-    let lon: number | null = actualCoords?.lng || null;
+    let lat: number | null = actualCoords?.lat ?? null;
+    let lon: number | null = actualCoords?.lng ?? null;
 
     // For Google results without actual coords, don't use estimated city center - it's too inaccurate
-    if (!lat || !lon) {
+    if (lat === null || lon === null || isNaN(lat) || isNaN(lon)) {
       if (source === 'google_maps') {
-        console.warn('⚠️ Google result without actual coordinates - reverting to cached location');
+        console.warn('⚠️ Google result without valid actual coordinates - reverting to cached location');
         lat = currentCoordsRef.current.lat;
         lon = currentCoordsRef.current.lng;
       } else {
         // For other sources, use provided coordinates as fallback
-        lat = parseFloat(r.lat) || null;
-        lon = parseFloat(r.lon) || null;
+        const parsedLat = parseFloat(r.lat);
+        const parsedLon = parseFloat(r.lon);
+        if (!isNaN(parsedLat) && !isNaN(parsedLon)) {
+          lat = parsedLat;
+          lon = parsedLon;
+        } else {
+          console.warn('⚠️ Could not parse coordinates from result');
+          lat = currentCoordsRef.current.lat;
+          lon = currentCoordsRef.current.lng;
+        }
       }
     }
 
     // If result has valid coordinates, pan to them
-    if (lat !== 0 || lon !== 0) {
+    if (typeof lat === 'number' && typeof lon === 'number' && !isNaN(lat) && !isNaN(lon) && (lat !== 0 || lon !== 0)) {
       skipNextGeocode.current = true;
       panTo(lat, lon, 16);
-      console.log(`📍 Panning to coordinates: ${lat}, ${lon} (${actualCoords ? 'actual' : 'estimated'})`);
+      console.log(`📍 Panning to coordinates: ${lat}, ${lon} (${actualCoords ? 'actual' : 'fallback'})`);
     } else {
-      console.log('📍 No coordinates available, user will manually adjust');
+      console.log('📍 Invalid coordinates, user will manually adjust');
       skipNextGeocode.current = false;
     }
 
