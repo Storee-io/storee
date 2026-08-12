@@ -2258,6 +2258,8 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
           if (data.lat && data.lng) {
             actualCoords = { lat: data.lat, lng: data.lng };
             console.log(`✅ Got actual coordinates from Details API: ${actualCoords.lat}, ${actualCoords.lng}`);
+          } else {
+            console.warn(`⚠️ Place Details API returned no coordinates`);
           }
         } else {
           console.warn(`⚠️ Place Details API returned ${response.status}`);
@@ -2267,9 +2269,22 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       }
     }
 
-    // Use actual coordinates if available, otherwise fallback to estimated
-    let lat = actualCoords?.lat || parseFloat(r.lat);
-    let lon = actualCoords?.lng || parseFloat(r.lon);
+    // Use actual coordinates if available
+    let lat: number | null = actualCoords?.lat || null;
+    let lon: number | null = actualCoords?.lng || null;
+
+    // For Google results without actual coords, don't use estimated city center - it's too inaccurate
+    if (!lat || !lon) {
+      if (source === 'google_maps') {
+        console.warn('⚠️ Google result without actual coordinates - reverting to cached location');
+        lat = currentCoordsRef.current.lat;
+        lon = currentCoordsRef.current.lng;
+      } else {
+        // For other sources, use provided coordinates as fallback
+        lat = parseFloat(r.lat) || null;
+        lon = parseFloat(r.lon) || null;
+      }
+    }
 
     // If result has valid coordinates, pan to them
     if (lat !== 0 || lon !== 0) {
