@@ -1770,8 +1770,8 @@ const abbreviateDisplayName = (displayName: string): string => {
 // street text (e.g. "RW 11").
 const parseDisplayName = (displayName: string, postcode?: string, knownSuburb?: string): PickedLocation => {
   // Truncate at the first postal code to avoid duplicates from malformed Nominatim responses
-  const parts = displayName.split(',').map(p => p.trim()).filter(Boolean);
-  const postalIdx = parts.findIndex(p => /^\d{4,6}$/.test(p));
+  const parts = displayName.split(',').map((p: string) => p.trim()).filter(Boolean);
+  const postalIdx = parts.findIndex((p: string) => /^\d{4,6}$/.test(p));
   if (postalIdx >= 3) {
     // Only use parts up to and including the first postal code (stop before any extra parts)
     const cleanedParts = parts.slice(0, postalIdx + 1); // Keep only up to postal code
@@ -1975,10 +1975,10 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
 
       // Extract street-level address from display_name up to (but not including) village/district level
       // to avoid duplication from structured fields (houseNumber, building already in display_name)
-      const displayParts = (data.display_name ?? '').split(',').map(p => p.trim()).filter(Boolean);
+      const displayParts = (data.display_name ?? '').split(',').map((p: string) => p.trim()).filter(Boolean);
       const villageLower = (suburbCandidate ?? '').toLowerCase();
       // Find where village starts in display_name and take only street parts before it
-      const villageIdx = displayParts.findIndex(p => p.toLowerCase() === villageLower);
+      const villageIdx = displayParts.findIndex((p: string) => p.toLowerCase() === villageLower);
       const streetParts = villageIdx > 0 ? displayParts.slice(0, villageIdx) : displayParts.slice(0, Math.max(1, displayParts.length - 4));
       const streetAddress = streetParts.join(', ') || parsed.address || '';
 
@@ -2196,7 +2196,7 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
     const displayParts = (r.display_name ?? '').split(',').map((p: string) => p.trim()).filter(Boolean);
     const villageLower = (suburbCandidate ?? '').toLowerCase();
     // Find where village starts in display_name and take only street parts before it
-    const villageIdx = displayParts.findIndex(p => p.toLowerCase() === villageLower);
+    const villageIdx = displayParts.findIndex((p: string) => p.toLowerCase() === villageLower);
     const streetParts = villageIdx > 0 ? displayParts.slice(0, villageIdx) : displayParts.slice(0, Math.max(1, displayParts.length - 4));
     const streetAddress = streetParts.join(', ') || parsed.address || '';
 
