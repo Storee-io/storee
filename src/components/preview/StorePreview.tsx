@@ -28,7 +28,6 @@ import { makePriceFmt } from '../../lib/formatCurrency';
 import { supabase } from '../../lib/supabase';
 import { useCart, type CartItem } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
-import { getPlaceDetails } from '../../lib/location/google-maps';
 
 // ── Field position context for drag-to-move ────────────────────────────────────
 type FieldOffsetMap = Record<string, { x: number; y: number }>;
@@ -2239,12 +2238,23 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       districtCode: match?.code ? match.code.slice(0, 6) : '',
     });
 
-    // Try to get actual coordinates from Google Places Details API if placeId available
+    // Try to get actual coordinates from backend API if placeId available
     let actualCoords: { lat: number; lng: number } | null = null;
 
     if (r.placeId) {
-      console.log('🔍 Fetching actual coordinates from Places Details API for placeId:', r.placeId);
-      actualCoords = await getPlaceDetails(r.placeId);
+      console.log('🔍 Fetching actual coordinates from backend for placeId:', r.placeId);
+      try {
+        const response = await fetch(`/api/place-details?placeId=${encodeURIComponent(r.placeId)}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.lat && data.lng) {
+            actualCoords = { lat: data.lat, lng: data.lng };
+            console.log(`✅ Got actual coordinates: ${actualCoords.lat}, ${actualCoords.lng}`);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Failed to fetch place details:', error);
+      }
     }
 
     // Use actual coordinates if available, otherwise fallback to estimated
