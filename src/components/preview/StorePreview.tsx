@@ -3789,7 +3789,7 @@ function CheckoutPage({ cart, primaryColor, storeName, device, onBack, onPlaceOr
 
       const rates = await fetchLiveShippingRates(
         shippingSettings.courierDelivery!.provider as 'biteship' | 'kiriminaja',
-        shippingSettings.courierDelivery!.apiKey,
+        shippingSettings.courierDelivery!.apiKey || '',
         postalCode,
         Math.round(cartWeight * 1000), // convert to grams
         shippingSettings.courierDelivery!.selectedCouriers || [],
