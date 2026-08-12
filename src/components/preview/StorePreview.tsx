@@ -1835,7 +1835,17 @@ const scoreSearchResult = (result: any, query: string): number => {
 
 // Default Monas location (fallback when GPS unavailable) - geocoded coordinates
 const MONAS_COORDS = { lat: -6.1754024, lng: 106.8271692 };
-const MONAS_NAME = 'Monumen Nasional, Jalan Medan Merdeka Utara, RW 02, Gambir, Jakarta Pusat, Daerah Khusus Ibukota Jakarta, 10110, Indonesia';
+const MONAS_NAME = 'Monumen Nasional, Jalan Lapangan Monas, RT.5/RW.2, Gambir, Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta, Indonesia';
+const MONAS_FULL = {
+  address: 'Jalan Lapangan Monas, RT.5/RW.2',
+  city: 'Jakarta Pusat',
+  postal: '10110',
+  province: 'DKI Jakarta',
+  display: 'Monumen Nasional, Jalan Lapangan Monas, RT.5/RW.2, Gambir, Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta, Indonesia',
+  suburb: 'Gambir',
+  district: 'Gambir',
+  districtCode: '310101001'
+};
 const LOCATION_CACHE_KEY = 'last_location_coords';
 const LOCATION_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
@@ -1948,14 +1958,23 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
   const leafletMap = useRef<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [loc, setLoc] = useState<PickedLocation>(initialLoc ?? { address: '', city: '', postal: '', province: '', display: '', suburb: '', district: '' });
+
+  // Initialize with cached/initial location or MONAS default
+  const cachedLoc = getLastCachedLocation();
+  const defaultLoc = initialLoc ?? (cachedLoc ? undefined : MONAS_FULL);
+  const [loc, setLoc] = useState<PickedLocation>(initialLoc ?? defaultLoc ?? { address: '', city: '', postal: '', province: '', display: '', suburb: '', district: '' });
   const [mapReady, setMapReady] = useState(false);
-  const [locating, setLocating] = useState(!initialCoords || !initialLoc);
+  const [locating, setLocating] = useState(!initialCoords && !cachedLoc && !initialLoc);
   const [geocoding, setGeocoding] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const geocodeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const currentCoordsRef = useRef<{ lat: number; lng: number }>(initialCoords ?? getLastCachedLocation() ?? MONAS_COORDS);
+  const currentCoordsRef = useRef<{ lat: number; lng: number }>(initialCoords ?? cachedLoc ?? MONAS_COORDS);
   const skipNextGeocode = useRef(!!initialLoc);
+
+  // Cache MONAS as initial location if no prior location exists
+  if (!cachedLoc && !initialCoords) {
+    cacheLocation(MONAS_COORDS);
+  }
 
   const reverseGeocode = useCallback(async (lat: number, lon: number) => {
     setGeocoding(true);
