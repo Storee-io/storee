@@ -43,6 +43,7 @@ export interface GoogleSearchResult {
   postal: string;
   confidence: number;
   source: 'google_maps';
+  placeId?: string;  // Used to fetch actual coordinates later
   lat: number;  // REQUIRED - must get from Details API
   lng: number;  // REQUIRED
 }
@@ -175,6 +176,7 @@ function parseGoogleAutocompletePrediction(
       postal: '', // Not provided by autocomplete
       confidence: 0.75,
       source: 'google_maps',
+      placeId: pred.placeId,  // Keep placeId for later Details API call
       lat: estimated.lat,
       lng: estimated.lng
     };
@@ -241,15 +243,54 @@ function findComponentV1(
 }
 
 /**
- * Estimasi cost per query (Places API v1 - Autocomplete Only)
- * Autocomplete Session: $0.004 per session
- * Total: ~$0.004 per query (SUPER CHEAP!)
+ * Fetch actual coordinates from Google Places Details API
+ * Called when user selects a search result to get precise location
+ * Cost: $0.015 per Details call (billed only when user selects)
+ */
+export async function getPlaceDetails(placeId: string): Promise<{ lat: number; lng: number } | null> {
+  if (!placeId || !GOOGLE_MAPS_API_KEY) {
+    console.warn('⚠️ No placeId or API key for Place Details');
+    return null;
+  }
+
+  try {
+    const response = await fetch(
+      `${GOOGLE_PLACES_API_V1}/${placeId}?fields=location&key=${GOOGLE_MAPS_API_KEY}`
+    );
+
+    if (!response.ok) {
+      console.warn(`⚠️ Place Details API error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    if (data.location?.latitude && data.location?.longitude) {
+      console.log(`✅ Got actual coordinates from Place Details: ${data.location.latitude}, ${data.location.longitude}`);
+      return {
+        lat: data.location.latitude,
+        lng: data.location.longitude
+      };
+    }
+
+    console.log(`⚠️ Place Details returned no location data for placeId: ${placeId}`);
+    return null;
+  } catch (error) {
+    console.error('Place Details API error:', error);
+    return null;
+  }
+}
+
+/**
+ * Estimasi cost per query (Places API v1)
+ * Autocomplete Session: $0.004 per search
+ * Details API: $0.015 per selection (called only when user selects result)
  *
- * Note: Tidak ada Details API call - autocomplete sudah return structured format.
- * Session tokens bisa turun 50% lebih lagi ($0.002/query)
+ * Strategy: Lazy load Details - only charged saat user actually klik select
+ * Search: $0.004 (always) + Details: $0.015 (only on selection)
  */
 export const GOOGLE_COST_ESTIMATE = {
-  AUTOCOMPLETE_COST: 0.004, // per autocomplete session
-  DETAILS_COST: 0, // Not needed - autocomplete has all info
-  TOTAL_PER_QUERY: 0.004, // Roughly $4 per 1000 queries (SUPER CHEAP!)
+  AUTOCOMPLETE_COST: 0.004, // per autocomplete search
+  DETAILS_COST: 0.015, // per place details (called on selection only)
+  TOTAL_PER_SEARCH: 0.004, // Just search, no selection
+  TOTAL_PER_SELECTION: 0.019, // Search + Details when user selects
 };

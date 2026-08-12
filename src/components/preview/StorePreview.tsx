@@ -28,6 +28,7 @@ import { makePriceFmt } from '../../lib/formatCurrency';
 import { supabase } from '../../lib/supabase';
 import { useCart, type CartItem } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
+import { getPlaceDetails } from '../../lib/location/google-maps';
 
 // ── Field position context for drag-to-move ────────────────────────────────────
 type FieldOffsetMap = Record<string, { x: number; y: number }>;
@@ -2238,22 +2239,25 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       districtCode: match?.code ? match.code.slice(0, 6) : '',
     });
 
-    // Try to get coordinates from search result
-    const lat = parseFloat(r.lat);
-    const lon = parseFloat(r.lon);
+    // Try to get actual coordinates from Google Places Details API if placeId available
+    let actualCoords: { lat: number; lng: number } | null = null;
+
+    if (r.placeId) {
+      console.log('🔍 Fetching actual coordinates from Places Details API for placeId:', r.placeId);
+      actualCoords = await getPlaceDetails(r.placeId);
+    }
+
+    // Use actual coordinates if available, otherwise fallback to estimated
+    let lat = actualCoords?.lat || parseFloat(r.lat);
+    let lon = actualCoords?.lng || parseFloat(r.lon);
 
     // If result has valid coordinates, pan to them
     if (lat !== 0 || lon !== 0) {
       skipNextGeocode.current = true;
       panTo(lat, lon, 16);
+      console.log(`📍 Panning to coordinates: ${lat}, ${lon} (${actualCoords ? 'actual' : 'estimated'})`);
     } else {
-      // No coordinates in result - use our reverse geocoding to get coordinates
-      // from the structured address data
-      console.log('📍 No coordinates in result, attempting to geocode from address data...');
-
-      // Create a fake lat/lon for the address area based on regency/city
-      // This is a workaround until we have real coordinates
-      // For now, just clear search results and let user manually adjust
+      console.log('📍 No coordinates available, user will manually adjust');
       skipNextGeocode.current = false;
     }
 
