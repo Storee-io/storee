@@ -97,9 +97,18 @@ export async function hybridSearch(
     // ===== LAYER 2: PARALLEL fetch Nominatim + Google =====
     console.log(`🔄 Searching Nominatim + Google in parallel for: "${query}"`);
 
+    // Race: return results as soon as Nominatim finishes, Google can be slow
+    const nominatimPromise = searchNominatim(query, limit);
+    const googlePromise = includeGoogle
+      ? Promise.race([
+          searchGoogleMaps(query, limit),
+          new Promise<any[]>(resolve => setTimeout(() => resolve([]), 2000)) // 2s timeout
+        ])
+      : Promise.resolve([]);
+
     const [nominatimResults, googleResults] = await Promise.all([
-      searchNominatim(query, limit),
-      includeGoogle ? searchGoogleMaps(query, limit) : Promise.resolve([])
+      nominatimPromise,
+      googlePromise
     ]);
 
     // Cost: Only pay for Google searches (Nominatim is FREE)
