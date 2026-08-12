@@ -1,23 +1,22 @@
-import {
-  searchLocalDB,
-  LocalSearchResult,
-  VillageRecord
-} from './wilayah-db';
 import { LocationCache, CACHE_CONFIG } from './cache';
 import {
   searchGoogleMaps,
   GoogleSearchResult,
   GOOGLE_COST_ESTIMATE
 } from './google-maps';
+import {
+  searchNominatim,
+  NominatimSearchResult
+} from './nominatim';
 
 export interface HybridSearchResult {
   query: string;
-  results: (LocalSearchResult | GoogleSearchResult)[];
-  source: 'local_db' | 'google_maps' | 'cache';
+  results: (NominatimSearchResult | GoogleSearchResult)[];
+  source: 'nominatim' | 'google_maps' | 'cache' | 'hybrid';
   stats: {
     totalResults: number;
     cacheHit: boolean;
-    localDbResults: number;
+    nominatimResults: number;
     googleResults: number;
     costEstimate: number; // USD
     responseTimeMs: number;
@@ -25,26 +24,27 @@ export interface HybridSearchResult {
 }
 
 /**
- * 3-Layer Hybrid Search Strategy:
+ * 2-Layer Hybrid Search Strategy (NEW):
  *
  * Layer 1: Cache (0ms, FREE)
- *   └─ Check Redis/memory cache first
+ *   └─ Check Redis/memory cache first (1 hour TTL)
  *
- * Layer 2: Local DB (5-10ms, FREE)
- *   ├─ Province search
- *   ├─ Regency/City search
- *   ├─ District search
- *   ├─ Village search
- *   └─ Postal code search
- *   └─ Handle: 80% of typical queries
+ * Layer 2: PARALLEL fetch (500-1000ms, MOSTLY FREE)
+ *   ├─ Nominatim (OpenStreetMap) - FREE, ACTUAL coordinates
+ *   │   ├─ Administrative boundaries search
+ *   │   ├─ Street-level addresses
+ *   │   └─ Returns REAL lat/lng immediately
+ *   │
+ *   └─ Google Autocomplete v1 - $0.004 per search
+ *       ├─ POI/Business specific locations
+ *       ├─ "Villa Rizki", "Restaurant X", etc
+ *       └─ Returns placeId for Details API later
  *
- * Layer 3: Google Maps API v1 (500-1000ms, $0.005/query or $5/1K)
- *   ├─ Street-level address
- *   ├─ POI/Business search
- *   └─ Fuzzy matching
- *   └─ Handle: Remaining 15-20% + fallback
+ * When user selects:
+ *   - Nominatim result → Use coordinates directly (FREE)
+ *   - Google result → Call Details API ($0.015) to get actual coordinates
  *
- * Result: ~99% cost savings vs Google-only approach (with new API v1!)
+ * Result: Hybrid data sources, accurate coordinates for both, cost-efficient
  */
 
 export async function hybridSearch(
@@ -62,7 +62,6 @@ export async function hybridSearch(
 
   const cacheKey = LocationCache.getCacheKey(query);
   let costEstimate = 0;
-  let source: 'local_db' | 'google_maps' | 'cache' = 'local_db';
 
   try {
     // ===== LAYER 1: Check Cache =====
@@ -79,82 +78,56 @@ export async function hybridSearch(
       };
     }
 
-    // ===== LAYER 2: Local DB Search =====
-    const localResults = await searchLocalDB(query, limit);
-
-    // Check if query looks like a specific place (e.g., "villa rizki", "restaurant", "jalan")
-    // vs administrative boundary (e.g., "jakarta", "bandung")
-    const isSpecificPlace = /\b(villa|rumah|jalan|jl|restoran|restaurant|kantor|toko|mall|hotel|resort|kafe|cafe)\b/i.test(query);
-
-    // If cache-only mode atau sudah punya results dari local DB AND not a specific place search
-    if (cacheOnly || (localResults.length >= 5 && !isSpecificPlace)) {
-      console.log(`✅ Local DB sufficient: ${localResults.length} results`);
-
-      const result: HybridSearchResult = {
+    if (cacheOnly) {
+      return {
         query,
-        results: localResults,
-        source: 'local_db',
+        results: [],
+        source: 'cache',
         stats: {
-          totalResults: localResults.length,
+          totalResults: 0,
           cacheHit: false,
-          localDbResults: localResults.length,
-          googleResults: 0,
-          costEstimate: 0, // Local DB is FREE
-          responseTimeMs: Date.now() - startTime
-        }
-      };
-
-      // Cache result
-      await LocationCache.set(cacheKey, result, CACHE_CONFIG.SEARCH_TTL);
-      return result;
-    }
-
-    // ===== LAYER 3: Google Maps Fallback =====
-    if (!includeGoogle || localResults.length >= limit) {
-      console.log(
-        `ℹ️ No Google fallback: includeGoogle=${includeGoogle}, localResults=${localResults.length}`
-      );
-
-      const result: HybridSearchResult = {
-        query,
-        results: localResults,
-        source: 'local_db',
-        stats: {
-          totalResults: localResults.length,
-          cacheHit: false,
-          localDbResults: localResults.length,
+          nominatimResults: 0,
           googleResults: 0,
           costEstimate: 0,
           responseTimeMs: Date.now() - startTime
         }
       };
-
-      await LocationCache.set(cacheKey, result, CACHE_CONFIG.SEARCH_TTL);
-      return result;
     }
 
-    console.log(
-      `⚠️  Local DB insufficient (${localResults.length}), querying Google Maps...`
-    );
+    // ===== LAYER 2: PARALLEL fetch Nominatim + Google =====
+    console.log(`🔄 Searching Nominatim + Google in parallel for: "${query}"`);
 
-    const googleResults = await searchGoogleMaps(query, limit - localResults.length);
-    costEstimate = googleResults.length * GOOGLE_COST_ESTIMATE.TOTAL_PER_QUERY;
+    const [nominatimResults, googleResults] = await Promise.all([
+      searchNominatim(query, limit),
+      includeGoogle ? searchGoogleMaps(query, limit) : Promise.resolve([])
+    ]);
 
-    const combinedResults = [...localResults, ...googleResults];
+    // Cost: Only pay for Google searches (Nominatim is FREE)
+    costEstimate = googleResults.length * GOOGLE_COST_ESTIMATE.AUTOCOMPLETE_COST;
+
+    // Combine results: Nominatim first (actual coords), then Google (specific places)
+    const combinedResults = [...nominatimResults, ...googleResults];
+
+    // Sort by confidence (higher first)
+    combinedResults.sort((a, b) => b.confidence - a.confidence);
 
     const result: HybridSearchResult = {
       query,
       results: combinedResults.slice(0, limit),
-      source: 'google_maps',
+      source: 'hybrid',
       stats: {
         totalResults: combinedResults.length,
         cacheHit: false,
-        localDbResults: localResults.length,
+        nominatimResults: nominatimResults.length,
         googleResults: googleResults.length,
         costEstimate,
         responseTimeMs: Date.now() - startTime
       }
     };
+
+    console.log(
+      `✅ Hybrid search complete: ${nominatimResults.length} Nominatim + ${googleResults.length} Google results`
+    );
 
     // Cache result
     await LocationCache.set(cacheKey, result, CACHE_CONFIG.SEARCH_TTL);
@@ -162,21 +135,38 @@ export async function hybridSearch(
   } catch (error) {
     console.error('Hybrid search error:', error);
 
-    // Fallback ke local DB results jika error
-    const localResults = await searchLocalDB(query, limit);
-    return {
-      query,
-      results: localResults,
-      source: 'local_db',
-      stats: {
-        totalResults: localResults.length,
-        cacheHit: false,
-        localDbResults: localResults.length,
-        googleResults: 0,
-        costEstimate: 0,
-        responseTimeMs: Date.now() - startTime
-      }
-    };
+    // Fallback: Try Nominatim only
+    try {
+      const nominatimResults = await searchNominatim(query, limit);
+      return {
+        query,
+        results: nominatimResults,
+        source: 'nominatim',
+        stats: {
+          totalResults: nominatimResults.length,
+          cacheHit: false,
+          nominatimResults: nominatimResults.length,
+          googleResults: 0,
+          costEstimate: 0,
+          responseTimeMs: Date.now() - startTime
+        }
+      };
+    } catch (fallbackError) {
+      console.error('Fallback Nominatim search also failed:', fallbackError);
+      return {
+        query,
+        results: [],
+        source: 'nominatim',
+        stats: {
+          totalResults: 0,
+          cacheHit: false,
+          nominatimResults: 0,
+          googleResults: 0,
+          costEstimate: 0,
+          responseTimeMs: Date.now() - startTime
+        }
+      };
+    }
   }
 }
 
@@ -202,31 +192,44 @@ export function estimateMonthlyCost(
   daysPerMonth: number = 30
 ): {
   totalQueries: number;
-  localDbQueries: number;
+  nominatimQueries: number;
   googleQueries: number;
-  estimatedCost: number;
+  googleSelectionsEstimate: number;
+  estimatedSearchCost: number;
+  estimatedDetailsCost: number;
+  estimatedTotalCost: number;
   savingsVsFullGoogle: number;
 } {
   const totalQueries = queriesPerDay * daysPerMonth;
-  const localDbPercentage = 0.8; // 80% dari queries handled oleh local DB
-  const googlePercentage = 0.15; // 15% fallback ke Google
+  const nominatimPercentage = 1.0; // 100% queries get Nominatim (FREE)
+  const googlePercentage = 1.0; // 100% also get Google (concurrent)
   const cachePercentage = 0.05; // 5% dari cache
+  const userSelectionRate = 0.3; // 30% of users select a result and trigger Details API
 
-  const localDbQueries = Math.floor(totalQueries * localDbPercentage);
+  const nominatimQueries = Math.floor(totalQueries * nominatimPercentage);
   const googleQueries = Math.floor(totalQueries * googlePercentage);
   const cacheQueries = Math.floor(totalQueries * cachePercentage);
+  const googleSelections = Math.floor(googleQueries * userSelectionRate);
 
-  const hybridCost =
-    googleQueries * (GOOGLE_COST_ESTIMATE.TOTAL_PER_QUERY / 1000);
+  // Cost breakdown:
+  // - Nominatim: FREE
+  // - Google Autocomplete: $0.004 per search
+  // - Google Details API: $0.015 per selection (only when user selects Google result)
+  const searchCost = googleQueries * (GOOGLE_COST_ESTIMATE.AUTOCOMPLETE_COST / 1000);
+  const detailsCost = googleSelections * (GOOGLE_COST_ESTIMATE.DETAILS_COST / 1000);
+  const hybridTotalCost = searchCost + detailsCost;
 
-  // Google Search API: $3.65/1K queries
+  // Full Google Search API: $3.65/1K queries (if we didn't have Nominatim)
   const fullGoogleCost = totalQueries * (3.65 / 1000);
 
   return {
     totalQueries,
-    localDbQueries,
+    nominatimQueries,
     googleQueries,
-    estimatedCost: hybridCost,
-    savingsVsFullGoogle: fullGoogleCost - hybridCost
+    googleSelectionsEstimate: googleSelections,
+    estimatedSearchCost: searchCost,
+    estimatedDetailsCost: detailsCost,
+    estimatedTotalCost: hybridTotalCost,
+    savingsVsFullGoogle: fullGoogleCost - hybridTotalCost
   };
 }

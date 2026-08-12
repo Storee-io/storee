@@ -2238,15 +2238,19 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       districtCode: match?.code ? match.code.slice(0, 6) : '',
     });
 
-    // Try to get actual coordinates from backend API if this is a Google result with placeId
+    // Handle coordinates based on source
     let actualCoords: { lat: number; lng: number } | null = null;
-    const isGoogleResult = r.source === 'google_maps' || r.metadata?.source === 'google_maps';
-    const hasPlaceId = r.placeId && typeof r.placeId === 'string' && r.placeId.trim().length > 0;
+    const source = r.source || r.metadata?.source;
 
-    console.log('📍 selectResult - source:', r.source || r.metadata?.source, 'placeId:', r.placeId, 'isGoogle:', isGoogleResult, 'hasPlaceId:', hasPlaceId);
+    console.log('📍 selectResult - source:', source, 'placeId:', r.placeId);
 
-    if (isGoogleResult && hasPlaceId) {
-      console.log('🔍 Fetching actual coordinates from backend for Google result, placeId:', r.placeId);
+    if (source === 'nominatim') {
+      // Nominatim already returns ACTUAL coordinates
+      actualCoords = { lat: parseFloat(r.lat), lng: parseFloat(r.lon) };
+      console.log(`✅ Nominatim result - using actual coordinates: ${actualCoords.lat}, ${actualCoords.lng}`);
+    } else if (source === 'google_maps' && r.placeId && typeof r.placeId === 'string' && r.placeId.trim().length > 0) {
+      // Google Autocomplete needs Details API to get actual coordinates
+      console.log('🔍 Fetching actual coordinates from Details API for Google result, placeId:', r.placeId);
       try {
         const response = await fetch(`/api/place-details?placeId=${encodeURIComponent(r.placeId)}`);
         if (response.ok) {
@@ -2261,8 +2265,6 @@ function LocationPickerModal({ t, onChoose, onClose, initialCoords, initialLoc }
       } catch (error) {
         console.error('❌ Failed to fetch place details:', error);
       }
-    } else if (!isGoogleResult) {
-      console.log('ℹ️ Local database result - using estimated coordinates');
     }
 
     // Use actual coordinates if available, otherwise fallback to estimated
